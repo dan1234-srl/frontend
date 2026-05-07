@@ -15,8 +15,14 @@ import {
   ArrowRight,
   MapPin,
   Settings,
+  Sparkles,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import ShoppingBag from "../cart/ShoppingBag";
@@ -59,14 +65,18 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // =========================
-  // IMAGE HELPER (Pregătit pentru CloudFront/S3)
-  // =========================
+  const { scrollY } = useScroll();
+  const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
+  const navBgOpacity = useTransform(
+    scrollY,
+    [0, 50],
+    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.9)"],
+  );
+
   const getValidImageUrl = (imageSource: string | null) => {
     if (!imageSource)
       return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
     if (imageSource.startsWith("http")) return imageSource;
-
     try {
       const parsed = JSON.parse(imageSource);
       return parsed?.main?.large || parsed?.url || "";
@@ -77,9 +87,6 @@ const Navbar = () => {
     }
   };
 
-  // =========================
-  // FETCH MENU (Adăugat headere pentru a evita 401 pe rute publice)
-  // =========================
   const fetchMenu = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/categories/tree`, {
@@ -100,7 +107,6 @@ const Navbar = () => {
     fetchMenu();
   }, [fetchMenu]);
 
-  // Close menus on route change
   useEffect(() => {
     setMegaOpen(false);
     setMobileOpen(false);
@@ -108,7 +114,6 @@ const Navbar = () => {
     setMobileView({ parent: null });
   }, [location.pathname]);
 
-  // Click outside user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -135,22 +140,33 @@ const Navbar = () => {
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col bg-white shadow-sm">
+      <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col">
+        {/* TOP BAR - Glassmorphism Light */}
         <div
           className="z-30 flex h-8 items-center justify-center px-4 text-center text-white"
           style={{ background: "var(--primary-gradient)" }}
         >
-          <p className="text-[10px] font-black uppercase tracking-[0.3em]">
-            Design Premium — Calitate Impecabilă
-          </p>
+          <motion.div
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 3, repeat: Infinity }}
+            className="flex items-center gap-2"
+          >
+            <Sparkles size={10} className="text-cyan-200" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em]">
+              Design Premium — Calitate Impecabilă
+            </p>
+            <Sparkles size={10} className="text-cyan-200" />
+          </motion.div>
         </div>
 
-        <nav
-          className="relative flex h-16 items-center border-b border-zinc-100 px-4 sm:px-6 lg:h-20 lg:px-12"
+        {/* NAVBAR */}
+        <motion.nav
+          style={{ height: navHeight, backgroundColor: navBgOpacity }}
+          className="relative flex items-center border-b border-zinc-100/50 backdrop-blur-md px-4 sm:px-6 lg:px-12 transition-all duration-300"
           onMouseLeave={() => {
             megaMenuTimeoutRef.current = setTimeout(
               () => setMegaOpen(false),
-              180,
+              250,
             );
           }}
         >
@@ -163,104 +179,125 @@ const Navbar = () => {
                   clearTimeout(megaMenuTimeoutRef.current);
                 setMegaOpen(true);
               }}
-              className="group flex items-center gap-3 text-[var(--deep-twilight)]"
+              className="group relative flex items-center gap-3 overflow-hidden rounded-full bg-zinc-50 px-5 py-2 transition-all hover:bg-zinc-100 hover:shadow-inner"
             >
-              <div className="rounded-md p-2 transition-colors group-hover:bg-zinc-100">
-                <Menu size={26} />
-              </div>
-              <span className="hidden text-[13px] font-black uppercase tracking-tight lg:block">
-                Produse
+              <Menu
+                size={20}
+                className="text-[var(--deep-twilight)] transition-transform group-hover:scale-110"
+              />
+              <span className="hidden text-[11px] font-black uppercase tracking-widest text-[var(--deep-twilight)] lg:block">
+                Meniu
               </span>
               <ChevronDown
                 size={14}
-                className={`hidden transition-transform duration-300 lg:block ${megaOpen ? "rotate-180" : ""}`}
+                className={`hidden transition-transform duration-500 lg:block ${megaOpen ? "rotate-180" : ""}`}
               />
             </button>
           </div>
 
           {/* CENTER: LOGO */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <Link to="/" className="pointer-events-auto group">
-              <span className="text-3xl font-black uppercase tracking-tighter text-[var(--deep-twilight)] sm:text-4xl">
-                Evem<span className="text-[var(--french-blue)]">.</span>
-              </span>
+            <Link
+              to="/"
+              className="pointer-events-auto group flex items-center gap-1"
+            >
+              <motion.span
+                whileHover={{ scale: 1.05 }}
+                className="text-3xl font-black uppercase tracking-tighter text-[var(--deep-twilight)] sm:text-4xl"
+              >
+                Evem
+                <span className="text-[var(--french-blue)] animate-pulse">
+                  .
+                </span>
+              </motion.span>
             </Link>
           </div>
 
           {/* RIGHT: ACTIONS */}
-          <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-3">
-            <button
+          <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-4">
+            {/* WISHLIST ICON WITH HOVER EFFECT */}
+            <motion.button
+              whileHover={{ y: -3 }}
               onClick={() => setWishOpen(true)}
-              className="rounded-full p-2 text-zinc-700 transition-all hover:bg-zinc-50"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-500"
             >
-              <Heart size={22} />
-            </button>
+              <Heart size={20} />
+            </motion.button>
 
             {/* USER MENU */}
             <div className="relative" ref={userMenuRef}>
-              <button
+              <motion.button
+                whileHover={{ y: -3 }}
                 onClick={() =>
                   user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                 }
-                className={`rounded-full p-2 transition-all ${userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${userMenuOpen ? "bg-zinc-100 shadow-inner" : "hover:bg-zinc-100"}`}
               >
-                <User size={22} className="text-zinc-700" />
-              </button>
+                <User size={20} className="text-zinc-700" />
+              </motion.button>
 
               <AnimatePresence>
                 {user && userMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 mt-4 w-64 overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.08)]"
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                    className="absolute right-0 mt-4 w-72 overflow-hidden rounded-[2rem] border border-zinc-100 bg-white/95 backdrop-blur-xl shadow-[0_30px_100px_rgba(0,0,0,0.12)]"
                   >
-                    <div className="border-b bg-zinc-50 p-4 text-left">
-                      <p className="mb-1 text-[10px] font-black uppercase text-[var(--french-blue)]">
-                        Contul meu
+                    <div className="bg-gradient-to-br from-zinc-50 to-white p-6 text-left">
+                      <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-[var(--french-blue)]">
+                        Premium Member
                       </p>
-                      <p className="truncate text-xs font-bold text-[var(--deep-twilight)]">
+                      <p className="truncate text-sm font-bold text-[var(--deep-twilight)]">
                         {user.email}
                       </p>
                     </div>
 
-                    <div className="flex flex-col p-2">
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-bold text-[var(--deep-twilight)] transition-colors hover:bg-zinc-50"
-                        >
-                          <ShieldCheck
-                            size={16}
-                            className="text-[var(--french-blue)]"
-                          />{" "}
-                          Administrare
-                        </Link>
+                    <div className="flex flex-col gap-1 p-3">
+                      {[
+                        {
+                          to: "/admin",
+                          icon: ShieldCheck,
+                          label: "Administrare",
+                          adminOnly: true,
+                          color: "text-blue-600",
+                        },
+                        {
+                          to: "/account/orders",
+                          icon: Package,
+                          label: "Comenzile mele",
+                        },
+                        {
+                          to: "/account/addresses",
+                          icon: MapPin,
+                          label: "Adresele mele",
+                        },
+                        {
+                          to: "/account/settings",
+                          icon: Settings,
+                          label: "Setări cont",
+                        },
+                      ].map(
+                        (link, idx) =>
+                          (link.adminOnly ? isAdmin : true) && (
+                            <Link
+                              key={idx}
+                              to={link.to}
+                              className="flex items-center gap-4 rounded-2xl px-4 py-3 text-left text-[13px] font-bold text-[var(--deep-twilight)] transition-all hover:bg-zinc-100 hover:translate-x-1"
+                            >
+                              <link.icon
+                                size={18}
+                                className={link.color || "text-zinc-400"}
+                              />
+                              {link.label}
+                            </Link>
+                          ),
                       )}
-                      <Link
-                        to="/account/orders"
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-bold text-[var(--deep-twilight)] transition-colors hover:bg-zinc-50"
-                      >
-                        <Package size={16} /> Comenzile mele
-                      </Link>
-                      {/* PAGINI NOI ADAUGATE */}
-                      <Link
-                        to="/account/addresses"
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-bold text-[var(--deep-twilight)] transition-colors hover:bg-zinc-50"
-                      >
-                        <MapPin size={16} /> Adresele mele
-                      </Link>
-                      <Link
-                        to="/account/settings"
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-bold text-[var(--deep-twilight)] transition-colors hover:bg-zinc-50"
-                      >
-                        <Settings size={16} /> Setări cont
-                      </Link>
                       <button
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black uppercase text-red-500 transition-colors hover:bg-red-50"
+                        className="mt-2 flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-[11px] font-black uppercase text-red-500 transition-all hover:bg-red-50"
                       >
-                        <LogOut size={16} /> Ieșire
+                        <LogOut size={18} /> Ieșire
                       </button>
                     </div>
                   </motion.div>
@@ -268,30 +305,40 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {/* CART ICON */}
-            <button
+            {/* CART ICON - Animated Bounce */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setBagOpen(true)}
-              className="relative ml-1 flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg transition-all active:scale-95"
+              className="relative flex h-12 w-12 items-center justify-center rounded-full text-white shadow-[0_10px_30px_rgba(0,0,0,0.15)] transition-all"
               style={{ background: "var(--primary-gradient)" }}
             >
-              <BagIcon size={20} />
-              {totalItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[10px] font-black text-white">
-                  {totalItems}
-                </span>
-              )}
-            </button>
+              <BagIcon size={22} />
+              <AnimatePresence>
+                {totalItems > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-[3px] border-white bg-black text-[10px] font-black text-white"
+                  >
+                    {totalItems}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
-        </nav>
+        </motion.nav>
 
-        {/* MEGA MENU DESKTOP */}
+        {/* MEGA MENU DESKTOP - Premium Redesign */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white shadow-2xl lg:block"
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white/95 backdrop-blur-2xl shadow-[0_40px_80px_rgba(0,0,0,0.1)] lg:block"
               onMouseEnter={() => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
@@ -299,101 +346,134 @@ const Navbar = () => {
               onMouseLeave={() => {
                 megaMenuTimeoutRef.current = setTimeout(
                   () => setMegaOpen(false),
-                  180,
+                  250,
                 );
               }}
             >
-              <div className="mx-auto flex h-[550px] max-w-[1600px]">
-                <div className="w-1/4 overflow-y-auto border-r border-zinc-100 bg-zinc-50 p-8">
-                  <p className="mb-8 text-left text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                    Colecții
+              <div className="mx-auto flex h-[600px] max-w-[1600px]">
+                {/* COLECtII PANEL */}
+                <div className="w-1/4 overflow-y-auto border-r border-zinc-100 bg-zinc-50/50 p-10">
+                  <p className="mb-10 text-left text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
+                    Suntem Evem
                   </p>
-                  <div className="flex flex-col gap-2">
-                    {categories.map((cat) => (
-                      <button
+                  <div className="flex flex-col gap-3">
+                    {categories.map((cat, i) => (
+                      <motion.button
                         key={cat.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
                         onMouseEnter={() => setActiveParent(cat)}
                         onClick={() => {
                           navigate(`/category/${cat.slug}`);
                           setMegaOpen(false);
                         }}
-                        className={`flex items-center justify-between rounded-xl px-5 py-4 text-left transition-all ${activeParent?.id === cat.id ? "translate-x-2 bg-white font-black text-[var(--french-blue)] shadow-md" : "font-bold text-[var(--deep-twilight)] hover:bg-white/60"}`}
+                        className={`group flex items-center justify-between rounded-[1.5rem] px-6 py-5 text-left transition-all ${
+                          activeParent?.id === cat.id
+                            ? "bg-white text-[var(--french-blue)] shadow-[0_15px_40px_rgba(0,0,0,0.06)]"
+                            : "text-zinc-500 hover:bg-white/50"
+                        }`}
                       >
-                        <span className="text-[13px] uppercase tracking-tight">
+                        <span
+                          className={`text-[14px] uppercase tracking-tighter transition-all ${activeParent?.id === cat.id ? "font-black" : "font-bold"}`}
+                        >
                           {cat.name}
                         </span>
                         <ChevronRight
                           size={18}
-                          className={
-                            activeParent?.id === cat.id
-                              ? "opacity-100"
-                              : "opacity-0"
-                          }
+                          className={`transition-all duration-300 ${activeParent?.id === cat.id ? "translate-x-1 opacity-100" : "opacity-0"}`}
                         />
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto bg-white p-12">
-                  <p className="mb-8 text-left text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                    Categorii
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-12 gap-y-12">
-                    {activeParent?.subcategories?.map((sub) => (
-                      <div key={sub.id} className="space-y-5 text-left">
-                        <Link
-                          to={`/category/${sub.slug}`}
-                          onClick={() => setMegaOpen(false)}
-                          className="block border-b border-zinc-100 pb-2 text-[15px] font-black uppercase tracking-tight text-[var(--deep-twilight)] hover:text-[var(--french-blue)]"
-                        >
-                          {sub.name}
-                        </Link>
-                        <div className="flex flex-col gap-3">
-                          {sub.subcategories?.map((child) => (
+
+                {/* CATEGORII PANEL - Minimalist & Clean */}
+                <div className="flex-1 overflow-y-auto bg-white p-16">
+                  <div className="grid grid-cols-2 gap-x-20 gap-y-16">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeParent?.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="contents"
+                      >
+                        {activeParent?.subcategories?.map((sub) => (
+                          <div
+                            key={sub.id}
+                            className="group/item space-y-6 text-left"
+                          >
                             <Link
-                              key={child.id}
-                              to={`/category/${child.slug}`}
+                              to={`/category/${sub.slug}`}
                               onClick={() => setMegaOpen(false)}
-                              className="text-[14px] font-bold text-zinc-500 hover:translate-x-1 hover:text-[var(--deep-twilight)]"
+                              className="inline-flex items-center gap-2 border-b-2 border-transparent pb-1 text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] transition-all hover:border-[var(--french-blue)] hover:text-[var(--french-blue)]"
                             >
-                              {child.name}
+                              {sub.name}
+                              <ArrowRight
+                                size={14}
+                                className="opacity-0 transition-all group-hover/item:translate-x-1 group-hover/item:opacity-100"
+                              />
                             </Link>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                            <div className="flex flex-col gap-4">
+                              {sub.subcategories?.map((child) => (
+                                <Link
+                                  key={child.id}
+                                  to={`/category/${child.slug}`}
+                                  onClick={() => setMegaOpen(false)}
+                                  className="text-[14px] font-medium text-zinc-400 transition-all hover:translate-x-2 hover:text-[var(--deep-twilight)]"
+                                >
+                                  {child.name}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </div>
-                {/* MEGA MENU RIGHT IMAGE */}
-                <div className="flex w-1/3 flex-col bg-zinc-50/50 p-10">
-                  <div className="group relative flex-1 overflow-hidden rounded-3xl bg-zinc-200 shadow-xl">
+
+                {/* VISUAL SHOWCASE - Right side */}
+                <div className="flex w-1/3 flex-col p-10">
+                  <div className="group relative flex-1 overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-2xl">
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={activeParent?.id}
                         src={getValidImageUrl(activeParent?.image_url || null)}
-                        initial={{ opacity: 0, scale: 1.05 }}
+                        initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 h-full w-full object-cover"
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.6 }}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                     </AnimatePresence>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-8 left-8 right-8 z-10 text-left text-white">
-                      <p className="mb-2 text-[9px] font-black uppercase tracking-[0.3em] text-[var(--light-cyan)]">
-                        Descoperă acum
-                      </p>
-                      <h4 className="mb-6 text-3xl font-black uppercase leading-none tracking-tighter">
-                        {activeParent?.name}
-                      </h4>
-                      <button
-                        onClick={() => {
-                          navigate(`/category/${activeParent?.slug}`);
-                          setMegaOpen(false);
-                        }}
-                        className="flex items-center gap-3 rounded-full bg-white px-8 py-3 text-[10px] font-black uppercase tracking-widest text-black hover:bg-[var(--light-cyan)]"
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-twilight)]/90 via-transparent to-transparent" />
+                    <div className="absolute bottom-10 left-10 right-10 z-10 text-left text-white">
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={`text-${activeParent?.id}`}
                       >
-                        Vezi Tot <ArrowRight size={14} />
-                      </button>
+                        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.4em] text-cyan-300">
+                          New Perspective
+                        </p>
+                        <h4 className="mb-8 text-4xl font-black uppercase leading-none tracking-tighter">
+                          {activeParent?.name}
+                        </h4>
+                        <button
+                          onClick={() => {
+                            navigate(`/category/${activeParent?.slug}`);
+                            setMegaOpen(false);
+                          }}
+                          className="group/btn relative flex items-center gap-4 overflow-hidden rounded-full bg-white px-10 py-4 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-cyan-50"
+                        >
+                          <span className="relative z-10">Explorează</span>
+                          <ArrowRight
+                            size={16}
+                            className="relative z-10 transition-transform group-hover/btn:translate-x-2"
+                          />
+                        </button>
+                      </motion.div>
                     </div>
                   </div>
                 </div>
@@ -403,85 +483,97 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
-      {/* MOBILE MENU CONTENT */}
+      {/* MOBILE MENU - Redesigned with animations */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-[300] flex flex-col bg-white lg:hidden"
           >
-            <div className="flex h-16 items-center justify-between border-b border-zinc-100 px-6">
-              <span className="text-[var(--deep-twilight)] text-lg font-black uppercase tracking-tight">
+            <div className="flex h-20 items-center justify-between border-b border-zinc-100 px-8">
+              <span className="text-2xl font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
                 Meniu
               </span>
               <button
                 onClick={() => setMobileOpen(false)}
-                className="rounded-full p-2 hover:bg-zinc-50"
+                className="rounded-full bg-zinc-50 p-3"
               >
-                <X size={28} />
+                <X size={24} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-4">
               {!mobileView.parent ? (
-                <div className="flex flex-col">
-                  {categories.map((cat) => (
-                    <button
+                <div className="flex flex-col gap-2">
+                  {categories.map((cat, i) => (
+                    <motion.button
                       key={cat.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
                       onClick={() =>
                         cat.subcategories?.length
                           ? setMobileView({ parent: cat })
                           : (navigate(`/category/${cat.slug}`),
                             setMobileOpen(false))
                       }
-                      className="group flex items-center justify-between border-b border-zinc-50 px-6 py-6 text-left active:bg-zinc-50"
+                      className="flex items-center justify-between rounded-3xl border border-zinc-50 bg-white p-6 text-left shadow-sm active:bg-zinc-50"
                     >
-                      <span className="text-[18px] font-black uppercase tracking-tight text-[var(--deep-twilight)]">
+                      <span className="text-[17px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
                         {cat.name}
                       </span>
                       {cat.subcategories?.length > 0 && (
-                        <ChevronRight size={22} className="text-zinc-300" />
+                        <ChevronRight size={20} className="text-zinc-300" />
                       )}
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col gap-4"
+                >
                   <button
                     onClick={() => setMobileView({ parent: null })}
-                    className="flex items-center gap-2 bg-zinc-50 px-6 py-4 text-[11px] font-black uppercase tracking-widest text-[var(--french-blue)]"
+                    className="mb-4 flex items-center gap-3 rounded-2xl bg-zinc-50 px-6 py-4 text-[12px] font-black uppercase tracking-widest text-[var(--french-blue)]"
                   >
-                    <ChevronLeft size={16} /> Înapoi
+                    <ChevronLeft size={18} /> Înapoi la Colecții
                   </button>
                   {mobileView.parent.subcategories?.map((sub) => (
-                    <div key={sub.id} className="flex flex-col">
-                      <div className="border-b border-zinc-50 bg-zinc-50/30 px-8 py-5 text-[15px] font-black uppercase text-[var(--deep-twilight)]">
+                    <div
+                      key={sub.id}
+                      className="rounded-[2rem] bg-zinc-50/50 p-6"
+                    >
+                      <div className="mb-4 text-[14px] font-black uppercase tracking-widest text-[var(--deep-twilight)]">
                         {sub.name}
                       </div>
-                      {sub.subcategories?.map((child) => (
-                        <Link
-                          key={child.id}
-                          to={`/category/${child.slug}`}
-                          onClick={() => setMobileOpen(false)}
-                          className="border-b border-zinc-50 px-12 py-4 text-[14px] font-bold text-zinc-500 active:text-[var(--french-blue)]"
-                        >
-                          {child.name}
-                        </Link>
-                      ))}
+                      <div className="flex flex-wrap gap-2">
+                        {sub.subcategories?.map((child) => (
+                          <Link
+                            key={child.id}
+                            to={`/category/${child.slug}`}
+                            onClick={() => setMobileOpen(false)}
+                            className="rounded-full bg-white px-5 py-3 text-[13px] font-bold text-zinc-500 shadow-sm active:text-[var(--french-blue)]"
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="h-[96px] w-full lg:h-[112px]" />
+      <div className="h-[5rem] w-full" />
 
-      {/* DRAWERS & MODALS */}
+      {/* MODALS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
