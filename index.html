@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linea - Minimalist jewelry crafted for the modern individual</title>
+    <meta name="description" content="E-commerce website for Linea - Minimalist jewelry crafted for the modern individual.">
+    <meta name="author" content="Lovable" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+
+    
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/2BLhx4pGbbVjvWowaDBmvYeT3Ec2/social-images/social-1758825622907-Linea OG Image.png">
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/2BLhx4pGbbVjvWowaDBmvYeT3Ec2/social-images/social-1758825622907-Linea OG Image.png">
+    <meta property="og:title" content="Linea - Minimalist jewelry crafted for the modern individual">
+  <meta name="twitter:title" content="Linea - Minimalist jewelry crafted for the modern individual">
+  <meta property="og:description" content="E-commerce website for Linea - Minimalist jewelry crafted for the modern individual.">
+  <meta name="twitter:description" content="E-commerce website for Linea - Minimalist jewelry crafted for the modern individual.">
+  <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/2BLhx4pGbbVjvWowaDBmvYeT3Ec2/uploads/1758825602014-Group 48096956.png">
+</head>
+
+  <body>
+    <div id="root"></div>
+    <script>
+      // Pre-hydrate active theme from localStorage to prevent FOUC.
+      // Mirrors logic in src/contexts/ThemeContext.tsx (STORAGE_KEY = linea_active_theme_v4).
+      (function () {
+        try {
+          var raw = localStorage.getItem("linea_active_theme_v4");
+          if (!raw) return;
+          var t = JSON.parse(raw);
+          var root = document.documentElement;
+          function hexToHsl(hex) {
+            if (!hex) return null;
+            var c = hex.replace("#", "").trim();
+            if (!/^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)) return null;
+            if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+            var r = parseInt(c.substr(0,2),16)/255,
+                g = parseInt(c.substr(2,2),16)/255,
+                b = parseInt(c.substr(4,2),16)/255,
+                max = Math.max(r,g,b), min = Math.min(r,g,b),
+                h=0, s=0, l=(max+min)/2;
+            if (max!==min){ var d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
+              switch(max){case r:h=(g-b)/d+(g<b?6:0);break;
+                          case g:h=(b-r)/d+2;break;
+                          case b:h=(r-g)/d+4;break;}
+              h/=6;
+            }
+            return Math.round(h*360)+" "+Math.round(s*100)+"% "+Math.round(l*100)+"%";
+          }
+          var pairs = [
+            [t.dark_amethyst, "--dark-amethyst", "--brand-deep"],
+            [t.dark_amethyst_2, "--dark-amethyst-2", "--brand-deep-2"],
+            [t.indigo_ink, "--indigo-ink", "--brand-ink"],
+            [t.indigo_velvet, "--indigo-velvet", "--brand-velvet"],
+            [t.royal_violet, "--royal-violet", "--brand"],
+            [t.lavender_purple, "--lavender-purple", "--brand-bright"],
+            [t.mauve_magic, "--mauve-magic", "--brand-soft"],
+            [t.mauve, "--mauve", "--brand-softest"]
+          ];
+          pairs.forEach(function(p){
+            if (!p[0]) return;
+            root.style.setProperty(p[1], p[0]);
+            var hsl = hexToHsl(p[0]);
+            if (hsl) root.style.setProperty(p[2], hsl);
+          });
+          if (t.royal_violet) {
+            var bh = hexToHsl(t.royal_violet);
+            if (bh) {
+              var lightness = parseInt(bh.split(" ")[2]);
+              root.style.setProperty("--brand-foreground", lightness > 60 ? "0 0% 8%" : "0 0% 100%");
+            }
+          }
+          var grad = t.primary_gradient ||
+            "linear-gradient(135deg, " + (t.dark_amethyst || "#10002b") + " 0%, " + (t.indigo_ink || t.royal_violet || "#3c096c") + " 100%)";
+          root.style.setProperty("--primary-gradient", grad);
+          root.style.setProperty("--gradient-primary", grad);
+        } catch(e) {}
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

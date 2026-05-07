@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* --- 1. VARIABILELE DINAMICE (Injectate din Backend) --- */
+    /* Valorile de mai jos sunt doar FALLBACK (ce se vede până se încarcă baza de date) */
+    --dark-amethyst: #10002b;
+    --dark-amethyst-2: #240046;
+    --indigo-ink: #3c096c;
+    --indigo-velvet: #5a189a;
+    --royal-violet: #7b2cbf;
+    --lavender-purple: #9d4edd;
+    --mauve-magic: #c77dff;
+    --mauve: #e0aaff;
+
+    /* --- 2. MAPARE TOTALĂ PENTRU COMPONENTE (SHADCN / UI) --- */
+    /* CRITIC: Mapăm culorile de sistem pe variabilele tale dinamice */
+
+    /* Fundalul și textul principal */
+    --background: #fbfbfd;
+    --foreground: #10002b;
+
+    /* Primary devine culoarea ta de brand din DB (ex: Albastru dacă e setat) */
+    --primary: var(--royal-violet);
+    --primary-foreground: #ffffff;
+
+    /* Ring-ul de focus și accentele urmăresc tema */
+    --ring: var(--royal-violet);
+    --accent: var(--royal-violet);
+    --accent-foreground: #ffffff;
+
+    /* Structură și Formulare */
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+
+    --secondary: #f3f4f6;
+    --secondary-foreground: #10002b;
+
+    /* --- 3. ALTE VARIABILE DE DESIGN --- */
+    --radius: 1rem;
+
+    /* SHADOWS LUXURY */
+    --shadow-soft: 0 4px 20px -1px rgba(0, 0, 0, 0.05);
+    --shadow-elevated: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+    --shadow-luxe: 0 20px 50px -12px rgba(0, 0, 0, 0.15);
+    --shadow-modal: 0 30px 60px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .dark {
+    /* În mod dark, putem inversa pointerii sau folosi valori fixe */
+    --background: var(--dark-amethyst);
+    --foreground: #f3f4f6;
+    --primary: #f3f4f6;
+    --primary-foreground: var(--dark-amethyst);
+    --border: var(--dark-amethyst-2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    /* Aplicăm fundalul dinamic direct pe body */
+    background-color: var(--background);
+    color: var(--foreground);
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+    min-height: 100vh;
+    font-family: var(--font-sans), ui-sans-serif, system-ui;
+  }
+}
+
+/* --- LOGICA PENTRU TEME DINAMICE --- */
+:root {
+  /* Gradientul va fi mereu proaspăt, bazat pe culorile din DB */
+  --primary-gradient: linear-gradient(
+    135deg,
+    var(--dark-amethyst) 0%,
+    var(--indigo-ink) 100%
+  );
+}
+
+.bg-luxury-gradient {
+  background: var(--primary-gradient);
+}
+
+/* --- SCROLLBAR LUXURY (DINAMIC) --- */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  /* Scrollbar-ul se face albastru/mov automat */
+  background: var(--royal-violet);
+  border-radius: 20px;
+  border: 1px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--indigo-velvet);
+}
+
+/* --- FIX-URI NPROGRESS & ALTELE --- */
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
+#nprogress .bar {
+  background: var(--royal-violet) !important;
+  height: 3px !important;
+  z-index: 10001 !important;
+}
+
+#nprogress .peg {
+  box-shadow:
+    0 0 10px var(--royal-violet),
+    0 0 5px var(--royal-violet) !important;
+}
+
+::selection {
+  background-color: var(--royal-violet);
+  color: white;
+}
