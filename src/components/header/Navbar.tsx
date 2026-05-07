@@ -65,12 +65,13 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Scroll Animations for performance
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
-  const navBgOpacity = useTransform(
+  const navBg = useTransform(
     scrollY,
     [0, 50],
-    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.9)"],
+    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.95)"],
   );
 
   const getValidImageUrl = (imageSource: string | null) => {
@@ -141,13 +142,13 @@ const Navbar = () => {
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col">
-        {/* TOP BAR - Glassmorphism Light */}
+        {/* TOP BAR */}
         <div
           className="z-30 flex h-8 items-center justify-center px-4 text-center text-white"
           style={{ background: "var(--primary-gradient)" }}
         >
           <motion.div
-            animate={{ opacity: [0.7, 1, 0.7] }}
+            animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 3, repeat: Infinity }}
             className="flex items-center gap-2"
           >
@@ -155,14 +156,13 @@ const Navbar = () => {
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">
               Design Premium — Calitate Impecabilă
             </p>
-            <Sparkles size={10} className="text-cyan-200" />
           </motion.div>
         </div>
 
-        {/* NAVBAR */}
+        {/* MAIN NAV */}
         <motion.nav
-          style={{ height: navHeight, backgroundColor: navBgOpacity }}
-          className="relative flex items-center border-b border-zinc-100/50 backdrop-blur-md px-4 sm:px-6 lg:px-12 transition-all duration-300"
+          style={{ height: navHeight, backgroundColor: navBg }}
+          className="relative flex items-center border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu"
           onMouseLeave={() => {
             megaMenuTimeoutRef.current = setTimeout(
               () => setMegaOpen(false),
@@ -170,7 +170,7 @@ const Navbar = () => {
             );
           }}
         >
-          {/* LEFT: PRODUSE */}
+          {/* LEFT: PRODUCTS TRIGGER */}
           <div className="z-20 flex flex-1 items-center gap-6">
             <button
               onClick={() => setMobileOpen(true)}
@@ -179,12 +179,9 @@ const Navbar = () => {
                   clearTimeout(megaMenuTimeoutRef.current);
                 setMegaOpen(true);
               }}
-              className="group relative flex items-center gap-3 overflow-hidden rounded-full bg-zinc-50 px-5 py-2 transition-all hover:bg-zinc-100 hover:shadow-inner"
+              className="group flex items-center gap-3 rounded-full bg-zinc-50 px-5 py-2.5 transition-all hover:bg-zinc-100 hover:shadow-sm"
             >
-              <Menu
-                size={20}
-                className="text-[var(--deep-twilight)] transition-transform group-hover:scale-110"
-              />
+              <Menu size={20} className="text-[var(--deep-twilight)]" />
               <span className="hidden text-[11px] font-black uppercase tracking-widest text-[var(--deep-twilight)] lg:block">
                 Meniu
               </span>
@@ -195,43 +192,35 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* CENTER: LOGO */}
+          {/* LOGO */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <Link
-              to="/"
-              className="pointer-events-auto group flex items-center gap-1"
-            >
+            <Link to="/" className="pointer-events-auto group">
               <motion.span
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 className="text-3xl font-black uppercase tracking-tighter text-[var(--deep-twilight)] sm:text-4xl"
               >
-                Evem
-                <span className="text-[var(--french-blue)] animate-pulse">
-                  .
-                </span>
+                Evem<span className="text-[var(--french-blue)]">.</span>
               </motion.span>
             </Link>
           </div>
 
-          {/* RIGHT: ACTIONS */}
+          {/* RIGHT ACTIONS */}
           <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-4">
-            {/* WISHLIST ICON WITH HOVER EFFECT */}
             <motion.button
-              whileHover={{ y: -3 }}
+              whileHover={{ y: -2 }}
               onClick={() => setWishOpen(true)}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-red-500"
+              className="p-2 text-zinc-700 hover:text-red-500 transition-colors"
             >
               <Heart size={20} />
             </motion.button>
 
-            {/* USER MENU */}
             <div className="relative" ref={userMenuRef}>
               <motion.button
-                whileHover={{ y: -3 }}
+                whileHover={{ y: -2 }}
                 onClick={() =>
                   user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                 }
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${userMenuOpen ? "bg-zinc-100 shadow-inner" : "hover:bg-zinc-100"}`}
+                className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"}`}
               >
                 <User size={20} className="text-zinc-700" />
               </motion.button>
@@ -239,65 +228,52 @@ const Navbar = () => {
               <AnimatePresence>
                 {user && userMenuOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                    initial={{ opacity: 0, y: 15, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-72 overflow-hidden rounded-[2rem] border border-zinc-100 bg-white/95 backdrop-blur-xl shadow-[0_30px_100px_rgba(0,0,0,0.12)]"
+                    exit={{ opacity: 0, y: 15, scale: 0.98 }}
+                    className="absolute right-0 mt-4 w-64 overflow-hidden rounded-[1.5rem] border border-zinc-100 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
                   >
-                    <div className="bg-gradient-to-br from-zinc-50 to-white p-6 text-left">
-                      <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-[var(--french-blue)]">
-                        Premium Member
+                    <div className="bg-zinc-50 p-5">
+                      <p className="text-[9px] font-black uppercase text-[var(--french-blue)] tracking-widest">
+                        Cont Premium
                       </p>
-                      <p className="truncate text-sm font-bold text-[var(--deep-twilight)]">
+                      <p className="truncate text-xs font-bold text-[var(--deep-twilight)]">
                         {user.email}
                       </p>
                     </div>
-
-                    <div className="flex flex-col gap-1 p-3">
-                      {[
-                        {
-                          to: "/admin",
-                          icon: ShieldCheck,
-                          label: "Administrare",
-                          adminOnly: true,
-                          color: "text-blue-600",
-                        },
-                        {
-                          to: "/account/orders",
-                          icon: Package,
-                          label: "Comenzile mele",
-                        },
-                        {
-                          to: "/account/addresses",
-                          icon: MapPin,
-                          label: "Adresele mele",
-                        },
-                        {
-                          to: "/account/settings",
-                          icon: Settings,
-                          label: "Setări cont",
-                        },
-                      ].map(
-                        (link, idx) =>
-                          (link.adminOnly ? isAdmin : true) && (
-                            <Link
-                              key={idx}
-                              to={link.to}
-                              className="flex items-center gap-4 rounded-2xl px-4 py-3 text-left text-[13px] font-bold text-[var(--deep-twilight)] transition-all hover:bg-zinc-100 hover:translate-x-1"
-                            >
-                              <link.icon
-                                size={18}
-                                className={link.color || "text-zinc-400"}
-                              />
-                              {link.label}
-                            </Link>
-                          ),
+                    <div className="flex flex-col p-2">
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
+                        >
+                          <ShieldCheck size={16} className="text-blue-600" />{" "}
+                          Administrare
+                        </Link>
                       )}
+                      <Link
+                        to="/account/orders"
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
+                      >
+                        <Package size={16} /> Comenzile mele
+                      </Link>
+                      <Link
+                        to="/account/addresses"
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
+                      >
+                        <MapPin size={16} /> Adresele mele
+                      </Link>
+                      <Link
+                        to="/account/settings"
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
+                      >
+                        <Settings size={16} /> Setări cont
+                      </Link>
                       <button
                         onClick={handleLogout}
-                        className="mt-2 flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-[11px] font-black uppercase text-red-500 transition-all hover:bg-red-50"
+                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black uppercase text-red-500 hover:bg-red-50 transition-colors"
                       >
-                        <LogOut size={18} /> Ieșire
+                        <LogOut size={16} /> Ieșire
                       </button>
                     </div>
                   </motion.div>
@@ -305,40 +281,36 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
-            {/* CART ICON - Animated Bounce */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setBagOpen(true)}
-              className="relative flex h-12 w-12 items-center justify-center rounded-full text-white shadow-[0_10px_30px_rgba(0,0,0,0.15)] transition-all"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg transform-gpu"
               style={{ background: "var(--primary-gradient)" }}
             >
-              <BagIcon size={22} />
-              <AnimatePresence>
-                {totalItems > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full border-[3px] border-white bg-black text-[10px] font-black text-white"
-                  >
-                    {totalItems}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <BagIcon size={20} />
+              {totalItems > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[9px] font-black"
+                >
+                  {totalItems}
+                </motion.span>
+              )}
             </motion.button>
           </div>
         </motion.nav>
 
-        {/* MEGA MENU DESKTOP - Premium Redesign */}
+        {/* MEGA MENU - REBUILT FOR LIQUID PERFORMANCE */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white/95 backdrop-blur-2xl shadow-[0_40px_80px_rgba(0,0,0,0.1)] lg:block"
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white/98 backdrop-blur-xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] lg:block transform-gpu"
               onMouseEnter={() => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
@@ -350,114 +322,119 @@ const Navbar = () => {
                 );
               }}
             >
-              <div className="mx-auto flex h-[600px] max-w-[1600px]">
-                {/* COLECtII PANEL */}
-                <div className="w-1/4 overflow-y-auto border-r border-zinc-100 bg-zinc-50/50 p-10">
-                  <p className="mb-10 text-left text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
-                    Suntem Evem
+              <div className="mx-auto flex h-[620px] max-w-[1600px]">
+                {/* LEFT: MAGNETIC CATEGORIES */}
+                <div className="relative w-[320px] border-r border-zinc-100 bg-zinc-50/40 p-10 flex flex-col">
+                  <p className="mb-10 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">
+                    Colecții
                   </p>
-                  <div className="flex flex-col gap-3">
+
+                  <div className="relative flex flex-col gap-1">
                     {categories.map((cat, i) => (
                       <motion.button
                         key={cat.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
                         onMouseEnter={() => setActiveParent(cat)}
                         onClick={() => {
                           navigate(`/category/${cat.slug}`);
                           setMegaOpen(false);
                         }}
-                        className={`group flex items-center justify-between rounded-[1.5rem] px-6 py-5 text-left transition-all ${
+                        className={`relative z-10 flex items-center justify-between rounded-xl py-3.5 px-6 text-left transition-all duration-300 ${
                           activeParent?.id === cat.id
-                            ? "bg-white text-[var(--french-blue)] shadow-[0_15px_40px_rgba(0,0,0,0.06)]"
-                            : "text-zinc-500 hover:bg-white/50"
+                            ? "text-[var(--french-blue)]"
+                            : "text-zinc-500 hover:text-black"
                         }`}
                       >
                         <span
-                          className={`text-[14px] uppercase tracking-tighter transition-all ${activeParent?.id === cat.id ? "font-black" : "font-bold"}`}
+                          className={`text-[14px] uppercase tracking-tighter transition-all duration-300 ${activeParent?.id === cat.id ? "font-black" : "font-medium"}`}
                         >
                           {cat.name}
                         </span>
+                        {activeParent?.id === cat.id && (
+                          <motion.div
+                            layoutId="navIndicator"
+                            className="absolute left-0 w-1 h-6 bg-[var(--french-blue)] rounded-full"
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            }}
+                          />
+                        )}
                         <ChevronRight
-                          size={18}
-                          className={`transition-all duration-300 ${activeParent?.id === cat.id ? "translate-x-1 opacity-100" : "opacity-0"}`}
+                          size={16}
+                          className={`transition-all duration-300 ${activeParent?.id === cat.id ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"}`}
                         />
                       </motion.button>
                     ))}
                   </div>
                 </div>
 
-                {/* CATEGORII PANEL - Minimalist & Clean */}
-                <div className="flex-1 overflow-y-auto bg-white p-16">
-                  <div className="grid grid-cols-2 gap-x-20 gap-y-16">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={activeParent?.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="contents"
-                      >
-                        {activeParent?.subcategories?.map((sub) => (
-                          <div
-                            key={sub.id}
-                            className="group/item space-y-6 text-left"
+                {/* CENTER: FLUID SUB-CATEGORIES */}
+                <div className="flex-1 overflow-y-auto bg-white p-16 scrollbar-hide">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeParent?.id}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -5 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="grid grid-cols-2 gap-x-20 gap-y-16"
+                    >
+                      {activeParent?.subcategories?.map((sub) => (
+                        <div key={sub.id} className="space-y-6">
+                          <Link
+                            to={`/category/${sub.slug}`}
+                            onClick={() => setMegaOpen(false)}
+                            className="group/link inline-block"
                           >
-                            <Link
-                              to={`/category/${sub.slug}`}
-                              onClick={() => setMegaOpen(false)}
-                              className="inline-flex items-center gap-2 border-b-2 border-transparent pb-1 text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] transition-all hover:border-[var(--french-blue)] hover:text-[var(--french-blue)]"
-                            >
+                            <h3 className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] group-hover/link:text-[var(--french-blue)] transition-colors">
                               {sub.name}
-                              <ArrowRight
-                                size={14}
-                                className="opacity-0 transition-all group-hover/item:translate-x-1 group-hover/item:opacity-100"
-                              />
-                            </Link>
-                            <div className="flex flex-col gap-4">
-                              {sub.subcategories?.map((child) => (
-                                <Link
-                                  key={child.id}
-                                  to={`/category/${child.slug}`}
-                                  onClick={() => setMegaOpen(false)}
-                                  className="text-[14px] font-medium text-zinc-400 transition-all hover:translate-x-2 hover:text-[var(--deep-twilight)]"
-                                >
-                                  {child.name}
-                                </Link>
-                              ))}
-                            </div>
+                            </h3>
+                            <div className="h-0.5 w-0 bg-[var(--french-blue)] group-hover/link:w-full transition-all duration-300" />
+                          </Link>
+                          <div className="flex flex-col gap-4">
+                            {sub.subcategories?.map((child) => (
+                              <Link
+                                key={child.id}
+                                to={`/category/${child.slug}`}
+                                onClick={() => setMegaOpen(false)}
+                                className="text-[14px] font-medium text-zinc-400 hover:text-black hover:translate-x-2 transition-all duration-300"
+                              >
+                                {child.name}
+                              </Link>
+                            ))}
                           </div>
-                        ))}
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
+                        </div>
+                      ))}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
-                {/* VISUAL SHOWCASE - Right side */}
-                <div className="flex w-1/3 flex-col p-10">
-                  <div className="group relative flex-1 overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-2xl">
+                {/* RIGHT: PREMIUM SHOWCASE */}
+                <div className="w-[420px] p-10 bg-zinc-50/20">
+                  <div className="group relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-200 shadow-xl transform-gpu">
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={activeParent?.id}
                         src={getValidImageUrl(activeParent?.image_url || null)}
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
+                        exit={{ opacity: 0, scale: 1 }}
                         transition={{ duration: 0.6 }}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-1000"
                       />
                     </AnimatePresence>
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-twilight)]/90 via-transparent to-transparent" />
-                    <div className="absolute bottom-10 left-10 right-10 z-10 text-left text-white">
+                    <div className="absolute bottom-10 left-10 right-10">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        key={`text-${activeParent?.id}`}
+                        key={activeParent?.id}
                       >
-                        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.4em] text-cyan-300">
-                          New Perspective
+                        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.4em] text-cyan-300">
+                          Colecția Nouă
                         </p>
-                        <h4 className="mb-8 text-4xl font-black uppercase leading-none tracking-tighter">
+                        <h4 className="mb-8 text-3xl font-black uppercase leading-none tracking-tighter text-white">
                           {activeParent?.name}
                         </h4>
                         <button
@@ -465,12 +442,12 @@ const Navbar = () => {
                             navigate(`/category/${activeParent?.slug}`);
                             setMegaOpen(false);
                           }}
-                          className="group/btn relative flex items-center gap-4 overflow-hidden rounded-full bg-white px-10 py-4 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-cyan-50"
+                          className="flex items-center gap-3 rounded-full bg-white px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-black hover:bg-cyan-50 transition-colors group/btn"
                         >
-                          <span className="relative z-10">Explorează</span>
+                          Explorează{" "}
                           <ArrowRight
-                            size={16}
-                            className="relative z-10 transition-transform group-hover/btn:translate-x-2"
+                            size={14}
+                            className="group-hover/btn:translate-x-1 transition-transform"
                           />
                         </button>
                       </motion.div>
@@ -483,7 +460,7 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
-      {/* MOBILE MENU - Redesigned with animations */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -494,7 +471,7 @@ const Navbar = () => {
             className="fixed inset-0 z-[300] flex flex-col bg-white lg:hidden"
           >
             <div className="flex h-20 items-center justify-between border-b border-zinc-100 px-8">
-              <span className="text-2xl font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
+              <span className="text-xl font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
                 Meniu
               </span>
               <button
@@ -504,50 +481,40 @@ const Navbar = () => {
                 <X size={24} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-6">
               {!mobileView.parent ? (
                 <div className="flex flex-col gap-2">
-                  {categories.map((cat, i) => (
-                    <motion.button
+                  {categories.map((cat) => (
+                    <button
                       key={cat.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
                       onClick={() =>
                         cat.subcategories?.length
                           ? setMobileView({ parent: cat })
                           : (navigate(`/category/${cat.slug}`),
                             setMobileOpen(false))
                       }
-                      className="flex items-center justify-between rounded-3xl border border-zinc-50 bg-white p-6 text-left shadow-sm active:bg-zinc-50"
+                      className="flex items-center justify-between rounded-2xl bg-zinc-50/50 p-6 text-left active:bg-zinc-100 transition-colors"
                     >
-                      <span className="text-[17px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
+                      <span className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
                         {cat.name}
                       </span>
                       {cat.subcategories?.length > 0 && (
                         <ChevronRight size={20} className="text-zinc-300" />
                       )}
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col gap-4"
-                >
+                <div className="flex flex-col gap-6">
                   <button
                     onClick={() => setMobileView({ parent: null })}
-                    className="mb-4 flex items-center gap-3 rounded-2xl bg-zinc-50 px-6 py-4 text-[12px] font-black uppercase tracking-widest text-[var(--french-blue)]"
+                    className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--french-blue)]"
                   >
-                    <ChevronLeft size={18} /> Înapoi la Colecții
+                    <ChevronLeft size={16} /> Înapoi
                   </button>
                   {mobileView.parent.subcategories?.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="rounded-[2rem] bg-zinc-50/50 p-6"
-                    >
-                      <div className="mb-4 text-[14px] font-black uppercase tracking-widest text-[var(--deep-twilight)]">
+                    <div key={sub.id} className="space-y-4">
+                      <div className="text-[14px] font-black uppercase tracking-widest text-[var(--deep-twilight)]">
                         {sub.name}
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -556,7 +523,7 @@ const Navbar = () => {
                             key={child.id}
                             to={`/category/${child.slug}`}
                             onClick={() => setMobileOpen(false)}
-                            className="rounded-full bg-white px-5 py-3 text-[13px] font-bold text-zinc-500 shadow-sm active:text-[var(--french-blue)]"
+                            className="rounded-full bg-zinc-100 px-5 py-2.5 text-[13px] font-bold text-zinc-500"
                           >
                             {child.name}
                           </Link>
@@ -564,7 +531,7 @@ const Navbar = () => {
                       </div>
                     </div>
                   ))}
-                </motion.div>
+                </div>
               )}
             </div>
           </motion.div>
@@ -573,7 +540,7 @@ const Navbar = () => {
 
       <div className="h-[5rem] w-full" />
 
-      {/* MODALS */}
+      {/* DRAWERS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
