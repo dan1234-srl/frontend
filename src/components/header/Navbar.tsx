@@ -65,15 +65,20 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Scroll Animations for performance
+  // =========================
+  // SCROLL ANIMATIONS (Performance optimized)
+  // =========================
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
   const navBg = useTransform(
     scrollY,
     [0, 50],
-    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.95)"],
+    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.98)"],
   );
 
+  // =========================
+  // IMAGE HELPER
+  // =========================
   const getValidImageUrl = (imageSource: string | null) => {
     if (!imageSource)
       return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
@@ -88,6 +93,9 @@ const Navbar = () => {
     }
   };
 
+  // =========================
+  // FETCH MENU
+  // =========================
   const fetchMenu = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/categories/tree`, {
@@ -108,6 +116,9 @@ const Navbar = () => {
     fetchMenu();
   }, [fetchMenu]);
 
+  // =========================
+  // CLOSE ON ROUTE CHANGE
+  // =========================
   useEffect(() => {
     setMegaOpen(false);
     setMobileOpen(false);
@@ -115,6 +126,9 @@ const Navbar = () => {
     setMobileView({ parent: null });
   }, [location.pathname]);
 
+  // =========================
+  // CLICK OUTSIDE MENU
+  // =========================
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -128,6 +142,9 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // =========================
+  // LOGOUT
+  // =========================
   const handleLogout = async () => {
     try {
       await signOut();
@@ -162,7 +179,7 @@ const Navbar = () => {
         {/* MAIN NAV */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
-          className="relative flex items-center border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu"
+          className="relative flex items-center border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu shadow-sm"
           onMouseLeave={() => {
             megaMenuTimeoutRef.current = setTimeout(
               () => setMegaOpen(false),
@@ -289,28 +306,33 @@ const Navbar = () => {
               style={{ background: "var(--primary-gradient)" }}
             >
               <BagIcon size={20} />
-              {totalItems > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[9px] font-black"
-                >
-                  {totalItems}
-                </motion.span>
-              )}
+              <AnimatePresence>
+                {totalItems > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[9px] font-black"
+                  >
+                    {totalItems}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </motion.button>
           </div>
         </motion.nav>
 
-        {/* MEGA MENU - REBUILT FOR LIQUID PERFORMANCE */}
+        {/* ========================= */}
+        {/* MEGA MENU DESKTOP (Luxury Boutique version) */}
+        {/* ========================= */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white/98 backdrop-blur-xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] lg:block transform-gpu"
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white shadow-[0_40px_100px_rgba(0,0,0,0.1)] lg:block transform-gpu"
               onMouseEnter={() => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
@@ -322,15 +344,21 @@ const Navbar = () => {
                 );
               }}
             >
-              <div className="mx-auto flex h-[620px] max-w-[1600px]">
-                {/* LEFT: MAGNETIC CATEGORIES */}
-                <div className="relative w-[320px] border-r border-zinc-100 bg-zinc-50/40 p-10 flex flex-col">
-                  <p className="mb-10 text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">
-                    Colecții
-                  </p>
+              <div className="mx-auto flex h-[650px] max-w-[1600px] overflow-hidden">
+                {/* LEFT PANEL: COLECtII */}
+                <div className="relative w-[340px] border-r border-zinc-100 bg-zinc-50/50 p-12 flex flex-col">
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="mb-14"
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[var(--french-blue)]">
+                      Curated Collections
+                    </p>
+                  </motion.div>
 
-                  <div className="relative flex flex-col gap-1">
-                    {categories.map((cat, i) => (
+                  <div className="relative space-y-2">
+                    {categories.map((cat) => (
                       <motion.button
                         key={cat.id}
                         onMouseEnter={() => setActiveParent(cat)}
@@ -338,68 +366,89 @@ const Navbar = () => {
                           navigate(`/category/${cat.slug}`);
                           setMegaOpen(false);
                         }}
-                        className={`relative z-10 flex items-center justify-between rounded-xl py-3.5 px-6 text-left transition-all duration-300 ${
+                        className={`relative group flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-500 ${
                           activeParent?.id === cat.id
-                            ? "text-[var(--french-blue)]"
-                            : "text-zinc-500 hover:text-black"
+                            ? "bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)] text-black"
+                            : "text-zinc-400 hover:text-zinc-600"
                         }`}
                       >
-                        <span
-                          className={`text-[14px] uppercase tracking-tighter transition-all duration-300 ${activeParent?.id === cat.id ? "font-black" : "font-medium"}`}
-                        >
-                          {cat.name}
-                        </span>
                         {activeParent?.id === cat.id && (
                           <motion.div
-                            layoutId="navIndicator"
-                            className="absolute left-0 w-1 h-6 bg-[var(--french-blue)] rounded-full"
+                            layoutId="luxuryIndicator"
+                            className="absolute left-0 w-1.5 h-6 bg-[var(--french-blue)] rounded-full"
                             transition={{
                               type: "spring",
-                              stiffness: 300,
-                              damping: 30,
+                              stiffness: 400,
+                              damping: 40,
                             }}
                           />
                         )}
+                        <span
+                          className={`text-[15px] uppercase tracking-tighter transition-all duration-300 ${
+                            activeParent?.id === cat.id
+                              ? "font-black"
+                              : "font-semibold"
+                          }`}
+                        >
+                          {cat.name}
+                        </span>
                         <ChevronRight
                           size={16}
-                          className={`transition-all duration-300 ${activeParent?.id === cat.id ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0"}`}
+                          className={`transition-all duration-500 ${
+                            activeParent?.id === cat.id
+                              ? "translate-x-0 opacity-100"
+                              : "-translate-x-4 opacity-0"
+                          }`}
                         />
                       </motion.button>
                     ))}
                   </div>
+
+                  <div className="mt-auto border-t border-zinc-200 pt-8">
+                    <div className="flex items-center gap-3 text-zinc-400">
+                      <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest">
+                        In Stock & Ready to Ship
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* CENTER: FLUID SUB-CATEGORIES */}
-                <div className="flex-1 overflow-y-auto bg-white p-16 scrollbar-hide">
+                {/* CENTER PANEL: CATEGORII */}
+                <div className="flex-1 overflow-y-auto bg-white p-20 scrollbar-hide">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeParent?.id}
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -5 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
-                      className="grid grid-cols-2 gap-x-20 gap-y-16"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.5, ease: "circOut" }}
+                      className="grid grid-cols-2 gap-x-24 gap-y-20"
                     >
                       {activeParent?.subcategories?.map((sub) => (
-                        <div key={sub.id} className="space-y-6">
+                        <div
+                          key={sub.id}
+                          className="group/section space-y-8 text-left"
+                        >
                           <Link
                             to={`/category/${sub.slug}`}
                             onClick={() => setMegaOpen(false)}
-                            className="group/link inline-block"
+                            className="block"
                           >
-                            <h3 className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] group-hover/link:text-[var(--french-blue)] transition-colors">
+                            <h3 className="text-[18px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] group-hover/section:text-[var(--french-blue)] transition-all duration-300">
                               {sub.name}
                             </h3>
-                            <div className="h-0.5 w-0 bg-[var(--french-blue)] group-hover/link:w-full transition-all duration-300" />
+                            <motion.div className="h-0.5 w-8 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
                           </Link>
-                          <div className="flex flex-col gap-4">
+                          <div className="flex flex-col gap-5">
                             {sub.subcategories?.map((child) => (
                               <Link
                                 key={child.id}
                                 to={`/category/${child.slug}`}
                                 onClick={() => setMegaOpen(false)}
-                                className="text-[14px] font-medium text-zinc-400 hover:text-black hover:translate-x-2 transition-all duration-300"
+                                className="text-[14px] font-medium text-zinc-400 hover:text-black hover:translate-x-3 transition-all duration-500 flex items-center gap-2 group/link"
                               >
+                                <span className="h-px w-0 bg-zinc-200 group-hover/link:w-4 transition-all duration-500" />
                                 {child.name}
                               </Link>
                             ))}
@@ -410,31 +459,40 @@ const Navbar = () => {
                   </AnimatePresence>
                 </div>
 
-                {/* RIGHT: PREMIUM SHOWCASE */}
-                <div className="w-[420px] p-10 bg-zinc-50/20">
-                  <div className="group relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-200 shadow-xl transform-gpu">
+                {/* RIGHT PANEL: VISUAL SHOWCASE */}
+                <div className="w-[480px] p-12 bg-zinc-50/10">
+                  <motion.div
+                    className="group relative h-full w-full overflow-hidden rounded-[3rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.15)] transform-gpu"
+                    whileHover={{ scale: 0.99 }}
+                  >
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={activeParent?.id}
                         src={getValidImageUrl(activeParent?.image_url || null)}
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1 }}
-                        transition={{ duration: 0.6 }}
-                        className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute inset-0 h-full w-full object-cover will-change-transform"
                       />
                     </AnimatePresence>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-twilight)]/90 via-transparent to-transparent" />
-                    <div className="absolute bottom-10 left-10 right-10">
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-twilight)] via-[var(--deep-twilight)]/20 to-transparent" />
+
+                    <div className="absolute bottom-14 left-14 right-14 z-10">
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
-                        key={activeParent?.id}
+                        key={`info-${activeParent?.id}`}
+                        transition={{ delay: 0.2, duration: 0.6 }}
                       >
-                        <p className="mb-2 text-[9px] font-black uppercase tracking-[0.4em] text-cyan-300">
-                          Colecția Nouă
-                        </p>
-                        <h4 className="mb-8 text-3xl font-black uppercase leading-none tracking-tighter text-white">
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="h-px w-10 bg-cyan-400" />
+                          <p className="text-[11px] font-black uppercase tracking-[0.5em] text-cyan-400">
+                            Essential
+                          </p>
+                        </div>
+                        <h4 className="mb-10 text-5xl font-black uppercase leading-[0.9] tracking-tighter text-white">
                           {activeParent?.name}
                         </h4>
                         <button
@@ -442,17 +500,17 @@ const Navbar = () => {
                             navigate(`/category/${activeParent?.slug}`);
                             setMegaOpen(false);
                           }}
-                          className="flex items-center gap-3 rounded-full bg-white px-8 py-3.5 text-[10px] font-black uppercase tracking-widest text-black hover:bg-cyan-50 transition-colors group/btn"
+                          className="group/btn relative flex items-center justify-between overflow-hidden rounded-full bg-white px-10 py-5 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-zinc-100 w-full"
                         >
-                          Explorează{" "}
+                          <span>Explore Collection</span>
                           <ArrowRight
-                            size={14}
-                            className="group-hover/btn:translate-x-1 transition-transform"
+                            size={20}
+                            className="transition-transform duration-500 group-hover/btn:translate-x-2"
                           />
                         </button>
                       </motion.div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
@@ -460,7 +518,9 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
+      {/* ========================= */}
       {/* MOBILE MENU */}
+      {/* ========================= */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -538,9 +598,10 @@ const Navbar = () => {
         )}
       </AnimatePresence>
 
+      {/* Spacer to prevent content from hiding under the fixed navbar */}
       <div className="h-[5rem] w-full" />
 
-      {/* DRAWERS */}
+      {/* DRAWERS & MODALS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
