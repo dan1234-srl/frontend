@@ -42,7 +42,7 @@ const AdminLayout = () => {
       items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/admin" }],
     },
     {
-      group: "Catalog Linea",
+      group: "Catalog Evem",
       color: "var(--royal-violet)",
       items: [
         { name: "Produse", icon: ShoppingBag, path: "/admin/products" },
@@ -135,7 +135,7 @@ const AdminLayout = () => {
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
     <div className="flex flex-col h-full py-4">
       <div className="h-16 flex items-center shrink-0 px-6 mb-4">
-        <img src="/LINEA-1.svg" className="h-3 brightness-0" alt="Linea" />
+        <img src="/LINEA-1.svg" className="h-3 brightness-0" alt="Evem" />
         {(isSidebarOpen || mobile) && (
           <div className="ml-3 border-l border-zinc-100 pl-3">
             <p

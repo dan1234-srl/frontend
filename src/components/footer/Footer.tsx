@@ -19,7 +19,7 @@ const Footer = () => {
             className="max-w-xl text-center md:text-left space-y-4"
           >
             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--royal-violet)]">
-              Linea Journal
+              Evem Journal
             </span>
             <h2 className="heading-serif text-4xl md:text-6xl italic tracking-tighter text-zinc-900 leading-[0.9]">
               {t(
@@ -83,7 +83,7 @@ const Footer = () => {
                 to="/"
                 className="heading-serif text-4xl italic tracking-tighter inline-block"
               >
-                Linea.
+                Evem.
               </Link>
               <p className="text-[11px] opacity-40 leading-relaxed max-w-xs font-bold uppercase tracking-widest">
                 {t(
@@ -169,7 +169,7 @@ const Footer = () => {
                   className="font-black"
                   style={{ color: "var(--mauve-magic)" }}
                 >
-                  hello@linea-boutique.ro
+                  hello@Evem-boutique.ro
                 </p>
                 <div
                   className="flex items-center gap-2 lg:justify-end pt-2"
@@ -190,7 +190,7 @@ const Footer = () => {
                 style={{ backgroundColor: "var(--royal-violet)" }}
               />
               <p className="text-[9px] font-bold tracking-[0.4em] uppercase opacity-30">
-                © {new Date().getFullYear()} Linea Studio. All rights reserved.
+                © {new Date().getFullYear()} Evem Studio. All rights reserved.
               </p>
             </div>
 

@@ -79,7 +79,7 @@ const SuccessPage = () => {
             </div>
 
             <p className="text-xs text-zinc-400 leading-relaxed max-w-xs mx-auto italic font-medium">
-              Vom începe pregătirea produselor Linea imediat. Veți fi notificat
+              Vom începe pregătirea produselor Evem imediat. Veți fi notificat
               când coletul pleacă spre dumneavoastră.
             </p>
           </div>
@@ -96,7 +96,7 @@ const SuccessPage = () => {
               />
             </button>
             <p className="text-[9px] text-zinc-300 uppercase tracking-[0.2em] font-medium italic">
-              Secured by Linea Ecosystem
+              Secured by Evem Ecosystem
             </p>
           </div>
         </motion.div>

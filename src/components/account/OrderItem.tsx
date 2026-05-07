@@ -239,7 +239,7 @@ export const OrderItem = ({ order }: any) => {
                     className="font-bold"
                     style={{ color: "var(--royal-violet)" }}
                   >
-                    Linea Express
+                    Evem Express
                   </span>
                 </div>
               </div>
@@ -253,7 +253,7 @@ export const OrderItem = ({ order }: any) => {
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
               {order.items?.map((item: any, i: number) => {
                 const name =
-                  item.product_name || item.product?.name || "Bijuterie Linea";
+                  item.product_name || item.product?.name || "Bijuterie Evem";
                 const price =
                   item.price_at_purchase || item.unit_price_at_purchase || 0;
                 return (

@@ -5,7 +5,7 @@ const LargeHero = () => {
       <div className="w-full aspect-[21/9] md:aspect-[16/7] mb-6 overflow-hidden bg-zinc-100">
         <img
           src={heroImage}
-          alt="Linea Architectural Shading"
+          alt="Evem Architectural Shading"
           loading="eager"
           fetchPriority="high"
           decoding="async"

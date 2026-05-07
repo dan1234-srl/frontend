@@ -162,7 +162,7 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
         className="mt-4 space-y-2 px-1 text-left flex-1"
       >
         <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-brand-bright">
-          {product.brand || "LINEA"}
+          {product.brand || "Evem"}
         </p>
         <h3 className="text-[12px] font-medium text-brand-deep leading-tight line-clamp-2 h-[32px]">
           {product.name}

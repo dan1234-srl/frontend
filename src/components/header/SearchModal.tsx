@@ -44,7 +44,7 @@ const SearchModal = ({
       </div>
       <div className="flex-1 min-w-0">
         <p className="label-micro text-muted-foreground mb-0.5">
-          {hit.brand || "Linea"}
+          {hit.brand || "Evem"}
         </p>
         <h4 className="text-sm font-semibold text-foreground truncate">
           {hit.name}

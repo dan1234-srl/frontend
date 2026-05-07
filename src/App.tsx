@@ -33,7 +33,6 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 // --- AUTH & ACCOUNT (Lazy Loaded) ---
-const ForgotPassword = lazy(() => import("./pages/auth/ForgotPasswordDrawer"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const Account = lazy(() => import("./pages/main/Account"));
 const Orders = lazy(() => import("./pages/main/Orders"));
@@ -181,14 +180,8 @@ const AnimatedRoutes = () => {
             <Route path="/checkout" element={<Navigate to="/" replace />} />
             <Route path="/register" element={<Navigate to="/" replace />} />
 
-            <Route
-              path="/forgot-password"
-              element={
-                <PageWrapper>
-                  <ForgotPassword />
-                </PageWrapper>
-              }
-            />
+
+
             <Route
               path="/reset-password"
               element={

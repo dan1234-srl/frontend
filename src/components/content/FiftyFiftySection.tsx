@@ -88,7 +88,7 @@ const FiftyFiftySection = () => {
                 <div className="space-y-4 text-left">
                   <div className="space-y-1">
                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">
-                      Colecția Linea De modificat
+                      Colecția Evem De modificat
                     </span>
                     <h3 className="heading-serif text-3xl md:text-4xl text-zinc-900 uppercase tracking-tighter">
                       {item.name}

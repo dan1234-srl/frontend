@@ -426,7 +426,7 @@ const AdminBrands = () => {
                   (e.target.style.borderColor = "var(--royal-violet)")
                 }
                 onBlur={(e) => (e.target.style.borderColor = "#f4f4f5")}
-                placeholder="EX: LINEA EXCLUSIVE..."
+                placeholder="EX: Evem EXCLUSIVE..."
               />
             </div>
 

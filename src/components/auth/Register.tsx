@@ -86,7 +86,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
       );
       if (error) toast.error(error.message);
       else {
-        toast.success("Bine ai venit în universul Linea!");
+        toast.success("Bine ai venit în universul Evem!");
         onClose();
       }
     } catch {

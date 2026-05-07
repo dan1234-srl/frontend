@@ -11,7 +11,7 @@ const EditorialSection = () => {
           </h2>
           <div className="space-y-6 text-sm font-light text-neutral-600 leading-relaxed">
             <p>
-              Linea a apărut din dorința de a aduce rigoarea arhitecturală în
+              Evem a apărut din dorința de a aduce rigoarea arhitecturală în
               designul umbrelelor de soare. Credem că umbra nu este doar o
               funcție, ci o extensie a spațiului locuibil.
             </p>
@@ -29,7 +29,7 @@ const EditorialSection = () => {
         <div className="relative aspect-[3/4] overflow-hidden">
           <img
             src="/images/design-studio.jpg"
-            alt="Atelierul de design Linea"
+            alt="Atelierul de design Evem"
             className="w-full h-full object-cover grayscale"
           />
         </div>

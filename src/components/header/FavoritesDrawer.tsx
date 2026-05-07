@@ -103,7 +103,7 @@ const FavoritesDrawer = ({
             {/* Footer subtil (opțional) */}
             <footer className="p-8 border-t border-zinc-100 bg-white/50 text-center">
               <p className="text-[9px] font-bold text-zinc-300 uppercase tracking-widest">
-                Linea Premium Selection
+                Evem Premium Selection
               </p>
             </footer>
           </motion.div>

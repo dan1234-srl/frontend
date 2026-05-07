@@ -217,7 +217,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       ) : (
         <div className="fixed inset-0 flex items-center justify-center bg-white z-[9999]">
           <div className="animate-pulse text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-            Linea Luxury Retail
+            Evem Luxury Retail
           </div>
         </div>
       )}

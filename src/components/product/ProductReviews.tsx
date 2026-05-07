@@ -49,7 +49,7 @@ const ProductReviews = ({ reviews }: { reviews: any[] }) => {
                   className="text-neutral-300"
                 />
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#050B18]">
-                  {review.user_name || "Linea Client"}
+                  {review.user_name || "Evem Client"}
                 </span>
               </div>
               <div className="flex gap-0.5 text-[#050B18]">

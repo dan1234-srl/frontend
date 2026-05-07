@@ -259,7 +259,7 @@ const AdminExportFeed = () => {
             Automated Distribution
           </h4>
           <p className="text-sm opacity-80 font-medium">
-            Feed-urile sunt generate dinamic folosind cache-ul serverului Linea.
+            Feed-urile sunt generate dinamic folosind cache-ul serverului Evem.
           </p>
         </div>
         <div className="relative z-10 flex gap-4">

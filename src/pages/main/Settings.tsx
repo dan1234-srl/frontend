@@ -34,7 +34,7 @@ const WebsiteSettings = () => {
     const ok = await confirm({
       title: "Ștergi definitiv contul?",
       description:
-        "Această acțiune este ireversibilă. Toate datele, comenzile și adresele tale vor fi șterse din sistemul Linea.",
+        "Această acțiune este ireversibilă. Toate datele, comenzile și adresele tale vor fi șterse din sistemul Evem.",
       confirmLabel: "Șterge contul",
       cancelLabel: "Anulează",
       tone: "destructive",

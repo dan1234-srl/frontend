@@ -175,7 +175,7 @@ const ProductCarousel = ({
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">
-                            {p.brand_name || "Linea Atelier"}
+                            {p.brand_name || "Evem Atelier"}
                           </span>
                           <div className="flex items-center gap-1">
                             <Star

@@ -25,7 +25,7 @@ const InitialLoader = () => {
             transition={{ duration: 1 }}
             className="text-2xl font-light uppercase tracking-[0.5em] text-foreground"
           >
-            Linea
+            Evem
           </motion.h1>
         </motion.div>
       )}

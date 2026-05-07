@@ -270,7 +270,7 @@ const Addresses = () => {
               </div>
               <p className="text-sm text-zinc-500 font-medium max-w-sm leading-relaxed">
                 Adresele tale sunt criptate și utilizate exclusiv pentru
-                procesarea livrărilor Linea. Nu partajăm datele tale cu terți.
+                procesarea livrărilor Evem. Nu partajăm datele tale cu terți.
               </p>
             </div>
             <div className="flex gap-8 items-center opacity-10 grayscale pointer-events-none">

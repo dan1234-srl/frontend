@@ -75,12 +75,12 @@ export const SmartImage = memo(function SmartImage({
         alt={alt}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
-        // Corecție: React cere lowercase pentru atributele DOM experimentale
-        fetchpriority={eager ? "high" : "auto"}
+
+        fetchPriority={eager ? "high" : "low"}
         onLoad={handleLoad}
         onError={handleError}
         className={cn(
-          "transition-opacity duration-500 ease-luxury",
+          "transition-opacity duration-700 ease-in-out", // O tranziție mai lină ajută la percepția vitezei
           loaded ? "opacity-100" : "opacity-0",
           className,
         )}

@@ -69,7 +69,7 @@ const CancelPage = () => {
               </span>
             </div>
             <p className="text-[10px] text-zinc-500 font-medium underline underline-offset-4 cursor-pointer hover:text-black transition-colors">
-              contact@linea-boutique.ro
+              contact@Evem-boutique.ro
             </p>
           </div>
         </motion.div>

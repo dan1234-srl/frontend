@@ -19,7 +19,7 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     id: "welcome",
     name: "Bun venit (creare cont)",
     event_name: "user_welcome",
-    subject: "Bun venit la Linea, {{customerName}}",
+    subject: "Bun venit la Evem, {{customerName}}",
     description: "Email de bun venit trimis automat după înregistrare.",
     category: "auth",
   },
@@ -27,7 +27,7 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     id: "forgot-password",
     name: "Resetare parolă",
     event_name: "password_reset",
-    subject: "Resetează parola contului tău Linea",
+    subject: "Resetează parola contului tău Evem",
     description: "Link securizat pentru resetarea parolei.",
     category: "auth",
   },
@@ -35,7 +35,7 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     id: "two-factor",
     name: "Cod 2FA",
     event_name: "two_factor_code",
-    subject: "Codul tău Linea: {{code}}",
+    subject: "Codul tău Evem: {{code}}",
     description: "Cod de verificare 2FA cu valabilitate limitată.",
     category: "auth",
   },
@@ -83,13 +83,13 @@ export function buildPresetDesign(
 
   // Shared building blocks
   const headerLogo = textBlock(
-    `<p style="text-align:center;font-family:Georgia,serif;font-size:32px;letter-spacing:0.4em;color:${deep};margin:0;font-weight:300;">LINEA</p><p style="text-align:center;font-family:Arial;font-size:9px;letter-spacing:0.3em;color:${accent};margin:8px 0 0;text-transform:uppercase;font-weight:bold;">Luxury Jewelry</p>`,
+    `<p style="text-align:center;font-family:Georgia,serif;font-size:32px;letter-spacing:0.4em;color:${deep};margin:0;font-weight:300;">Evem</p><p style="text-align:center;font-family:Arial;font-size:9px;letter-spacing:0.3em;color:${accent};margin:8px 0 0;text-transform:uppercase;font-weight:bold;">Luxury Jewelry</p>`,
     { paddingTop: "32px", paddingBottom: "24px" },
   );
 
   const divider = dividerBlock(deep);
   const footer = textBlock(
-    `<p style="text-align:center;font-family:Arial;font-size:11px;color:#888;margin:0;">Linea Jewelry Inc. — București, România</p><p style="text-align:center;font-family:Arial;font-size:10px;color:#aaa;margin:8px 0 0;">Acest email a fost generat automat. Pentru asistență scrie la <a href="mailto:hello@linea.ro" style="color:${accent};">hello@linea.ro</a></p>`,
+    `<p style="text-align:center;font-family:Arial;font-size:11px;color:#888;margin:0;">Evem Jewelry Inc. — București, România</p><p style="text-align:center;font-family:Arial;font-size:10px;color:#aaa;margin:8px 0 0;">Acest email a fost generat automat. Pentru asistență scrie la <a href="mailto:hello@Evem.ro" style="color:${accent};">hello@Evem.ro</a></p>`,
     { paddingTop: "32px", paddingBottom: "24px" },
   );
 
@@ -101,7 +101,7 @@ export function buildPresetDesign(
         { paddingTop: "40px", paddingBottom: "16px" },
       ),
       textBlock(
-        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Suntem onorați să te avem în comunitatea Linea. Bijuteriile noastre sunt create pentru a celebra momente unice. Descoperă colecțiile noastre și transformă-ți garderoba cu piese atemporale.</p>`,
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Suntem onorați să te avem în comunitatea Evem. Bijuteriile noastre sunt create pentru a celebra momente unice. Descoperă colecțiile noastre și transformă-ți garderoba cu piese atemporale.</p>`,
         { paddingBottom: "32px" },
       ),
       buttonBlock("DESCOPERĂ COLECȚIA", "{{shopUrl}}", accent),
@@ -143,7 +143,7 @@ export function buildPresetDesign(
         { paddingBottom: "32px" },
       ),
       textBlock(
-        `<p style="text-align:center;font-family:Arial;font-size:11px;color:#999;">Nu împărtăși acest cod cu nimeni. Echipa Linea nu îți va cere niciodată codul.</p>`,
+        `<p style="text-align:center;font-family:Arial;font-size:11px;color:#999;">Nu împărtăși acest cod cu nimeni. Echipa Evem nu îți va cere niciodată codul.</p>`,
       ),
       divider,
       footer,

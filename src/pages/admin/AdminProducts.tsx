@@ -109,7 +109,7 @@ const AdminProducts = () => {
     ean: "",
     slug: "",
     name: "",
-    brand_name: "Linea",
+    brand_name: "Evem",
     status: "ACTIVE",
     price: 0,
     sale_price: 0,
@@ -430,7 +430,7 @@ const AdminProducts = () => {
                           {p.name}
                         </p>
                         <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">
-                          {p.sku} • {p.brand_name || "Linea"}
+                          {p.sku} • {p.brand_name || "Evem"}
                         </p>
                       </div>
                     </div>
@@ -946,7 +946,7 @@ const AdminProducts = () => {
             <div className="flex items-center gap-3 text-zinc-400">
               <ShieldCheck size={16} />
               <p className="text-[9px] font-black uppercase tracking-widest">
-                Propagare securizată în infrastructura Linea Cloud
+                Propagare securizată în infrastructura Evem Cloud
               </p>
             </div>
             <div className="flex gap-4">
