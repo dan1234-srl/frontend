@@ -2,15 +2,10 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   X,
-  Chrome,
-  Facebook,
-  Apple,
   ShieldCheck,
   Loader2,
-  ArrowRight,
   Fingerprint,
-  Mail,
-  CheckCircle2,
+  ArrowRight,
   ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,95 +15,123 @@ interface AuthDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToRegister: () => void;
+  onOpenForgot: () => void;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://linea-backend-production.up.railway.app";
-
-const Login = ({ isOpen, onClose, onSwitchToRegister }: AuthDrawerProps) => {
-  const [view, setView] = useState<"login" | "forgot" | "forgot-sent" | "2fa">(
-    "login",
-  );
+const Login = ({
+  isOpen,
+  onClose,
+  onSwitchToRegister,
+  onOpenForgot,
+}: AuthDrawerProps) => {
+  const [view, setView] = useState<"login" | "2fa">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [tempToken, setTempToken] = useState("");
-  const [forgotEmail, setForgotEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Extragem syncWishlist din AuthContext pentru a muta datele Guest -> Account
   const { signIn, verify2FA, syncWishlist } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
-      document.body.dataset.scrollLocked = "true";
+      document.body.style.overflow = "hidden";
       setView("login");
     } else {
-      delete document.body.dataset.scrollLocked;
+      document.body.style.overflow = "unset";
+
       setEmail("");
       setPassword("");
       setOtpCode("");
+      setTempToken("");
+      setLoading(false);
     }
+
     return () => {
-      delete document.body.dataset.scrollLocked;
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const result = await signIn(email, password);
 
-    if (result.requires2FA) {
-      setTempToken(result.tempToken || "");
-      setView("2fa");
-      toast.info("Verificare suplimentară necesară");
-    } else if (result.error) {
-      toast.error("Date de acces incorecte");
-    } else {
-      // SUCCESS: Sincronizăm wishlist-ul înainte de închidere
-      await syncWishlist();
-      toast.success("Bine ai revenit");
-      onClose();
+    if (!email.trim() || !password.trim()) {
+      toast.error("Completează toate câmpurile.");
+      return;
     }
-    setLoading(false);
-  };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otpCode.length < 6) return;
     setLoading(true);
-    const { error } = await verify2FA(otpCode, tempToken);
-    if (!error) {
-      // SUCCESS: Sincronizăm wishlist-ul și aici (pentru cei cu 2FA activ)
-      await syncWishlist();
-      toast.success("Identitate confirmată");
-      onClose();
-    } else {
-      toast.error("Cod invalid");
-      setOtpCode("");
-    }
-    setLoading(false);
-  };
 
-  const handleForgot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotEmail.trim()) return;
-    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail.trim() }),
-      });
-      if (res.ok || res.status === 404 || res.status === 400) {
-        setView("forgot-sent");
-      } else {
-        toast.error("Nu am putut trimite emailul. Încearcă din nou.");
+      const result = await signIn(email.trim(), password);
+
+      if (result.requires2FA) {
+        setTempToken(result.tempToken || "");
+        setView("2fa");
+        toast.success("Introdu codul de verificare.");
+        return;
       }
-    } catch {
-      toast.error("Eroare de conexiune. Încearcă din nou.");
+
+      if (result.error) {
+        toast.error("Date de acces incorecte.");
+        return;
+      }
+
+      await syncWishlist();
+
+      toast.success("Bine ați revenit");
+
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Eroare de conexiune.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otpCode.trim()) {
+      toast.error("Introdu codul 2FA.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await verify2FA(tempToken, otpCode);
+
+      if (result?.error) {
+        toast.error("Cod invalid.");
+        return;
+      }
+
+      await syncWishlist();
+
+      toast.success("Autentificare reușită");
+
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Eroare de verificare.");
     } finally {
       setLoading(false);
     }
@@ -118,326 +141,240 @@ const Login = ({ isOpen, onClose, onSwitchToRegister }: AuthDrawerProps) => {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end">
+          {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
             onClick={onClose}
-            className="absolute inset-0 bg-foreground/40 backdrop-blur-md"
+            className="absolute inset-0 bg-black/10 backdrop-blur-[12px]"
           />
 
+          {/* Drawer */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{
-              type: "tween",
-              duration: 0.45,
-              ease: [0.22, 1, 0.36, 1],
+              type: "spring",
+              damping: 30,
+              stiffness: 220,
             }}
-            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[460px] flex-col bg-card shadow-luxe"
+            className="relative z-[701] flex h-full w-full sm:max-w-[480px] flex-col overflow-hidden bg-white shadow-[0_10px_60px_rgba(0,0,0,0.08)]"
           >
-            <header className="flex items-end justify-between px-6 sm:px-10 pt-10 pb-6 border-b border-border">
-              <div className="space-y-1.5">
-                <p className="label-luxury">
-                  {view === "2fa"
-                    ? "Verificare"
-                    : view === "forgot" || view === "forgot-sent"
-                      ? "Recuperare"
-                      : "Membri Linea"}
-                </p>
-                <h2 className="heading-serif text-3xl">
-                  {view === "login" && "Acces cont"}
-                  {view === "2fa" && "Cod de verificare"}
-                  {view === "forgot" && "Resetare parolă"}
-                  {view === "forgot-sent" && "Email trimis"}
-                </h2>
-              </div>
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="group h-10 w-10 grid place-items-center border border-border hover:bg-foreground hover:text-background transition-colors"
-              >
-                <X
-                  size={16}
-                  strokeWidth={1.4}
-                  className="group-hover:rotate-90 transition-transform duration-300"
-                />
-              </button>
-            </header>
+            {/* Close */}
+            <button
+              onClick={onClose}
+              aria-label="Închide"
+              className="absolute top-8 right-8 z-50 flex size-12 items-center justify-center rounded-full bg-zinc-50 text-zinc-700 transition-all duration-500 hover:bg-[var(--dark-amethyst)] hover:text-white"
+            >
+              <X size={20} strokeWidth={1.5} />
+            </button>
 
-            <div className="flex-1 overflow-y-auto luxury-scrollbar px-6 sm:px-10 py-10">
+            {/* Content */}
+            <div className="flex flex-1 flex-col justify-center px-8 sm:px-16">
               <AnimatePresence mode="wait">
-                {view === "2fa" && (
-                  <motion.div
-                    key="2fa"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-10"
-                  >
-                    <div className="text-center space-y-5">
-                      <div className="w-16 h-16 mx-auto bg-surface border border-border grid place-items-center rounded-full">
-                        <Fingerprint size={28} strokeWidth={1} />
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
-                        Introdu codul de 6 cifre din aplicația ta de
-                        autentificare.
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleVerifyOTP} className="space-y-8">
-                      <input
-                        type="text"
-                        maxLength={6}
-                        required
-                        value={otpCode}
-                        onChange={(e) =>
-                          setOtpCode(e.target.value.replace(/\D/g, ""))
-                        }
-                        placeholder="000000"
-                        autoFocus
-                        className="h-20 w-full text-center text-4xl tracking-[0.4em] font-light border-b border-foreground bg-transparent outline-none placeholder:text-muted-foreground/30"
-                      />
-                      <button
-                        type="submit"
-                        disabled={loading || otpCode.length < 6}
-                        className="group h-14 w-full bg-foreground text-background flex items-center justify-center gap-3 hover:bg-primary-hover transition-colors disabled:opacity-30"
-                      >
-                        {loading ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <span className="text-[10px] font-bold uppercase tracking-[0.4em]">
-                            Verifică
-                          </span>
-                        )}
-                      </button>
-                    </form>
-
-                    <button
-                      onClick={() => setView("login")}
-                      className="w-full text-center label-micro text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      ← Înapoi
-                    </button>
-                  </motion.div>
-                )}
-
-                {view === "forgot" && (
-                  <motion.div
-                    key="forgot"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-10"
-                  >
-                    <div className="text-center space-y-5">
-                      <div className="w-16 h-16 mx-auto bg-surface border border-border grid place-items-center rounded-full">
-                        <Mail size={26} strokeWidth={1.2} />
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
-                        Îți trimitem un link securizat pentru resetarea parolei
-                        la adresa indicată.
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleForgot} className="space-y-7">
-                      <div className="space-y-2">
-                        <label className="label-luxury block">Email</label>
-                        <input
-                          type="email"
-                          required
-                          autoFocus
-                          value={forgotEmail}
-                          onChange={(e) => setForgotEmail(e.target.value)}
-                          placeholder="nume@exemplu.com"
-                          className="h-12 w-full border-b border-border bg-transparent text-sm outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/50"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={loading || !forgotEmail}
-                        className="group h-14 w-full bg-foreground text-background flex items-center justify-center gap-3 hover:bg-primary-hover transition-colors disabled:opacity-30"
-                      >
-                        {loading ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.4em]">
-                              Trimite link
-                            </span>
-                            <ArrowRight
-                              size={16}
-                              className="transition-transform duration-300 group-hover:translate-x-1"
-                            />
-                          </>
-                        )}
-                      </button>
-                    </form>
-
-                    <button
-                      onClick={() => setView("login")}
-                      className="w-full flex items-center justify-center gap-2 label-micro text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <ArrowLeft size={11} /> Înapoi la autentificare
-                    </button>
-                  </motion.div>
-                )}
-
-                {view === "forgot-sent" && (
-                  <motion.div
-                    key="forgot-sent"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-10 text-center"
-                  >
-                    <div className="w-20 h-20 mx-auto bg-surface border border-border grid place-items-center rounded-full">
-                      <CheckCircle2 size={32} strokeWidth={1.2} />
-                    </div>
-                    <div className="space-y-3 max-w-xs mx-auto">
-                      <h3 className="heading-serif text-2xl">
-                        Verifică-ți emailul
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        Dacă{" "}
-                        <strong className="text-foreground">
-                          {forgotEmail}
-                        </strong>{" "}
-                        este înregistrat, vei primi un link de resetare în
-                        câteva minute.
-                      </p>
-                      <p className="text-xs text-muted-foreground/70 pt-2">
-                        Verifică și folderul Spam.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setView("login");
-                        setForgotEmail("");
-                      }}
-                      className="w-full flex items-center justify-center gap-2 label-micro text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <ArrowLeft size={11} /> Înapoi la autentificare
-                    </button>
-                  </motion.div>
-                )}
-
-                {view === "login" && (
+                {view === "login" ? (
                   <motion.div
                     key="login"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-8"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-full"
                   >
-                    <form onSubmit={handleLogin} className="space-y-7">
-                      <div className="space-y-2">
-                        <label className="label-luxury block">Email</label>
+                    <header className="mb-12 space-y-4">
+                      <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400">
+                        Membru Linea
+                      </span>
+
+                      <h2 className="heading-serif text-5xl italic leading-tight text-[var(--dark-amethyst)]">
+                        Autentificare
+                      </h2>
+
+                      <div className="h-1 w-12 rounded-full bg-[var(--french-blue)] opacity-60" />
+                    </header>
+
+                    <form onSubmit={handleLogin} className="space-y-8">
+                      {/* Email */}
+                      <div className="group space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                          Email
+                        </label>
+
                         <input
                           type="email"
                           required
+                          autoComplete="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="nume@exemplu.com"
-                          className="h-12 w-full border-b border-border bg-transparent text-sm outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/50"
+                          placeholder="nume@casa.com"
+                          className="w-full border-b-2 border-zinc-100 bg-transparent py-4 text-lg font-light outline-none transition-all duration-500 placeholder:text-zinc-300 focus:border-[var(--dark-amethyst)]"
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-end">
-                          <label className="label-luxury">Parolă</label>
+                      {/* Password */}
+                      <div className="group space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                            Parolă
+                          </label>
+
                           <button
                             type="button"
-                            onClick={() => setView("forgot")}
-                            className="text-[10px] font-bold uppercase tracking-[0.2em] text-foreground hover:opacity-70 transition-opacity"
+                            onClick={() => {
+                              onOpenForgot();
+                            }}
+                            className="border-b border-transparent text-[9px] font-black uppercase tracking-widest text-zinc-300 transition-all hover:border-[var(--dark-amethyst)] hover:text-[var(--dark-amethyst)]"
                           >
                             Ai uitat?
                           </button>
                         </div>
+
                         <input
                           type="password"
                           required
+                          autoComplete="current-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="h-12 w-full border-b border-border bg-transparent text-sm outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/50"
+                          className="w-full border-b-2 border-zinc-100 bg-transparent py-4 text-lg font-light outline-none transition-all duration-500 placeholder:text-zinc-300 focus:border-[var(--dark-amethyst)]"
+                        />
+                      </div>
+
+                      {/* Submit */}
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="group/btn relative h-16 w-full overflow-hidden rounded-full text-white shadow-2xl transition-all disabled:cursor-not-allowed disabled:opacity-70"
+                        style={{
+                          background: "var(--primary-gradient)",
+                        }}
+                      >
+                        <div className="absolute inset-0 translate-y-full bg-black/10 transition-transform duration-500 group-hover/btn:translate-y-0" />
+
+                        <span className="relative z-10 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.5em]">
+                          {loading ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <>
+                              Acces Cont
+                              <ArrowRight size={16} />
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    </form>
+
+                    {/* Register */}
+                    <div className="mt-12 text-center">
+                      <p className="text-xs font-medium tracking-wide text-zinc-400">
+                        Nu sunteți membru?
+                      </p>
+
+                      <button
+                        onClick={onSwitchToRegister}
+                        className="mt-2 border-b border-[var(--dark-amethyst)]/20 text-sm font-black italic text-[var(--dark-amethyst)] transition-all hover:border-[var(--dark-amethyst)]"
+                      >
+                        Creați un profil
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="2fa"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    className="w-full"
+                  >
+                    <button
+                      onClick={() => setView("login")}
+                      className="mb-10 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 transition-colors hover:text-[var(--dark-amethyst)]"
+                    >
+                      <ArrowLeft size={14} />
+                      Înapoi
+                    </button>
+
+                    <div className="mb-10 space-y-5 text-center">
+                      <div className="mx-auto flex size-24 items-center justify-center rounded-full border border-zinc-100 bg-zinc-50">
+                        <Fingerprint
+                          size={40}
+                          className="text-[var(--dark-amethyst)]"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <h2 className="heading-serif text-4xl italic text-[var(--dark-amethyst)]">
+                          Verificare 2FA
+                        </h2>
+
+                        <p className="mx-auto max-w-[280px] text-sm font-medium leading-relaxed text-zinc-400">
+                          Introdu codul de autentificare din aplicația ta de
+                          securitate.
+                        </p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleVerify2FA} className="space-y-8">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                          Cod verificare
+                        </label>
+
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          value={otpCode}
+                          onChange={(e) =>
+                            setOtpCode(
+                              e.target.value.replace(/\D/g, "").slice(0, 6),
+                            )
+                          }
+                          placeholder="123456"
+                          className="w-full border-b-2 border-zinc-100 bg-transparent py-4 text-center text-3xl tracking-[0.5em] outline-none transition-all duration-500 placeholder:text-zinc-300 focus:border-[var(--dark-amethyst)]"
                         />
                       </div>
 
                       <button
                         type="submit"
-                        disabled={loading}
-                        className="group h-14 w-full bg-foreground text-background flex items-center justify-center gap-3 hover:bg-primary-hover transition-colors disabled:opacity-30"
+                        disabled={loading || otpCode.length < 6}
+                        className="group/btn relative h-16 w-full overflow-hidden rounded-full text-white shadow-2xl transition-all disabled:cursor-not-allowed disabled:opacity-70"
+                        style={{
+                          background: "var(--primary-gradient)",
+                        }}
                       >
-                        {loading ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <>
-                            <span className="text-[10px] font-bold uppercase tracking-[0.4em]">
-                              Autentificare
-                            </span>
-                            <ArrowRight
-                              size={16}
-                              className="transition-transform duration-300 group-hover:translate-x-1"
-                            />
-                          </>
-                        )}
+                        <div className="absolute inset-0 translate-y-full bg-black/10 transition-transform duration-500 group-hover/btn:translate-y-0" />
+
+                        <span className="relative z-10 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.5em]">
+                          {loading ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <>
+                              Verificare
+                              <ArrowRight size={16} />
+                            </>
+                          )}
+                        </span>
                       </button>
                     </form>
-
-                    <div className="space-y-6 pt-2">
-                      <div className="relative flex items-center">
-                        <div className="h-px w-full bg-border" />
-                        <span className="absolute bg-card px-4 left-1/2 -translate-x-1/2 label-micro text-muted-foreground">
-                          Sau
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        {[Chrome, Facebook, Apple].map((Icon, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            className="h-12 grid place-items-center border border-border hover:bg-foreground hover:text-background transition-colors"
-                          >
-                            <Icon size={16} strokeWidth={1.4} />
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="text-center pt-2">
-                        <button
-                          onClick={onSwitchToRegister}
-                          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          Nu ai cont?{" "}
-                          <span className="text-foreground border-b border-foreground/30 hover:border-foreground transition-colors">
-                            Creează unul
-                          </span>
-                        </button>
-                      </div>
-                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <footer className="px-6 sm:px-10 py-5 border-t border-border bg-surface/40 flex items-center justify-between text-muted-foreground/70">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={12} strokeWidth={1.4} />
-                <span className="text-[9px] font-medium uppercase tracking-[0.3em]">
-                  Conexiune securizată
+            {/* Footer */}
+            <footer className="flex justify-center border-t border-zinc-50 bg-zinc-50/30 p-10">
+              <div className="flex items-center gap-3 opacity-40">
+                <ShieldCheck size={14} className="text-[var(--french-blue)]" />
+
+                <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[var(--dark-amethyst)]">
+                  Securitate SSL
                 </span>
               </div>
-              <span className="text-[9px] font-medium uppercase tracking-[0.3em]">
-                AES-256
-              </span>
             </footer>
           </motion.div>
         </div>

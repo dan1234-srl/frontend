@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { X, ChevronLeft, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { X, Loader2, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface RegisterProps {
   isOpen: boolean;
@@ -26,9 +26,10 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
   const { signUp } = useAuth();
 
   useEffect(() => {
-    if (isOpen) document.body.dataset.scrollLocked = "true";
-    else {
-      delete document.body.dataset.scrollLocked;
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
       setFormData({
         email: "",
         password: "",
@@ -40,62 +41,21 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
         phone: "",
       });
     }
-    return () => {
-      delete document.body.dataset.scrollLocked;
-    };
   }, [isOpen]);
 
   const validateAll = () => {
-    const { firstName, lastName, email, password, confirmPassword, phone, birthday } =
+    const { firstName, lastName, email, password, confirmPassword, birthday } =
       formData;
 
-    const forbidden = [
-      "SELECT",
-      "DROP",
-      "DELETE",
-      "UPDATE",
-      "INSERT",
-      "--",
-      "/*",
-      "*/",
-      "XP_",
-      "<SCRIPT",
-      "OR 1=1",
-      "WAITFOR DELAY",
-    ];
-    const publicData = `${firstName}${lastName}${email}${phone}`.toUpperCase();
-    if (forbidden.some((p) => publicData.includes(p))) {
-      toast.error("Caractere nepermise în formular.");
-      return false;
-    }
-
-    const nameRegex = /^[a-zA-ZĂÂÎȘȚăâîșț\s\-]{2,50}$/;
-    if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-      toast.error("Numele trebuie să conțină doar litere (2–50 caractere).");
-      return false;
-    }
-    const cleanPhone = phone.replace(/[^0-9+]/g, "");
-    if (!/^(?:\+?40|0)7\d{8}$/.test(cleanPhone)) {
-      toast.error("Număr de telefon invalid.");
+    if (
+      !/^[a-zA-ZĂÂÎȘȚăâîșț\s\-]{2,50}$/.test(firstName) ||
+      !/^[a-zA-ZĂÂÎȘȚăâîșț\s\-]{2,50}$/.test(lastName)
+    ) {
+      toast.error("Numele trebuie să conțină doar litere.");
       return false;
     }
     if (!birthday) {
       toast.error("Data nașterii este obligatorie.");
-      return false;
-    }
-    const age = Math.floor(
-      (Date.now() - new Date(birthday).getTime()) / 31557600000,
-    );
-    if (age < 18) {
-      toast.error("Trebuie să ai 18+ ani.");
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Email invalid.");
-      return false;
-    }
-    if (!/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(password)) {
-      toast.error("Parolă slabă. Minim 8 caractere, 1 cifră, 1 simbol.");
       return false;
     }
     if (password !== confirmPassword) {
@@ -111,11 +71,8 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
     setLoading(true);
 
     let finalPhone = formData.phone.replace(/[^0-9+]/g, "");
-    if (finalPhone.startsWith("0")) finalPhone = "+40" + finalPhone.substring(1);
-    else if (finalPhone.startsWith("407") && !finalPhone.startsWith("+"))
-      finalPhone = "+" + finalPhone;
-    else if (finalPhone.length === 9 && finalPhone.startsWith("7"))
-      finalPhone = "+40" + finalPhone;
+    if (finalPhone.startsWith("0"))
+      finalPhone = "+40" + finalPhone.substring(1);
 
     try {
       const { error } = await signUp(
@@ -127,14 +84,13 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
         formData.gender,
         finalPhone,
       );
-      if (error) {
-        toast.error(error.message || "Acest email este deja folosit.");
-      } else {
-        toast.success("Cont creat. Bine ai venit!");
-        onSwitchToLogin();
+      if (error) toast.error(error.message);
+      else {
+        toast.success("Bine ai venit în universul Linea!");
+        onClose();
       }
     } catch {
-      toast.error("Eroare de rețea. Încearcă din nou.");
+      toast.error("Eroare de conexiune.");
     } finally {
       setLoading(false);
     }
@@ -143,168 +99,181 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
   const update = (k: keyof typeof formData, v: string) =>
     setFormData((p) => ({ ...p, [k]: v }));
 
-  const inputBase =
-    "h-11 w-full border-b border-border bg-transparent text-sm outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/50";
+  const inputClass =
+    "w-full py-3 border-b-2 border-zinc-100 bg-transparent text-base outline-none focus:border-[var(--dark-amethyst)] transition-all duration-500 placeholder:text-zinc-200 font-light";
 
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end">
+          {/* Overlay - Frosted Glass identical cu Login/Wishlist */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-foreground/40 backdrop-blur-md"
+            className="absolute inset-0 bg-black/10 backdrop-blur-[12px]"
           />
+
+          {/* Sidebar Panel */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "tween", duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[480px] flex-col bg-card shadow-luxe overflow-hidden"
+            transition={{ type: "spring", damping: 30, stiffness: 200 }}
+            className="relative z-[701] flex h-full w-full sm:max-w-[520px] flex-col bg-white shadow-luxe"
           >
-            <header className="flex items-end justify-between px-6 sm:px-10 pt-10 pb-6 border-b border-border">
-              <div className="space-y-1.5">
-                <p className="label-luxury">Linea Club</p>
-                <h2 className="heading-serif text-3xl">Cont nou</h2>
+            {/* Buton închidere circular */}
+            <button
+              onClick={onClose}
+              className="absolute top-8 right-8 size-12 rounded-full bg-zinc-50 flex items-center justify-center hover:bg-[var(--dark-amethyst)] hover:text-white transition-all duration-500 z-50 shadow-sm"
+            >
+              <X size={20} strokeWidth={1.5} />
+            </button>
+
+            {/* Container Centrat Vertical */}
+            <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 py-12 overflow-y-auto no-scrollbar">
+              <div className="w-full py-10">
+                <header className="mb-10 space-y-3">
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400">
+                    Membru Nou
+                  </span>
+                  <h2 className="heading-serif text-5xl italic text-[var(--dark-amethyst)] leading-tight">
+                    CREARE PROFIL
+                  </h2>
+                  <div className="h-1 w-12 bg-[var(--french-blue)] rounded-full opacity-60" />
+                </header>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2 group">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                        Prenume
+                      </label>
+                      <input
+                        required
+                        value={formData.firstName}
+                        onChange={(e) => update("firstName", e.target.value)}
+                        className={inputClass}
+                        placeholder="Alexandru"
+                      />
+                    </div>
+                    <div className="space-y-2 group">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                        Nume
+                      </label>
+                      <input
+                        required
+                        value={formData.lastName}
+                        onChange={(e) => update("lastName", e.target.value)}
+                        className={inputClass}
+                        placeholder="Popescu"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 group">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                      Adresă Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => update("email", e.target.value)}
+                      className={inputClass}
+                      placeholder="nume@casa.com"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2 group">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                        Telefon
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => update("phone", e.target.value)}
+                        className={inputClass}
+                        placeholder="07xx xxx xxx"
+                      />
+                    </div>
+                    <div className="space-y-2 group">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                        Data Nașterii
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.birthday}
+                        onChange={(e) => update("birthday", e.target.value)}
+                        className={`${inputClass} cursor-pointer`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2 group">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                        Parolă
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={formData.password}
+                        onChange={(e) => update("password", e.target.value)}
+                        className={inputClass}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="space-y-2 group">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
+                        Confirmare
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          update("confirmPassword", e.target.value)
+                        }
+                        className={`${inputClass} ${formData.confirmPassword && formData.password !== formData.confirmPassword ? "border-red-200" : ""}`}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="relative w-full h-16 rounded-full text-white overflow-hidden group/btn shadow-2xl transition-all active:scale-[0.98] disabled:opacity-50 mt-4"
+                    style={{ background: "var(--primary-gradient)" }}
+                  >
+                    <div className="absolute inset-0 bg-black/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
+                    <span className="relative z-10 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.5em]">
+                      {loading ? (
+                        <Loader2 size={18} className="animate-spin" />
+                      ) : (
+                        <>
+                          Finalizare Profil <ArrowRight size={16} />
+                        </>
+                      )}
+                    </span>
+                  </button>
+                </form>
               </div>
-              <button
-                onClick={onClose}
-                aria-label="Close"
-                className="group h-10 w-10 grid place-items-center border border-border hover:bg-foreground hover:text-background transition-colors"
-              >
-                <X
-                  size={16}
-                  strokeWidth={1.4}
-                  className="group-hover:rotate-90 transition-transform duration-300"
-                />
-              </button>
-            </header>
-
-            <div className="flex-1 overflow-y-auto luxury-scrollbar px-6 sm:px-10 py-8">
-              <button
-                onClick={onSwitchToLogin}
-                className="mb-6 flex items-center gap-2 label-micro text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronLeft size={12} /> Înapoi la autentificare
-              </button>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="label-luxury block">Prenume</label>
-                    <input
-                      required
-                      value={formData.firstName}
-                      onChange={(e) => update("firstName", e.target.value)}
-                      placeholder="Alexandru"
-                      className={inputBase}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="label-luxury block">Nume</label>
-                    <input
-                      required
-                      value={formData.lastName}
-                      onChange={(e) => update("lastName", e.target.value)}
-                      placeholder="Popescu"
-                      className={inputBase}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="label-luxury block">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    placeholder="nume@exemplu.com"
-                    className={inputBase}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="label-luxury block">Telefon</label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    placeholder="07xx xxx xxx"
-                    className={inputBase}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="label-luxury block">Data nașterii</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.birthday}
-                      onChange={(e) => update("birthday", e.target.value)}
-                      className={`${inputBase} cursor-pointer`}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="label-luxury block">Gen</label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => update("gender", e.target.value)}
-                      className={`${inputBase} appearance-none cursor-pointer`}
-                    >
-                      <option value="unspecified">Selectează</option>
-                      <option value="female">Feminin</option>
-                      <option value="male">Masculin</option>
-                      <option value="other">Altul</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="label-luxury block">Parolă</label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => update("password", e.target.value)}
-                      className={inputBase}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="label-luxury block">Confirmare</label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.confirmPassword}
-                      onChange={(e) => update("confirmPassword", e.target.value)}
-                      className={`${inputBase} ${
-                        formData.confirmPassword &&
-                        formData.password !== formData.confirmPassword
-                          ? "border-destructive"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-4 h-14 w-full bg-foreground text-background text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-primary-hover transition-colors disabled:opacity-30 flex items-center justify-center gap-3"
-                >
-                  {loading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    "Creează cont"
-                  )}
-                </button>
-              </form>
             </div>
+
+            <footer className="p-10 flex items-center justify-center border-t border-zinc-50 bg-zinc-50/30">
+              <div className="flex items-center gap-3 opacity-40">
+                <ShieldCheck size={14} className="text-[var(--french-blue)]" />
+                <span className="text-[8px] uppercase tracking-[0.4em] font-black text-[var(--dark-amethyst)]">
+                  SSL Secure Connection 256-Bit
+                </span>
+              </div>
+            </footer>
           </motion.div>
         </div>
       )}

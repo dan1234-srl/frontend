@@ -33,7 +33,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 // --- AUTH & ACCOUNT (Lazy Loaded) ---
-const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPasswordDrawer"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const Account = lazy(() => import("./pages/main/Account"));
 const Orders = lazy(() => import("./pages/main/Orders"));
@@ -96,7 +96,7 @@ const InitialLoader = () => (
       transition={{ duration: 0.6, delay: 0.2 }}
       className="text-2xl font-light uppercase tracking-[0.5em] text-foreground"
     >
-      Linea
+      Evem
     </motion.h1>
   </motion.div>
 );
