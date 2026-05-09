@@ -4,12 +4,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 
 const Footer = () => {
-  const { language } = useLanguage();
+  // Verificăm dacă contextul există pentru a preveni crash-ul
+  const langContext = useLanguage();
+  const language = langContext?.language || "ro";
 
-  // Helper pentru traducere stabil
   const t = (ro: string, en: string) => (language === "en" ? en : ro);
 
-  // Liste de date extrase pentru a evita recrearea lor la fiecare render și pentru curățenia codului
   const collectionLinks = [
     { name: "Archive", path: "/category/archive" },
     { name: "New In", path: "/category/new-in" },
@@ -24,9 +24,20 @@ const Footer = () => {
     { name: t("Termeni", "Terms"), path: "/terms" },
   ];
 
+  // Mapare explicită a componentelor pentru a preveni "z is not a function"
   const socialLinks = [
-    { Icon: Instagram, href: "https://instagram.com/evem", label: "Instagram" },
-    { Icon: Mail, href: "mailto:hello@evem-boutique.ro", label: "Email" },
+    {
+      id: "ig",
+      Icon: Instagram,
+      href: "https://instagram.com/evem",
+      label: "Instagram",
+    },
+    {
+      id: "mail",
+      Icon: Mail,
+      href: "mailto:hello@evem-boutique.ro",
+      label: "Email",
+    },
   ];
 
   const legalLinks = [
@@ -72,8 +83,7 @@ const Footer = () => {
             />
             <button
               type="submit"
-              aria-label="Subscribe"
-              className="absolute right-0 top-1/2 -translate-y-1/2 size-10 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg transform-gpu"
+              className="absolute right-0 top-1/2 -translate-y-1/2 size-10 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg"
               style={{ background: "var(--primary-gradient)" }}
             >
               <ArrowRight size={18} strokeWidth={2.5} />
@@ -82,7 +92,7 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* 2. ARCHITECTURAL CURVE */}
+      {/* 2. CURVE */}
       <div
         className="relative h-16 md:h-24 w-full bg-white"
         style={{ color: "var(--dark-amethyst)" }}
@@ -99,14 +109,13 @@ const Footer = () => {
         </svg>
       </div>
 
-      {/* 3. MAIN FOOTER CONTENT */}
+      {/* 3. MAIN FOOTER */}
       <div
         className="text-white pt-12 pb-10 px-6"
         style={{ backgroundColor: "var(--dark-amethyst)" }}
       >
         <div className="max-w-[1400px] mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-16 lg:gap-8 mb-20">
-            {/* Brand Section */}
             <div className="lg:col-span-4 space-y-8">
               <Link
                 to="/"
@@ -121,23 +130,22 @@ const Footer = () => {
                 )}
               </p>
               <div className="flex gap-4">
-                {socialLinks.map((social) => (
+                {socialLinks.map(({ id, Icon, href, label }) => (
                   <a
-                    key={social.label}
-                    href={social.href}
+                    key={id}
+                    href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={social.label}
-                    className="size-12 rounded-2xl border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-500 transform-gpu"
-                    style={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+                    aria-label={label}
+                    className="size-12 rounded-2xl border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-500"
+                    style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
                   >
-                    <social.Icon size={18} strokeWidth={1.5} />
+                    <Icon size={18} strokeWidth={1.5} />
                   </a>
                 ))}
               </div>
             </div>
 
-            {/* Links Grid */}
             <div className="lg:col-span-5 grid grid-cols-2 gap-8">
               <div className="space-y-6">
                 <h4
@@ -153,10 +161,10 @@ const Footer = () => {
                         to={link.path}
                         className="hover:text-white transition-colors flex items-center gap-1 group"
                       >
-                        {link.name}
+                        {link.name}{" "}
                         <ArrowUpRight
                           size={10}
-                          className="opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all"
+                          className="opacity-0 group-hover:opacity-100 transition-all"
                         />
                       </Link>
                     </li>
@@ -185,7 +193,6 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Contact Info */}
             <div className="lg:col-span-3 space-y-6 text-left lg:text-right">
               <h4
                 className="text-[10px] font-black uppercase tracking-[0.4em]"
@@ -205,14 +212,12 @@ const Footer = () => {
                   className="flex items-center gap-2 lg:justify-end pt-2"
                   style={{ color: "var(--lavender-purple)" }}
                 >
-                  <Globe size={12} />
-                  <span>Ships Worldwide</span>
+                  <Globe size={12} /> <span>Ships Worldwide</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 4. BOTTOM BAR */}
           <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
               <span
@@ -223,7 +228,6 @@ const Footer = () => {
                 © {new Date().getFullYear()} Evem Studio. All rights reserved.
               </p>
             </div>
-
             <div className="flex gap-8">
               {legalLinks.map((link) =>
                 link.external ? (

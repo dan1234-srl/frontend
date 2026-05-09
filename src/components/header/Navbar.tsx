@@ -66,7 +66,7 @@ const Navbar = () => {
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // =========================
-  // SCROLL ANIMATIONS (Performance optimized)
+  // SCROLL ANIMATIONS
   // =========================
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
@@ -116,9 +116,14 @@ const Navbar = () => {
     fetchMenu();
   }, [fetchMenu]);
 
-  // =========================
-  // CLOSE ON ROUTE CHANGE
-  // =========================
+  // Fallback for active parent
+  useEffect(() => {
+    if (categories.length > 0 && !activeParent) {
+      setActiveParent(categories[0]);
+    }
+  }, [categories, activeParent]);
+
+  // Close menus on route change
   useEffect(() => {
     setMegaOpen(false);
     setMobileOpen(false);
@@ -126,9 +131,7 @@ const Navbar = () => {
     setMobileView({ parent: null });
   }, [location.pathname]);
 
-  // =========================
-  // CLICK OUTSIDE MENU
-  // =========================
+  // Click outside user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -142,9 +145,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // =========================
-  // LOGOUT
-  // =========================
   const handleLogout = async () => {
     try {
       await signOut();
@@ -165,6 +165,7 @@ const Navbar = () => {
           style={{ background: "var(--primary-gradient)" }}
         >
           <motion.div
+            key="top-bar-content"
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 3, repeat: Infinity }}
             className="flex items-center gap-2"
@@ -211,7 +212,7 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* LOGO */}
+          {/* CENTER: LOGO */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Link to="/" className="pointer-events-auto group">
               <motion.span
@@ -328,13 +329,11 @@ const Navbar = () => {
           </div>
         </motion.nav>
 
-        {/* ========================= */}
         {/* MEGA MENU DESKTOP */}
-        {/* ========================= */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
-              key="mega-menu"
+              key="mega-menu-container"
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
@@ -352,17 +351,13 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[650px] max-w-[1600px] overflow-hidden">
-                {/* LEFT PANEL: COLECȚII */}
+                {/* LEFT PANEL: COLECtII */}
                 <div className="relative w-[340px] border-r border-zinc-100 bg-zinc-50/50 p-12 flex flex-col">
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="mb-14"
-                  >
+                  <div className="mb-14">
                     <p className="text-[10px] font-black uppercase tracking-[0.6em] text-[var(--french-blue)]">
                       Curated Collections
                     </p>
-                  </motion.div>
+                  </div>
 
                   <div className="relative space-y-2">
                     {categories.map((cat) => (
@@ -410,22 +405,13 @@ const Navbar = () => {
                       </motion.button>
                     ))}
                   </div>
-
-                  <div className="mt-auto border-t border-zinc-200 pt-8">
-                    <div className="flex items-center gap-3 text-zinc-400">
-                      <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest">
-                        In Stock & Ready to Ship
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* CENTER PANEL: CATEGORII */}
                 <div className="flex-1 overflow-y-auto bg-white p-20 scrollbar-hide">
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={activeParent?.id || "empty-center"}
+                      key={activeParent?.id || "empty-content"}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -445,7 +431,7 @@ const Navbar = () => {
                             <h3 className="text-[18px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] group-hover/section:text-[var(--french-blue)] transition-all duration-300">
                               {sub.name}
                             </h3>
-                            <motion.div className="h-0.5 w-8 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
+                            <div className="h-0.5 w-8 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
                           </Link>
                           <div className="flex flex-col gap-5">
                             {sub.subcategories?.map((child) => (
@@ -455,7 +441,7 @@ const Navbar = () => {
                                 onClick={() => setMegaOpen(false)}
                                 className="text-[14px] font-medium text-zinc-400 hover:text-black hover:translate-x-3 transition-all duration-500 flex items-center gap-2 group/link"
                               >
-                                <span className="h-px w-0 bg-zinc-200 group-hover/link:w-4 transition-all duration-500" />
+                                <span className="h-px w-0 bg-zinc-200 group-hover/link:w-4 transition-all duration-500" />{" "}
                                 {child.name}
                               </Link>
                             ))}
@@ -468,57 +454,42 @@ const Navbar = () => {
 
                 {/* RIGHT PANEL: VISUAL SHOWCASE */}
                 <div className="w-[480px] p-12 bg-zinc-50/10">
-                  <motion.div
-                    className="group relative h-full w-full overflow-hidden rounded-[3rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.15)] transform-gpu"
-                    whileHover={{ scale: 0.99 }}
-                  >
+                  <motion.div className="group relative h-full w-full overflow-hidden rounded-[3rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.15)] transform-gpu">
                     <AnimatePresence mode="wait">
                       <motion.img
-                        key={activeParent?.id || "empty-img"}
+                        key={activeParent?.id || "showcase-img"}
                         src={getValidImageUrl(activeParent?.image_url || null)}
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.05 }}
-                        transition={{
-                          duration: 0.8,
-                          ease: [0.16, 1, 0.3, 1],
-                        }}
+                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                         className="absolute inset-0 h-full w-full object-cover will-change-transform"
                       />
                     </AnimatePresence>
-
                     <div className="absolute inset-0 bg-gradient-to-t from-[var(--deep-twilight)] via-[var(--deep-twilight)]/20 to-transparent" />
-
                     <div className="absolute bottom-14 left-14 right-14 z-10">
-                      <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        key={`info-${activeParent?.id || "empty"}`}
-                        transition={{ delay: 0.2, duration: 0.6 }}
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="h-px w-10 bg-cyan-400" />
+                        <p className="text-[11px] font-black uppercase tracking-[0.5em] text-cyan-400">
+                          Essential
+                        </p>
+                      </div>
+                      <h4 className="mb-10 text-5xl font-black uppercase leading-[0.9] tracking-tighter text-white">
+                        {activeParent?.name}
+                      </h4>
+                      <button
+                        onClick={() => {
+                          navigate(`/category/${activeParent?.slug}`);
+                          setMegaOpen(false);
+                        }}
+                        className="group/btn relative flex items-center justify-between overflow-hidden rounded-full bg-white px-10 py-5 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-zinc-100 w-full"
                       >
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="h-px w-10 bg-cyan-400" />
-                          <p className="text-[11px] font-black uppercase tracking-[0.5em] text-cyan-400">
-                            Essential
-                          </p>
-                        </div>
-                        <h4 className="mb-10 text-5xl font-black uppercase leading-[0.9] tracking-tighter text-white">
-                          {activeParent?.name}
-                        </h4>
-                        <button
-                          onClick={() => {
-                            navigate(`/category/${activeParent?.slug}`);
-                            setMegaOpen(false);
-                          }}
-                          className="group/btn relative flex items-center justify-between overflow-hidden rounded-full bg-white px-10 py-5 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-zinc-100 w-full"
-                        >
-                          <span>Explore Collection</span>
-                          <ArrowRight
-                            size={20}
-                            className="transition-transform duration-500 group-hover/btn:translate-x-2"
-                          />
-                        </button>
-                      </motion.div>
+                        <span>Explore Collection</span>{" "}
+                        <ArrowRight
+                          size={20}
+                          className="transition-transform duration-500 group-hover/btn:translate-x-2"
+                        />
+                      </button>
                     </div>
                   </motion.div>
                 </div>
@@ -528,13 +499,11 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
-      {/* ========================= */}
       {/* MOBILE MENU */}
-      {/* ========================= */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            key="mobile-menu"
+            key="mobile-nav-container"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
@@ -558,14 +527,12 @@ const Navbar = () => {
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() => {
-                        if (cat.subcategories?.length) {
-                          setMobileView({ parent: cat });
-                        } else {
-                          navigate(`/category/${cat.slug}`);
-                          setMobileOpen(false);
-                        }
-                      }}
+                      onClick={() =>
+                        cat.subcategories?.length
+                          ? setMobileView({ parent: cat })
+                          : (navigate(`/category/${cat.slug}`),
+                            setMobileOpen(false))
+                      }
                       className="flex items-center justify-between rounded-2xl bg-zinc-50/50 p-6 text-left active:bg-zinc-100 transition-colors"
                     >
                       <span className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
@@ -611,7 +578,6 @@ const Navbar = () => {
         )}
       </AnimatePresence>
 
-      {/* Spacer to prevent content from hiding under the fixed navbar */}
       <div className="h-[5rem] w-full" />
 
       {/* DRAWERS & MODALS */}
