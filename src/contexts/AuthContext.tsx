@@ -16,6 +16,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   fetchUserData: () => Promise<boolean>;
+  syncWishlist: () => Promise<void>; // Reintrodusă în interfață
   signUp: (
     email: string,
     password: string,
@@ -31,7 +32,6 @@ interface AuthContextType {
   ) => Promise<{ error: any; requires2FA?: boolean; tempToken?: string }>;
   verify2FA: (code: string, tempToken: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  // Funcția adăugată pentru resetarea parolei
   resetPassword: (
     email: string,
     code?: string,
@@ -45,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // 1. Fetch Date Utilizator
   const fetchUserData = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
@@ -67,6 +68,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // 2. Sincronizare Wishlist (Guest -> Database)
+  const syncWishlist = useCallback(async () => {
+    try {
+      const localData = localStorage.getItem("guest_wishlist");
+      if (!localData) return;
+
+      const guestItems = JSON.parse(localData);
+      if (!Array.isArray(guestItems) || guestItems.length === 0) return;
+
+      const productIds = guestItems.map(
+        (item: any) => item.id || item.product_id,
+      );
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/wishlist/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_ids: productIds }),
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        localStorage.removeItem("guest_wishlist");
+        console.log("✅ Wishlist synced successfully.");
+      }
+    } catch (error) {
+      console.error("❌ Wishlist sync failed:", error);
+    }
+  }, []);
+
+  // Initializare
   useEffect(() => {
     const initAuth = async () => {
       await fetchUserData();
@@ -75,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, [fetchUserData]);
 
+  // 3. Autentificare
   const signIn = useCallback(
     async (email: string, password: string) => {
       try {
@@ -88,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const data = await response.json();
         if (!response.ok)
           throw new Error(data.detail || "Credentials rejection.");
+
         if (data.requires_2fa)
           return { error: null, requires2FA: true, tempToken: data.temp_token };
 
@@ -100,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [fetchUserData],
   );
 
+  // 4. Verificare 2FA
   const verify2FA = useCallback(
     async (code: string, tempToken: string) => {
       try {
@@ -122,6 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [fetchUserData],
   );
 
+  // 5. Inregistrare
   const signUp = useCallback(
     async (
       email: string,
@@ -157,6 +192,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  // 6. Resetare Parola
+  const resetPassword = useCallback(async (email: string, code?: string) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), code: code?.trim() }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (response.status === 403 && data.requires_2fa) {
+        return { error: null, requires2FA: true };
+      }
+
+      if (!response.ok) throw new Error(data.detail || "Eroare la resetare.");
+
+      return { error: null, requires2FA: false };
+    } catch (error: any) {
+      return { error: { message: error.message } };
+    }
+  }, []);
+
+  // 7. Deconectare
   const signOut = useCallback(async () => {
     try {
       await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
@@ -171,38 +233,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Funcția adăugată pentru Forgot Password (suportă 2FA)
-  const resetPassword = useCallback(async (email: string, code?: string) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/auth/forgot-password`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email.trim(),
-            code: code?.trim(),
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      // Dacă serverul raportează că user-ul are 2FA activ, dar nu l-am trimis încă
-      if (response.status === 403 && data.requires_2fa) {
-        return { error: null, requires2FA: true };
-      }
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Eroare la resetare.");
-      }
-
-      return { error: null, requires2FA: false };
-    } catch (error: any) {
-      return { error: { message: error.message } };
-    }
-  }, []);
-
   return (
     <AuthContext.Provider
       value={{
@@ -214,7 +244,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         verify2FA,
         signOut,
         fetchUserData,
-        resetPassword, // <- Adăugată aici
+        syncWishlist,
+        resetPassword,
       }}
     >
       {!isLoading ? (
