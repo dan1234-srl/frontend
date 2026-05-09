@@ -4,7 +4,7 @@ import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Loader2, ShieldCheck, ArrowRight, Lock } from "lucide-react";
+import { Loader2, ArrowRight, Lock } from "lucide-react";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -15,10 +15,9 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Verificăm dacă token-ul există la încărcare
   useEffect(() => {
     if (!token) {
-      toast.error("Link de resetare invalid sau expirat.");
+      toast.error("Link-ul de resetare lipsește.");
     }
   }, [token]);
 
@@ -26,7 +25,7 @@ const ResetPassword = () => {
     e.preventDefault();
 
     if (!token) {
-      toast.error("Token-ul lipsește. Vă rugăm să solicitați un link nou.");
+      toast.error("Token invalid. Vă rugăm să solicitați un link nou.");
       return;
     }
 
@@ -58,7 +57,7 @@ const ResetPassword = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("Parola a fost actualizată cu succes.");
+        toast.success("Parola a fost actualizată.");
         navigate("/");
       } else {
         toast.error(data.detail || "Eroare la resetarea parolei.");
@@ -86,10 +85,10 @@ const ResetPassword = () => {
           {!token ? (
             <div className="text-center space-y-6">
               <h1 className="heading-serif text-3xl text-zinc-300 italic">
-                Link Invalid
+                Sesiune Invalidă
               </h1>
               <p className="text-sm text-zinc-400">
-                Link-ul accesat nu conține un token valid.
+                Link-ul de resetare nu mai este valid.
               </p>
               <button
                 onClick={() => navigate("/")}
@@ -102,7 +101,7 @@ const ResetPassword = () => {
             <div className="space-y-10">
               <header className="text-center space-y-4">
                 <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400">
-                  Securitate Maximă
+                  Securitate Cont
                 </span>
                 <h1 className="heading-serif text-5xl italic text-[var(--dark-amethyst)]">
                   Parolă Nouă
@@ -114,9 +113,9 @@ const ResetPassword = () => {
                 onSubmit={handleSubmit}
                 className="space-y-8 bg-white p-8 sm:p-12 shadow-luxe border border-zinc-50 rounded-[40px]"
               >
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                   <div className="space-y-2 group">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)] transition-colors">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
                       Noua Parolă
                     </label>
                     <div className="relative">
@@ -136,14 +135,14 @@ const ResetPassword = () => {
                   </div>
 
                   <div className="space-y-2 group">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)] transition-colors">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)]">
                       Confirmă Parola
                     </label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repetă noua parolă"
+                      placeholder="Repetă parola"
                       required
                       className="w-full py-4 border-b-2 border-zinc-100 bg-transparent text-lg outline-none focus:border-[var(--dark-amethyst)] transition-all duration-500 font-light"
                     />
@@ -162,7 +161,7 @@ const ResetPassword = () => {
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
                       <>
-                        Salvează Modificările <ArrowRight size={16} />
+                        Actualizează Parola <ArrowRight size={16} />
                       </>
                     )}
                   </span>
