@@ -31,6 +31,11 @@ interface AuthContextType {
   ) => Promise<{ error: any; requires2FA?: boolean; tempToken?: string }>;
   verify2FA: (code: string, tempToken: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  // Funcția adăugată pentru resetarea parolei
+  resetPassword: (
+    email: string,
+    code?: string,
+  ) => Promise<{ error: any; requires2FA?: boolean }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,34 +122,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [fetchUserData],
   );
 
-  const syncWishlist = async () => {
-    try {
-      const localData = localStorage.getItem("guest_wishlist");
-      if (!localData) return;
-
-      const guestItems = JSON.parse(localData);
-      if (!Array.isArray(guestItems) || guestItems.length === 0) return;
-
-      // Extragem ID-urile produselor (asigură-te că obiectele din local au cheia 'id')
-      const productIds = guestItems.map(
-        (item: any) => item.id || item.product_id,
-      );
-
-      const response = await fetch(`${API_BASE_URL}/api/v1/wishlist/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_ids: productIds }),
-        credentials: "include", // Trimite cookie-ul de sesiune primit la login
-      });
-
-      if (response.ok) {
-        localStorage.removeItem("guest_wishlist");
-        console.log("✅ Wishlist synced with account.");
-      }
-    } catch (error) {
-      console.error("❌ Wishlist sync failed:", error);
-    }
-  };
   const signUp = useCallback(
     async (
       email: string,
@@ -187,15 +164,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         credentials: "include",
       });
     } finally {
-      // RESETARE SELECTIVĂ: Nu folosim localStorage.clear()!
       setUser(null);
       setIsAdmin(false);
-
-      // Ștergem doar datele de sesiune, păstrăm tema (linea_active_theme_v4)
       localStorage.removeItem("user_session_info");
-
-      // Refresh forțat la homepage pentru a reinițializa toate contexturile
       window.location.href = "/";
+    }
+  }, []);
+
+  // Funcția adăugată pentru Forgot Password (suportă 2FA)
+  const resetPassword = useCallback(async (email: string, code?: string) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email.trim(),
+            code: code?.trim(),
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      // Dacă serverul raportează că user-ul are 2FA activ, dar nu l-am trimis încă
+      if (response.status === 403 && data.requires_2fa) {
+        return { error: null, requires2FA: true };
+      }
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Eroare la resetare.");
+      }
+
+      return { error: null, requires2FA: false };
+    } catch (error: any) {
+      return { error: { message: error.message } };
     }
   }, []);
 
@@ -210,6 +214,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         verify2FA,
         signOut,
         fetchUserData,
+        resetPassword, // <- Adăugată aici
       }}
     >
       {!isLoading ? (

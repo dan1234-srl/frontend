@@ -4,7 +4,6 @@ import {
   X,
   ShieldCheck,
   Loader2,
-  Mail,
   ArrowRight,
   CheckCircle2,
   ArrowLeft,
@@ -15,7 +14,7 @@ import { toast } from "sonner";
 interface ForgotPasswordDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  onBackToLogin: () => void; // Linkat înapoi la login
+  onBackToLogin: () => void;
 }
 
 const ForgotPasswordDrawer = ({
@@ -24,6 +23,9 @@ const ForgotPasswordDrawer = ({
   onBackToLogin,
 }: ForgotPasswordDrawerProps) => {
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState(""); // Stare nouă pentru 2FA
+  const [requires2FA, setRequires2FA] = useState(false); // Flag pentru UI
+
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const { resetPassword } = useAuth();
@@ -31,8 +33,11 @@ const ForgotPasswordDrawer = ({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      // Resetăm tot când se deschide
       setSent(false);
+      setRequires2FA(false);
       setEmail("");
+      setCode("");
     } else {
       document.body.style.overflow = "unset";
     }
@@ -41,17 +46,32 @@ const ForgotPasswordDrawer = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+    if (requires2FA && !code.trim()) return;
+
     setLoading(true);
     try {
-      const { error } = await resetPassword(email.trim());
-      if (error) {
-        toast.error("Adresa de email nu a fost găsită.");
+      // Trimitem cererea (cu tot cu cod dacă suntem în pasul 2FA)
+      const result = await resetPassword(
+        email.trim(),
+        requires2FA ? code.trim() : undefined,
+      );
+
+      if (result.requires2FA) {
+        // Trecem la pasul 2FA
+        setRequires2FA(true);
+        toast.info("Acest cont este protejat de 2FA. Introdu codul.");
+      } else if (result.error) {
+        toast.error(
+          result.error.message ||
+            "Adresa de email nu a fost găsită sau codul este incorect.",
+        );
       } else {
+        // Succes final
         setSent(true);
-        toast.success("Verifică inbox-ul");
+        toast.success("Verifică inbox-ul pentru instrucțiuni.");
       }
     } catch {
-      toast.error("Eroare de conexiune.");
+      toast.error("Eroare de conexiune la server.");
     } finally {
       setLoading(false);
     }
@@ -88,40 +108,67 @@ const ForgotPasswordDrawer = ({
                 <div className="w-full">
                   <header className="mb-12 space-y-3">
                     <button
-                      onClick={onBackToLogin} // Linkare înapoi
+                      onClick={() => {
+                        if (requires2FA) {
+                          setRequires2FA(false); // Dacă e la pasul 2FA, revine la pasul de email
+                          setCode("");
+                        } else {
+                          onBackToLogin(); // Altfel revine la login
+                        }
+                      }}
                       className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-[var(--dark-amethyst)] mb-6 transition-colors"
                     >
-                      <ArrowLeft size={14} /> Revenire la logare
+                      <ArrowLeft size={14} />{" "}
+                      {requires2FA ? "Înapoi la Email" : "Revenire la logare"}
                     </button>
-                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400">
-                      Recuperare Acces
+                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--dark-amethyst)]">
+                      {requires2FA ? "Securitate Cont" : "Recuperare Acces"}
                     </span>
                     <h2 className="heading-serif text-5xl italic text-[var(--dark-amethyst)] leading-tight">
-                      Resetare
+                      {requires2FA ? "Cod 2FA" : "Resetare"}
                     </h2>
                     <p className="text-xs text-zinc-400 font-medium leading-relaxed max-w-[280px]">
-                      Introdu email-ul pentru a primi un link securizat.
+                      {requires2FA
+                        ? "Introdu codul din aplicația Authenticator pentru a autoriza resetarea."
+                        : "Introdu email-ul pentru a primi un link securizat."}
                     </p>
                   </header>
 
                   <form onSubmit={handleSubmit} className="space-y-10">
-                    <div className="space-y-2 group">
-                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="nume@casa.com"
-                        className="w-full py-4 border-b-2 border-zinc-100 bg-transparent text-lg outline-none focus:border-[var(--dark-amethyst)] transition-all duration-500 font-light"
-                      />
-                    </div>
+                    {!requires2FA ? (
+                      <div className="space-y-2 group">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="nume@casa.com"
+                          className="w-full py-4 border-b-2 border-zinc-100 bg-transparent text-lg outline-none focus:border-[var(--dark-amethyst)] transition-all duration-500 font-light"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2 group">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                          Cod Autentificare
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                          placeholder="000000"
+                          className="w-full py-4 border-b-2 border-zinc-100 bg-transparent text-3xl tracking-[0.5em] text-center outline-none focus:border-[var(--dark-amethyst)] transition-all duration-500 font-black"
+                        />
+                      </div>
+                    )}
 
                     <button
                       type="submit"
-                      disabled={loading || !email}
+                      disabled={loading || (!requires2FA ? !email : !code)}
                       className="relative w-full h-16 rounded-full text-white overflow-hidden group/btn shadow-2xl transition-all"
                       style={{ background: "var(--primary-gradient)" }}
                     >
@@ -131,7 +178,10 @@ const ForgotPasswordDrawer = ({
                           <Loader2 size={18} className="animate-spin" />
                         ) : (
                           <>
-                            Trimite Link <ArrowRight size={16} />
+                            {requires2FA
+                              ? "Confirmă & Trimite Link"
+                              : "Trimite Link"}{" "}
+                            <ArrowRight size={16} />
                           </>
                         )}
                       </span>
@@ -167,7 +217,7 @@ const ForgotPasswordDrawer = ({
                 className="mr-2 text-[var(--french-blue)]"
               />
               <span className="text-[8px] uppercase tracking-[0.4em] font-black text-[var(--dark-amethyst)]">
-                Securitate SSL
+                Securitate SSL & 2FA Ready
               </span>
             </footer>
           </motion.div>
