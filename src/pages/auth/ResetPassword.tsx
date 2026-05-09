@@ -7,6 +7,14 @@ import { motion } from "framer-motion";
 import { Loader2, ArrowRight, Lock, ShieldCheck } from "lucide-react";
 
 /**
+ * Definește URL-ul de bază pentru API.
+ * Se folosește variabila de mediu din Vercel (api.evem.ro) sau fallback la Railway.
+ */
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
+
+/**
  * ResetPassword Component
  * Gestionează procesul de setare a unei parole noi folosind un token JWT primit prin email.
  */
@@ -54,11 +62,11 @@ const ResetPassword = () => {
 
     try {
       /**
-       * IMPORTANT: Folosim URL-ul complet de producție.
-       * Asigură-te că BACKEND-ul are CORS configurat pentru https://evem.ro
+       * IMPORTANT: Folosim template literals cu API_BASE_URL pentru flexibilitate.
+       * Endpoint-ul este concatenat automat.
        */
       const response = await fetch(
-        "https://linea-backend-production.up.railway.app/api/v1/auth/reset-password",
+        `${API_BASE_URL}/api/v1/auth/reset-password`,
         {
           method: "POST",
           headers: {
@@ -78,7 +86,7 @@ const ResetPassword = () => {
         toast.success(
           "Parola a fost actualizată cu succes! Acum vă puteți autentifica.",
         );
-        // Redirecționăm utilizatorul către pagina principală sau modalul de login
+        // Redirecționăm utilizatorul către pagina principală sau modalul de login după 2 secunde
         setTimeout(() => navigate("/"), 2000);
       } else {
         // Gestionăm erorile venite de la server (ex: token expirat)
@@ -99,7 +107,7 @@ const ResetPassword = () => {
       <Header />
 
       <main className="flex-1 flex items-center justify-center px-6 py-20 relative">
-        {/* Efect vizual de fundal */}
+        {/* Efect vizual de fundal (Dark Amethyst Blur) */}
         <div className="absolute inset-0 pointer-events-none opacity-5 overflow-hidden">
           <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-[var(--dark-amethyst)] rounded-full blur-[150px]" />
         </div>
@@ -185,7 +193,7 @@ const ResetPassword = () => {
                   </div>
                 </div>
 
-                {/* Buton Submit */}
+                {/* Buton Submit cu gradient Luxury */}
                 <button
                   type="submit"
                   disabled={loading}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { X, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
+import { X, Loader2, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
   });
 
   const [loading, setLoading] = useState(false);
-  const { signUp, syncWishlist } = useAuth(); // Am adus syncWishlist din context
+  const { signUp } = useAuth();
 
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +44,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
   }, [isOpen]);
 
   const validateAll = () => {
-    const { firstName, lastName, password, confirmPassword, birthday } =
+    const { firstName, lastName, email, password, confirmPassword, birthday } =
       formData;
 
     if (
@@ -56,10 +56,6 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
     }
     if (!birthday) {
       toast.error("Data nașterii este obligatorie.");
-      return false;
-    }
-    if (password.length < 8) {
-      toast.error("Parola trebuie să aibă minim 8 caractere.");
       return false;
     }
     if (password !== confirmPassword) {
@@ -88,17 +84,13 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
         formData.gender,
         finalPhone,
       );
-
-      if (error) {
-        toast.error(error.message);
-      } else {
-        // După înregistrare, sincronizăm wishlist-ul local cu baza de date
-        await syncWishlist();
+      if (error) toast.error(error.message);
+      else {
         toast.success("Bine ai venit în universul Evem!");
         onClose();
       }
-    } catch (err) {
-      toast.error("Eroare de conexiune la server.");
+    } catch {
+      toast.error("Eroare de conexiune.");
     } finally {
       setLoading(false);
     }
@@ -114,6 +106,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end">
+          {/* Overlay - Frosted Glass identical cu Login/Wishlist */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -122,6 +115,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
             className="absolute inset-0 bg-black/10 backdrop-blur-[12px]"
           />
 
+          {/* Sidebar Panel */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -129,6 +123,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
             transition={{ type: "spring", damping: 30, stiffness: 200 }}
             className="relative z-[701] flex h-full w-full sm:max-w-[520px] flex-col bg-white shadow-luxe"
           >
+            {/* Buton închidere circular */}
             <button
               onClick={onClose}
               className="absolute top-8 right-8 size-12 rounded-full bg-zinc-50 flex items-center justify-center hover:bg-[var(--dark-amethyst)] hover:text-white transition-all duration-500 z-50 shadow-sm"
@@ -136,6 +131,7 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
               <X size={20} strokeWidth={1.5} />
             </button>
 
+            {/* Container Centrat Vertical */}
             <div className="flex-1 flex flex-col justify-center px-8 sm:px-16 py-12 overflow-y-auto no-scrollbar">
               <div className="w-full py-10">
                 <header className="mb-10 space-y-3">
@@ -266,16 +262,6 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                       )}
                     </span>
                   </button>
-
-                  <div className="text-center pt-4">
-                    <button
-                      type="button"
-                      onClick={onSwitchToLogin}
-                      className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-[var(--dark-amethyst)] transition-colors"
-                    >
-                      Ai deja cont? Autentifică-te
-                    </button>
-                  </div>
                 </form>
               </div>
             </div>
