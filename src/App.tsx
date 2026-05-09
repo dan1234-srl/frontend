@@ -119,210 +119,201 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsFirstLoad(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
-    <>
+    <Suspense fallback={<PageLoader />}>
       <AnimatePresence mode="wait">
-        {isFirstLoad && <InitialLoader key="loader" />}
+        <Routes location={location} key={location.pathname}>
+          {/* RUTE PUBLICE PRINCIPALE */}
+          <Route
+            path="/"
+            element={
+              <PageWrapper>
+                <Index />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/category/:slug"
+            element={
+              <PageWrapper>
+                <CategoryPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/product/:productId"
+            element={
+              <PageWrapper>
+                <ProductDetail />
+              </PageWrapper>
+            }
+          />
+
+          {/* RESET PASSWORD - Mutată sus pentru prioritate */}
+          <Route
+            path="/reset-password"
+            element={
+              <PageWrapper>
+                <ResetPassword />
+              </PageWrapper>
+            }
+          />
+
+          {/* STRIPE CONFIRMATIONS */}
+          <Route
+            path="/order-confirmation"
+            element={
+              <PageWrapper>
+                <SuccessPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/order-canceled"
+            element={
+              <PageWrapper>
+                <CancelPage />
+              </PageWrapper>
+            }
+          />
+
+          {/* USER ACCOUNT */}
+          <Route
+            path="/account/profile"
+            element={
+              <PageWrapper>
+                <Account />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/account/addresses"
+            element={
+              <PageWrapper>
+                <Addresses />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/account/orders"
+            element={
+              <PageWrapper>
+                <Orders />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <PageWrapper>
+                <WebsiteSettings />
+              </PageWrapper>
+            }
+          />
+
+          {/* PAGINI DESPRE / INFO */}
+          <Route
+            path="/about/our-story"
+            element={
+              <PageWrapper>
+                <OurStory />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/sustainability"
+            element={
+              <PageWrapper>
+                <Sustainability />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/size-guide"
+            element={
+              <PageWrapper>
+                <SizeGuide />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/customer-care"
+            element={
+              <PageWrapper>
+                <CustomerCare />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/store-locator"
+            element={
+              <PageWrapper>
+                <StoreLocator />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/privacy-policy"
+            element={
+              <PageWrapper>
+                <PrivacyPolicy />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/terms-of-service"
+            element={
+              <PageWrapper>
+                <TermsOfService />
+              </PageWrapper>
+            }
+          />
+
+          {/* ADMIN COMPLEX ROUTING */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="brands" element={<AdminBrands />} />
+            <Route path="attributes" element={<AdminAttributes />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="coupons" element={<AdminCoupons />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="messages" element={<AdminMessages />} />
+            <Route path="newsletter" element={<AdminNewsletter />} />
+            <Route path="pages" element={<AdminPages />} />
+            <Route path="email-templates" element={<AdminEmailTemplates />} />
+            <Route
+              path="wishlist-analytics"
+              element={<AdminWishlistAnalytics />}
+            />
+            <Route path="import" element={<AdminImportFeed />} />
+            <Route path="export" element={<AdminExportFeed />} />
+            <Route path="theme" element={<AdminThemeSettings />} />
+            <Route path="settings" element={<AdminGeneralSettings />} />
+          </Route>
+
+          {/* 404 CATCH ALL */}
+          <Route
+            path="*"
+            element={
+              <PageWrapper>
+                <NotFound />
+              </PageWrapper>
+            }
+          />
+        </Routes>
       </AnimatePresence>
-
-      {/* Suspense oprește încărcarea admin-ului pe paginile de client */}
-      <Suspense fallback={<PageLoader />}>
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route
-              path="/"
-              element={
-                <PageWrapper>
-                  <Index />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/order-confirmation"
-              element={
-                <PageWrapper>
-                  <SuccessPage />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/order-canceled"
-              element={
-                <PageWrapper>
-                  <CancelPage />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/category/:slug"
-              element={
-                <PageWrapper>
-                  <CategoryPage />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/product/:productId"
-              element={
-                <PageWrapper>
-                  <ProductDetail />
-                </PageWrapper>
-              }
-            />
-
-            <Route path="/checkout" element={<Navigate to="/" replace />} />
-            <Route path="/register" element={<Navigate to="/" replace />} />
-
-
-
-            <Route
-              path="/reset-password"
-              element={
-                <PageWrapper>
-                  <ResetPassword />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/account/profile"
-              element={
-                <PageWrapper>
-                  <Account />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/account/addresses"
-              element={
-                <PageWrapper>
-                  <Addresses />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/account/orders"
-              element={
-                <PageWrapper>
-                  <Orders />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <PageWrapper>
-                  <WebsiteSettings />
-                </PageWrapper>
-              }
-            />
-
-            {/* Admin Routes - Codul pentru acestea se va descărca DOAR dacă intri pe /admin */}
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminProducts />} />
-              <Route
-                path="wishlist-analytics"
-                element={<AdminWishlistAnalytics />}
-              />
-              <Route path="theme" element={<AdminThemeSettings />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="brands" element={<AdminBrands />} />
-              <Route path="attributes" element={<AdminAttributes />} />
-              <Route path="import" element={<AdminImportFeed />} />
-              <Route path="export" element={<AdminExportFeed />} />
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="coupons" element={<AdminCoupons />} />
-              <Route path="newsletter" element={<AdminNewsletter />} />
-              <Route path="messages" element={<AdminMessages />} />
-              <Route path="email-templates" element={<AdminEmailTemplates />} />
-              <Route path="reviews" element={<AdminReviews />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="pages" element={<AdminPages />} />
-              <Route path="settings" element={<AdminGeneralSettings />} />
-            </Route>
-
-            <Route
-              path="/about/our-story"
-              element={
-                <PageWrapper>
-                  <OurStory />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/about/sustainability"
-              element={
-                <PageWrapper>
-                  <Sustainability />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/about/size-guide"
-              element={
-                <PageWrapper>
-                  <SizeGuide />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/about/customer-care"
-              element={
-                <PageWrapper>
-                  <CustomerCare />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/about/store-locator"
-              element={
-                <PageWrapper>
-                  <StoreLocator />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/privacy-policy"
-              element={
-                <PageWrapper>
-                  <PrivacyPolicy />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/terms-of-service"
-              element={
-                <PageWrapper>
-                  <TermsOfService />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="*"
-              element={
-                <PageWrapper>
-                  <NotFound />
-                </PageWrapper>
-              }
-            />
-          </Routes>
-        </AnimatePresence>
-      </Suspense>
-    </>
+    </Suspense>
   );
 };
 

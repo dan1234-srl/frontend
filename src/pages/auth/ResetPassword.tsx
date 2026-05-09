@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
 import { toast } from "sonner";
@@ -8,44 +7,66 @@ import { motion } from "framer-motion";
 import { Loader2, ShieldCheck, ArrowRight, Lock } from "lucide-react";
 
 const ResetPassword = () => {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  const navigate = useNavigate();
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
-  const { updatePassword } = useAuth();
-  const navigate = useNavigate();
 
+  // Verificăm dacă token-ul există la încărcare
   useEffect(() => {
-    // Verificăm dacă suntem într-un flux de recovery din URL (hash-ul de la Supabase/Backend)
-    const hash = window.location.hash;
-    if (
-      hash.includes("type=recovery") ||
-      window.location.search.includes("token=")
-    ) {
-      setIsRecovery(true);
+    if (!token) {
+      toast.error("Link de resetare invalid sau expirat.");
     }
-  }, []);
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast.error("Parola trebuie să aibă minim 6 caractere.");
+
+    if (!token) {
+      toast.error("Token-ul lipsește. Vă rugăm să solicitați un link nou.");
       return;
     }
+
+    if (password.length < 8) {
+      toast.error("Parola trebuie să aibă minim 8 caractere.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Parolele nu coincid.");
       return;
     }
 
     setLoading(true);
-    const { error } = await updatePassword(password);
-    setLoading(false);
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Parola a fost actualizată.");
-      navigate("/");
+    try {
+      const response = await fetch(
+        "https://linea-backend-production.up.railway.app/api/v1/auth/reset-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: token,
+            new_password: password,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Parola a fost actualizată cu succes.");
+        navigate("/");
+      } else {
+        toast.error(data.detail || "Eroare la resetarea parolei.");
+      }
+    } catch (err) {
+      toast.error("Eroare de conexiune la server.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,7 +74,6 @@ const ResetPassword = () => {
     <div className="min-h-screen bg-white flex flex-col font-sans">
       <Header />
       <main className="flex-1 flex items-center justify-center px-6 py-20 relative">
-        {/* Background Decor */}
         <div className="absolute inset-0 pointer-events-none opacity-5 overflow-hidden">
           <div className="absolute -top-[10%] -right-[10%] w-[500px] h-[500px] bg-[var(--dark-amethyst)] rounded-full blur-[150px]" />
         </div>
@@ -63,13 +83,13 @@ const ResetPassword = () => {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-md w-full relative z-10"
         >
-          {!isRecovery ? (
+          {!token ? (
             <div className="text-center space-y-6">
               <h1 className="heading-serif text-3xl text-zinc-300 italic">
-                Sesiune expirată
+                Link Invalid
               </h1>
               <p className="text-sm text-zinc-400">
-                Link-ul de resetare nu mai este valid.
+                Link-ul accesat nu conține un token valid.
               </p>
               <button
                 onClick={() => navigate("/")}
@@ -95,7 +115,6 @@ const ResetPassword = () => {
                 className="space-y-8 bg-white p-8 sm:p-12 shadow-luxe border border-zinc-50 rounded-[40px]"
               >
                 <div className="space-y-6">
-                  {/* Password 1 */}
                   <div className="space-y-2 group">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)] transition-colors">
                       Noua Parolă
@@ -105,7 +124,7 @@ const ResetPassword = () => {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Minim 6 caractere"
+                        placeholder="Minim 8 caractere"
                         required
                         className="w-full py-4 border-b-2 border-zinc-100 bg-transparent text-lg outline-none focus:border-[var(--dark-amethyst)] transition-all duration-500 font-light"
                       />
@@ -116,7 +135,6 @@ const ResetPassword = () => {
                     </div>
                   </div>
 
-                  {/* Password 2 */}
                   <div className="space-y-2 group">
                     <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 group-focus-within:text-[var(--french-blue)] transition-colors">
                       Confirmă Parola
