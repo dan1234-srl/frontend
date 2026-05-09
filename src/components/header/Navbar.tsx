@@ -204,7 +204,9 @@ const Navbar = () => {
               </span>
               <ChevronDown
                 size={14}
-                className={`hidden transition-transform duration-500 lg:block ${megaOpen ? "rotate-180" : ""}`}
+                className={`hidden transition-transform duration-500 lg:block ${
+                  megaOpen ? "rotate-180" : ""
+                }`}
               />
             </button>
           </div>
@@ -237,7 +239,9 @@ const Navbar = () => {
                 onClick={() =>
                   user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                 }
-                className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"}`}
+                className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${
+                  userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"
+                }`}
               >
                 <User size={20} className="text-zinc-700" />
               </motion.button>
@@ -245,6 +249,7 @@ const Navbar = () => {
               <AnimatePresence>
                 {user && userMenuOpen && (
                   <motion.div
+                    key="user-menu-dropdown"
                     initial={{ opacity: 0, y: 15, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 15, scale: 0.98 }}
@@ -309,6 +314,7 @@ const Navbar = () => {
               <AnimatePresence>
                 {totalItems > 0 && (
                   <motion.span
+                    key="cart-badge"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
@@ -323,11 +329,12 @@ const Navbar = () => {
         </motion.nav>
 
         {/* ========================= */}
-        {/* MEGA MENU DESKTOP (Luxury Boutique version) */}
+        {/* MEGA MENU DESKTOP */}
         {/* ========================= */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
+              key="mega-menu"
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
@@ -345,7 +352,7 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[650px] max-w-[1600px] overflow-hidden">
-                {/* LEFT PANEL: COLECtII */}
+                {/* LEFT PANEL: COLECȚII */}
                 <div className="relative w-[340px] border-r border-zinc-100 bg-zinc-50/50 p-12 flex flex-col">
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
@@ -418,7 +425,7 @@ const Navbar = () => {
                 <div className="flex-1 overflow-y-auto bg-white p-20 scrollbar-hide">
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={activeParent?.id}
+                      key={activeParent?.id || "empty-center"}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -467,12 +474,15 @@ const Navbar = () => {
                   >
                     <AnimatePresence mode="wait">
                       <motion.img
-                        key={activeParent?.id}
+                        key={activeParent?.id || "empty-img"}
                         src={getValidImageUrl(activeParent?.image_url || null)}
                         initial={{ opacity: 0, scale: 1.1 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.05 }}
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{
+                          duration: 0.8,
+                          ease: [0.16, 1, 0.3, 1],
+                        }}
                         className="absolute inset-0 h-full w-full object-cover will-change-transform"
                       />
                     </AnimatePresence>
@@ -483,7 +493,7 @@ const Navbar = () => {
                       <motion.div
                         initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
-                        key={`info-${activeParent?.id}`}
+                        key={`info-${activeParent?.id || "empty"}`}
                         transition={{ delay: 0.2, duration: 0.6 }}
                       >
                         <div className="flex items-center gap-4 mb-6">
@@ -524,6 +534,7 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
+            key="mobile-menu"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
@@ -547,12 +558,14 @@ const Navbar = () => {
                   {categories.map((cat) => (
                     <button
                       key={cat.id}
-                      onClick={() =>
-                        cat.subcategories?.length
-                          ? setMobileView({ parent: cat })
-                          : (navigate(`/category/${cat.slug}`),
-                            setMobileOpen(false))
-                      }
+                      onClick={() => {
+                        if (cat.subcategories?.length) {
+                          setMobileView({ parent: cat });
+                        } else {
+                          navigate(`/category/${cat.slug}`);
+                          setMobileOpen(false);
+                        }
+                      }}
                       className="flex items-center justify-between rounded-2xl bg-zinc-50/50 p-6 text-left active:bg-zinc-100 transition-colors"
                     >
                       <span className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">

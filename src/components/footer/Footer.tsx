@@ -5,11 +5,39 @@ import { motion } from "framer-motion";
 
 const Footer = () => {
   const { language } = useLanguage();
+
+  // Helper pentru traducere stabil
   const t = (ro: string, en: string) => (language === "en" ? en : ro);
+
+  // Liste de date extrase pentru a evita recrearea lor la fiecare render și pentru curățenia codului
+  const collectionLinks = [
+    { name: "Archive", path: "/category/archive" },
+    { name: "New In", path: "/category/new-in" },
+    { name: "Limited", path: "/category/limited" },
+    { name: "Bespoke", path: "/category/bespoke" },
+  ];
+
+  const supportLinks = [
+    { name: t("Ghid Mărimi", "Size Guide"), path: "/size-guide" },
+    { name: t("Livrare", "Shipping"), path: "/shipping" },
+    { name: t("Retur", "Returns"), path: "/returns" },
+    { name: t("Termeni", "Terms"), path: "/terms" },
+  ];
+
+  const socialLinks = [
+    { Icon: Instagram, href: "https://instagram.com/evem", label: "Instagram" },
+    { Icon: Mail, href: "mailto:hello@evem-boutique.ro", label: "Email" },
+  ];
+
+  const legalLinks = [
+    { name: "Privacy", path: "/privacy" },
+    { name: "Cookies", path: "/cookies" },
+    { name: "ANPC", path: "https://anpc.ro", external: true },
+  ];
 
   return (
     <footer className="w-full mt-20 relative overflow-hidden bg-[var(--background)]">
-      {/* 1. NEWSLETTER SECTION (Light & Clean) */}
+      {/* 1. NEWSLETTER SECTION */}
       <div className="bg-white pt-20 pb-24 md:pb-32 px-6">
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
           <motion.div
@@ -40,11 +68,12 @@ const Footer = () => {
               type="email"
               required
               placeholder={t("Adresa ta de email", "Your email address")}
-              className="w-full bg-transparent border-b-2 border-zinc-100 py-4 pr-12 text-sm md:text-base outline-none focus:border-[var(--royal-violet)] transition-all duration-500 placeholder:text-zinc-300 font-medium"
+              className="w-full bg-transparent border-b-2 border-zinc-100 py-4 pr-12 text-sm md:text-base outline-none focus:border-[var(--royal-violet)] transition-all duration-500 placeholder:text-zinc-300 font-medium text-zinc-900"
             />
             <button
               type="submit"
-              className="absolute right-0 top-1/2 -translate-y-1/2 size-10 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg"
+              aria-label="Subscribe"
+              className="absolute right-0 top-1/2 -translate-y-1/2 size-10 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-lg transform-gpu"
               style={{ background: "var(--primary-gradient)" }}
             >
               <ArrowRight size={18} strokeWidth={2.5} />
@@ -53,26 +82,26 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* 2. ARCHITECTURAL CURVE (Transiția Dinamică) */}
+      {/* 2. ARCHITECTURAL CURVE */}
       <div
-        className="relative h-16 md:h-24 w-full bg-white transition-colors duration-700"
+        className="relative h-16 md:h-24 w-full bg-white"
         style={{ color: "var(--dark-amethyst)" }}
       >
         <svg
           viewBox="0 0 1440 120"
-          className="absolute bottom-0 w-full h-full preserve-3d"
+          className="absolute bottom-0 w-full h-full"
           preserveAspectRatio="none"
         >
           <path
             fill="currentColor"
             d="M0,120 C480,0 960,0 1440,120 L1440,120 L0,120 Z"
-          ></path>
+          />
         </svg>
       </div>
 
-      {/* 3. MAIN FOOTER (Deep Amethyst / Dynamic Theme) */}
+      {/* 3. MAIN FOOTER CONTENT */}
       <div
-        className="text-white pt-12 pb-10 px-6 transition-colors duration-700"
+        className="text-white pt-12 pb-10 px-6"
         style={{ backgroundColor: "var(--dark-amethyst)" }}
       >
         <div className="max-w-[1400px] mx-auto">
@@ -92,14 +121,17 @@ const Footer = () => {
                 )}
               </p>
               <div className="flex gap-4">
-                {[Instagram, Mail].map((Icon, i) => (
+                {socialLinks.map((social) => (
                   <a
-                    key={i}
-                    href="#"
-                    className="size-12 rounded-2xl border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-500"
-                    style={{ backgroundColor: "var(--dark-amethyst-2)" }}
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="size-12 rounded-2xl border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all duration-500 transform-gpu"
+                    style={{ backgroundColor: "rgba(255,255,255,0.03)" }}
                   >
-                    <Icon size={18} strokeWidth={1.5} />
+                    <social.Icon size={18} strokeWidth={1.5} />
                   </a>
                 ))}
               </div>
@@ -115,16 +147,16 @@ const Footer = () => {
                   {t("Colecții", "Collections")}
                 </h4>
                 <ul className="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-white/50">
-                  {["Archive", "New In", "Limited", "Bespoke"].map((item) => (
-                    <li key={item}>
+                  {collectionLinks.map((link) => (
+                    <li key={link.name}>
                       <Link
-                        to="#"
+                        to={link.path}
                         className="hover:text-white transition-colors flex items-center gap-1 group"
                       >
-                        {item}{" "}
+                        {link.name}
                         <ArrowUpRight
                           size={10}
-                          className="opacity-0 group-hover:opacity-100 transition-all"
+                          className="opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all"
                         />
                       </Link>
                     </li>
@@ -139,18 +171,16 @@ const Footer = () => {
                   {t("Asistență", "Support")}
                 </h4>
                 <ul className="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-white/50">
-                  {["Size Guide", "Shipping", "Returns", "Terms"].map(
-                    (item) => (
-                      <li key={item}>
-                        <Link
-                          to="#"
-                          className="hover:text-white transition-colors"
-                        >
-                          {item}
-                        </Link>
-                      </li>
-                    ),
-                  )}
+                  {supportLinks.map((link) => (
+                    <li key={link.name}>
+                      <Link
+                        to={link.path}
+                        className="hover:text-white transition-colors"
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -169,7 +199,7 @@ const Footer = () => {
                   className="font-black"
                   style={{ color: "var(--mauve-magic)" }}
                 >
-                  hello@Evem-boutique.ro
+                  hello@evem-boutique.ro
                 </p>
                 <div
                   className="flex items-center gap-2 lg:justify-end pt-2"
@@ -195,15 +225,27 @@ const Footer = () => {
             </div>
 
             <div className="flex gap-8">
-              {["Privacy", "Cookies", "ANPC"].map((item) => (
-                <Link
-                  key={item}
-                  to="#"
-                  className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 hover:opacity-100 transition-opacity"
-                >
-                  {item}
-                </Link>
-              ))}
+              {legalLinks.map((link) =>
+                link.external ? (
+                  <a
+                    key={link.name}
+                    href={link.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 hover:opacity-100 transition-opacity"
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 hover:opacity-100 transition-opacity"
+                  >
+                    {link.name}
+                  </Link>
+                ),
+              )}
             </div>
           </div>
         </div>
