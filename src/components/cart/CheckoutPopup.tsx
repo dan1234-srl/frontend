@@ -107,15 +107,8 @@ const CheckoutPopup = ({
     null,
   );
   const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
-
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setAppliedVoucher(initialDiscount);
-      setStep(1);
-    }
-  }, [isOpen, initialDiscount]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     email: "",
@@ -126,7 +119,48 @@ const CheckoutPopup = ({
     city: "",
     county: "",
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Idempotency key generată per sesiune de deschidere popup
+  const idempotencyKey = useMemo(() => crypto.randomUUID(), [isOpen]);
+
+  // Sincronizare inițială date user și voucher
+  useEffect(() => {
+    if (isOpen) {
+      setAppliedVoucher(initialDiscount);
+      setStep(1);
+      setErrors({});
+
+      if (user) {
+        setFormData((prev) => ({
+          ...prev,
+          email: user.email || "",
+          firstName: user.first_name || "",
+          lastName: user.last_name || "",
+          phone: (user.phone || "").replace(/\s+/g, ""),
+        }));
+
+        if (user.addresses && user.addresses.length > 0) {
+          const def =
+            user.addresses.find((a: any) => a.is_default) || user.addresses[0];
+          handleSelectAddress(def);
+        } else {
+          setAddressMode("new");
+        }
+      }
+    }
+  }, [isOpen, user, initialDiscount]);
+
+  const handleSelectAddress = (addr: any) => {
+    setSelectedAddressId(addr.id);
+    setFormData((prev) => ({
+      ...prev,
+      street: addr.street,
+      city: addr.city,
+      county: addr.county,
+    }));
+    setAddressMode("select");
+    setErrors({});
+  };
 
   const totals = useMemo(() => {
     const itemsSum = cartItems.reduce(
@@ -139,45 +173,14 @@ const CheckoutPopup = ({
     return { subtotal: base, discount: disc, total: Math.max(base - disc, 0) };
   }, [cartItems, propSubtotal, appliedVoucher]);
 
-  useEffect(() => {
-    if (isOpen && user) {
-      setFormData((prev) => ({
-        ...prev,
-        email: user.email || "",
-        firstName: user.first_name || "",
-        lastName: user.last_name || "",
-        phone: (user.phone || "").replace(/^\+4/, ""),
-      }));
-
-      if (user.addresses && user.addresses.length > 0) {
-        const def =
-          user.addresses.find((a: any) => a.is_default) || user.addresses[0];
-        handleSelectAddress(def);
-      } else {
-        setAddressMode("new");
-      }
-    }
-  }, [isOpen, user]);
-
-  const handleSelectAddress = (addr: any) => {
-    setSelectedAddressId(addr.id);
-    setFormData((prev) => ({
-      ...prev,
-      street: addr.street,
-      city: addr.city,
-      county: addr.county,
-    }));
-    setAddressMode("select");
-  };
-
   const validate = () => {
     const e: Record<string, string> = {};
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
       e.email = "Email invalid";
     if (formData.firstName.length < 2) e.firstName = "Min. 2 caractere";
     if (formData.lastName.length < 2) e.lastName = "Min. 2 caractere";
-    if (!formData.phone.match(/^0[0-9]{9}$/))
-      e.phone = "Format corect: 07xxxxxxxx";
+    if (!formData.phone.match(/^(07|\+407|407)[0-9]{8}$/))
+      e.phone = "Format: 07xxxxxxxx";
     if (formData.street.length < 5) e.street = "Adresă prea scurtă";
     if (!formData.city) e.city = "Oraș obligatoriu";
     if (!formData.county) e.county = "Județ obligatoriu";
@@ -190,24 +193,20 @@ const CheckoutPopup = ({
     setLoading(true);
 
     try {
-      // 1. Pregătim payload-ul exact conform schemelor Pydantic de pe Backend
       const payload = {
         items: cartItems.map((i: any) => ({
-          // Asigură-te că aceste nume de proprietăți (id, sku) sunt EXACT ca în obiectul tău de cart
-          sku: i.sku || i.product_sku,
+          sku: (i.sku || i.product_sku).toUpperCase().trim(),
           quantity: parseInt(i.quantity),
         })),
         shipping_details: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-          email: formData.email,
-          // Backend-ul cere un 'dict' (obiect) pentru address
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          phone: formData.phone.replace(/\s+/g, ""),
+          email: formData.email.toLowerCase().trim(),
           address: {
-            street: formData.street,
-            city: formData.city,
-            county: formData.county,
-            full_address: `${formData.street}, ${formData.city}, ${formData.county}`,
+            street: formData.street.trim(),
+            city: formData.city.trim(),
+            county: formData.county.trim(),
           },
         },
         payment_method: paymentMethod,
@@ -215,13 +214,14 @@ const CheckoutPopup = ({
         save_address: shouldSaveAddress && addressMode === "new",
       };
 
-      console.log("Trimitere payload:", payload); // Debug: verifică în consolă dacă SKU-ul e acolo
-
       const res = await fetch(
         `${API_BASE_URL}/api/v1/orders/create-checkout-session`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
           credentials: "include",
           body: JSON.stringify(payload),
         },
@@ -230,20 +230,14 @@ const CheckoutPopup = ({
       const data = await res.json();
 
       if (!res.ok) {
-        // Dacă eroarea este de validare (422), o afișăm detaliat în consolă
-        if (res.status === 422) {
-          console.error("Eroare Validare Backend:", data.detail);
-        }
-        throw new Error(data.detail || "Eroare la procesarea comenzii.");
+        const errorMsg = Array.isArray(data.detail)
+          ? data.detail.map((d: any) => d.msg).join(", ")
+          : data.detail;
+        throw new Error(errorMsg || "Eroare la procesarea comenzii.");
       }
 
       if (data.url) {
-        window.location.href = data.url; // Redirecționare către Stripe
-      } else {
-        // Pentru COD (Cash on Delivery)
-        toast.success("Comandă plasată cu succes!");
-        onClose();
-        window.location.href = `/order-confirmation?order_id=${data.order_id}`;
+        window.location.href = data.url;
       }
     } catch (err: any) {
       toast.error(err.message);
@@ -271,7 +265,7 @@ const CheckoutPopup = ({
             transition={{ type: "spring", damping: 32, stiffness: 250 }}
             className="relative z-[801] w-full max-w-[1250px] h-[100dvh] lg:h-full bg-white flex flex-col lg:flex-row shadow-2xl overflow-hidden"
           >
-            {/* --- SECTIUNEA STANGA: FORMULARE (RESPONSIVE SCROLL) --- */}
+            {/* --- SECTIUNEA STANGA: FORMULARE --- */}
             <div className="flex-1 overflow-y-auto px-6 py-8 lg:px-16 lg:py-12 custom-scrollbar text-left bg-white order-2 lg:order-1">
               <header className="flex justify-between items-center mb-10">
                 <div>
@@ -309,7 +303,7 @@ const CheckoutPopup = ({
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-10"
                   >
-                    {/* --- SELECTIE ADRESE EXISTENTE --- */}
+                    {/* ADRESE SALVATE */}
                     {user?.addresses && user.addresses.length > 0 && (
                       <div className="space-y-4">
                         <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
@@ -368,6 +362,7 @@ const CheckoutPopup = ({
                       </div>
                     )}
 
+                    {/* FORMULAR DATE */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <PremiumInput
                         label="Email"
@@ -445,7 +440,7 @@ const CheckoutPopup = ({
                           htmlFor="save-address"
                           className="text-[10px] font-black uppercase tracking-widest text-zinc-500 cursor-pointer"
                         >
-                          Salvează această adresă în contul meu
+                          Salvează adresa în cont
                         </label>
                       </div>
                     )}
@@ -485,7 +480,7 @@ const CheckoutPopup = ({
                             id: "cod",
                             title: "Ramburs",
                             icon: Truck,
-                            desc: "Plată la curier",
+                            desc: "Plată la livrare",
                           },
                         ].map((m) => (
                           <button
@@ -554,7 +549,7 @@ const CheckoutPopup = ({
               </AnimatePresence>
             </div>
 
-            {/* --- SECTIUNEA DREAPTA: SUMAR (AFISAT SUS PE MOBIL) --- */}
+            {/* --- SECTIUNEA DREAPTA: SUMAR --- */}
             <div className="w-full lg:w-[480px] bg-zinc-50 border-b lg:border-b-0 lg:border-l border-zinc-100 p-6 lg:p-12 flex flex-col text-left order-1 lg:order-2">
               <header className="flex items-center justify-between lg:justify-start gap-3 mb-8 lg:mb-12">
                 <div className="flex items-center gap-3">
@@ -607,14 +602,12 @@ const CheckoutPopup = ({
                     {formatCurrency(totals.subtotal)}
                   </span>
                 </div>
-
                 {totals.discount > 0 && (
                   <div className="flex justify-between text-[10px] font-black uppercase text-rose-500">
                     <span>Discount Voucher</span>
                     <span>-{formatCurrency(totals.discount)}</span>
                   </div>
                 )}
-
                 <div className="flex justify-between text-[10px] font-black uppercase text-emerald-600">
                   <span>Transport</span>
                   <span>GRATUIT</span>
