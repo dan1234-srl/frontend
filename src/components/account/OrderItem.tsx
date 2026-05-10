@@ -62,18 +62,33 @@ export const OrderItem = ({ order }: any) => {
   const handleDownloadDocs = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
+
     const isFinal = ["SHIPPED", "DELIVERED"].includes(
       order.status?.toUpperCase(),
     );
-    const docName = isFinal ? "Factura Fiscală" : "Proforma";
+    const docName = isFinal ? "Factura" : "Proforma";
 
     toast.promise(
       new Promise(async (resolve, reject) => {
         try {
           const response = await fetch(
             `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
+            {
+              method: "GET",
+              // FIX PENTRU EROAREA 401: Trimite cookie-urile de sesiune
+              credentials: "include",
+              headers: {
+                Accept: "application/pdf",
+              },
+            },
           );
-          if (!response.ok) throw new Error();
+
+          if (response.status === 401)
+            throw new Error(
+              "Sesiune expirată. Vă rugăm să vă reautentificați.",
+            );
+          if (!response.ok) throw new Error("Documentul nu este generat încă.");
+
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement("a");
@@ -81,19 +96,19 @@ export const OrderItem = ({ order }: any) => {
           link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
           document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
+          link.parentNode?.removeChild(link);
           window.URL.revokeObjectURL(url);
           resolve(true);
-        } catch {
-          reject();
+        } catch (err: any) {
+          reject(err);
         } finally {
           setIsDownloading(false);
         }
       }),
       {
-        loading: `Se pregătește documentul...`,
-        success: `${docName} descărcată.`,
-        error: "Documentul nu a putut fi descărcat.",
+        loading: `Se pregătește ${docName}...`,
+        success: `${docName} a fost descărcată.`,
+        error: (err) => err.message || "Eroare la descărcare.",
       },
     );
   };
@@ -106,16 +121,16 @@ export const OrderItem = ({ order }: any) => {
         animate={{ opacity: 1, y: 0 }}
         className="group relative bg-white border border-zinc-100 p-8 pt-10 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:shadow-zinc-200/50 transition-all duration-500 flex flex-col justify-between"
       >
-        <div className="relative z-10">
+        <div className="relative z-10 text-left">
           <header className="flex justify-between items-start mb-10">
-            <div className="space-y-2 text-left">
+            <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <div className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--royal-violet)] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--royal-violet)]"></span>
                 </div>
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">
-                  REF: {order.order_number?.split("-").pop()}
+                  #{order.order_number?.split("-").pop()}
                 </p>
               </div>
               <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)]">
@@ -127,7 +142,7 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </header>
 
-          <div className="flex gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar text-left">
+          <div className="flex gap-3 mb-10 overflow-x-auto pb-4 no-scrollbar">
             {order.items?.map((item: any, i: number) => (
               <div key={i} className="relative shrink-0">
                 <div className="size-16 rounded-2xl overflow-hidden border border-zinc-100 bg-zinc-50">
@@ -144,11 +159,11 @@ export const OrderItem = ({ order }: any) => {
             ))}
           </div>
 
-          <div className="space-y-4 mb-10 text-left">
+          <div className="space-y-4 mb-10">
             <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400">
               <span className="flex items-center gap-2">
                 <Truck size={12} className="text-[var(--royal-violet)]" />{" "}
-                Tracking Status
+                Expediție
               </span>
               <span className="text-[var(--dark-amethyst)] font-bold">
                 {order.status}
@@ -156,15 +171,17 @@ export const OrderItem = ({ order }: any) => {
             </div>
             <div className="flex gap-2">
               {[1, 2, 3, 4].map((step) => (
-                <div key={step} className="flex-1">
-                  <div
-                    className="h-1.5 rounded-full transition-all duration-1000"
-                    style={{
-                      background:
-                        step <= currentStepIndex
-                          ? "var(--primary-gradient)"
-                          : "#F4F4F5",
+                <div
+                  key={step}
+                  className="flex-1 h-1.5 rounded-full bg-zinc-100 relative overflow-hidden"
+                >
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: step <= currentStepIndex ? "100%" : "0%",
                     }}
+                    className="h-full"
+                    style={{ background: "var(--primary-gradient)" }}
                   />
                 </div>
               ))}
@@ -174,9 +191,9 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:bg-black active:scale-[0.98] shadow-lg shadow-zinc-200"
+          className="w-full h-14 rounded-2xl bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:bg-black active:scale-[0.98] shadow-lg"
         >
-          Vezi Detalii <ChevronRight size={14} />
+          Detalii Achiziție <ChevronRight size={14} />
         </button>
       </motion.article>
 
@@ -186,8 +203,8 @@ export const OrderItem = ({ order }: any) => {
         title="Informații Comandă"
         description={order.order_number}
       >
-        {/* REPARARE FINALĂ: bg-white pur, fără opacitate sau blur */}
-        <div className="space-y-10 py-4 bg-white relative z-50 text-left w-full">
+        {/* MODAL FIX: bg-white pur, z-index ridicat, fara blur */}
+        <div className="space-y-10 py-4 bg-white relative z-50 text-left w-full overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-5 flex items-center gap-2">
@@ -229,13 +246,13 @@ export const OrderItem = ({ order }: any) => {
 
           <div className="space-y-5">
             <p className="text-[9px] font-black uppercase text-zinc-400 ml-2 tracking-widest">
-              Articole Comandate
+              Produse Selectate
             </p>
             <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-5 p-5 bg-white border border-zinc-100 rounded-[2rem] hover:border-zinc-300 transition-all"
+                  className="flex items-center gap-5 p-5 bg-white border border-zinc-100 rounded-[2rem]"
                 >
                   <img
                     src={getValidImageUrl(item)}
@@ -274,7 +291,7 @@ export const OrderItem = ({ order }: any) => {
             </button>
             <div className="text-center sm:text-right">
               <p className="text-[10px] font-black uppercase text-zinc-300 tracking-widest mb-1">
-                Total Tranzacție
+                Total Plată
               </p>
               <p className="heading-serif text-4xl font-bold text-[var(--dark-amethyst)]">
                 {order.total_amount?.toLocaleString()} RON

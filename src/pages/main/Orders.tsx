@@ -43,7 +43,7 @@ const Orders = () => {
         setOrders(Array.isArray(data) ? data : []);
       }
     } catch (error) {
-      toast.error("Eroare de sincronizare.");
+      toast.error("Sincronizarea istoricului a eșuat.");
     } finally {
       setIsLoading(false);
     }
@@ -61,17 +61,12 @@ const Orders = () => {
     );
   }, [searchTerm, orders]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col font-sans">
       <Header />
 
       <main className="flex-1 pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-16">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-16 text-left">
           <div className="space-y-6">
             <button
               onClick={() => navigate("/account")}
@@ -97,8 +92,8 @@ const Orders = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Nr. comandă sau status..."
-              className="w-full bg-white border border-zinc-100 rounded-2xl py-5 pl-12 pr-6 text-xs font-bold uppercase tracking-widest outline-none shadow-sm focus:border-[var(--royal-violet)] transition-all"
+              placeholder="Caută după referință..."
+              className="w-full bg-white border border-zinc-100 rounded-2xl py-5 pl-12 pr-6 text-xs font-bold uppercase tracking-widest outline-none shadow-sm focus:border-zinc-300 transition-all"
             />
           </div>
         </div>
@@ -114,7 +109,7 @@ const Orders = () => {
             <AnimatePresence mode="popLayout">
               {filteredOrders.length > 0 ? (
                 <motion.div
-                  key="orders-list" // KEY OBLIGATORIE PENTRU ANIMATEPRESENCE
+                  key="orders-grid-container" // Key esențială
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -126,7 +121,7 @@ const Orders = () => {
                 </motion.div>
               ) : (
                 <motion.div
-                  key="no-orders" // KEY OBLIGATORIE
+                  key="empty-orders-state" // Key esențială
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="py-40 text-center rounded-[3rem] border border-dashed border-zinc-100 bg-zinc-50/30"
@@ -147,17 +142,17 @@ const Orders = () => {
               <div className="flex justify-center items-center gap-10 border-t border-zinc-100 pt-12">
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
+                  onClick={() => setCurrentPage((p) => p - 1)}
                   className="size-14 rounded-full border border-zinc-100 flex items-center justify-center hover:bg-black hover:text-white transition-all disabled:opacity-20 bg-white"
                 >
                   <ChevronLeft size={20} />
                 </button>
-                <p className="text-2xl font-black text-[var(--dark-amethyst)]">
+                <span className="text-2xl font-black text-[var(--dark-amethyst)]">
                   {currentPage}
-                </p>
+                </span>
                 <button
                   disabled={orders.length < ordersPerPage}
-                  onClick={() => handlePageChange(currentPage + 1)}
+                  onClick={() => setCurrentPage((p) => p + 1)}
                   className="size-14 rounded-full border border-zinc-100 flex items-center justify-center hover:bg-black hover:text-white transition-all disabled:opacity-20 bg-white"
                 >
                   <ChevronRight size={20} />
