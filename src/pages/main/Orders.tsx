@@ -40,11 +40,10 @@ const Orders = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        // Ne asigurăm că setăm array-ul
         setOrders(Array.isArray(data) ? data : []);
       }
     } catch (error) {
-      toast.error("Sincronizarea istoricului a eșuat.");
+      toast.error("Eroare de sincronizare.");
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +61,11 @@ const Orders = () => {
     );
   }, [searchTerm, orders]);
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-[#FDFDFD] flex flex-col font-sans">
       <Header />
@@ -77,16 +81,11 @@ const Orders = () => {
                 size={14}
                 className="group-hover:-translate-x-1 transition-transform"
               />{" "}
-              Înapoi la Cont
+              Înapoi
             </button>
-            <div className="space-y-2">
-              <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-[var(--dark-amethyst)]">
-                Arhiva <span className="text-[var(--french-blue)]">Evem</span>
-              </h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-300 ml-1">
-                Istoric Comenzi & Documente Fiscale
-              </p>
-            </div>
+            <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-[var(--dark-amethyst)]">
+              Comenzile <span className="text-[var(--french-blue)]">mele</span>
+            </h1>
           </div>
 
           <div className="relative w-full lg:w-96 group">
@@ -98,7 +97,7 @@ const Orders = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Caută după referință..."
+              placeholder="Nr. comandă sau status..."
               className="w-full bg-white border border-zinc-100 rounded-2xl py-5 pl-12 pr-6 text-xs font-bold uppercase tracking-widest outline-none shadow-sm focus:border-[var(--royal-violet)] transition-all"
             />
           </div>
@@ -115,10 +114,10 @@ const Orders = () => {
             <AnimatePresence mode="popLayout">
               {filteredOrders.length > 0 ? (
                 <motion.div
-                  key="orders-grid" // <--- REZOLVĂ CRASH-UL FRAMER MOTION
+                  key="orders-list" // KEY OBLIGATORIE PENTRU ANIMATEPRESENCE
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
+                  exit={{ opacity: 0 }}
                   className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
                 >
                   {filteredOrders.map((order) => (
@@ -127,10 +126,9 @@ const Orders = () => {
                 </motion.div>
               ) : (
                 <motion.div
-                  key="orders-empty" // <--- REZOLVĂ CRASH-UL FRAMER MOTION
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
+                  key="no-orders" // KEY OBLIGATORIE
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   className="py-40 text-center rounded-[3rem] border border-dashed border-zinc-100 bg-zinc-50/30"
                 >
                   <ShoppingBag
@@ -139,7 +137,7 @@ const Orders = () => {
                     strokeWidth={1}
                   />
                   <h3 className="heading-serif text-3xl italic text-zinc-400">
-                    Momentan nu există comenzi
+                    Nicio comandă găsită
                   </h3>
                 </motion.div>
               )}
@@ -149,22 +147,17 @@ const Orders = () => {
               <div className="flex justify-center items-center gap-10 border-t border-zinc-100 pt-12">
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
+                  onClick={() => handlePageChange(currentPage - 1)}
                   className="size-14 rounded-full border border-zinc-100 flex items-center justify-center hover:bg-black hover:text-white transition-all disabled:opacity-20 bg-white"
                 >
                   <ChevronLeft size={20} />
                 </button>
-                <div className="text-center min-w-20">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-300">
-                    Pagina
-                  </p>
-                  <p className="text-2xl font-black text-[var(--dark-amethyst)]">
-                    {currentPage}
-                  </p>
-                </div>
+                <p className="text-2xl font-black text-[var(--dark-amethyst)]">
+                  {currentPage}
+                </p>
                 <button
                   disabled={orders.length < ordersPerPage}
-                  onClick={() => setCurrentPage((p) => p + 1)}
+                  onClick={() => handlePageChange(currentPage + 1)}
                   className="size-14 rounded-full border border-zinc-100 flex items-center justify-center hover:bg-black hover:text-white transition-all disabled:opacity-20 bg-white"
                 >
                   <ChevronRight size={20} />
