@@ -10,8 +10,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import Navbar from "@/components/navbar/Navbar"; // Folosim Navbar-ul tau actualizat
 import Footer from "@/components/footer/Footer";
+import Navbar from "@/components/header/Navbar";
 
 const SuccessPage = () => {
   const [searchParams] = useSearchParams();
