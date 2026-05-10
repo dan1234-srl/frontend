@@ -4,7 +4,6 @@ import {
   MapPin,
   Clock,
   Download,
-  Package,
   CreditCard,
   Calendar,
   X,
@@ -50,7 +49,7 @@ export const OrderItem = ({ order }: any) => {
     const s = order.status?.toUpperCase();
     if (s === "DELIVERED") return 4;
     if (s === "SHIPPED") return 3;
-    if (["PROCESSING", "PAID", "CONFIRMED"].includes(s)) return 2;
+    if (["PROCESSING", "PAID", "CONFIRMED", "PROCESSING"].includes(s)) return 2;
     return 1;
   })();
 
@@ -63,39 +62,35 @@ export const OrderItem = ({ order }: any) => {
     );
     const docName = isFinal ? "Factura" : "Proforma";
 
+    // Corecție: Punem setIsDownloading(false) ÎN INTERIORUL promise-ului pentru a fi siguri
     toast.promise(
-      async () => {
-        // Folosim fetch pentru a evita blocarea pop-up-urilor
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-          {
-            method: "GET",
-          },
-        );
+      (async () => {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
+          );
+          if (!response.ok)
+            throw new Error("Eroare la generarea documentului.");
 
-        if (!response.ok) {
-          if (response.status === 404)
-            throw new Error("Documentul nu a fost generat încă.");
-          throw new Error("Eroare server.");
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } finally {
+          setIsDownloading(false);
         }
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      },
+      })(),
       {
         loading: `Se generează ${docName}...`,
-        success: `${docName} descărcată.`,
-        error: (err) => err.message,
+        success: `${docName} a fost descărcată.`,
+        error: "Eroare la descărcare.",
       },
     );
-    setIsDownloading(false);
   };
 
   return (
@@ -104,17 +99,17 @@ export const OrderItem = ({ order }: any) => {
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        // Am eliminat overflow-hidden pentru a nu taia bulina
-        className="group border border-zinc-100 p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 bg-white hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)] flex flex-col justify-between relative"
+        // pt-4 previne taierea bulinei la hover sau animatie
+        className="group border border-zinc-100 p-6 md:p-8 pt-8 rounded-[2.5rem] transition-all duration-500 bg-white hover:shadow-2xl flex flex-col justify-between relative"
       >
-        <div>
-          <header className="flex justify-between items-start mb-8 pt-1">
+        <div className="relative z-10">
+          <header className="flex justify-between items-start mb-8">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                {/* Bulina cu ping pentru efect premium */}
-                <span className="relative flex h-2 w-2">
+                {/* Bulina fixată cu padding-top pe container */}
+                <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--royal-violet)] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--royal-violet)]"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--royal-violet)]"></span>
                 </span>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
                   #{order.order_number?.split("-").pop()}
@@ -140,14 +135,14 @@ export const OrderItem = ({ order }: any) => {
           <div className="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar">
             {order.items?.map((item: any, i: number) => (
               <div key={i} className="relative shrink-0">
-                <div className="size-14 rounded-2xl overflow-hidden border border-zinc-50 bg-zinc-50 shadow-inner">
+                <div className="size-14 rounded-2xl overflow-hidden border border-zinc-50 bg-zinc-50">
                   <img
                     src={getValidImageUrl(item)}
                     className="w-full h-full object-cover"
                     alt=""
                   />
                 </div>
-                <span className="absolute -top-2 -right-2 bg-[var(--dark-amethyst)] text-white text-[8px] font-black size-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                <span className="absolute -top-2 -right-2 bg-[var(--dark-amethyst)] text-white text-[8px] font-black size-5 rounded-full flex items-center justify-center border-2 border-white">
                   {item.quantity}
                 </span>
               </div>
@@ -184,7 +179,7 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:shadow-lg active:scale-[0.98]"
+          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-[0.98]"
           style={{ background: "var(--primary-gradient)" }}
         >
           Detalii & Documente <ChevronRight size={14} />
@@ -195,20 +190,20 @@ export const OrderItem = ({ order }: any) => {
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
         title="Rezumat Achiziție"
-        description={`Comanda ${order.order_number}`}
+        description={`Referință: ${order.order_number}`}
       >
-        {/* Container principal cu fundal alb forțat pentru a elimina transparența */}
-        <div className="space-y-10 py-2 bg-white rounded-b-[2.5rem] relative z-[1001]">
+        {/* bg-white și z-index forțat pentru a elimina transparența */}
+        <div className="space-y-10 py-4 bg-white rounded-b-[2rem] relative z-[1001]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
                 <MapPin size={12} className="text-[var(--royal-violet)]" />{" "}
-                Adresa de Livrare
+                Livrare
               </p>
               <p className="font-black text-sm text-[var(--dark-amethyst)]">
                 {order.customer_name}
               </p>
-              <p className="text-xs text-zinc-500 leading-relaxed italic mt-1">
+              <p className="text-xs text-zinc-500 italic mt-1 leading-relaxed">
                 {(() => {
                   try {
                     const a =
@@ -250,9 +245,9 @@ export const OrderItem = ({ order }: any) => {
 
           <div className="space-y-4">
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">
-              Articole Comandate
+              Produse
             </p>
-            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
@@ -260,7 +255,7 @@ export const OrderItem = ({ order }: any) => {
                 >
                   <img
                     src={getValidImageUrl(item)}
-                    className="size-14 rounded-2xl object-cover shadow-sm"
+                    className="size-14 rounded-2xl object-cover"
                     alt=""
                   />
                   <div className="flex-1">
@@ -271,14 +266,12 @@ export const OrderItem = ({ order }: any) => {
                       Cantitate: {item.quantity}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-black text-xs">
-                      {(
-                        item.price_at_purchase || item.unit_price_at_purchase
-                      )?.toLocaleString()}{" "}
-                      RON
-                    </p>
-                  </div>
+                  <p className="font-black text-xs">
+                    {(
+                      item.price_at_purchase || item.unit_price_at_purchase
+                    )?.toLocaleString()}{" "}
+                    RON
+                  </p>
                 </div>
               ))}
             </div>
@@ -297,7 +290,7 @@ export const OrderItem = ({ order }: any) => {
             </button>
             <div className="text-center sm:text-right">
               <p className="text-[9px] font-black uppercase text-zinc-300 tracking-widest mb-1">
-                Total Tranzacție
+                Total Achitat
               </p>
               <p className="heading-serif text-4xl font-bold text-[var(--dark-amethyst)]">
                 {order.total_amount?.toLocaleString()}{" "}
