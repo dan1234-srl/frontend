@@ -43,7 +43,7 @@ const Orders = () => {
         setOrders(Array.isArray(data) ? data : []);
       }
     } catch (error) {
-      toast.error("Sincronizarea istoricului a eșuat.");
+      toast.error("Eroare de sincronizare.");
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +70,7 @@ const Orders = () => {
           <div className="space-y-6">
             <button
               onClick={() => navigate("/account")}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-[var(--dark-amethyst)] transition-all group"
+              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-zinc-900 transition-all group"
             >
               <ArrowLeft
                 size={14}
@@ -78,30 +78,30 @@ const Orders = () => {
               />{" "}
               Înapoi
             </button>
-            <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-[var(--dark-amethyst)]">
-              Comenzile <span className="text-[var(--french-blue)]">mele</span>
+            <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-zinc-900">
+              Arhiva <span className="text-zinc-400">meă</span>
             </h1>
           </div>
 
           <div className="relative w-full lg:w-96 group">
             <Search
               size={16}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-black transition-colors"
             />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Caută după referință..."
+              placeholder="Nr. comandă sau status..."
               className="w-full bg-white border border-zinc-100 rounded-2xl py-5 pl-12 pr-6 text-xs font-bold uppercase tracking-widest outline-none shadow-sm focus:border-zinc-300 transition-all"
             />
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-96 rounded-[2.5rem] bg-zinc-50" />
+              <Skeleton key={i} className="h-80 rounded-[2.5rem] bg-zinc-50" />
             ))}
           </div>
         ) : (
@@ -109,11 +109,10 @@ const Orders = () => {
             <AnimatePresence mode="popLayout">
               {filteredOrders.length > 0 ? (
                 <motion.div
-                  key="orders-grid-container" // Key esențială
+                  key="orders-grid"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
+                  className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
                 >
                   {filteredOrders.map((order) => (
                     <OrderItem key={order.id} order={order} />
@@ -121,9 +120,7 @@ const Orders = () => {
                 </motion.div>
               ) : (
                 <motion.div
-                  key="empty-orders-state" // Key esențială
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  key="empty"
                   className="py-40 text-center rounded-[3rem] border border-dashed border-zinc-100 bg-zinc-50/30"
                 >
                   <ShoppingBag
@@ -139,7 +136,7 @@ const Orders = () => {
             </AnimatePresence>
 
             {(orders.length >= ordersPerPage || currentPage > 1) && (
-              <div className="flex justify-center items-center gap-10 border-t border-zinc-100 pt-12">
+              <div className="flex justify-center items-center gap-10 pt-12 border-t border-zinc-50">
                 <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => p - 1)}
@@ -147,7 +144,7 @@ const Orders = () => {
                 >
                   <ChevronLeft size={20} />
                 </button>
-                <span className="text-2xl font-black text-[var(--dark-amethyst)]">
+                <span className="text-2xl font-black text-zinc-900">
                   {currentPage}
                 </span>
                 <button
