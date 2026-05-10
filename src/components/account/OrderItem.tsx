@@ -4,9 +4,9 @@ import {
   MapPin,
   Clock,
   Download,
-  X,
-  Calendar,
   CreditCard,
+  Calendar,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -21,39 +21,67 @@ export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // Helper pentru imagini
+  // Helper Imagini
   const getValidImageUrl = (item: any) => {
     const source = item.product_image || item.product?.image_url;
     if (!source) return "/placeholder-jewelry.jpg";
     if (typeof source === "string" && source.startsWith("http")) return source;
     try {
       const parsed = typeof source === "string" ? JSON.parse(source) : source;
-      return parsed.main?.medium || parsed.url || "/placeholder-jewelry.jpg";
+      return (
+        parsed?.main?.medium ||
+        parsed?.url ||
+        parsed?.medium ||
+        "/placeholder-jewelry.jpg"
+      );
     } catch {
       return "/placeholder-jewelry.jpg";
     }
   };
 
+  // Helper Adresă (PREVINE EROAREA REACT #306)
+  const getSafeAddress = () => {
+    try {
+      if (!order.shipping_address) return "Adresă indisponibilă";
+      const a =
+        typeof order.shipping_address === "string"
+          ? JSON.parse(order.shipping_address)
+          : order.shipping_address;
+      if (typeof a !== "object") return String(order.shipping_address);
+
+      const parts = [a.street, a.city, a.county].filter(Boolean);
+      return parts.length > 0 ? parts.join(", ") : "Adresă nespecificată";
+    } catch {
+      return String(order.shipping_address || "Adresă invalidă");
+    }
+  };
+
+  const steps = [
+    { id: "PENDING", label: "Înregistrată" },
+    { id: "PROCESSING", label: "Pregătire" },
+    { id: "SHIPPED", label: "Expediată" },
+    { id: "DELIVERED", label: "Livrată" },
+  ];
+
   const currentStepIndex = (() => {
     const s = order.status?.toUpperCase();
     if (s === "DELIVERED") return 4;
     if (s === "SHIPPED") return 3;
-    if (["PROCESSING", "CONFIRMED", "PAID"].includes(s)) return 2;
+    if (["PROCESSING", "PAID", "CONFIRMED"].includes(s)) return 2;
     return 1;
   })();
 
-  // FUNCTIA DE DOWNLOAD CORECTATA (Fara randare Promise)
   const handleDownloadDocs = async () => {
     if (isDownloading) return;
+    setIsDownloading(true);
 
     const isFinal = ["SHIPPED", "DELIVERED"].includes(
-      order.status?.toUpperCase(),
+      order.status?.toUpperCase() || "",
     );
     const docName = isFinal ? "Factura" : "Proforma";
 
     toast.promise(
-      async () => {
-        setIsDownloading(true);
+      new Promise(async (resolve, reject) => {
         try {
           const response = await fetch(
             `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
@@ -62,59 +90,54 @@ export const OrderItem = ({ order }: any) => {
             },
           );
 
-          if (!response.ok) throw new Error("Documentul nu este generat încă.");
+          if (!response.ok) {
+            if (response.status === 404)
+              throw new Error("Documentul nu este generat încă.");
+            throw new Error("Eroare la procesarea documentului.");
+          }
 
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement("a");
           link.href = url;
           link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
+
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
+
+          resolve("Succes");
+        } catch (error) {
+          reject(error);
         } finally {
           setIsDownloading(false);
         }
-      },
+      }),
       {
-        loading: `Se pregătește ${docName}...`,
-        success: `${docName} descărcată.`,
-        error: "Eroare. Documentul ar putea fi indisponibil temporar.",
+        loading: `Se generează ${docName}...`,
+        success: `${docName} a fost descărcată.`,
+        error: (err: any) => err.message || "Eroare la descărcare.",
       },
     );
-  };
-
-  // REPARARE EROARE #306: Parsare sigură adresă
-  const renderAddress = () => {
-    try {
-      const addr =
-        typeof order.shipping_address === "string"
-          ? JSON.parse(order.shipping_address)
-          : order.shipping_address;
-
-      if (!addr || typeof addr !== "object")
-        return String(order.shipping_address || "N/A");
-
-      return `Strada ${addr.street || ""}, ${addr.city || ""}, ${addr.county || ""}`;
-    } catch (e) {
-      return String(order.shipping_address || "Adresă invalidă");
-    }
   };
 
   return (
     <>
       <motion.article
         layout
-        className="group border border-zinc-100 p-6 md:p-8 pt-10 rounded-[2.5rem] transition-all duration-500 bg-white hover:shadow-2xl flex flex-col justify-between relative"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        // pt-8 pe interior protejează bulina de overflow
+        className="group border border-zinc-100 p-6 md:p-8 pt-8 rounded-[2.5rem] transition-all duration-500 bg-white hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)] flex flex-col justify-between relative"
       >
-        <div className="relative">
+        <div className="relative z-10">
           <header className="flex justify-between items-start mb-8">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--royal-violet)] opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--royal-violet)]"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--royal-violet)]"></span>
                 </span>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
                   #{order.order_number?.split("-").pop()}
@@ -128,7 +151,7 @@ export const OrderItem = ({ order }: any) => {
               </h3>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-black uppercase text-zinc-300 mb-1">
+              <p className="text-[9px] font-black uppercase text-zinc-300 tracking-widest mb-1">
                 Total
               </p>
               <p className="font-black text-lg text-[var(--dark-amethyst)]">
@@ -140,70 +163,114 @@ export const OrderItem = ({ order }: any) => {
           <div className="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar">
             {order.items?.map((item: any, i: number) => (
               <div key={i} className="relative shrink-0">
-                <div className="size-14 rounded-2xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-inner">
+                <div className="size-14 rounded-2xl overflow-hidden border border-zinc-50 bg-zinc-50 shadow-inner">
                   <img
                     src={getValidImageUrl(item)}
                     className="w-full h-full object-cover"
                     alt=""
                   />
                 </div>
+                <span className="absolute -top-2 -right-2 bg-[var(--dark-amethyst)] text-white text-[8px] font-black size-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                  {item.quantity}
+                </span>
               </div>
             ))}
+          </div>
+
+          <div className="space-y-4 mb-10">
+            <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+              <span className="text-zinc-400 flex items-center gap-2">
+                <Truck size={12} className="text-[var(--royal-violet)]" />{" "}
+                Status Comandă
+              </span>
+              <span className="text-[var(--dark-amethyst)] font-bold">
+                {order.status}
+              </span>
+            </div>
+            <div className="flex gap-1.5">
+              {steps.map((step, i) => (
+                <div key={step.id} className="flex-1">
+                  <div
+                    className="h-1 rounded-full transition-all duration-1000"
+                    style={{
+                      background:
+                        i + 1 <= currentStepIndex
+                          ? "var(--primary-gradient)"
+                          : "#F4F4F5",
+                    }}
+                  />
+                  <p
+                    className={`mt-2 text-[7px] font-black uppercase text-center ${i + 1 <= currentStepIndex ? "text-[var(--dark-amethyst)]" : "text-zinc-300"}`}
+                  >
+                    {step.label}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:brightness-110"
+          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:brightness-110 active:scale-[0.98]"
           style={{ background: "var(--primary-gradient)" }}
         >
-          Detalii Comandă <ChevronRight size={14} />
+          Detalii & Documente <ChevronRight size={14} />
         </button>
       </motion.article>
 
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
-        title="Detalii Achiziție"
-        description={order.order_number}
+        title="Rezumat Achiziție"
+        description={`Referință: ${order.order_number}`}
       >
-        {/* bg-white forțat pentru a opri transparența */}
-        <div className="space-y-10 py-4 bg-white rounded-b-[2.5rem] relative z-10 text-left">
+        {/* Container forțat alb */}
+        <div className="space-y-10 py-4 bg-white rounded-b-[2.5rem] relative z-[1001] w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
-              <p className="text-[9px] font-black uppercase text-zinc-400 mb-4 flex items-center gap-2">
+            <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100 text-left">
+              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
                 <MapPin size={12} className="text-[var(--royal-violet)]" />{" "}
-                Adresa
+                Livrare
               </p>
               <p className="font-black text-sm text-[var(--dark-amethyst)]">
                 {order.customer_name}
               </p>
-              <p className="text-xs text-zinc-500 italic mt-1">
-                {renderAddress()}
+              <p className="text-xs text-zinc-500 italic mt-1 leading-relaxed">
+                {getSafeAddress()}
               </p>
             </div>
 
-            <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center gap-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400 font-bold uppercase">Data</span>
-                <span className="font-bold">
+            <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center gap-3 text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar size={12} className="text-[var(--royal-violet)]" />{" "}
+                  Data
+                </span>
+                <span className="text-xs font-bold">
                   {new Date(order.created_at).toLocaleDateString("ro-RO")}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400 font-bold uppercase">Plată</span>
-                <span className="font-bold uppercase">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard
+                    size={12}
+                    className="text-[var(--royal-violet)]"
+                  />{" "}
+                  Plată
+                </span>
+                <span className="text-xs font-bold uppercase">
                   {order.payment_method}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <p className="text-[9px] font-black uppercase text-zinc-400 ml-2">
-              Articole
+          <div className="space-y-4 text-left">
+            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">
+              Produse
             </p>
-            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
@@ -211,19 +278,22 @@ export const OrderItem = ({ order }: any) => {
                 >
                   <img
                     src={getValidImageUrl(item)}
-                    className="size-12 rounded-xl object-cover"
+                    className="size-14 rounded-2xl object-cover"
                     alt=""
                   />
-                  <div className="flex-1">
-                    <h4 className="text-[10px] font-black uppercase text-[var(--dark-amethyst)] line-clamp-1">
-                      {item.product_name}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[11px] font-black uppercase text-[var(--dark-amethyst)] truncate">
+                      {item.product_name || "Bijuterie Evem"}
                     </h4>
-                    <p className="text-[9px] font-bold text-[var(--royal-violet)]">
-                      Buc: {item.quantity}
+                    <p className="text-[10px] font-bold text-[var(--royal-violet)]">
+                      Cantitate: {item.quantity}
                     </p>
                   </div>
                   <p className="font-black text-xs">
-                    {item.price_at_purchase?.toLocaleString()} RON
+                    {(
+                      item.price_at_purchase || item.unit_price_at_purchase
+                    )?.toLocaleString()}{" "}
+                    RON
                   </p>
                 </div>
               ))}
@@ -237,16 +307,19 @@ export const OrderItem = ({ order }: any) => {
               className="w-full sm:w-auto h-16 px-10 rounded-2xl border-2 border-[var(--dark-amethyst)] text-[var(--dark-amethyst)] text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-[var(--dark-amethyst)] hover:text-white transition-all disabled:opacity-50"
             >
               <Download size={16} />
-              {["SHIPPED", "DELIVERED"].includes(order.status?.toUpperCase())
-                ? "Factură"
-                : "Proformă"}
+              {["SHIPPED", "DELIVERED"].includes(
+                order.status?.toUpperCase() || "",
+              )
+                ? "Descarcă Factura"
+                : "Descarcă Proforma"}
             </button>
-            <div className="text-right">
-              <p className="text-[9px] font-black uppercase text-zinc-300">
+            <div className="text-center sm:text-right">
+              <p className="text-[9px] font-black uppercase text-zinc-300 tracking-widest mb-1">
                 Total Achitat
               </p>
-              <p className="heading-serif text-3xl font-bold text-[var(--dark-amethyst)]">
-                {order.total_amount?.toLocaleString()} RON
+              <p className="heading-serif text-4xl font-bold text-[var(--dark-amethyst)]">
+                {order.total_amount?.toLocaleString()}{" "}
+                <span className="text-sm font-sans uppercase">Ron</span>
               </p>
             </div>
           </div>
