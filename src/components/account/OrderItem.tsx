@@ -9,7 +9,7 @@ import {
   Calendar,
   X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "sonner";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
@@ -65,15 +65,19 @@ export const OrderItem = ({ order }: any) => {
 
     toast.promise(
       async () => {
+        // Folosim fetch pentru a evita blocarea pop-up-urilor
         const response = await fetch(
           `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
           {
             method: "GET",
-            headers: { Accept: "application/pdf" },
           },
         );
 
-        if (!response.ok) throw new Error("Generarea a eșuat.");
+        if (!response.ok) {
+          if (response.status === 404)
+            throw new Error("Documentul nu a fost generat încă.");
+          throw new Error("Eroare server.");
+        }
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -87,8 +91,8 @@ export const OrderItem = ({ order }: any) => {
       },
       {
         loading: `Se generează ${docName}...`,
-        success: `${docName} descărcată cu succes.`,
-        error: "Eroare server. Reîncercați.",
+        success: `${docName} descărcată.`,
+        error: (err) => err.message,
       },
     );
     setIsDownloading(false);
@@ -100,13 +104,18 @@ export const OrderItem = ({ order }: any) => {
         layout
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="group border border-zinc-100 p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 bg-white hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)] flex flex-col justify-between"
+        // Am eliminat overflow-hidden pentru a nu taia bulina
+        className="group border border-zinc-100 p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 bg-white hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)] flex flex-col justify-between relative"
       >
         <div>
-          <header className="flex justify-between items-start mb-8">
+          <header className="flex justify-between items-start mb-8 pt-1">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-[var(--royal-violet)] animate-pulse" />
+                {/* Bulina cu ping pentru efect premium */}
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--royal-violet)] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--royal-violet)]"></span>
+                </span>
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
                   #{order.order_number?.split("-").pop()}
                 </p>
@@ -130,11 +139,11 @@ export const OrderItem = ({ order }: any) => {
 
           <div className="flex gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar">
             {order.items?.map((item: any, i: number) => (
-              <div key={i} className="relative shrink-0 group/img">
+              <div key={i} className="relative shrink-0">
                 <div className="size-14 rounded-2xl overflow-hidden border border-zinc-50 bg-zinc-50 shadow-inner">
                   <img
                     src={getValidImageUrl(item)}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+                    className="w-full h-full object-cover"
                     alt=""
                   />
                 </div>
@@ -149,9 +158,9 @@ export const OrderItem = ({ order }: any) => {
             <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
               <span className="text-zinc-400 flex items-center gap-2">
                 <Truck size={12} className="text-[var(--royal-violet)]" />{" "}
-                Tracking
+                Status Comandă
               </span>
-              <span className="text-[var(--dark-amethyst)]">
+              <span className="text-[var(--dark-amethyst)] font-bold">
                 {order.status}
               </span>
             </div>
@@ -178,42 +187,40 @@ export const OrderItem = ({ order }: any) => {
           className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:shadow-lg active:scale-[0.98]"
           style={{ background: "var(--primary-gradient)" }}
         >
-          Detalii Comandă <ChevronRight size={14} />
+          Detalii & Documente <ChevronRight size={14} />
         </button>
       </motion.article>
 
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
-        title="Rezumat Comandă"
-        description={order.order_number}
+        title="Rezumat Achiziție"
+        description={`Comanda ${order.order_number}`}
       >
-        <div className="space-y-10 py-2 bg-white rounded-b-[2.5rem]">
-          {/* Grid Info */}
+        {/* Container principal cu fundal alb forțat pentru a elimina transparența */}
+        <div className="space-y-10 py-2 bg-white rounded-b-[2.5rem] relative z-[1001]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
                 <MapPin size={12} className="text-[var(--royal-violet)]" />{" "}
                 Adresa de Livrare
               </p>
-              <div className="space-y-1">
-                <p className="font-black text-sm text-[var(--dark-amethyst)]">
-                  {order.customer_name}
-                </p>
-                <p className="text-xs text-zinc-500 leading-relaxed italic">
-                  {(() => {
-                    try {
-                      const a =
-                        typeof order.shipping_address === "string"
-                          ? JSON.parse(order.shipping_address)
-                          : order.shipping_address;
-                      return `${a.street}, ${a.city}, ${a.county}`;
-                    } catch {
-                      return order.shipping_address;
-                    }
-                  })()}
-                </p>
-              </div>
+              <p className="font-black text-sm text-[var(--dark-amethyst)]">
+                {order.customer_name}
+              </p>
+              <p className="text-xs text-zinc-500 leading-relaxed italic mt-1">
+                {(() => {
+                  try {
+                    const a =
+                      typeof order.shipping_address === "string"
+                        ? JSON.parse(order.shipping_address)
+                        : order.shipping_address;
+                    return `${a.street}, ${a.city}, ${a.county}`;
+                  } catch {
+                    return order.shipping_address || "Adresă indisponibilă";
+                  }
+                })()}
+              </p>
             </div>
 
             <div className="p-6 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center gap-3">
@@ -241,16 +248,15 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Listă Produse */}
           <div className="space-y-4">
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 ml-2">
-              Articole Selectate
+              Articole Comandate
             </p>
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-4 p-4 bg-white border border-zinc-100 rounded-3xl hover:shadow-md transition-all"
+                  className="flex items-center gap-4 p-4 bg-white border border-zinc-100 rounded-3xl"
                 >
                   <img
                     src={getValidImageUrl(item)}
@@ -278,7 +284,6 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Acțiuni & Total */}
           <div className="pt-8 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-6">
             <button
               onClick={handleDownloadDocs}
@@ -287,8 +292,8 @@ export const OrderItem = ({ order }: any) => {
             >
               <Download size={16} />
               {["SHIPPED", "DELIVERED"].includes(order.status?.toUpperCase())
-                ? "Factură Fiscală"
-                : "Document Proformă"}
+                ? "Descarcă Factura"
+                : "Descarcă Proforma"}
             </button>
             <div className="text-center sm:text-right">
               <p className="text-[9px] font-black uppercase text-zinc-300 tracking-widest mb-1">
