@@ -79,7 +79,7 @@ const Navbar = () => {
   );
 
   // =========================
-  // IMAGE HELPER
+  // IMAGE HELPER (Premium Fallback)
   // =========================
   const getValidImageUrl = (imageSource: string | null) => {
     if (!imageSource)
@@ -118,12 +118,14 @@ const Navbar = () => {
     fetchMenu();
   }, [fetchMenu]);
 
+  // Fallback for active parent
   useEffect(() => {
     if (categories.length > 0 && !activeParent) {
       setActiveParent(categories[0]);
     }
   }, [categories, activeParent]);
 
+  // Close menus on route change
   useEffect(() => {
     setMegaOpen(false);
     setMobileOpen(false);
@@ -131,6 +133,7 @@ const Navbar = () => {
     setMobileView({ parent: null });
   }, [location.pathname]);
 
+  // Click outside user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -331,7 +334,7 @@ const Navbar = () => {
         </motion.nav>
 
         {/* ========================================================= */}
-        {/* MEGA MENU DESKTOP (MODERN & FLUID) */}
+        {/* MEGA MENU DESKTOP (MODERN, FLUID & FULLY SCROLLABLE) */}
         {/* ========================================================= */}
         <AnimatePresence>
           {megaOpen && (
@@ -354,54 +357,63 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECtII */}
-                <div className="relative w-[340px] border-r border-zinc-100 bg-zinc-50/30 p-12 flex flex-col">
-                  <div className="mb-10">
+                {/* 1. LEFT PANEL: COLECȚII (SCROLL ACTIVAT AICI) */}
+                <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
+                  <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
                       Curated Collections
                     </p>
                   </div>
 
-                  <div className="relative space-y-2">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onMouseEnter={() => setActiveParent(cat)}
-                        onClick={() => {
-                          navigate(`/category/${cat.slug}`);
-                          setMegaOpen(false);
-                        }}
-                        className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${
-                          activeParent?.id === cat.id
-                            ? "bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)] text-black"
-                            : "text-zinc-400 hover:text-zinc-700 hover:bg-white/50"
-                        }`}
-                      >
-                        {activeParent?.id === cat.id && (
-                          <motion.div
-                            layoutId="luxuryIndicator"
-                            className="absolute left-0 w-1.5 h-6 bg-[var(--french-blue)] rounded-full"
-                            transition={springTransition}
-                          />
-                        )}
-                        <span
-                          className={`text-[14px] uppercase tracking-tighter transition-all duration-300 ${activeParent?.id === cat.id ? "font-black" : "font-semibold"}`}
+                  <div className="flex-1 overflow-y-auto px-6 pb-12 custom-scrollbar">
+                    <div className="space-y-2">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onMouseEnter={() => setActiveParent(cat)}
+                          onClick={() => {
+                            navigate(`/category/${cat.slug}`);
+                            setMegaOpen(false);
+                          }}
+                          className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${
+                            activeParent?.id === cat.id
+                              ? "bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)] text-black"
+                              : "text-zinc-400 hover:text-zinc-700 hover:bg-white/50"
+                          }`}
                         >
-                          {cat.name}
-                        </span>
-                        <ChevronRight
-                          size={16}
-                          className={`transition-all duration-500 ${activeParent?.id === cat.id ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"}`}
-                        />
-                      </button>
-                    ))}
+                          {activeParent?.id === cat.id && (
+                            <motion.div
+                              layoutId="luxuryIndicator"
+                              className="absolute left-0 w-1.5 h-6 bg-[var(--french-blue)] rounded-full"
+                              transition={springTransition}
+                            />
+                          )}
+                          <span
+                            className={`text-[14px] uppercase tracking-tighter transition-all duration-300 ${
+                              activeParent?.id === cat.id
+                                ? "font-black"
+                                : "font-semibold"
+                            }`}
+                          >
+                            {cat.name}
+                          </span>
+                          <ChevronRight
+                            size={16}
+                            className={`transition-all duration-500 ${
+                              activeParent?.id === cat.id
+                                ? "translate-x-0 opacity-100"
+                                : "-translate-x-4 opacity-0"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* 2. CENTER PANEL: CATEGORII (Scroll Reparat + Staggered Animation) */}
-                <div className="flex-1 relative bg-white">
-                  {/* FIX SCROLL: Container cu poziție absolută și custom scrollbar */}
-                  <div className="absolute inset-0 overflow-y-auto p-12 pr-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 transition-colors">
+                {/* 2. CENTER PANEL: CATEGORII (SCROLL ACTIVAT AICI) */}
+                <div className="flex-1 flex flex-col h-full bg-white">
+                  <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={activeParent?.id || "empty-content"}
@@ -415,7 +427,7 @@ const Navbar = () => {
                             transition: { staggerChildren: 0.05 },
                           },
                         }}
-                        className="grid grid-cols-2 gap-x-16 gap-y-12 pb-12" // pb-12 previne tăierea ultimei linii
+                        className="grid grid-cols-2 gap-x-20 gap-y-16 pb-8" // pb-8 to give some breathing room at the bottom
                       >
                         {activeParent?.subcategories?.map((sub: Category) => (
                           <motion.div
@@ -428,7 +440,7 @@ const Navbar = () => {
                                 transition: springTransition,
                               },
                             }}
-                            className="group/section space-y-5 text-left"
+                            className="group/section space-y-6 text-left"
                           >
                             <Link
                               to={`/category/${sub.slug}`}
@@ -441,7 +453,7 @@ const Navbar = () => {
                               <div className="h-0.5 w-6 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
                             </Link>
 
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col gap-4">
                               {sub.subcategories?.map((child) => (
                                 <Link
                                   key={child.id}
@@ -462,8 +474,8 @@ const Navbar = () => {
                 </div>
 
                 {/* 3. RIGHT PANEL: VISUAL SHOWCASE */}
-                <div className="w-[450px] p-10 bg-zinc-50/30">
-                  <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)] transform-gpu">
+                <div className="w-[480px] p-10 bg-zinc-50/30">
+                  <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={activeParent?.id || "showcase-img"}
@@ -535,7 +547,7 @@ const Navbar = () => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200">
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               {!mobileView.parent ? (
                 // Lista de Categorii Principale (Nivel 1)
                 <motion.div
@@ -623,6 +635,18 @@ const Navbar = () => {
       </AnimatePresence>
 
       <div className="h-[5rem] w-full" />
+
+      {/* STILURI GLOBALE PENTRU SCROLLBAR */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e4e4e7; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #d4d4d8; }
+      `,
+        }}
+      />
 
       {/* DRAWERS & MODALS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
