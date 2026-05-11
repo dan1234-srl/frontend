@@ -79,7 +79,7 @@ const Navbar = () => {
   );
 
   // =========================
-  // IMAGE HELPER (Premium Fallback)
+  // IMAGE HELPER
   // =========================
   const getValidImageUrl = (imageSource: string | null) => {
     if (!imageSource)
@@ -118,14 +118,12 @@ const Navbar = () => {
     fetchMenu();
   }, [fetchMenu]);
 
-  // Fallback for active parent
   useEffect(() => {
     if (categories.length > 0 && !activeParent) {
       setActiveParent(categories[0]);
     }
   }, [categories, activeParent]);
 
-  // Close menus on route change
   useEffect(() => {
     setMegaOpen(false);
     setMobileOpen(false);
@@ -133,7 +131,6 @@ const Navbar = () => {
     setMobileView({ parent: null });
   }, [location.pathname]);
 
-  // Click outside user menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -376,7 +373,7 @@ const Navbar = () => {
                         }}
                         className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${
                           activeParent?.id === cat.id
-                            ? "bg-white shadow-md text-black"
+                            ? "bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)] text-black"
                             : "text-zinc-400 hover:text-zinc-700 hover:bg-white/50"
                         }`}
                       >
@@ -401,69 +398,72 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* 2. CENTER PANEL: CATEGORII (Staggered Animation) */}
-                <div className="flex-1 overflow-y-auto bg-white p-16 scrollbar-hide">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeParent?.id || "empty-content"}
-                      initial="hidden"
-                      animate="show"
-                      exit="hidden"
-                      variants={{
-                        hidden: { opacity: 0 },
-                        show: {
-                          opacity: 1,
-                          transition: { staggerChildren: 0.05 },
-                        },
-                      }}
-                      className="grid grid-cols-2 gap-x-20 gap-y-16"
-                    >
-                      {activeParent?.subcategories?.map((sub: Category) => (
-                        <motion.div
-                          key={sub.id}
-                          variants={{
-                            hidden: { opacity: 0, y: 15 },
-                            show: {
-                              opacity: 1,
-                              y: 0,
-                              transition: springTransition,
-                            },
-                          }}
-                          className="group/section space-y-6 text-left"
-                        >
-                          <Link
-                            to={`/category/${sub.slug}`}
-                            onClick={() => setMegaOpen(false)}
-                            className="inline-block"
+                {/* 2. CENTER PANEL: CATEGORII (Scroll Reparat + Staggered Animation) */}
+                <div className="flex-1 relative bg-white">
+                  {/* FIX SCROLL: Container cu poziție absolută și custom scrollbar */}
+                  <div className="absolute inset-0 overflow-y-auto p-12 pr-8 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-300 transition-colors">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeParent?.id || "empty-content"}
+                        initial="hidden"
+                        animate="show"
+                        exit="hidden"
+                        variants={{
+                          hidden: { opacity: 0 },
+                          show: {
+                            opacity: 1,
+                            transition: { staggerChildren: 0.05 },
+                          },
+                        }}
+                        className="grid grid-cols-2 gap-x-16 gap-y-12 pb-12" // pb-12 previne tăierea ultimei linii
+                      >
+                        {activeParent?.subcategories?.map((sub: Category) => (
+                          <motion.div
+                            key={sub.id}
+                            variants={{
+                              hidden: { opacity: 0, y: 15 },
+                              show: {
+                                opacity: 1,
+                                y: 0,
+                                transition: springTransition,
+                              },
+                            }}
+                            className="group/section space-y-5 text-left"
                           >
-                            <h3 className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] group-hover/section:text-[var(--french-blue)] transition-colors duration-300">
-                              {sub.name}
-                            </h3>
-                            <div className="h-0.5 w-6 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
-                          </Link>
+                            <Link
+                              to={`/category/${sub.slug}`}
+                              onClick={() => setMegaOpen(false)}
+                              className="inline-block"
+                            >
+                              <h3 className="text-[16px] font-black uppercase tracking-tighter text-[var(--deep-twilight)] group-hover/section:text-[var(--french-blue)] transition-colors duration-300">
+                                {sub.name}
+                              </h3>
+                              <div className="h-0.5 w-6 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
+                            </Link>
 
-                          <div className="flex flex-col gap-4">
-                            {sub.subcategories?.map((child) => (
-                              <Link
-                                key={child.id}
-                                to={`/category/${child.slug}`}
-                                onClick={() => setMegaOpen(false)}
-                                className="text-[13px] font-medium text-zinc-500 hover:text-black hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group/link"
-                              >
-                                <span className="h-px w-0 bg-zinc-300 group-hover/link:w-3 transition-all duration-300" />
-                                {child.name}
-                              </Link>
-                            ))}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  </AnimatePresence>
+                            <div className="flex flex-col gap-3">
+                              {sub.subcategories?.map((child) => (
+                                <Link
+                                  key={child.id}
+                                  to={`/category/${child.slug}`}
+                                  onClick={() => setMegaOpen(false)}
+                                  className="text-[13px] font-medium text-zinc-500 hover:text-black hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group/link"
+                                >
+                                  <span className="h-px w-0 bg-zinc-300 group-hover/link:w-3 transition-all duration-300" />
+                                  {child.name}
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 {/* 3. RIGHT PANEL: VISUAL SHOWCASE */}
-                <div className="w-[480px] p-10 bg-zinc-50/30">
-                  <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
+                <div className="w-[450px] p-10 bg-zinc-50/30">
+                  <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)] transform-gpu">
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={activeParent?.id || "showcase-img"}
@@ -535,7 +535,7 @@ const Navbar = () => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-200">
               {!mobileView.parent ? (
                 // Lista de Categorii Principale (Nivel 1)
                 <motion.div
@@ -580,7 +580,7 @@ const Navbar = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={springTransition}
-                  className="flex flex-col gap-8"
+                  className="flex flex-col gap-8 pb-10"
                 >
                   <button
                     onClick={() => setMobileView({ parent: null })}
