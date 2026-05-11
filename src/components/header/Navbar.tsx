@@ -1,22 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   User,
   ShoppingBag as BagIcon,
   Menu,
-  LogOut,
-  ShieldCheck,
   Heart,
   X,
   ChevronRight,
-  ChevronLeft,
-  Package,
-  ChevronDown,
   ArrowRight,
-  MapPin,
-  Settings,
   Sparkles,
   Search,
+  ArrowUpRight,
+  HelpCircle,
+  Instagram,
 } from "lucide-react";
 import {
   motion,
@@ -30,7 +26,6 @@ import ShoppingBag from "../cart/ShoppingBag";
 import WishlistDrawer from "../cart/WishlistDrawer";
 import Login from "@/components/auth/Login";
 import Register from "@/components/auth/Register";
-import { toast } from "sonner";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 
 const API_BASE_URL =
@@ -38,49 +33,37 @@ const API_BASE_URL =
   "https://linea-backend-production.up.railway.app";
 
 const Navbar = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [categories, setCategories] = useState<any[]>([]);
-  const [activeParent, setActiveParent] = useState<any | null>(null);
-  const [megaOpen, setMegaOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // States pentru sertare
   const [bagOpen, setBagOpen] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [mobileView, setMobileView] = useState<{ parent: any | null }>({
-    parent: null,
-  });
 
-  const megaMenuRef = useRef<HTMLDivElement>(null);
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // SCROLL LOGIC
+  // Gestiune Scroll pentru Navigarea "Sticky-Smart"
   const { scrollY } = useScroll();
-  const navHeight = useTransform(scrollY, [0, 80], ["6rem", "4.5rem"]);
-  const navBg = useTransform(
-    scrollY,
-    [0, 80],
-    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.95)"],
-  );
-  const borderOpacity = useTransform(scrollY, [0, 80], ["0", "1"]);
+  const navHeight = useTransform(scrollY, [0, 50], ["7rem", "5.5rem"]);
+  const navPadding = useTransform(scrollY, [0, 50], ["0rem 4rem", "0rem 3rem"]);
+  const shadowOpacity = useTransform(scrollY, [0, 50], ["0", "0.04"]);
 
   const fetchMenu = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/categories/tree`);
       if (res.ok) {
         const data = await res.json();
-        setCategories(data);
-        if (data.length > 0) setActiveParent(data[0]);
+        setCategories(Array.isArray(data) ? data : []);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Critical Menu Fetch Error:", err);
     }
   }, []);
 
@@ -89,403 +72,312 @@ const Navbar = () => {
   }, [fetchMenu]);
 
   useEffect(() => {
-    setMegaOpen(false);
+    setHoveredCategory(null);
     setMobileOpen(false);
-    setUserMenuOpen(false);
   }, [location.pathname]);
 
-  const handleLogout = async () => {
-    await signOut();
-    toast.success("Sesiune încheiată.");
-    navigate("/");
+  // Image Helper cu Fallback Premium
+  const getValidImageUrl = (source: string | null) => {
+    if (!source)
+      return "https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?q=80&w=800";
+    if (source.startsWith("http")) return source;
+    try {
+      const parsed = JSON.parse(source);
+      return parsed.main?.medium || parsed.url || parsed.medium || source;
+    } catch {
+      return source;
+    }
   };
 
-  const menuTransition = { duration: 0.6, ease: [0.16, 1, 0.3, 1] };
+  const menuTransition = { duration: 0.6, ease: [0.22, 1, 0.36, 1] };
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-[200]">
-        {/* TOP ANNOUNCEMENT */}
-        <div
-          className="relative z-[201] hidden h-9 items-center justify-center px-4 md:flex"
-          style={{ background: "var(--primary-gradient)" }}
-        >
+      <header className="fixed inset-x-0 top-0 z-[200] bg-white pointer-events-none">
+        {/* TOP BANNER — Animated News Ticker Style */}
+        <div className="h-10 bg-zinc-950 flex items-center justify-center overflow-hidden pointer-events-auto">
           <motion.div
-            animate={{ opacity: [0.7, 1, 0.7] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="flex items-center gap-3 text-white"
+            animate={{ x: [20, 0], opacity: [0, 1] }}
+            className="flex items-center gap-6 text-white"
           >
-            <Sparkles size={12} className="text-yellow-200" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em]">
-              Livrare Gratuită la comenzi peste 500 RON
-            </span>
+            <div className="flex items-center gap-2">
+              <Sparkles
+                size={12}
+                className="text-[var(--royal-violet)] animate-pulse"
+              />
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] whitespace-nowrap">
+                New SS26 Collection —{" "}
+                <span className="text-zinc-400">Shop the Edit</span>
+              </p>
+            </div>
+            <div className="hidden md:block w-px h-3 bg-zinc-800" />
+            <p className="hidden md:block text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500 whitespace-nowrap">
+              Livrare Premium Asigurată
+            </p>
           </motion.div>
         </div>
 
-        {/* NAVIGATION BAR */}
+        {/* MAIN NAVIGATION */}
         <motion.nav
-          style={{ height: navHeight, backgroundColor: navBg }}
-          className="relative flex items-center justify-between px-6 lg:px-12 backdrop-blur-xl border-b border-zinc-100"
+          style={{
+            height: navHeight,
+            padding: navPadding,
+            boxShadow: `0 20px 40px rgba(0,0,0,${shadowOpacity})`,
+          }}
+          className="relative flex items-center justify-between border-b border-zinc-50 bg-white pointer-events-auto transition-all"
         >
-          {/* LEFT: MENU & SEARCH */}
-          <div className="flex flex-1 items-center gap-4">
-            <button
-              onClick={() => setMobileOpen(true)}
-              onMouseEnter={() => {
-                if (megaMenuTimeoutRef.current)
-                  clearTimeout(megaMenuTimeoutRef.current);
-                setMegaOpen(true);
-              }}
-              className="group flex items-center gap-3 rounded-2xl bg-zinc-50/50 p-2.5 px-4 transition-all hover:bg-zinc-100"
-            >
-              <div className="flex flex-col gap-1">
-                <span
-                  className={`h-0.5 w-5 bg-black transition-all ${megaOpen ? "rotate-45 translate-y-1.5" : ""}`}
-                />
-                <span
-                  className={`h-0.5 w-3 bg-black transition-all ${megaOpen ? "opacity-0" : ""}`}
-                />
-                <span
-                  className={`h-0.5 w-5 bg-black transition-all ${megaOpen ? "-rotate-45 -translate-y-1.5" : ""}`}
-                />
-              </div>
-              <span className="hidden text-[11px] font-black uppercase tracking-widest lg:block">
-                Meniu
+          {/* STÂNGA: Logo */}
+          <div className="flex-1 flex items-center justify-start">
+            <Link to="/" className="group flex items-end">
+              <span className="text-3xl font-black uppercase tracking-tighter text-zinc-950 leading-none">
+                Evem<span className="text-[var(--royal-violet)]">.</span>
               </span>
-            </button>
-            <button className="hidden p-2 text-zinc-400 transition-colors hover:text-black lg:block">
-              <Search size={20} strokeWidth={1.5} />
-            </button>
+              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-300 ml-2 mb-0.5 hidden xl:block">
+                Luxury Retail
+              </span>
+            </Link>
           </div>
 
-          {/* CENTER: LOGO */}
-          <Link to="/" className="relative z-10 block group">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              className="flex flex-col items-center"
-            >
-              <span className="text-2xl font-black uppercase tracking-[-0.05em] text-[var(--dark-amethyst)] md:text-3xl">
-                Evem<span className="text-[var(--royal-violet)]">Luxury</span>
-              </span>
-              <div className="h-[1px] w-0 bg-black transition-all group-hover:w-full" />
-            </motion.div>
-          </Link>
+          {/* CENTRU: Navigație Categorii Dinamică */}
+          <div className="hidden lg:flex items-center gap-1 xl:gap-4 h-full">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                onMouseEnter={() => setHoveredCategory(cat.id)}
+                onMouseLeave={() => setHoveredCategory(null)}
+                className="h-full flex items-center group/nav"
+              >
+                <button
+                  onClick={() => navigate(`/category/${cat.slug}`)}
+                  className={`relative px-4 py-2 text-[11px] font-black uppercase tracking-[0.25em] transition-all duration-300 ${
+                    hoveredCategory === cat.id
+                      ? "text-zinc-950 scale-105"
+                      : "text-zinc-400 hover:text-zinc-600"
+                  }`}
+                >
+                  {cat.name}
+                  {hoveredCategory === cat.id && (
+                    <motion.div
+                      layoutId="active-pill"
+                      className="absolute -bottom-1 left-4 right-4 h-0.5 bg-black rounded-full"
+                    />
+                  )}
+                </button>
 
-          {/* RIGHT: ACCOUNT & CART */}
-          <div className="flex flex-1 items-center justify-end gap-2 md:gap-5">
+                {/* MEGA MENU: Floating Island Style */}
+                <AnimatePresence>
+                  {hoveredCategory === cat.id &&
+                    cat.subcategories?.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                        transition={menuTransition}
+                        className="absolute top-[85%] left-0 right-0 mx-auto max-w-[1200px] bg-white border border-zinc-100 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.12)] rounded-[2.5rem] p-12 flex gap-12 overflow-hidden"
+                      >
+                        <div className="flex-1 grid grid-cols-3 gap-12">
+                          {cat.subcategories.map((sub: any, idx: number) => (
+                            <motion.div
+                              key={sub.id}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.04 }}
+                              className="space-y-6"
+                            >
+                              <Link
+                                to={`/category/${sub.slug}`}
+                                className="inline-flex items-center gap-2 group/title"
+                              >
+                                <h4 className="text-[12px] font-black uppercase tracking-[0.2em] text-zinc-950">
+                                  {sub.name}
+                                </h4>
+                                <ArrowUpRight
+                                  size={14}
+                                  className="text-zinc-200 group-hover/title:translate-x-0.5 group-hover/title:-translate-y-0.5 group-hover/title:text-black transition-all"
+                                />
+                              </Link>
+                              <div className="flex flex-col gap-3">
+                                {sub.subcategories?.map((child: any) => (
+                                  <Link
+                                    key={child.id}
+                                    to={`/category/${child.slug}`}
+                                    className="text-[13px] font-medium text-zinc-400 hover:text-black transition-colors flex items-center gap-3 group/link"
+                                  >
+                                    <span className="w-0 h-px bg-zinc-900 group-hover/link:w-4 transition-all duration-300" />
+                                    {child.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+
+                        {/* VIZUAL: Feature Card */}
+                        <div className="w-[320px] bg-zinc-50 rounded-[2rem] p-8 flex flex-col justify-between relative overflow-hidden group/card">
+                          <img
+                            src={getValidImageUrl(cat.image_url)}
+                            className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover/card:scale-110 transition-transform duration-1000 pointer-events-none"
+                            alt=""
+                          />
+                          <div className="relative z-10">
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] mb-3">
+                              Highlights
+                            </p>
+                            <h5 className="heading-serif text-2xl italic leading-tight text-zinc-900">
+                              Seleția Lunii {cat.name}
+                            </h5>
+                          </div>
+                          <Link
+                            to={`/category/${cat.slug}`}
+                            className="relative z-10 inline-flex items-center justify-center size-12 bg-white rounded-full shadow-sm hover:bg-black hover:text-white transition-all self-end"
+                          >
+                            <ArrowRight size={20} />
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+
+          {/* DREAPTA: Acțiuni Utilitare */}
+          <div className="flex-1 flex items-center justify-end gap-2 md:gap-4">
+            <button className="hidden sm:flex size-10 items-center justify-center hover:bg-zinc-50 rounded-full transition-colors">
+              <Search size={20} strokeWidth={1.2} />
+            </button>
             <button
               onClick={() => setWishOpen(true)}
-              className="group relative hidden p-2 md:block"
+              className="flex size-10 items-center justify-center hover:bg-zinc-50 rounded-full transition-colors relative group"
             >
               <Heart
-                size={22}
-                strokeWidth={1.5}
-                className="transition-colors group-hover:text-red-500"
+                size={20}
+                strokeWidth={1.2}
+                className="group-hover:text-red-500 transition-colors"
               />
             </button>
-
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={() =>
-                  user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
-                }
-                className="flex items-center gap-2 p-2"
-              >
-                <User size={22} strokeWidth={1.5} />
-                {user && (
-                  <span className="hidden text-[10px] font-black uppercase tracking-widest lg:block">
-                    Cont
-                  </span>
-                )}
-              </button>
-
-              <AnimatePresence>
-                {user && userMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={menuTransition}
-                    className="absolute right-0 mt-4 w-72 overflow-hidden rounded-[2rem] border border-zinc-100 bg-white p-2 shadow-2xl"
-                  >
-                    <div className="p-6 pb-4">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                        Bine ai revenit,
-                      </p>
-                      <p className="truncate text-sm font-bold text-black">
-                        {user.first_name || user.email}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center gap-3 rounded-2xl px-5 py-3.5 text-xs font-bold hover:bg-zinc-50 transition-colors text-blue-600"
-                        >
-                          <ShieldCheck size={18} /> Administrare
-                        </Link>
-                      )}
-                      <Link
-                        to="/account/orders"
-                        className="flex items-center gap-3 rounded-2xl px-5 py-3.5 text-xs font-bold hover:bg-zinc-50 transition-colors"
-                      >
-                        <Package size={18} /> Comenzile mele
-                      </Link>
-                      <Link
-                        to="/account/settings"
-                        className="flex items-center gap-3 rounded-2xl px-5 py-3.5 text-xs font-bold hover:bg-zinc-50 transition-colors"
-                      >
-                        <Settings size={18} /> Setări Cont
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-2xl px-5 py-3.5 text-xs font-black uppercase text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <LogOut size={18} /> Deconectare
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
             <button
-              onClick={() => setBagOpen(true)}
-              className="group relative flex h-11 items-center gap-3 rounded-full bg-black px-5 text-white shadow-xl transition-all hover:bg-zinc-800"
+              onClick={() =>
+                user ? navigate("/account/orders") : setLoginOpen(true)
+              }
+              className="flex size-10 items-center justify-center hover:bg-zinc-50 rounded-full transition-colors"
             >
-              <BagIcon size={18} />
-              <span className="hidden text-[11px] font-black uppercase tracking-widest md:block">
-                Coș
+              <User size={20} strokeWidth={1.2} />
+            </button>
+
+            {/* CTA principal: Coșul */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setBagOpen(true)}
+              className="ml-2 flex items-center gap-4 bg-zinc-950 text-white pl-6 pr-2 py-2 rounded-full shadow-2xl shadow-zinc-200"
+            >
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden sm:block">
+                Bag ({totalItems})
               </span>
-              {totalItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-[9px] font-black shadow-lg">
-                  {totalItems}
-                </span>
-              )}
+              <div className="size-9 bg-white/10 rounded-full flex items-center justify-center">
+                <BagIcon size={18} strokeWidth={2} />
+              </div>
+            </motion.button>
+
+            {/* MOBILE MENU TRIGGER */}
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="lg:hidden ml-2 size-10 flex items-center justify-center"
+            >
+              <Menu size={24} />
             </button>
           </div>
         </motion.nav>
+      </header>
 
-        {/* MEGA MENU DESKTOP */}
-        <AnimatePresence>
-          {megaOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={menuTransition}
-              onMouseEnter={() => {
-                if (megaMenuTimeoutRef.current)
-                  clearTimeout(megaMenuTimeoutRef.current);
-              }}
-              onMouseLeave={() => {
-                megaMenuTimeoutRef.current = setTimeout(
-                  () => setMegaOpen(false),
-                  300,
-                );
-              }}
-              className="absolute inset-x-0 top-full hidden border-t border-zinc-100 bg-white shadow-[0_40px_80px_rgba(0,0,0,0.1)] lg:block"
-            >
-              <div className="mx-auto flex h-[580px] max-w-[1600px]">
-                {/* CATEGORY SELECTOR */}
-                <div className="w-[350px] border-r border-zinc-50 bg-zinc-50/30 p-10">
-                  <p className="mb-10 text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400">
-                    Colecții Exclusive
-                  </p>
-                  <div className="space-y-2">
-                    {categories.map((cat) => (
-                      <motion.button
-                        key={cat.id}
-                        onMouseEnter={() => setActiveParent(cat)}
-                        onClick={() => navigate(`/category/${cat.slug}`)}
-                        className={`group relative flex w-full items-center justify-between rounded-2xl p-5 text-left transition-all ${
-                          activeParent?.id === cat.id
-                            ? "bg-white shadow-xl text-black"
-                            : "text-zinc-400 hover:text-zinc-600"
-                        }`}
-                      >
-                        <span
-                          className={`text-sm font-black uppercase tracking-tight ${activeParent?.id === cat.id ? "scale-105 origin-left transition-transform" : ""}`}
-                        >
-                          {cat.name}
-                        </span>
-                        <ChevronRight
-                          size={16}
-                          className={`transition-all ${activeParent?.id === cat.id ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"}`}
-                        />
-                        {activeParent?.id === cat.id && (
-                          <motion.div
-                            layoutId="nav-pill"
-                            className="absolute left-0 h-6 w-1 rounded-full bg-[var(--royal-violet)]"
-                          />
-                        )}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
+      {/* MOBILE FULL-SCREEN OVERLAY MENU */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed inset-0 z-[300] bg-white flex flex-col"
+          >
+            <div className="h-24 flex items-center justify-between px-8 border-b border-zinc-100">
+              <Link
+                to="/"
+                onClick={() => setMobileOpen(false)}
+                className="text-2xl font-black tracking-tighter uppercase"
+              >
+                Evem.
+              </Link>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="size-12 bg-zinc-950 text-white rounded-full flex items-center justify-center"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-                {/* SUBCATEGORIES GRID */}
-                <div className="flex-1 overflow-y-auto p-16 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto px-8 py-12 flex flex-col justify-between">
+              <div className="space-y-12">
+                {categories.map((cat, idx) => (
                   <motion.div
-                    key={activeParent?.id}
-                    initial={{ opacity: 0, x: 20 }}
+                    key={cat.id}
+                    initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={menuTransition}
-                    className="grid grid-cols-3 gap-12"
+                    transition={{ delay: 0.2 + idx * 0.08 }}
                   >
-                    {activeParent?.subcategories?.map((sub: any) => (
-                      <div key={sub.id} className="space-y-6">
-                        <Link
-                          to={`/category/${sub.slug}`}
-                          className="group/item inline-block"
-                        >
-                          <h3 className="text-sm font-black uppercase tracking-widest transition-colors group-hover/item:text-[var(--royal-violet)]">
-                            {sub.name}
-                          </h3>
-                          <div className="mt-1 h-0.5 w-6 bg-[var(--royal-violet)] transition-all group-hover/item:w-full" />
-                        </Link>
-                        <ul className="space-y-4">
-                          {sub.subcategories?.map((child: any) => (
-                            <li key={child.id}>
-                              <Link
-                                to={`/category/${child.slug}`}
-                                className="text-xs font-medium text-zinc-500 transition-all hover:translate-x-2 hover:text-black flex items-center gap-2"
-                              >
-                                <span className="h-px w-0 bg-zinc-200 transition-all group-hover:w-3" />{" "}
-                                {child.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
+                    <Link
+                      to={`/category/${cat.slug}`}
+                      onClick={() => setMobileOpen(false)}
+                      className="group flex flex-col"
+                    >
+                      <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest mb-2">
+                        0{idx + 1}
+                      </span>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-5xl font-black uppercase tracking-tighter">
+                          {cat.name}
+                        </h2>
+                        <ArrowUpRight size={24} className="text-zinc-200" />
                       </div>
-                    ))}
+                    </Link>
                   </motion.div>
-                </div>
+                ))}
+              </div>
 
-                {/* VISUAL PANEL */}
-                <div className="w-[450px] p-8">
-                  <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100">
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={activeParent?.id}
-                        src={
-                          activeParent?.image_url ||
-                          "https://images.unsplash.com/photo-1515562141207-7a18b5ce3377?q=80&w=1200"
-                        }
-                        initial={{ scale: 1.1, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 1.05, opacity: 0 }}
-                        transition={{ duration: 0.8 }}
-                        className="h-full w-full object-cover"
-                      />
-                    </AnimatePresence>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <div className="absolute bottom-10 left-10 right-10">
-                      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/60 mb-2">
-                        New Season
-                      </p>
-                      <h4 className="text-3xl font-black text-white uppercase tracking-tighter mb-6">
-                        {activeParent?.name}
-                      </h4>
-                      <Link
-                        to={`/category/${activeParent?.slug}`}
-                        className="inline-flex items-center gap-3 rounded-full bg-white px-8 py-4 text-[10px] font-black uppercase tracking-widest text-black transition-transform hover:scale-105 active:scale-95"
-                      >
-                        Vezi Colecția <ArrowRight size={14} />
+              {/* Mobile Menu Footer */}
+              <div className="pt-12 mt-12 border-t border-zinc-100 space-y-8">
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      Suport
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <Link to="/contact" className="text-sm font-bold">
+                        Contact Us
                       </Link>
+                      <Link to="/shipping" className="text-sm font-bold">
+                        Shipping Policy
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      Social
+                    </p>
+                    <div className="flex gap-4">
+                      <Instagram size={20} />
+                      <HelpCircle size={20} />
                     </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
-      {/* MOBILE FULLSCREEN MENU */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] bg-white lg:hidden"
-          >
-            <div className="flex h-24 items-center justify-between px-8 border-b border-zinc-50">
-              <span className="text-xl font-black uppercase tracking-tighter">
-                Meniu
-              </span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="rounded-full bg-zinc-50 p-4"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="h-[calc(100vh-6rem)] overflow-y-auto p-6">
-              {!mobileView.parent ? (
-                <div className="space-y-3">
-                  {categories.map((cat, idx) => (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      key={cat.id}
-                      onClick={() =>
-                        cat.subcategories?.length
-                          ? setMobileView({ parent: cat })
-                          : (navigate(`/category/${cat.slug}`),
-                            setMobileOpen(false))
-                      }
-                      className="flex w-full items-center justify-between rounded-[2rem] bg-zinc-50 p-8 transition-all active:scale-[0.98]"
-                    >
-                      <span className="text-lg font-black uppercase tracking-tight">
-                        {cat.name}
-                      </span>
-                      <ChevronRight size={20} />
-                    </motion.button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  <button
-                    onClick={() => setMobileView({ parent: null })}
-                    className="flex items-center gap-2 font-black uppercase tracking-widest text-[var(--royal-violet)]"
-                  >
-                    <ChevronLeft size={20} /> Înapoi
-                  </button>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter">
-                    {mobileView.parent.name}
-                  </h2>
-                  <div className="grid gap-8">
-                    {mobileView.parent.subcategories?.map((sub: any) => (
-                      <div key={sub.id} className="space-y-4">
-                        <p className="text-xs font-black uppercase tracking-[0.3em] text-zinc-400">
-                          {sub.name}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {sub.subcategories?.map((child: any) => (
-                            <Link
-                              key={child.id}
-                              to={`/category/${child.slug}`}
-                              onClick={() => setMobileOpen(false)}
-                              className="rounded-full bg-zinc-100 px-6 py-3 text-sm font-bold"
-                            >
-                              {child.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* RENDER DRAWERS & MODALS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
@@ -517,8 +409,8 @@ const Navbar = () => {
         }}
       />
 
-      {/* Spacer to prevent content jump */}
-      <div className="h-[6rem] md:h-[7.5rem]" />
+      {/* DYNAMIC SPACER: Previne săritura conținutului sub navbar */}
+      <div className="h-[7rem] md:h-[8.5rem]" />
     </>
   );
 };
