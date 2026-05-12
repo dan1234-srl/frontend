@@ -39,15 +39,25 @@ const API_BASE_URL =
 // --- LOGO COMPONENTS ---
 const LogoIcon = () => (
   <svg
-    width="32"
-    height="22"
-    viewBox="0 0 220 140"
+    width="40"
+    height="30"
+    viewBox="0 0 540 400"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <rect width="220" height="28" y="0" fill="currentColor" />
-    <rect width="220" height="28" y="56" fill="currentColor" />
-    <rect width="160" height="28" y="112" fill="currentColor" />
+    {/* Partea Stângă (E-ul stilizat) */}
+    <rect x="0" y="0" width="260" height="85" fill="currentColor" />
+    <rect x="0" y="155" width="200" height="85" fill="currentColor" />
+    <rect x="0" y="315" width="260" height="85" fill="currentColor" />
+
+    {/* Partea Dreaptă - V-ul oblic și restul liniilor */}
+    {/* Folosim un Path pentru a crea acea tăietură oblică perfectă */}
+    <path d="M320 0H540V85H365L320 0Z" fill="currentColor" />
+    <path d="M290 155H540V240H340L290 155Z" fill="currentColor" />
+    <path d="M260 315H540V400H310L260 315Z" fill="currentColor" />
+
+    {/* Elementul V central care unește totul */}
+    <path d="M220 0L380 400H480L320 0H220Z" fill="currentColor" />
   </svg>
 );
 
@@ -222,21 +232,26 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* CENTER: BRAND LOGO (REPLACED EVEM WITH SVG) */}
+          {/* CENTER: BRAND LOGO */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Link
               to="/"
-              className="pointer-events-auto group flex items-center gap-3"
+              className="pointer-events-auto group flex items-center gap-4"
             >
+              {/* Simbolul Grafic */}
               <motion.div
-                whileHover={{ rotate: -5, scale: 1.1 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
                 className="text-black"
               >
                 <LogoIcon />
               </motion.div>
+
+              {/* Textul EVEM */}
               <motion.div
-                whileHover={{ x: 2 }}
-                className="text-[var(--deep-twilight)]"
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-black"
               >
                 <LogoText />
               </motion.div>
