@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   SlidersHorizontal,
-  ShoppingBag,
   Loader2,
   Copy,
   Check,
@@ -38,10 +37,9 @@ const CategoryPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  // Fetch Vouchere Ticker (cu formatare %/RON de pe Backend)
+  // Fetch Vouchers Ticker
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
       .then((res) => res.json())
@@ -53,7 +51,7 @@ const CategoryPage = () => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     toast.success(`Cod ${code} copiat!`, {
-      style: { background: "var(--brand-color, #000)", color: "#fff" },
+      style: { background: "#000", color: "#fff" },
       icon: <Sparkles className="text-[#9bdda2]" size={16} />,
     });
     setTimeout(() => setCopiedCode(null), 3000);
@@ -83,7 +81,6 @@ const CategoryPage = () => {
     [slug, searchParams],
   );
 
-  // Scroll Control: Doar la schimbarea categoriei sau filtrelor dure
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/products/filters/${slug}`)
       .then((res) => res.json())
@@ -101,10 +98,17 @@ const CategoryPage = () => {
     <div className="bg-[#fcfcfc] min-h-screen flex flex-col overflow-x-hidden selection:bg-zinc-900 selection:text-white">
       <Navbar />
 
-      {/* VOUCHER TICKER - DESIGN INFINIT */}
+      {/* 
+        FIX: SPACER FOR FIXED NAVBAR 
+        This div ensures the content starts below the fixed Navbar.
+        Matching your Navbar height (5.5rem / 88px).
+      */}
+      <div className="h-[5.5rem] w-full shrink-0" aria-hidden="true" />
+
+      {/* VOUCHER TICKER - NOW SITS DIRECTLY BELOW NAVBAR */}
       <AnimatePresence>
         {vouchers.length > 0 && (
-          <section className="w-full bg-[#050505] py-4 border-b border-zinc-900 relative overflow-hidden">
+          <section className="w-full bg-[#050505] py-4 border-b border-zinc-900 relative overflow-hidden z-10">
             <div className="flex whitespace-nowrap">
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
@@ -117,7 +121,7 @@ const CategoryPage = () => {
                     className="flex items-center gap-10"
                   >
                     <div className="flex flex-col text-left">
-                      <span className="text-[var(--brand-color,#9bdda2)] text-2xl font-black tracking-tighter">
+                      <span className="text-[#9bdda2] text-2xl font-black tracking-tighter">
                         {v.discount_value}
                       </span>
                       <span className="text-zinc-500 text-[9px] uppercase font-bold tracking-widest">
@@ -126,7 +130,7 @@ const CategoryPage = () => {
                     </div>
                     <button
                       onClick={() => copyToClipboard(v.code)}
-                      className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-2.5 hover:border-[var(--brand-color,#9bdda2)] transition-all"
+                      className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-2.5 hover:border-[#9bdda2] transition-all"
                     >
                       <span className="text-sm font-mono font-black text-white">
                         {v.code}
@@ -157,7 +161,6 @@ const CategoryPage = () => {
             </p>
           </div>
           <div className="flex gap-4 w-full md:w-auto">
-            {/* MOBILE ONLY DRAWER */}
             <div className="lg:hidden flex-1">
               <Sheet>
                 <SheetTrigger asChild>
@@ -185,8 +188,8 @@ const CategoryPage = () => {
         </div>
 
         <div className="flex gap-16 items-start">
-          {/* DESKTOP SIDEBAR - FIXED ON THE LEFT */}
-          <aside className="hidden lg:block w-[280px] shrink-0 sticky top-32 h-[calc(100vh-150px)] overflow-y-auto luxury-scrollbar pr-6">
+          {/* DESKTOP SIDEBAR - STICKY POSITIONING */}
+          <aside className="hidden lg:block w-[280px] shrink-0 sticky top-28 h-[calc(100vh-120px)] overflow-y-auto luxury-scrollbar pr-6">
             <div className="border-r border-zinc-100 h-full">
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mb-8 block text-left">
                 Filtrează Colecția
@@ -195,7 +198,7 @@ const CategoryPage = () => {
             </div>
           </aside>
 
-          {/* GRID PRODUSE */}
+          {/* PRODUCT GRID */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
               <ProductGridSkeleton count={8} />
@@ -207,7 +210,6 @@ const CategoryPage = () => {
                   ))}
                 </div>
 
-                {/* LOAD MORE - MODERN PAGINATION */}
                 <div className="flex flex-col items-center py-20 border-t border-zinc-100">
                   {currentPage < totalPages ? (
                     <button
