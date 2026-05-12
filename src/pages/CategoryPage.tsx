@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -95,44 +95,44 @@ const CategoryPage = () => {
   ]);
 
   return (
-    <div className="bg-[#fcfcfc] min-h-screen flex flex-col overflow-x-hidden selection:bg-zinc-900 selection:text-white">
+    <div className="bg-[#fcfcfc] min-h-screen flex flex-col overflow-x-hidden selection:bg-zinc-900 selection:text-white relative">
+      {/* NAVBAR */}
       <Navbar />
 
       {/* 
-        FIX: SPACER FOR FIXED NAVBAR 
-        This div ensures the content starts below the fixed Navbar.
-        Matching your Navbar height (5.5rem / 88px).
+        ELIMINAT SPACER-UL VECHI! 
+        Navbar-ul tău are deja spacer-ul lui inclus la finalul componentei, 
+        deci acum Voucherele se vor lipi perfect de el.
       */}
-      <div className="h-[5.5rem] w-full shrink-0" aria-hidden="true" />
 
-      {/* VOUCHER TICKER - NOW SITS DIRECTLY BELOW NAVBAR */}
+      {/* VOUCHER TICKER */}
       <AnimatePresence>
         {vouchers.length > 0 && (
-          <section className="w-full bg-[#050505] py-4 border-b border-zinc-900 relative overflow-hidden z-10">
+          <section className="w-full bg-[#050505] py-3 md:py-4 border-b border-zinc-900 relative overflow-hidden z-10">
             <div className="flex whitespace-nowrap">
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
                 transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                className="flex gap-24 md:gap-48 items-center px-10"
+                className="flex gap-16 md:gap-48 items-center px-4 md:px-10"
               >
                 {[...vouchers, ...vouchers].map((v, idx) => (
                   <div
                     key={`${v.id}-${idx}`}
-                    className="flex items-center gap-10"
+                    className="flex items-center gap-6 md:gap-10"
                   >
                     <div className="flex flex-col text-left">
-                      <span className="text-[#9bdda2] text-2xl font-black tracking-tighter">
+                      <span className="text-[#9bdda2] text-xl md:text-2xl font-black tracking-tighter">
                         {v.discount_value}
                       </span>
-                      <span className="text-zinc-500 text-[9px] uppercase font-bold tracking-widest">
+                      <span className="text-zinc-500 text-[8px] md:text-[9px] uppercase font-bold tracking-widest">
                         {v.description}
                       </span>
                     </div>
                     <button
                       onClick={() => copyToClipboard(v.code)}
-                      className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-2.5 hover:border-[#9bdda2] transition-all"
+                      className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 md:px-6 md:py-2.5 hover:border-[#9bdda2] transition-all rounded-md"
                     >
-                      <span className="text-sm font-mono font-black text-white">
+                      <span className="text-xs md:text-sm font-mono font-black text-white">
                         {v.code}
                       </span>
                       {copiedCode === v.code ? (
@@ -149,48 +149,57 @@ const CategoryPage = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-grow w-full max-w-[85%] mx-auto py-12">
-        {/* HEADER & ACTIONS */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16 border-b border-zinc-100 pb-10">
-          <div className="text-left">
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-zinc-950 mb-2">
+      {/* MAIN CONTENT - FULLY RESPONSIVE */}
+      <main className="flex-grow w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        {/* HEADER SECTION (Title + Actions) */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-16 border-b border-zinc-100 pb-8 md:pb-10">
+          <div className="text-left w-full md:w-auto">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-zinc-950 mb-2 leading-none">
               {filtersData?.category_name || slug?.replace(/-/g, " ")}
             </h1>
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-2 md:mt-3">
               {products.length} Articole disponibile
             </p>
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <div className="lg:hidden flex-1">
+
+          {/* ACTIONS CONTAINER (Mobile: Side-by-side grid, Desktop: Flex) */}
+          <div className="grid grid-cols-2 md:flex md:items-center w-full md:w-auto gap-3 z-40">
+            {/* Filter Button - Mobile Only */}
+            <div className="lg:hidden w-full">
               <Sheet>
                 <SheetTrigger asChild>
-                  <button className="w-full h-12 flex items-center justify-center gap-3 border border-zinc-200 text-[10px] font-black uppercase tracking-widest">
+                  <button className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-colors">
                     <SlidersHorizontal size={14} /> Filtre
                   </button>
                 </SheetTrigger>
                 <SheetContent
                   side="right"
-                  className="w-full bg-white border-none p-0"
+                  className="w-full sm:w-[400px] bg-white border-none p-0 z-[1001]"
                 >
-                  <SheetHeader className="p-8 border-b">
-                    <SheetTitle className="text-2xl font-black uppercase">
+                  <SheetHeader className="p-6 border-b">
+                    <SheetTitle className="text-xl font-black uppercase">
                       Filtre
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="p-8 h-full overflow-y-auto">
+                  <div className="p-6 h-full overflow-y-auto">
                     {filtersData && <FilterSidebar filtersData={filtersData} />}
                   </div>
                 </SheetContent>
               </Sheet>
             </div>
-            <SortDropdown />
+
+            {/* SortDropdown */}
+            <div className="w-full">
+              <SortDropdown />
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-16 items-start">
+        {/* CONTENT (Desktop Sidebar + Product Grid) */}
+        <div className="flex gap-8 lg:gap-12 items-start relative">
           {/* DESKTOP SIDEBAR - STICKY POSITIONING */}
-          <aside className="hidden lg:block w-[280px] shrink-0 sticky top-28 h-[calc(100vh-120px)] overflow-y-auto luxury-scrollbar pr-6">
-            <div className="border-r border-zinc-100 h-full">
+          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto luxury-scrollbar pr-6">
+            <div className="h-full">
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mb-8 block text-left">
                 Filtrează Colecția
               </span>
@@ -203,36 +212,37 @@ const CategoryPage = () => {
             {loading && products.length === 0 ? (
               <ProductGridSkeleton count={8} />
             ) : (
-              <div className="flex flex-col gap-20">
-                <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-8 gap-y-16">
+              <div className="flex flex-col gap-12 md:gap-20">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6 md:gap-y-16">
                   {products.map((p, i) => (
                     <ProductCard key={`${p.id}-${i}`} product={p} />
                   ))}
                 </div>
 
-                <div className="flex flex-col items-center py-20 border-t border-zinc-100">
+                {/* LOAD MORE BUTTON */}
+                <div className="flex flex-col items-center py-12 md:py-20 border-t border-zinc-100">
                   {currentPage < totalPages ? (
                     <button
                       onClick={() => fetchProducts(currentPage + 1, true)}
                       disabled={loadingMore}
-                      className="group flex flex-col items-center gap-4"
+                      className="group flex flex-col items-center gap-3 md:gap-4"
                     >
-                      <div className="w-16 h-16 rounded-full border border-zinc-200 flex items-center justify-center group-hover:border-black transition-all">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border border-zinc-200 flex items-center justify-center group-hover:border-black transition-all bg-white shadow-sm">
                         {loadingMore ? (
                           <Loader2 className="animate-spin text-zinc-400" />
                         ) : (
                           <ChevronDown
-                            size={24}
+                            size={20}
                             className="group-hover:translate-y-1 transition-transform"
                           />
                         )}
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 group-hover:text-black">
+                      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 group-hover:text-black">
                         Afișează mai multe
                       </span>
                     </button>
                   ) : (
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300">
+                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300">
                       Colecție completă
                     </p>
                   )}
@@ -243,6 +253,42 @@ const CategoryPage = () => {
         </div>
       </main>
       <Footer />
+
+      {/* --- RADIX UI BUG FIXES & STYLING --- */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        /* 
+          1. FIX PENTRU "SHIFT/FLICKER"
+          Aceasta forteaza browser-ul sa ignore padding-ul pe care Radix 
+          il adauga cand blocheaza scroll-ul (cand deschizi dropdown-ul).
+        */
+        html {
+          scrollbar-gutter: stable;
+        }
+        body[data-scroll-locked] {
+          padding-right: 0px !important;
+          margin-right: 0px !important;
+        }
+        /* Asiguram ca nici header-ul fixed nu se misca */
+        [data-scroll-locked] .fixed {
+          padding-right: 0px !important;
+          margin-right: 0px !important;
+        }
+
+        /* 2. Z-Index corect pentru meniuri */
+        [data-radix-popper-content-wrapper] { 
+          z-index: 9999 !important; 
+        }
+        
+        /* 3. SCROLLBAR LUXURY PENTRU SIDEBAR */
+        .luxury-scrollbar::-webkit-scrollbar { width: 3px; }
+        .luxury-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+        .luxury-scrollbar:hover::-webkit-scrollbar-thumb { background: #d4d4d8; }
+      `,
+        }}
+      />
     </div>
   );
 };
