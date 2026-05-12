@@ -4,7 +4,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 
 const Footer = () => {
-  // Verificăm dacă contextul există pentru a preveni crash-ul
   const langContext = useLanguage();
   const language = langContext?.language || "ro";
 
@@ -24,7 +23,6 @@ const Footer = () => {
     { name: t("Termeni", "Terms"), path: "/terms" },
   ];
 
-  // Mapare explicită a componentelor pentru a preveni "z is not a function"
   const socialLinks = [
     {
       id: "ig",
@@ -92,7 +90,7 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* 2. CURVE */}
+      {/* 2. CURVE (Transition to Dark Footer) */}
       <div
         className="relative h-16 md:h-24 w-full bg-white"
         style={{ color: "var(--dark-amethyst)" }}
@@ -116,12 +114,14 @@ const Footer = () => {
       >
         <div className="max-w-[1400px] mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-16 lg:gap-8 mb-20">
+            {/* BRAND BOX */}
             <div className="lg:col-span-4 space-y-8">
-              <Link
-                to="/"
-                className="heading-serif text-4xl italic tracking-tighter inline-block"
-              >
-                Evem.
+              <Link to="/" className="inline-block group">
+                <img
+                  src="/Copilot_20260512_191942.png"
+                  alt="Evem Luxury"
+                  className="h-10 w-auto brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity"
+                />
               </Link>
               <p className="text-[11px] opacity-40 leading-relaxed max-w-xs font-bold uppercase tracking-widest">
                 {t(
@@ -146,6 +146,7 @@ const Footer = () => {
               </div>
             </div>
 
+            {/* LINKS BOX 1 */}
             <div className="lg:col-span-5 grid grid-cols-2 gap-8">
               <div className="space-y-6">
                 <h4
@@ -161,16 +162,17 @@ const Footer = () => {
                         to={link.path}
                         className="hover:text-white transition-colors flex items-center gap-1 group"
                       >
-                        {link.name}{" "}
+                        {link.name}
                         <ArrowUpRight
                           size={10}
-                          className="opacity-0 group-hover:opacity-100 transition-all"
+                          className="opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0"
                         />
                       </Link>
                     </li>
                   ))}
                 </ul>
               </div>
+
               <div className="space-y-6">
                 <h4
                   className="text-[10px] font-black uppercase tracking-[0.4em]"
@@ -193,6 +195,7 @@ const Footer = () => {
               </div>
             </div>
 
+            {/* LINKS BOX 2 (Atelier) */}
             <div className="lg:col-span-3 space-y-6 text-left lg:text-right">
               <h4
                 className="text-[10px] font-black uppercase tracking-[0.4em]"
@@ -218,6 +221,7 @@ const Footer = () => {
             </div>
           </div>
 
+          {/* BOTTOM COPYRIGHT */}
           <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
               <span
