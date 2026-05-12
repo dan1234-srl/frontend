@@ -13,8 +13,6 @@ import {
   Package,
   ChevronDown,
   ArrowRight,
-  MapPin,
-  Settings,
   Sparkles,
   Search,
 } from "lucide-react";
@@ -46,6 +44,22 @@ interface Category {
   subcategories: Category[];
 }
 
+// --- FUNCTIA CARE LIPSEA ---
+const getValidImageUrl = (imageSource: string | null | undefined): string => {
+  if (!imageSource)
+    return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
+  if (typeof imageSource === "string" && imageSource.startsWith("http"))
+    return imageSource;
+  try {
+    const parsed = JSON.parse(imageSource as string);
+    return parsed?.main?.large || parsed?.url || "";
+  } catch {
+    return (imageSource as string).startsWith("/")
+      ? `${API_BASE_URL}${imageSource}`
+      : (imageSource as string);
+  }
+};
+
 const Navbar = () => {
   const { user, signOut, isAdmin } = useAuth();
   const { totalItems } = useCart();
@@ -71,7 +85,6 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- SCROLL ANIMATIONS ---
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5.5rem", "4.5rem"]);
   const navBg = useTransform(
@@ -148,7 +161,6 @@ const Navbar = () => {
           </motion.div>
         </div>
 
-        {/* MAIN NAV */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
           className="relative flex items-center justify-between border-b border-zinc-100 backdrop-blur-md px-3 sm:px-6 lg:px-12 transform-gpu shadow-sm transition-all"
@@ -159,7 +171,6 @@ const Navbar = () => {
             );
           }}
         >
-          {/* LEFT: MENU & SEARCH */}
           <div className="z-20 flex flex-1 items-center justify-start gap-1 sm:gap-4">
             <button
               onClick={() => setMobileOpen(true)}
@@ -172,16 +183,12 @@ const Navbar = () => {
             >
               <Menu size={18} className="text-black" />
             </button>
-
-            {/* Buton Căutare (Mobil/Tabletă) */}
             <button
               onClick={() => setSearchOpen(true)}
               className="xl:hidden flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors"
             >
               <Search size={18} className="text-black" />
             </button>
-
-            {/* BARĂ CĂUTARE DESKTOP (Ascunsă pe ecrane sub 1280px) */}
             <form
               onSubmit={handleSearch}
               className="relative hidden xl:block w-64"
@@ -200,7 +207,6 @@ const Navbar = () => {
             </form>
           </div>
 
-          {/* CENTER: LOGO */}
           <div className="flex-shrink-0 flex items-center justify-center px-2">
             <Link to="/" className="group flex items-center justify-center">
               <motion.div
@@ -221,9 +227,7 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* RIGHT ACTIONS */}
           <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-2 lg:gap-4">
-            {/* Wishlist - Prezent și pe mobil */}
             <motion.button
               whileHover={{ y: -2 }}
               onClick={() => setWishOpen(true)}
@@ -231,8 +235,6 @@ const Navbar = () => {
             >
               <Heart size={18} />
             </motion.button>
-
-            {/* Cont Utilizator */}
             <div className="relative" ref={userMenuRef}>
               <motion.button
                 whileHover={{ y: -2 }}
@@ -243,7 +245,6 @@ const Navbar = () => {
               >
                 <User size={18} />
               </motion.button>
-
               <AnimatePresence>
                 {user && userMenuOpen && (
                   <motion.div
@@ -285,8 +286,6 @@ const Navbar = () => {
                 )}
               </AnimatePresence>
             </div>
-
-            {/* Coș Cumpărături */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -326,7 +325,7 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECTII */}
+                {/* 1. LEFT PANEL: COLECtII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -475,10 +474,8 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
-      {/* SEARCH MODAL */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
-      {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -501,9 +498,7 @@ const Navbar = () => {
                 <X size={22} />
               </button>
             </div>
-
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-left">
-              {/* CĂUTARE MOBIL */}
               {!mobileView.parent && (
                 <form onSubmit={handleSearch} className="relative mb-8">
                   <Search
@@ -519,7 +514,6 @@ const Navbar = () => {
                   />
                 </form>
               )}
-
               {!mobileView.parent ? (
                 <motion.div
                   initial="hidden"
@@ -577,7 +571,7 @@ const Navbar = () => {
                     {mobileView.parent.subcategories?.map((sub: Category) => (
                       <div key={sub.id} className="space-y-4">
                         <div className="text-[15px] font-black uppercase tracking-widest text-[var(--deep-twilight)] flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--french-blue)]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--french-blue)]" />{" "}
                           {sub.name}
                         </div>
                         <div className="flex flex-wrap gap-2.5">
@@ -603,17 +597,6 @@ const Navbar = () => {
       </AnimatePresence>
 
       <div className="h-[5.5rem] w-full" />
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e4e4e7; border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #d4d4d8; }
-      `,
-        }}
-      />
-
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
