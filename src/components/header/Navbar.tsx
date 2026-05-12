@@ -32,10 +32,6 @@ import Register from "@/components/auth/Register";
 import { toast } from "sonner";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 
-// --- IMPORTĂ IMAGINILE LOGO-ULUI ---
-import logoIconImg from "@/assets/images/logo-icon.png";
-import logoTextImg from "@/assets/images/logo-text.png";
-
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
@@ -187,7 +183,7 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* CENTER: LOGO (IMAGINI) */}
+          {/* CENTER: LOGO (IMAGINI DIN FOLDERUL PUBLIC) */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Link
               to="/"
@@ -198,16 +194,16 @@ const Navbar = () => {
                 className="flex items-center"
               >
                 <img
-                  src={logoIconImg}
+                  src="/logo-icon.png"
                   alt="Icon"
-                  className="h-6 w-auto object-contain"
+                  className="h-7 w-auto object-contain"
                 />
               </motion.div>
               <motion.div whileHover={{ x: 2 }} className="flex items-center">
                 <img
-                  src={logoTextImg}
+                  src="/logo-text.png"
                   alt="Evem"
-                  className="h-5 w-auto object-contain"
+                  className="h-6 w-auto object-contain"
                 />
               </motion.div>
             </Link>
@@ -308,7 +304,7 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT: COLECȚII (SCROLL ACTIV) */}
+                {/* 1. LEFT PANEL: COLECtII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -349,12 +345,12 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* 2. CENTER: CATEGORII (SCROLL ACTIV) */}
+                {/* 2. CENTER PANEL: CATEGORII */}
                 <div className="flex-1 flex flex-col h-full bg-white">
                   <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={activeParent?.id || "empty"}
+                        key={activeParent?.id || "empty-content"}
                         initial="hidden"
                         animate="show"
                         exit="hidden"
@@ -410,7 +406,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* 3. RIGHT: VISUAL */}
+                {/* 3. RIGHT PANEL: VISUAL SHOWCASE */}
                 <div className="w-[480px] p-10 bg-zinc-50/30">
                   <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
                     <AnimatePresence mode="wait">
@@ -572,7 +568,6 @@ const Navbar = () => {
         }}
       />
 
-      {/* DRAWERS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
