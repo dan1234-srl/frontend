@@ -47,17 +47,17 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
     );
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[320px] sm:max-w-[400px] md:max-w-[450px] mx-auto lg:mx-0">
-      {/* Imaginea Principală */}
-      <div className="relative aspect-[3/4] group overflow-hidden rounded-3xl bg-white border border-zinc-100 shadow-sm cursor-zoom-in">
+    <div className="flex flex-col gap-3 w-full max-w-[450px] mx-auto lg:mx-0">
+      {/* Imaginea Principală - Limităm înălțimea pe mobil (max-h-[45vh]) */}
+      <div className="relative aspect-[3/4] md:aspect-[3/4] max-h-[45vh] md:max-h-none group overflow-hidden rounded-2xl bg-white border border-zinc-100 shadow-sm cursor-zoom-in flex items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="h-full w-full"
+            transition={{ duration: 0.2 }}
+            className="h-full w-full flex items-center justify-center"
           >
             <SmartImage
               src={optimizeImageUrl(
@@ -72,7 +72,8 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
               )}
               alt="Imagine produs"
               eager
-              className="absolute inset-0 h-full w-full object-contain p-4"
+              // Folosim object-contain pentru a ne asigura că imaginea se vede întreagă în noul spațiu limitat
+              className="max-h-full max-w-full object-contain p-2"
               onClick={() => setIsZoomOpen(true)}
             />
           </motion.div>
@@ -81,9 +82,9 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
         {/* Badge Zoom */}
         <button
           onClick={() => setIsZoomOpen(true)}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/80 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+          className="absolute top-3 right-3 p-1.5 rounded-full bg-white/80 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
         >
-          <Maximize2 size={18} className="text-zinc-600" />
+          <Maximize2 size={16} className="text-zinc-600" />
         </button>
 
         {/* Navigație Săgeți */}
@@ -91,30 +92,30 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
           <>
             <button
               onClick={prev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-zinc-900 hover:text-white z-10"
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all shadow-md z-10"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
             <button
               onClick={next}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-zinc-900 hover:text-white z-10"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all shadow-md z-10"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </>
         )}
       </div>
 
-      {/* Rândul de miniaturi (Thumbnails) */}
+      {/* Rândul de miniaturi (Thumbnails) - Mai compacte pe mobil */}
       {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide snap-x justify-center lg:justify-start">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x justify-center">
           {images.map((img, i) => (
             <button
               key={i}
               onClick={() => setCurrentIndex(i)}
-              className={`relative flex-shrink-0 w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all snap-start ${
+              className={`relative flex-shrink-0 w-12 sm:w-16 aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all snap-start ${
                 i === currentIndex
-                  ? "border-zinc-900 shadow-md scale-105"
+                  ? "border-zinc-900 shadow-sm"
                   : "border-transparent opacity-50 hover:opacity-100"
               }`}
             >
@@ -128,7 +129,6 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
         </div>
       )}
 
-      {/* Modalul de Zoom */}
       <ImageZoom
         images={images}
         initialIndex={currentIndex}
