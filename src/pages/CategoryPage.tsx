@@ -97,8 +97,8 @@ const CategoryPage = () => {
     <div className="bg-[#fcfcfc] min-h-screen flex flex-col overflow-x-hidden selection:bg-zinc-900 selection:text-white">
       <Navbar />
 
-      {/* FIX SPACER: Acest div goale impinge conținutul exact cât înălțimea Navbar-ului fixed (5.5rem = 88px) */}
-      <div className="pt-[88px]" aria-hidden="true" />
+      {/* FIX SPACER: This forces exactly 5.5rem of space before the content starts, ensuring the banner touches the Navbar */}
+      <div className="h-[5.5rem] w-full shrink-0" aria-hidden="true" />
 
       <AnimatePresence>
         {vouchers.length > 0 && (
@@ -144,7 +144,7 @@ const CategoryPage = () => {
       </AnimatePresence>
 
       <main className="flex-grow w-full max-w-[92%] 2xl:max-w-[1400px] mx-auto py-8 md:py-12">
-        {/* HEADER SECTION (Titlu + Acțiuni) */}
+        {/* HEADER SECTION (Title + Actions) */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 md:mb-16 border-b border-zinc-100 pb-8 md:pb-10">
           <div className="text-left w-full md:w-auto">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-zinc-950 mb-2 leading-none">
@@ -155,9 +155,9 @@ const CategoryPage = () => {
             </p>
           </div>
 
-          {/* BUTOANE FILTRE (MOBIL) SI SORTARE */}
+          {/* FILTER BUTTON (MOBILE) AND SORT DROPDOWN */}
           <div className="flex items-center justify-between w-full md:w-auto gap-4 z-40">
-            {/* Buton Filtre - Doar pe mobil */}
+            {/* Filter Button - Mobile Only */}
             <div className="lg:hidden flex-1">
               <Sheet>
                 <SheetTrigger asChild>
@@ -181,14 +181,14 @@ const CategoryPage = () => {
               </Sheet>
             </div>
 
-            {/* SortDropdown container */}
+            {/* SortDropdown */}
             <div className="flex-1 md:flex-none">
               <SortDropdown />
             </div>
           </div>
         </div>
 
-        {/* CONTENT (Sidebar Desktop + Grid Produse) */}
+        {/* CONTENT (Desktop Sidebar + Product Grid) */}
         <div className="flex gap-12 items-start relative">
           <aside className="hidden lg:block w-[260px] shrink-0 sticky top-28 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 luxury-scrollbar">
             <div className="h-full">
@@ -244,15 +244,28 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
+      {/* GLOBAL STYLES FOR RADIX UI FIXES */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        /* Forțăm popover-ul să fie deasupra și să nu cauzeze shift la layout */
+        /* KILL THE SHIFT: Prevent Radix from adding padding to the body when modals/selects open */
+        body {
+          padding-right: 0px !important;
+          margin-right: 0px !important;
+          overflow-x: hidden !important;
+        }
+
+        /* Prevent fixed headers from shifting */
+        header, nav {
+          padding-right: 0px !important;
+        }
+
+        /* Ensure popovers are on top and correctly sized */
         [data-radix-popper-content-wrapper] { 
           z-index: 9999 !important; 
-          width: 220px !important;
         }
         
+        /* Custom scrollbar for sidebar */
         .luxury-scrollbar::-webkit-scrollbar { width: 3px; }
         .luxury-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }

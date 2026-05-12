@@ -17,53 +17,52 @@ export const SortDropdown = () => {
   };
 
   return (
-    // Folosim un div cu lățime fixă pentru a ancora elementul
-    <div className="flex items-center justify-end min-w-[160px] md:min-w-[200px]">
-      <Select
-        onValueChange={handleSortChange}
-        defaultValue={searchParams.get("sort") || "newest"}
-      >
-        <SelectTrigger className="h-11 w-full border border-zinc-200 bg-white px-4 text-[10px] font-black uppercase tracking-widest focus:ring-0 focus:ring-offset-0 transition-all rounded-lg shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-400 font-bold hidden sm:inline">
-              Sortare:
-            </span>
+    <Select
+      onValueChange={handleSortChange}
+      defaultValue={searchParams.get("sort") || "newest"}
+    >
+      {/* Explicit fixed width prevents layout jumping when text length changes */}
+      <SelectTrigger className="w-full md:w-[220px] h-11 rounded-lg border border-zinc-200 bg-white px-4 text-[10px] font-black uppercase tracking-widest text-zinc-800 shadow-sm focus:ring-0 focus:ring-offset-0 focus:border-zinc-400 transition-colors flex items-center justify-between">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <span className="text-zinc-400 font-bold shrink-0 hidden sm:inline">
+            Sortare:
+          </span>
+          <span className="truncate">
             <SelectValue placeholder="Sortează" />
-          </div>
-        </SelectTrigger>
+          </span>
+        </div>
+      </SelectTrigger>
 
-        <SelectContent
-          // 'popper' ajută la evitarea flicker-ului de poziționare
-          position="popper"
-          sideOffset={5}
-          className="z-[10000] min-w-[200px] bg-white border border-zinc-100 shadow-xl rounded-xl"
+      <SelectContent
+        position="popper"
+        sideOffset={5}
+        className="z-[9999] bg-white border border-zinc-100 shadow-xl rounded-lg w-[220px]"
+      >
+        <SelectItem
+          value="newest"
+          className="text-[10px] font-black uppercase tracking-widest py-3 pl-8 focus:bg-zinc-50 cursor-pointer text-zinc-700"
         >
-          <SelectItem
-            value="newest"
-            className="text-[10px] font-black uppercase py-3 cursor-pointer"
-          >
-            Cele mai noi
-          </SelectItem>
-          <SelectItem
-            value="price_asc"
-            className="text-[10px] font-black uppercase py-3 cursor-pointer"
-          >
-            Preț: Mic - Mare
-          </SelectItem>
-          <SelectItem
-            value="price_desc"
-            className="text-[10px] font-black uppercase py-3 cursor-pointer"
-          >
-            Preț: Mare - Mic
-          </SelectItem>
-          <SelectItem
-            value="popular"
-            className="text-[10px] font-black uppercase py-3 cursor-pointer"
-          >
-            Cele mai populare
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+          Cele mai noi
+        </SelectItem>
+        <SelectItem
+          value="price_asc"
+          className="text-[10px] font-black uppercase tracking-widest py-3 pl-8 focus:bg-zinc-50 cursor-pointer text-zinc-700"
+        >
+          Preț: Mic - Mare
+        </SelectItem>
+        <SelectItem
+          value="price_desc"
+          className="text-[10px] font-black uppercase tracking-widest py-3 pl-8 focus:bg-zinc-50 cursor-pointer text-zinc-700"
+        >
+          Preț: Mare - Mic
+        </SelectItem>
+        <SelectItem
+          value="popular"
+          className="text-[10px] font-black uppercase tracking-widest py-3 pl-8 focus:bg-zinc-50 cursor-pointer text-zinc-700"
+        >
+          Cele mai populare
+        </SelectItem>
+      </SelectContent>
+    </Select>
   );
 };
