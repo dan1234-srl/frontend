@@ -53,22 +53,31 @@ const LogoIcon = () => (
 
 const LogoText = () => (
   <svg
-    width="120"
-    height="36"
-    viewBox="0 0 300 90"
+    width="140"
+    height="28"
+    viewBox="0 0 450 80"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <path d="M0 0h80v14H14v16h60v14H14v16h66v14H0z" fill="currentColor" />
+    {/* E */}
+    <path d="M0 0H100V15H18V32H85V47H18V65H100V80H0V0Z" fill="currentColor" />
+    {/* V */}
     <path
-      d="M110 0h14l40 74h-16l-10-20h-32l-10 20H80zm22 44l-10-20-10 20z"
+      d="M120 0H138L175 62L212 0H230L185 80H165L120 0Z"
       fill="currentColor"
     />
-    <path d="M180 0h14v60h52v14h-66z" fill="currentColor" />
-    <path d="M260 0h14v60h52v14h-66z" fill="currentColor" />
+    {/* E */}
+    <path
+      d="M250 0H350V15H268V32H335V47H268V65H350V80H250V0Z"
+      fill="currentColor"
+    />
+    {/* M */}
+    <path
+      d="M370 80V0H388L410 45L432 0H450V80H435V25L415 65H405L385 25V80H370Z"
+      fill="currentColor"
+    />
   </svg>
 );
-
 interface Category {
   id: number;
   name: string;
