@@ -216,17 +216,19 @@ const Navbar = () => {
               className="pointer-events-auto group flex items-center justify-center px-4"
             >
               <motion.div
-                whileHover={{ scale: 0.6 }}
-                whileTap={{ scale: 0.58 }}
+                /* Efectul de hover trebuie să fie discret (ex: 1.02 pentru o ușoară mărire) */
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className="flex items-center justify-center"
               >
                 <img
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
-                  className="h-10 sm:h-12 lg:h-16 w-auto object-contain transition-all duration-500"
+                  /* MODIFICĂ AICI: h-7 pentru mobil, h-8 pentru tablete, h-10 pentru desktop */
+                  className="h-7 sm:h-8 lg:h-10 w-auto object-contain transition-all duration-500"
                   style={{
                     imageRendering: "auto",
-                    filter: "drop-shadow(0px 1px 1px rgba(0,0,0,0.05))", // Oferă profunzime fără a fi pixelat
+                    filter: "drop-shadow(0px 1px 1px rgba(0,0,0,0.05))",
                   }}
                 />
               </motion.div>
