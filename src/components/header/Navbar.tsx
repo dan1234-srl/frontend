@@ -13,6 +13,8 @@ import {
   Package,
   ChevronDown,
   ArrowRight,
+  MapPin,
+  Settings,
   Sparkles,
   Search,
 } from "lucide-react";
@@ -30,6 +32,7 @@ import Login from "@/components/auth/Login";
 import Register from "@/components/auth/Register";
 import { toast } from "sonner";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
+import SearchModal from "./SearchModal";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -58,6 +61,7 @@ const Navbar = () => {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchQuery, setSearchTerm] = useState("");
   const [mobileView, setMobileView] = useState<{ parent: Category | null }>({
@@ -75,20 +79,6 @@ const Navbar = () => {
     [0, 50],
     ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.98)"],
   );
-
-  const getValidImageUrl = (imageSource: string | null) => {
-    if (!imageSource)
-      return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
-    if (imageSource.startsWith("http")) return imageSource;
-    try {
-      const parsed = JSON.parse(imageSource);
-      return parsed?.main?.large || parsed?.url || "";
-    } catch {
-      return imageSource.startsWith("/")
-        ? `${API_BASE_URL}${imageSource}`
-        : imageSource;
-    }
-  };
 
   const fetchMenu = useCallback(async () => {
     try {
@@ -161,7 +151,7 @@ const Navbar = () => {
         {/* MAIN NAV */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
-          className="relative flex items-center border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu shadow-sm"
+          className="relative flex items-center justify-between border-b border-zinc-100 backdrop-blur-md px-3 sm:px-6 lg:px-12 transform-gpu shadow-sm transition-all"
           onMouseLeave={() => {
             megaMenuTimeoutRef.current = setTimeout(
               () => setMegaOpen(false),
@@ -170,7 +160,7 @@ const Navbar = () => {
           }}
         >
           {/* LEFT: MENU & SEARCH */}
-          <div className="z-20 flex flex-1 items-center gap-2 sm:gap-6">
+          <div className="z-20 flex flex-1 items-center justify-start gap-1 sm:gap-4">
             <button
               onClick={() => setMobileOpen(true)}
               onMouseEnter={() => {
@@ -178,19 +168,20 @@ const Navbar = () => {
                   clearTimeout(megaMenuTimeoutRef.current);
                 setMegaOpen(true);
               }}
-              className="group flex items-center gap-2 rounded-full bg-zinc-50 px-4 py-2 sm:px-5 sm:py-2.5 transition-all hover:bg-zinc-100"
+              className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors"
             >
-              <Menu size={18} className="text-[var(--deep-twilight)]" />
-              <span className="hidden text-[11px] font-black uppercase tracking-widest text-[var(--deep-twilight)] lg:block">
-                Meniu
-              </span>
-              <ChevronDown
-                size={14}
-                className={`hidden transition-transform duration-500 lg:block ${megaOpen ? "rotate-180" : ""}`}
-              />
+              <Menu size={18} className="text-black" />
             </button>
 
-            {/* BARĂ CĂUTARE DESKTOP */}
+            {/* Buton Căutare (Mobil/Tabletă) */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="xl:hidden flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors"
+            >
+              <Search size={18} className="text-black" />
+            </button>
+
+            {/* BARĂ CĂUTARE DESKTOP (Ascunsă pe ecrane sub 1280px) */}
             <form
               onSubmit={handleSearch}
               className="relative hidden xl:block w-64"
@@ -209,14 +200,10 @@ const Navbar = () => {
             </form>
           </div>
 
-          {/* CENTER: LOGO (IMAGINE UNICĂ) */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <Link
-              to="/"
-              className="pointer-events-auto group flex items-center justify-center px-4"
-            >
+          {/* CENTER: LOGO */}
+          <div className="flex-shrink-0 flex items-center justify-center px-2">
+            <Link to="/" className="group flex items-center justify-center">
               <motion.div
-                /* Efectul de hover trebuie să fie discret (ex: 1.02 pentru o ușoară mărire) */
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="flex items-center justify-center"
@@ -224,8 +211,7 @@ const Navbar = () => {
                 <img
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
-                  /* MODIFICĂ AICI: h-7 pentru mobil, h-8 pentru tablete, h-10 pentru desktop */
-                  className="h-7 sm:h-8 lg:h-10 w-auto object-contain transition-all duration-500"
+                  className="h-6 sm:h-7 lg:h-9 w-auto object-contain transition-all duration-500"
                   style={{
                     imageRendering: "auto",
                     filter: "drop-shadow(0px 1px 1px rgba(0,0,0,0.05))",
@@ -236,25 +222,28 @@ const Navbar = () => {
           </div>
 
           {/* RIGHT ACTIONS */}
-          <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-4">
+          <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-2 lg:gap-4">
+            {/* Wishlist - Prezent și pe mobil */}
             <motion.button
               whileHover={{ y: -2 }}
               onClick={() => setWishOpen(true)}
-              className="p-2 text-zinc-700 hover:text-red-500 transition-colors"
+              className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full text-zinc-700 hover:text-red-500 hover:bg-zinc-50 transition-all"
             >
-              <Heart size={20} />
+              <Heart size={18} />
             </motion.button>
 
+            {/* Cont Utilizator */}
             <div className="relative" ref={userMenuRef}>
               <motion.button
                 whileHover={{ y: -2 }}
                 onClick={() =>
                   user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                 }
-                className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"}`}
+                className={`flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full transition-all ${userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50 text-zinc-700"}`}
               >
-                <User size={20} className="text-zinc-700" />
+                <User size={18} />
               </motion.button>
+
               <AnimatePresence>
                 {user && userMenuOpen && (
                   <motion.div
@@ -297,16 +286,17 @@ const Navbar = () => {
               </AnimatePresence>
             </div>
 
+            {/* Coș Cumpărături */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setBagOpen(true)}
-              className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-white shadow-lg"
+              className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white shadow-lg"
               style={{ background: "var(--primary-gradient)" }}
             >
-              <BagIcon size={20} />
+              <BagIcon size={18} />
               {totalItems > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[9px] font-black">
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[8px] sm:text-[9px] font-black">
                   {totalItems}
                 </span>
               )}
@@ -336,7 +326,7 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECtII */}
+                {/* 1. LEFT PANEL: COLECTII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -485,6 +475,9 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
+      {/* SEARCH MODAL */}
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+
       {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
@@ -496,7 +489,6 @@ const Navbar = () => {
             className="fixed inset-0 z-[300] flex flex-col bg-white lg:hidden"
           >
             <div className="flex h-20 items-center justify-between border-b border-zinc-100 px-6">
-              {/* LOGO IN MOBILE MENU */}
               <img
                 src="/Copilot_20260512_191942.png"
                 alt="Evem Luxury"
