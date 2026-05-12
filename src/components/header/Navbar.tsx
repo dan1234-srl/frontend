@@ -209,21 +209,25 @@ const Navbar = () => {
             </form>
           </div>
 
-          {/* CENTER: LOGO (SINGLE IMAGE) */}
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          {/* CENTER: LOGO (IMAGINE UNICĂ) */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <Link
               to="/"
-              className="pointer-events-auto group flex items-center justify-center"
+              className="pointer-events-auto group flex items-center justify-center px-4"
             >
               <motion.div
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="flex items-center"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center justify-center"
               >
                 <img
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
-                  className="h-7 sm:h-9 lg:h-11 w-auto object-contain transition-all duration-300"
+                  className="h-10 sm:h-12 lg:h-16 w-auto object-contain transition-all duration-500"
+                  style={{
+                    imageRendering: "auto",
+                    filter: "drop-shadow(0px 1px 1px rgba(0,0,0,0.05))", // Oferă profunzime fără a fi pixelat
+                  }}
                 />
               </motion.div>
             </Link>
