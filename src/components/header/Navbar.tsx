@@ -36,6 +36,39 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
+// --- LOGO COMPONENTS ---
+const LogoIcon = () => (
+  <svg
+    width="32"
+    height="22"
+    viewBox="0 0 220 140"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <rect width="220" height="28" y="0" fill="currentColor" />
+    <rect width="220" height="28" y="56" fill="currentColor" />
+    <rect width="160" height="28" y="112" fill="currentColor" />
+  </svg>
+);
+
+const LogoText = () => (
+  <svg
+    width="120"
+    height="36"
+    viewBox="0 0 300 90"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M0 0h80v14H14v16h60v14H14v16h66v14H0z" fill="currentColor" />
+    <path
+      d="M110 0h14l40 74h-16l-10-20h-32l-10 20H80zm22 44l-10-20-10 20z"
+      fill="currentColor"
+    />
+    <path d="M180 0h14v60h52v14h-66z" fill="currentColor" />
+    <path d="M260 0h14v60h52v14h-66z" fill="currentColor" />
+  </svg>
+);
+
 interface Category {
   id: number;
   name: string;
@@ -67,9 +100,6 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // =========================
-  // SCROLL ANIMATIONS
-  // =========================
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
   const navBg = useTransform(
@@ -78,9 +108,6 @@ const Navbar = () => {
     ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.98)"],
   );
 
-  // =========================
-  // IMAGE HELPER (Premium Fallback)
-  // =========================
   const getValidImageUrl = (imageSource: string | null) => {
     if (!imageSource)
       return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
@@ -95,22 +122,18 @@ const Navbar = () => {
     }
   };
 
-  // =========================
-  // FETCH MENU
-  // =========================
   const fetchMenu = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/categories/tree`, {
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) throw new Error("Failed categories fetch");
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setCategories(data);
-        if (data.length > 0) setActiveParent(data[0]);
+      const res = await fetch(`${API_BASE_URL}/api/v1/categories/tree`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setCategories(data);
+          if (data.length > 0) setActiveParent(data[0]);
+        }
       }
     } catch (error) {
-      console.error("Menu fetch error:", error);
+      console.error(error);
     }
   }, []);
 
@@ -118,14 +141,10 @@ const Navbar = () => {
     fetchMenu();
   }, [fetchMenu]);
 
-  // Fallback for active parent
   useEffect(() => {
-    if (categories.length > 0 && !activeParent) {
-      setActiveParent(categories[0]);
-    }
+    if (categories.length > 0 && !activeParent) setActiveParent(categories[0]);
   }, [categories, activeParent]);
 
-  // Close menus on route change
   useEffect(() => {
     setMegaOpen(false);
     setMobileOpen(false);
@@ -133,45 +152,24 @@ const Navbar = () => {
     setMobileView({ parent: null });
   }, [location.pathname]);
 
-  // Click outside user menu
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(event.target as Node)
-      ) {
-        setUserMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const handleLogout = async () => {
-    try {
-      await signOut();
-      toast.success("Sesiune încheiată.");
-      setUserMenuOpen(false);
-      navigate("/");
-    } catch (error) {
-      toast.error("Eroare la deconectare.");
-    }
+    await signOut();
+    toast.success("Sesiune încheiată.");
+    setUserMenuOpen(false);
+    navigate("/");
   };
 
-  // Smooth Animations Presets
   const springTransition = { type: "spring", stiffness: 350, damping: 30 };
   const fadeTransition = { duration: 0.4, ease: [0.16, 1, 0.3, 1] };
 
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col">
-        {/* TOP BAR */}
         <div
           className="z-30 flex h-8 items-center justify-center px-4 text-center text-white"
           style={{ background: "var(--primary-gradient)" }}
         >
           <motion.div
-            key="top-bar-content"
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 3, repeat: Infinity }}
             className="flex items-center gap-2"
@@ -183,7 +181,6 @@ const Navbar = () => {
           </motion.div>
         </div>
 
-        {/* MAIN NAV */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
           className="relative flex items-center border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu shadow-sm"
@@ -203,7 +200,7 @@ const Navbar = () => {
                   clearTimeout(megaMenuTimeoutRef.current);
                 setMegaOpen(true);
               }}
-              className="group flex items-center gap-3 rounded-full bg-zinc-50 px-5 py-2.5 transition-all hover:bg-zinc-100 hover:shadow-sm"
+              className="group flex items-center gap-3 rounded-full bg-zinc-50 px-5 py-2.5 transition-all hover:bg-zinc-100"
             >
               <Menu size={20} className="text-[var(--deep-twilight)]" />
               <span className="hidden text-[11px] font-black uppercase tracking-widest text-[var(--deep-twilight)] lg:block">
@@ -216,15 +213,24 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* CENTER: LOGO */}
+          {/* CENTER: BRAND LOGO (REPLACED EVEM WITH SVG) */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <Link to="/" className="pointer-events-auto group">
-              <motion.span
-                whileHover={{ scale: 1.02 }}
-                className="text-3xl font-black uppercase tracking-tighter text-[var(--deep-twilight)] sm:text-4xl"
+            <Link
+              to="/"
+              className="pointer-events-auto group flex items-center gap-3"
+            >
+              <motion.div
+                whileHover={{ rotate: -5, scale: 1.1 }}
+                className="text-black"
               >
-                Evem<span className="text-[var(--french-blue)]">.</span>
-              </motion.span>
+                <LogoIcon />
+              </motion.div>
+              <motion.div
+                whileHover={{ x: 2 }}
+                className="text-[var(--deep-twilight)]"
+              >
+                <LogoText />
+              </motion.div>
             </Link>
           </div>
 
@@ -244,23 +250,19 @@ const Navbar = () => {
                 onClick={() =>
                   user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                 }
-                className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${
-                  userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"
-                }`}
+                className={`h-10 w-10 flex items-center justify-center rounded-full transition-all ${userMenuOpen ? "bg-zinc-100" : "hover:bg-zinc-50"}`}
               >
                 <User size={20} className="text-zinc-700" />
               </motion.button>
-
               <AnimatePresence>
                 {user && userMenuOpen && (
                   <motion.div
-                    key="user-menu-dropdown"
                     initial={{ opacity: 0, y: 15, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 15, scale: 0.98 }}
-                    className="absolute right-0 mt-4 w-64 overflow-hidden rounded-[1.5rem] border border-zinc-100 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.1)]"
+                    className="absolute right-0 mt-4 w-64 overflow-hidden rounded-[1.5rem] border border-zinc-100 bg-white shadow-2xl p-2"
                   >
-                    <div className="bg-zinc-50 p-5">
+                    <div className="bg-zinc-50 p-4 rounded-xl mb-1">
                       <p className="text-[9px] font-black uppercase text-[var(--french-blue)] tracking-widest">
                         Cont Premium
                       </p>
@@ -268,41 +270,27 @@ const Navbar = () => {
                         {user.email}
                       </p>
                     </div>
-                    <div className="flex flex-col p-2">
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
-                        >
-                          <ShieldCheck size={16} className="text-blue-600" />{" "}
-                          Administrare
-                        </Link>
-                      )}
+                    {isAdmin && (
                       <Link
-                        to="/account/orders"
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
+                        to="/admin"
+                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50"
                       >
-                        <Package size={16} /> Comenzile mele
+                        <ShieldCheck size={16} className="text-blue-600" />{" "}
+                        Administrare
                       </Link>
-                      <Link
-                        to="/account/addresses"
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
-                      >
-                        <MapPin size={16} /> Adresele mele
-                      </Link>
-                      <Link
-                        to="/account/settings"
-                        className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50 transition-colors"
-                      >
-                        <Settings size={16} /> Setări cont
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black uppercase text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <LogOut size={16} /> Ieșire
-                      </button>
-                    </div>
+                    )}
+                    <Link
+                      to="/account/orders"
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50"
+                    >
+                      <Package size={16} /> Comenzile mele
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-xs font-black uppercase text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut size={16} /> Ieșire
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -312,30 +300,20 @@ const Navbar = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setBagOpen(true)}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg transform-gpu"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg"
               style={{ background: "var(--primary-gradient)" }}
             >
               <BagIcon size={20} />
-              <AnimatePresence>
-                {totalItems > 0 && (
-                  <motion.span
-                    key="cart-badge"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[9px] font-black"
-                  >
-                    {totalItems}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              {totalItems > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-black text-[9px] font-black">
+                  {totalItems}
+                </span>
+              )}
             </motion.button>
           </div>
         </motion.nav>
 
-        {/* ========================================================= */}
-        {/* MEGA MENU DESKTOP (MODERN, FLUID & FULLY SCROLLABLE) */}
-        {/* ========================================================= */}
+        {/* MEGA MENU DESKTOP */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
@@ -344,7 +322,7 @@ const Navbar = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={fadeTransition}
-              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white shadow-[0_40px_100px_rgba(0,0,0,0.08)] lg:block transform-gpu"
+              className="absolute left-0 top-full z-[100] hidden w-full border-t border-zinc-100 bg-white shadow-2xl lg:block transform-gpu"
               onMouseEnter={() => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
@@ -357,14 +335,13 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECȚII (SCROLL ACTIVAT AICI) */}
+                {/* 1. LEFT PANEL: COLECtII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
                       Curated Collections
                     </p>
                   </div>
-
                   <div className="flex-1 overflow-y-auto px-6 pb-12 custom-scrollbar">
                     <div className="space-y-2">
                       {categories.map((cat) => (
@@ -375,11 +352,7 @@ const Navbar = () => {
                             navigate(`/category/${cat.slug}`);
                             setMegaOpen(false);
                           }}
-                          className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${
-                            activeParent?.id === cat.id
-                              ? "bg-white shadow-[0_10px_30px_rgba(0,0,0,0.04)] text-black"
-                              : "text-zinc-400 hover:text-zinc-700 hover:bg-white/50"
-                          }`}
+                          className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${activeParent?.id === cat.id ? "bg-white shadow-md text-black" : "text-zinc-400 hover:text-zinc-700"}`}
                         >
                           {activeParent?.id === cat.id && (
                             <motion.div
@@ -389,21 +362,13 @@ const Navbar = () => {
                             />
                           )}
                           <span
-                            className={`text-[14px] uppercase tracking-tighter transition-all duration-300 ${
-                              activeParent?.id === cat.id
-                                ? "font-black"
-                                : "font-semibold"
-                            }`}
+                            className={`text-[14px] uppercase tracking-tighter transition-all duration-300 ${activeParent?.id === cat.id ? "font-black" : "font-semibold"}`}
                           >
                             {cat.name}
                           </span>
                           <ChevronRight
                             size={16}
-                            className={`transition-all duration-500 ${
-                              activeParent?.id === cat.id
-                                ? "translate-x-0 opacity-100"
-                                : "-translate-x-4 opacity-0"
-                            }`}
+                            className={`transition-all duration-500 ${activeParent?.id === cat.id ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"}`}
                           />
                         </button>
                       ))}
@@ -411,7 +376,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* 2. CENTER PANEL: CATEGORII (SCROLL ACTIVAT AICI) */}
+                {/* 2. CENTER PANEL: CATEGORII */}
                 <div className="flex-1 flex flex-col h-full bg-white">
                   <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
@@ -427,7 +392,7 @@ const Navbar = () => {
                             transition: { staggerChildren: 0.05 },
                           },
                         }}
-                        className="grid grid-cols-2 gap-x-20 gap-y-16 pb-8" // pb-8 to give some breathing room at the bottom
+                        className="grid grid-cols-2 gap-x-20 gap-y-16 pb-8"
                       >
                         {activeParent?.subcategories?.map((sub: Category) => (
                           <motion.div
@@ -452,7 +417,6 @@ const Navbar = () => {
                               </h3>
                               <div className="h-0.5 w-6 bg-[var(--french-blue)] mt-2 group-hover/section:w-full transition-all duration-500" />
                             </Link>
-
                             <div className="flex flex-col gap-4">
                               {sub.subcategories?.map((child) => (
                                 <Link
@@ -461,7 +425,7 @@ const Navbar = () => {
                                   onClick={() => setMegaOpen(false)}
                                   className="text-[13px] font-medium text-zinc-500 hover:text-black hover:translate-x-2 transition-all duration-300 flex items-center gap-2 group/link"
                                 >
-                                  <span className="h-px w-0 bg-zinc-300 group-hover/link:w-3 transition-all duration-300" />
+                                  <span className="h-px w-0 bg-zinc-300 group-hover/link:w-3 transition-all duration-300" />{" "}
                                   {child.name}
                                 </Link>
                               ))}
@@ -483,13 +447,11 @@ const Navbar = () => {
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.05 }}
-                        transition={{ duration: 0.6, ease: "easeInOut" }}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover/card:scale-105 will-change-transform"
+                        transition={{ duration: 0.6 }}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
                       />
                     </AnimatePresence>
-
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
                     <div className="absolute bottom-10 left-10 right-10 z-10">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="h-px w-8 bg-white/60" />
@@ -505,9 +467,9 @@ const Navbar = () => {
                           navigate(`/category/${activeParent?.slug}`);
                           setMegaOpen(false);
                         }}
-                        className="group/btn flex w-full items-center justify-between overflow-hidden rounded-full bg-white px-8 py-4 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:bg-zinc-100"
+                        className="group/btn flex w-full items-center justify-between overflow-hidden rounded-full bg-white px-8 py-4 text-[11px] font-black uppercase tracking-widest text-black hover:bg-zinc-100 transition-all"
                       >
-                        <span>Explorează</span>
+                        <span>Explorează</span>{" "}
                         <ArrowRight
                           size={18}
                           className="transition-transform duration-500 group-hover/btn:translate-x-1"
@@ -522,13 +484,10 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
-      {/* ========================================================= */}
-      {/* MOBILE MENU (FULL RESPONSIVE & SMOOTH) */}
-      {/* ========================================================= */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            key="mobile-nav-container"
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
@@ -541,15 +500,13 @@ const Navbar = () => {
               </span>
               <button
                 onClick={() => setMobileOpen(false)}
-                className="rounded-full bg-zinc-50 p-3 active:scale-95 transition-transform"
+                className="rounded-full bg-zinc-50 p-3"
               >
                 <X size={22} />
               </button>
             </div>
-
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               {!mobileView.parent ? (
-                // Lista de Categorii Principale (Nivel 1)
                 <motion.div
                   initial="hidden"
                   animate="show"
@@ -586,7 +543,6 @@ const Navbar = () => {
                   ))}
                 </motion.div>
               ) : (
-                // Subcategorii (Nivel 2 & 3)
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -600,16 +556,13 @@ const Navbar = () => {
                   >
                     <ChevronLeft size={18} /> Înapoi
                   </button>
-
-                  <h2 className="text-4xl font-black uppercase tracking-tighter px-2 leading-none text-[var(--deep-twilight)]">
+                  <h2 className="text-4xl font-black uppercase tracking-tighter px-2 text-[var(--deep-twilight)]">
                     {mobileView.parent.name}
                   </h2>
-
                   <div className="flex flex-col gap-8 px-2">
                     {mobileView.parent.subcategories?.map((sub: Category) => (
                       <div key={sub.id} className="space-y-4">
-                        <div className="text-[15px] font-black uppercase tracking-widest text-[var(--deep-twilight)] flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--french-blue)]" />{" "}
+                        <div className="text-[15px] font-black uppercase tracking-widest text-[var(--deep-twilight)]">
                           {sub.name}
                         </div>
                         <div className="flex flex-wrap gap-2.5">
@@ -618,7 +571,7 @@ const Navbar = () => {
                               key={child.id}
                               to={`/category/${child.slug}`}
                               onClick={() => setMobileOpen(false)}
-                              className="rounded-full bg-zinc-100 px-5 py-2.5 text-[13px] font-bold text-zinc-600 hover:bg-zinc-200 active:scale-95 transition-all"
+                              className="rounded-full bg-zinc-100 px-5 py-2.5 text-[13px] font-bold text-zinc-600"
                             >
                               {child.name}
                             </Link>
@@ -635,8 +588,6 @@ const Navbar = () => {
       </AnimatePresence>
 
       <div className="h-[5rem] w-full" />
-
-      {/* STILURI GLOBALE PENTRU SCROLLBAR */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -648,7 +599,6 @@ const Navbar = () => {
         }}
       />
 
-      {/* DRAWERS & MODALS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
