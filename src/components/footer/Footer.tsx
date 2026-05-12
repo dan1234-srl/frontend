@@ -3,6 +3,30 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 
+// --- FUNCȚIA DE UTILITATE PENTRU IMAGINI ---
+// Plasată în afara componentei pentru a fi disponibilă fără erori de referință
+const getValidImageUrl = (imageSource: string | null | undefined): string => {
+  if (!imageSource)
+    return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
+
+  if (typeof imageSource === "string" && imageSource.startsWith("http")) {
+    return imageSource;
+  }
+
+  try {
+    // Verificăm dacă este un string JSON (format specific bazei tale de date)
+    const parsed = JSON.parse(imageSource as string);
+    return parsed?.main?.large || parsed?.url || "";
+  } catch {
+    const API_BASE_URL =
+      import.meta.env.VITE_API_URL ||
+      "https://linea-backend-production.up.railway.app";
+    return (imageSource as string).startsWith("/")
+      ? `${API_BASE_URL}${imageSource}`
+      : (imageSource as string);
+  }
+};
+
 const Footer = () => {
   const langContext = useLanguage();
   const language = langContext?.language || "ro";
@@ -90,7 +114,7 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* 2. CURVE (Transition to Dark Footer) */}
+      {/* 2. CURVE */}
       <div
         className="relative h-16 md:h-24 w-full bg-white"
         style={{ color: "var(--dark-amethyst)" }}
@@ -121,6 +145,10 @@ const Footer = () => {
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
                   className="h-10 w-auto brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity"
+                  onError={(e) => {
+                    // Fallback în cazul în care imaginea custom nu se încarcă
+                    (e.target as HTMLImageElement).src = getValidImageUrl(null);
+                  }}
                 />
               </Link>
               <p className="text-[11px] opacity-40 leading-relaxed max-w-xs font-bold uppercase tracking-widest">
@@ -195,7 +223,7 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* LINKS BOX 2 (Atelier) */}
+            {/* LINKS BOX 2 */}
             <div className="lg:col-span-3 space-y-6 text-left lg:text-right">
               <h4
                 className="text-[10px] font-black uppercase tracking-[0.4em]"
@@ -221,7 +249,6 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* BOTTOM COPYRIGHT */}
           <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-4">
               <span
