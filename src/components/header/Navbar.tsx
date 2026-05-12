@@ -16,6 +16,7 @@ import {
   MapPin,
   Settings,
   Sparkles,
+  Search,
 } from "lucide-react";
 import {
   motion,
@@ -60,6 +61,7 @@ const Navbar = () => {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchQuery, setSearchTerm] = useState("");
   const [mobileView, setMobileView] = useState<{ parent: Category | null }>({
     parent: null,
   });
@@ -69,7 +71,7 @@ const Navbar = () => {
 
   // --- SCROLL ANIMATIONS ---
   const { scrollY } = useScroll();
-  const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
+  const navHeight = useTransform(scrollY, [0, 50], ["5.5rem", "4.5rem"]);
   const navBg = useTransform(
     scrollY,
     [0, 50],
@@ -127,6 +129,14 @@ const Navbar = () => {
     navigate("/");
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setMobileOpen(false);
+    }
+  };
+
   const springTransition = { type: "spring", stiffness: 350, damping: 30 };
   const fadeTransition = { duration: 0.4, ease: [0.16, 1, 0.3, 1] };
 
@@ -161,8 +171,8 @@ const Navbar = () => {
             );
           }}
         >
-          {/* LEFT: PRODUCTS TRIGGER */}
-          <div className="z-20 flex flex-1 items-center gap-6">
+          {/* LEFT: MENU & SEARCH */}
+          <div className="z-20 flex flex-1 items-center gap-2 sm:gap-6">
             <button
               onClick={() => setMobileOpen(true)}
               onMouseEnter={() => {
@@ -170,9 +180,9 @@ const Navbar = () => {
                   clearTimeout(megaMenuTimeoutRef.current);
                 setMegaOpen(true);
               }}
-              className="group flex items-center gap-3 rounded-full bg-zinc-50 px-5 py-2.5 transition-all hover:bg-zinc-100"
+              className="group flex items-center gap-2 rounded-full bg-zinc-50 px-4 py-2 sm:px-5 sm:py-2.5 transition-all hover:bg-zinc-100"
             >
-              <Menu size={20} className="text-[var(--deep-twilight)]" />
+              <Menu size={18} className="text-[var(--deep-twilight)]" />
               <span className="hidden text-[11px] font-black uppercase tracking-widest text-[var(--deep-twilight)] lg:block">
                 Meniu
               </span>
@@ -181,13 +191,31 @@ const Navbar = () => {
                 className={`hidden transition-transform duration-500 lg:block ${megaOpen ? "rotate-180" : ""}`}
               />
             </button>
+
+            {/* BARĂ CĂUTARE DESKTOP */}
+            <form
+              onSubmit={handleSearch}
+              className="relative hidden xl:block w-64"
+            >
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                size={16}
+              />
+              <input
+                type="text"
+                placeholder="Caută produse..."
+                value={searchQuery}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-zinc-50 border-none rounded-full py-2.5 pl-11 pr-4 text-[12px] font-medium focus:ring-2 focus:ring-zinc-200 transition-all outline-none"
+              />
+            </form>
           </div>
 
-          {/* CENTER: LOGO (IMAGINI DIN FOLDERUL PUBLIC) */}
+          {/* CENTER: LOGO (IMAGINI DIN PUBLIC) */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Link
               to="/"
-              className="pointer-events-auto group flex items-center gap-4"
+              className="pointer-events-auto group flex items-center gap-2 sm:gap-3"
             >
               <motion.div
                 whileHover={{ rotate: -5, scale: 1.05 }}
@@ -196,14 +224,14 @@ const Navbar = () => {
                 <img
                   src="/logo-icon.png"
                   alt="Icon"
-                  className="h-7 w-auto object-contain"
+                  className="h-9 w-auto object-contain sm:h-12"
                 />
               </motion.div>
               <motion.div whileHover={{ x: 2 }} className="flex items-center">
                 <img
                   src="/logo-text.png"
                   alt="Evem"
-                  className="h-6 w-auto object-contain"
+                  className="h-7 w-auto object-contain sm:h-10"
                 />
               </motion.div>
             </Link>
@@ -275,7 +303,7 @@ const Navbar = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setBagOpen(true)}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full text-white shadow-lg"
+              className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-white shadow-lg"
               style={{ background: "var(--primary-gradient)" }}
             >
               <BagIcon size={20} />
@@ -304,7 +332,6 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECtII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -344,13 +371,11 @@ const Navbar = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* 2. CENTER PANEL: CATEGORII */}
                 <div className="flex-1 flex flex-col h-full bg-white">
                   <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={activeParent?.id || "empty-content"}
+                        key={activeParent?.id || "empty"}
                         initial="hidden"
                         animate="show"
                         exit="hidden"
@@ -405,8 +430,6 @@ const Navbar = () => {
                     </AnimatePresence>
                   </div>
                 </div>
-
-                {/* 3. RIGHT PANEL: VISUAL SHOWCASE */}
                 <div className="w-[480px] p-10 bg-zinc-50/30">
                   <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
                     <AnimatePresence mode="wait">
@@ -421,7 +444,7 @@ const Navbar = () => {
                       />
                     </AnimatePresence>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute bottom-10 left-10 right-10 z-10">
+                    <div className="absolute bottom-10 left-10 right-10 z-10 text-left">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="h-px w-8 bg-white/60" />
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/80">
@@ -474,7 +497,25 @@ const Navbar = () => {
                 <X size={22} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-left">
+              {/* CĂUTARE MOBIL */}
+              {!mobileView.parent && (
+                <form onSubmit={handleSearch} className="relative mb-8">
+                  <Search
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Ce cauți astăzi?"
+                    value={searchQuery}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-zinc-50 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-zinc-100 transition-all outline-none"
+                  />
+                </form>
+              )}
+
               {!mobileView.parent ? (
                 <motion.div
                   initial="hidden"
@@ -500,7 +541,7 @@ const Navbar = () => {
                           : (navigate(`/category/${cat.slug}`),
                             setMobileOpen(false))
                       }
-                      className="flex items-center justify-between rounded-[1.5rem] bg-zinc-50/80 p-6 text-left active:bg-zinc-100 transition-colors"
+                      className="flex items-center justify-between rounded-[1.5rem] bg-zinc-50/80 p-6 active:bg-zinc-100 transition-colors"
                     >
                       <span className="text-[18px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
                         {cat.name}
@@ -531,7 +572,8 @@ const Navbar = () => {
                   <div className="flex flex-col gap-8 px-2">
                     {mobileView.parent.subcategories?.map((sub: Category) => (
                       <div key={sub.id} className="space-y-4">
-                        <div className="text-[15px] font-black uppercase tracking-widest text-[var(--deep-twilight)]">
+                        <div className="text-[15px] font-black uppercase tracking-widest text-[var(--deep-twilight)] flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--french-blue)]" />
                           {sub.name}
                         </div>
                         <div className="flex flex-wrap gap-2.5">
@@ -556,7 +598,7 @@ const Navbar = () => {
         )}
       </AnimatePresence>
 
-      <div className="h-[5rem] w-full" />
+      <div className="h-[5.5rem] w-full" />
       <style
         dangerouslySetInnerHTML={{
           __html: `
