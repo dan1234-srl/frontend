@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Send,
   Users,
@@ -11,6 +11,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Activity,
+  Heart,
+  Layout,
+  Info,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,308 +28,304 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
-const MOCK_SUBSCRIBERS = [
-  {
-    id: 1,
-    email: "client.premium@yahoo.com",
-    name: "Elena Popescu",
-    date: "15 Mar 2026",
-    source: "Popup Homepage",
-    status: "Subscris",
-  },
-  {
-    id: 2,
-    email: "andrei.ionescu@gmail.com",
-    name: "Andrei Ionescu",
-    date: "12 Mar 2026",
-    source: "Checkout",
-    status: "Subscris",
-  },
-  {
-    id: 3,
-    email: "m.radu@outlook.com",
-    name: "Maria Radu",
-    date: "10 Mar 2026",
-    source: "Footer",
-    status: "Unsubscribed",
-  },
-  {
-    id: 4,
-    email: "office@business.ro",
-    name: "Cristian Stan",
-    date: "05 Mar 2026",
-    source: "Popup Homepage",
-    status: "Subscris",
-  },
-  {
-    id: 5,
-    email: "anca.d@jewelry.com",
-    name: "Anca Dumitru",
-    date: "01 Mar 2026",
-    source: "Manual",
-    status: "Subscris",
-  },
-];
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
 
 const AdminNewsletter = () => {
+  const [activeTab, setActiveTab] = useState<"subscribers" | "campaign">(
+    "subscribers",
+  );
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({ total_active_users: 0 });
   const [searchTerm, setSearchTerm] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("Toate");
 
-  const handleSendCampaign = () => {
-    toast.promise(new Promise((res) => setTimeout(res, 2000)), {
-      loading: "Se pregătește expedierea...",
-      success: "Campania a fost trimisă!",
-      error: "Eroare la trimitere.",
-    });
-  };
-
-  const filtered = MOCK_SUBSCRIBERS.filter((s) => {
-    const matchSearch =
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchSource = sourceFilter === "Toate" || s.source === sourceFilter;
-    return matchSearch && matchSource;
+  // State pentru campanie
+  const [campaign, setCampaign] = useState({
+    subject: "",
+    content_html: "",
+    segment: "all",
+    product_id: "",
   });
 
+  // 1. Fetch Statistici de la API
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/marketing/subscribers-count`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // 2. Apelare API pentru Trimitere Campanie
+  const handleSendCampaign = async () => {
+    if (!campaign.subject || !campaign.content_html) {
+      return toast.error("Completează subiectul și conținutul email-ului.");
+    }
+
+    if (campaign.segment === "wishlist_product" && !campaign.product_id) {
+      return toast.error("Introdu ID-ul produsului pentru segmentul Wishlist.");
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/marketing/send-campaign`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(campaign),
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success(
+          `Succes! Campania a fost programată pentru ${data.recipients_count} persoane.`,
+        );
+        setActiveTab("subscribers"); // Reset tab
+      } else {
+        toast.error(data.detail || "Eroare la trimiterea campaniei.");
+      }
+    } catch (error) {
+      toast.error("Eroare de conexiune cu serverul.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-10 pb-16 text-left font-sans animate-in fade-in duration-700">
-      {/* Header */}
+    <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans animate-in fade-in duration-700">
+      {/* HEADER DINAMIC */}
       <div className="flex flex-col gap-3 border-b border-zinc-100 pb-10">
         <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-lg text-white"
-            style={{ background: "var(--primary-gradient)" }}
-          >
+          <div className="p-2 rounded-lg text-white bg-black">
             <Activity size={14} />
           </div>
-          <span className="text-[10px] uppercase tracking-[0.4em] font-black text-[var(--royal-violet)]">
-            Email Marketing
+          <span className="text-[10px] uppercase tracking-[0.4em] font-black text-zinc-400">
+            Marketing Automation v2.0
           </span>
         </div>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <h1 className="text-4xl md:text-6xl font-serif italic tracking-tighter text-[var(--dark-amethyst)]">
-            Newsletter
-          </h1>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="rounded-xl border-zinc-200 text-[10px] uppercase tracking-widest h-12 px-6 gap-2 text-[var(--dark-amethyst)] hover:border-[var(--royal-violet)]"
-            >
-              <Download size={14} /> Export CSV
-            </Button>
+          <div>
+            <h1 className="text-4xl md:text-6xl font-serif italic tracking-tighter text-black">
+              {activeTab === "subscribers" ? "Audiență" : "Campanie Nouă"}
+            </h1>
+          </div>
+
+          <div className="flex p-1 bg-zinc-100 rounded-2xl">
             <button
-              onClick={handleSendCampaign}
-              className="rounded-xl text-white text-[10px] font-black uppercase tracking-widest h-12 px-8 gap-2 shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center"
-              style={{ background: "var(--primary-gradient)" }}
+              onClick={() => setActiveTab("subscribers")}
+              className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "subscribers" ? "bg-white shadow-sm text-black" : "text-zinc-400 hover:text-zinc-600"}`}
             >
-              <Send size={16} /> Trimite Campanie
+              Statistici
+            </button>
+            <button
+              onClick={() => setActiveTab("campaign")}
+              className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "campaign" ? "bg-white shadow-sm text-black" : "text-zinc-400 hover:text-zinc-600"}`}
+            >
+              Configurare Email
             </button>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          {
-            label: "Total Abonați",
-            value: "1,284",
-            icon: <Users size={18} />,
-            trend: "+12 luna asta",
-          },
-          {
-            label: "Rată Deschidere",
-            value: "24.8%",
-            icon: <MailOpen size={18} />,
-            trend: "Peste medie",
-            color: "var(--royal-violet)",
-          },
-          {
-            label: "Click-through",
-            value: "8.2%",
-            icon: <MousePointer2 size={18} />,
-            trend: "Standard",
-            color: "#10b981",
-          },
-          {
-            label: "Dezabonări",
-            value: "3",
-            icon: <UserMinus size={18} />,
-            trend: "Scădere -2%",
-            color: "#f43f5e",
-          },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className="bg-white border border-zinc-100 p-6 shadow-sm rounded-[2rem] group hover:shadow-md transition-all"
+      <AnimatePresence mode="wait">
+        {activeTab === "subscribers" ? (
+          <motion.div
+            key="subscribers"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-8"
           >
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-[9px] uppercase tracking-widest text-zinc-400 font-black">
-                {item.label}
-              </span>
-              <div
-                className="transition-colors"
-                style={{ color: item.color || "var(--dark-amethyst)" }}
-              >
-                {item.icon}
+            {/* STATS REAL-TIME */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white border border-zinc-100 p-8 rounded-[2.5rem] shadow-sm group">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-[9px] uppercase tracking-widest text-zinc-400 font-black">
+                    Total Destinatari
+                  </span>
+                  <Users size={18} />
+                </div>
+                <h4 className="text-3xl font-serif italic tracking-tighter">
+                  {stats.total_active_users}
+                </h4>
+                <p className="text-[8px] uppercase text-emerald-500 mt-2 font-bold tracking-widest">
+                  Utilizatori activi
+                </p>
+              </div>
+
+              <div className="bg-white border border-zinc-100 p-8 rounded-[2.5rem] shadow-sm">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-[9px] uppercase tracking-widest text-zinc-400 font-black">
+                    Rată Deschidere
+                  </span>
+                  <MailOpen size={18} className="text-[var(--royal-violet)]" />
+                </div>
+                <h4 className="text-3xl font-serif italic tracking-tighter">
+                  24.8%
+                </h4>
+                <p className="text-[8px] uppercase text-zinc-300 mt-2 font-bold tracking-widest">
+                  Ultima campanie
+                </p>
               </div>
             </div>
-            <h4 className="text-2xl font-serif italic text-[var(--dark-amethyst)] tracking-tighter">
-              {item.value}
-            </h4>
-            <p className="text-[8px] uppercase text-zinc-300 mt-2 font-bold tracking-widest">
-              {item.trend}
-            </p>
-          </div>
-        ))}
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white border border-zinc-100 p-4 shadow-sm rounded-[1.5rem] flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300"
-            size={16}
-          />
-          <Input
-            placeholder="CAUTĂ ABONAT..."
-            className="pl-12 rounded-xl border-zinc-50 bg-zinc-50/50 text-[10px] uppercase tracking-widest h-12 focus:ring-2 focus:ring-[var(--royal-violet)]/10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <select
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value)}
-          className="h-12 border border-zinc-100 bg-zinc-50/50 text-[10px] font-black uppercase tracking-widest px-6 outline-none rounded-xl text-[var(--dark-amethyst)]"
-        >
-          <option value="Toate">Toate Sursele</option>
-          <option>Popup Homepage</option>
-          <option>Checkout</option>
-          <option>Footer</option>
-          <option>Manual</option>
-        </select>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white border border-zinc-100 shadow-sm overflow-hidden rounded-[2rem]">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-zinc-50/50">
-              <TableRow className="border-b border-zinc-100">
-                <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400 px-10 py-6">
-                  Abonat
-                </TableHead>
-                <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400 hidden md:table-cell">
-                  Email
-                </TableHead>
-                <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400 hidden lg:table-cell">
-                  Data
-                </TableHead>
-                <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400 hidden md:table-cell">
-                  Sursă
-                </TableHead>
-                <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400 text-center">
-                  Status
-                </TableHead>
-                <TableHead className="text-right text-[10px] uppercase tracking-widest font-black text-zinc-400 px-10">
-                  Acțiuni
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((sub) => (
-                <TableRow
-                  key={sub.id}
-                  className="group border-b border-zinc-50 last:border-0 hover:bg-zinc-50/50 transition-colors"
-                >
-                  <TableCell className="px-10 py-5 font-bold text-sm text-[var(--dark-amethyst)] uppercase tracking-tight">
-                    {sub.name}
-                  </TableCell>
-                  <TableCell className="text-xs text-[var(--royal-violet)] font-medium italic hidden md:table-cell">
-                    {sub.email}
-                  </TableCell>
-                  <TableCell className="text-[10px] text-zinc-400 uppercase font-bold hidden lg:table-cell">
-                    {sub.date}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <span className="text-[9px] uppercase tracking-widest bg-zinc-100 px-3 py-1 text-zinc-500 rounded-lg font-black">
-                      {sub.source}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span
-                      className={`px-3 py-1 text-[8px] uppercase tracking-widest font-black border rounded-full shadow-sm ${
-                        sub.status === "Subscris"
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          : "bg-zinc-100 text-zinc-400 border-zinc-200"
-                      }`}
-                    >
-                      {sub.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right px-10">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-xl text-zinc-300 hover:text-[var(--dark-amethyst)] hover:bg-white border border-transparent hover:border-zinc-100"
-                      >
-                        <Mail size={16} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 rounded-xl text-zinc-300 hover:text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-100"
-                      >
-                        <UserMinus size={16} />
-                      </Button>
+            {/* TABEL PLACEHOLDER - Aici poți implementa listarea utilizatorilor real-time */}
+            <div className="bg-zinc-50/50 p-20 rounded-[3rem] border border-dashed border-zinc-200 text-center">
+              <Mail size={40} className="mx-auto text-zinc-200 mb-4" />
+              <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                Selectează "Configurare Email" pentru a lansa o campanie către
+                cei {stats.total_active_users} abonați.
+              </p>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="campaign"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="bg-white border border-zinc-100 p-10 rounded-[3rem] shadow-xl space-y-8">
+              {/* SELECTOR SEGMENT */}
+              <div className="space-y-4 text-left">
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
+                  <Layout size={12} /> Segmentare Audiență
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setCampaign({ ...campaign, segment: "all" })}
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "all" ? "border-black bg-zinc-50" : "border-zinc-100"}`}
+                  >
+                    <Users size={18} className="mb-2" />
+                    <div className="font-bold text-xs uppercase tracking-widest">
+                      Toți Utilizatorii
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+                    <div className="text-[9px] text-zinc-400 mt-1">
+                      Se trimite către întreaga listă (
+                      {stats.total_active_users})
+                    </div>
+                  </button>
 
-      {/* Pagination */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-6 border-t border-zinc-100">
-        <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] font-black">
-          Afișare <span className="text-[var(--dark-amethyst)]">1-5</span> din{" "}
-          <span className="text-[var(--dark-amethyst)]">1,284</span>
-        </p>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 rounded-xl border-zinc-200 hover:border-[var(--royal-violet)]"
-          >
-            <ChevronLeft size={18} />
-          </Button>
-          <button
-            className="h-10 min-w-[40px] rounded-xl text-[10px] font-black text-white shadow-lg"
-            style={{ background: "var(--primary-gradient)" }}
-          >
-            1
-          </button>
-          <Button
-            variant="ghost"
-            className="h-10 min-w-[40px] rounded-xl text-[10px] font-black text-zinc-400 hover:text-[var(--dark-amethyst)]"
-          >
-            2
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 rounded-xl border-zinc-200 hover:border-[var(--royal-violet)]"
-          >
-            <ChevronRight size={18} />
-          </Button>
-        </div>
-      </div>
+                  <button
+                    onClick={() =>
+                      setCampaign({ ...campaign, segment: "wishlist_product" })
+                    }
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "wishlist_product" ? "border-black bg-zinc-50" : "border-zinc-100"}`}
+                  >
+                    <Heart size={18} className="mb-2 text-red-500" />
+                    <div className="font-bold text-xs uppercase tracking-widest">
+                      Targetare Wishlist
+                    </div>
+                    <div className="text-[9px] text-zinc-400 mt-1">
+                      Doar celor care au produsul X salvat
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* PRODUCT ID (DOAR PENTRU WISHLIST) */}
+              {campaign.segment === "wishlist_product" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="space-y-2 text-left"
+                >
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                    UUID Produs
+                  </label>
+                  <Input
+                    placeholder="Introdu ID-ul produsului..."
+                    className="h-14 rounded-2xl bg-red-50/20 border-red-100 font-mono text-xs"
+                    value={campaign.product_id}
+                    onChange={(e) =>
+                      setCampaign({ ...campaign, product_id: e.target.value })
+                    }
+                  />
+                </motion.div>
+              )}
+
+              {/* COMPOSE EMAIL */}
+              <div className="space-y-6 text-left">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                    Subiect Email
+                  </label>
+                  <Input
+                    placeholder="ex: Reducere flash doar pentru tine..."
+                    className="h-14 rounded-2xl bg-zinc-50 border-none font-bold"
+                    value={campaign.subject}
+                    onChange={(e) =>
+                      setCampaign({ ...campaign, subject: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex justify-between">
+                    Conținut (HTML suportat)
+                    <span className="text-emerald-500 flex items-center gap-1">
+                      <Sparkles size={10} /> CSS Inline recomandat
+                    </span>
+                  </label>
+                  <textarea
+                    placeholder="Scrie conținutul campaniei aici..."
+                    className="w-full h-80 bg-zinc-50 rounded-[2rem] p-6 text-sm font-mono border-none outline-none focus:ring-2 focus:ring-zinc-100 resize-none"
+                    value={campaign.content_html}
+                    onChange={(e) =>
+                      setCampaign({ ...campaign, content_html: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* SEND BUTTON */}
+              <div className="pt-6 border-t border-zinc-100">
+                <Button
+                  disabled={loading}
+                  onClick={handleSendCampaign}
+                  className="w-full h-16 bg-black text-white rounded-full font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-zinc-800 transition-all shadow-2xl"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <Send size={18} />
+                  )}
+                  Lansează Campania în Worker
+                </Button>
+                <p className="text-[9px] text-zinc-400 mt-4 text-center uppercase tracking-widest font-medium italic">
+                  Acțiunea va genera task-uri asincrone în coada Redis pentru
+                  procesare imediată.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
