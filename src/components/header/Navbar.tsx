@@ -11,7 +11,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Package,
-  ChevronDown,
   ArrowRight,
   Sparkles,
   Search,
@@ -177,7 +176,15 @@ const Navbar = () => {
               <Menu size={18} className="text-black" />
             </button>
 
-            {/* DESKTOP SEARCH BUTTON: Deschide SearchModal */}
+            {/* MOBILE SEARCH ICON: Revine în Navbar pentru tablete/mobile */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="xl:hidden flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors"
+            >
+              <Search size={18} className="text-black" />
+            </button>
+
+            {/* DESKTOP SEARCH BUTTON: Deschide SearchModal direct */}
             <button
               onClick={() => setSearchOpen(true)}
               className="hidden xl:flex items-center gap-3 bg-zinc-50 rounded-full py-2.5 px-5 w-64 text-zinc-400 hover:bg-zinc-100 transition-all text-left"
@@ -491,20 +498,6 @@ const Navbar = () => {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-left">
-              {/* MOBILE SEARCH: Un singur buton clar care deschide Modalul */}
-              {!mobileView.parent && (
-                <div
-                  onClick={() => {
-                    setMobileOpen(false);
-                    setSearchOpen(true);
-                  }}
-                  className="relative mb-8 bg-zinc-50 hover:bg-zinc-100 transition-colors rounded-2xl py-4 px-6 text-zinc-400 font-bold text-sm flex items-center gap-3 cursor-pointer"
-                >
-                  <Search size={18} className="text-zinc-400" /> Caută
-                  produse...
-                </div>
-              )}
-
               {!mobileView.parent ? (
                 <motion.div
                   initial="hidden"
