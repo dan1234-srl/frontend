@@ -216,8 +216,8 @@ const Navbar = () => {
               className="pointer-events-auto group flex items-center justify-center px-4"
             >
               <motion.div
-                whileHover={{ scale: 0.8 }}
-                whileTap={{ scale: 0.78 }}
+                whileHover={{ scale: 0.6 }}
+                whileTap={{ scale: 0.58 }}
                 className="flex items-center justify-center"
               >
                 <img
