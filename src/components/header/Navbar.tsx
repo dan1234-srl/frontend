@@ -32,62 +32,14 @@ import Register from "@/components/auth/Register";
 import { toast } from "sonner";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 
+// --- IMPORTĂ IMAGINILE LOGO-ULUI ---
+import logoIconImg from "@/assets/images/logo-icon.png";
+import logoTextImg from "@/assets/images/logo-text.png";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
-// --- LOGO COMPONENTS ---
-const LogoIcon = () => (
-  <svg
-    width="40"
-    height="30"
-    viewBox="0 0 540 400"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Partea Stângă (E-ul stilizat) */}
-    <rect x="0" y="0" width="260" height="85" fill="currentColor" />
-    <rect x="0" y="155" width="200" height="85" fill="currentColor" />
-    <rect x="0" y="315" width="260" height="85" fill="currentColor" />
-
-    {/* Partea Dreaptă - V-ul oblic și restul liniilor */}
-    {/* Folosim un Path pentru a crea acea tăietură oblică perfectă */}
-    <path d="M320 0H540V85H365L320 0Z" fill="currentColor" />
-    <path d="M290 155H540V240H340L290 155Z" fill="currentColor" />
-    <path d="M260 315H540V400H310L260 315Z" fill="currentColor" />
-
-    {/* Elementul V central care unește totul */}
-    <path d="M220 0L380 400H480L320 0H220Z" fill="currentColor" />
-  </svg>
-);
-
-const LogoText = () => (
-  <svg
-    width="140"
-    height="28"
-    viewBox="0 0 450 80"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* E */}
-    <path d="M0 0H100V15H18V32H85V47H18V65H100V80H0V0Z" fill="currentColor" />
-    {/* V */}
-    <path
-      d="M120 0H138L175 62L212 0H230L185 80H165L120 0Z"
-      fill="currentColor"
-    />
-    {/* E */}
-    <path
-      d="M250 0H350V15H268V32H335V47H268V65H350V80H250V0Z"
-      fill="currentColor"
-    />
-    {/* M */}
-    <path
-      d="M370 80V0H388L410 45L432 0H450V80H435V25L415 65H405L385 25V80H370Z"
-      fill="currentColor"
-    />
-  </svg>
-);
 interface Category {
   id: number;
   name: string;
@@ -119,6 +71,7 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // --- SCROLL ANIMATIONS ---
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5rem", "4rem"]);
   const navBg = useTransform(
@@ -152,7 +105,7 @@ const Navbar = () => {
         }
       }
     } catch (error) {
-      console.error(error);
+      console.error("Menu fetch error:", error);
     }
   }, []);
 
@@ -184,6 +137,7 @@ const Navbar = () => {
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col">
+        {/* TOP BAR */}
         <div
           className="z-30 flex h-8 items-center justify-center px-4 text-center text-white"
           style={{ background: "var(--primary-gradient)" }}
@@ -200,6 +154,7 @@ const Navbar = () => {
           </motion.div>
         </div>
 
+        {/* MAIN NAV */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
           className="relative flex items-center border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu shadow-sm"
@@ -232,28 +187,28 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* CENTER: BRAND LOGO */}
+          {/* CENTER: LOGO (IMAGINI) */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Link
               to="/"
               className="pointer-events-auto group flex items-center gap-4"
             >
-              {/* Simbolul Grafic */}
               <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-black"
+                whileHover={{ rotate: -5, scale: 1.05 }}
+                className="flex items-center"
               >
-                <LogoIcon />
+                <img
+                  src={logoIconImg}
+                  alt="Icon"
+                  className="h-6 w-auto object-contain"
+                />
               </motion.div>
-
-              {/* Textul EVEM */}
-              <motion.div
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-black"
-              >
-                <LogoText />
+              <motion.div whileHover={{ x: 2 }} className="flex items-center">
+                <img
+                  src={logoTextImg}
+                  alt="Evem"
+                  className="h-5 w-auto object-contain"
+                />
               </motion.div>
             </Link>
           </div>
@@ -351,15 +306,9 @@ const Navbar = () => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
               }}
-              onMouseLeave={() => {
-                megaMenuTimeoutRef.current = setTimeout(
-                  () => setMegaOpen(false),
-                  250,
-                );
-              }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECtII */}
+                {/* 1. LEFT: COLECȚII (SCROLL ACTIV) */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -376,7 +325,7 @@ const Navbar = () => {
                             navigate(`/category/${cat.slug}`);
                             setMegaOpen(false);
                           }}
-                          className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${activeParent?.id === cat.id ? "bg-white shadow-md text-black" : "text-zinc-400 hover:text-zinc-700"}`}
+                          className={`group relative flex w-full items-center justify-between rounded-2xl py-4 px-6 text-left transition-all duration-300 ${activeParent?.id === cat.id ? "bg-white shadow-md text-black" : "text-zinc-400 hover:text-zinc-700 hover:bg-white/50"}`}
                         >
                           {activeParent?.id === cat.id && (
                             <motion.div
@@ -400,12 +349,12 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* 2. CENTER PANEL: CATEGORII */}
+                {/* 2. CENTER: CATEGORII (SCROLL ACTIV) */}
                 <div className="flex-1 flex flex-col h-full bg-white">
                   <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={activeParent?.id || "empty-content"}
+                        key={activeParent?.id || "empty"}
                         initial="hidden"
                         animate="show"
                         exit="hidden"
@@ -461,12 +410,12 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* 3. RIGHT PANEL: VISUAL SHOWCASE */}
+                {/* 3. RIGHT: VISUAL */}
                 <div className="w-[480px] p-10 bg-zinc-50/30">
                   <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
                     <AnimatePresence mode="wait">
                       <motion.img
-                        key={activeParent?.id || "showcase-img"}
+                        key={activeParent?.id || "showcase"}
                         src={getValidImageUrl(activeParent?.image_url)}
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -491,7 +440,7 @@ const Navbar = () => {
                           navigate(`/category/${activeParent?.slug}`);
                           setMegaOpen(false);
                         }}
-                        className="group/btn flex w-full items-center justify-between overflow-hidden rounded-full bg-white px-8 py-4 text-[11px] font-black uppercase tracking-widest text-black hover:bg-zinc-100 transition-all"
+                        className="group/btn flex w-full items-center justify-between overflow-hidden rounded-full bg-white px-8 py-4 text-[11px] font-black uppercase text-black hover:bg-zinc-100 transition-all"
                       >
                         <span>Explorează</span>{" "}
                         <ArrowRight
@@ -595,7 +544,7 @@ const Navbar = () => {
                               key={child.id}
                               to={`/category/${child.slug}`}
                               onClick={() => setMobileOpen(false)}
-                              className="rounded-full bg-zinc-100 px-5 py-2.5 text-[13px] font-bold text-zinc-600"
+                              className="rounded-full bg-zinc-100 px-5 py-2.5 text-[13px] font-bold text-zinc-600 active:scale-95 transition-all"
                             >
                               {child.name}
                             </Link>
@@ -623,6 +572,7 @@ const Navbar = () => {
         }}
       />
 
+      {/* DRAWERS */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login
