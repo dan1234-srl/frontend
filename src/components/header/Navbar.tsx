@@ -15,6 +15,8 @@ import {
   ArrowRight,
   Sparkles,
   Search,
+  MapPin,
+  Settings,
 } from "lucide-react";
 import {
   motion,
@@ -44,7 +46,6 @@ interface Category {
   subcategories: Category[];
 }
 
-// --- FUNCTIA CARE LIPSEA ---
 const getValidImageUrl = (imageSource: string | null | undefined): string => {
   if (!imageSource)
     return "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200";
@@ -77,7 +78,7 @@ const Navbar = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [searchQuery, setSearchTerm] = useState("");
+
   const [mobileView, setMobileView] = useState<{ parent: Category | null }>({
     parent: null,
   });
@@ -130,14 +131,6 @@ const Navbar = () => {
     navigate("/");
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setMobileOpen(false);
-    }
-  };
-
   const springTransition = { type: "spring", stiffness: 350, damping: 30 };
   const fadeTransition = { duration: 0.4, ease: [0.16, 1, 0.3, 1] };
 
@@ -183,28 +176,15 @@ const Navbar = () => {
             >
               <Menu size={18} className="text-black" />
             </button>
+
+            {/* DESKTOP SEARCH BUTTON: Deschide SearchModal */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="xl:hidden flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors"
+              className="hidden xl:flex items-center gap-3 bg-zinc-50 rounded-full py-2.5 px-5 w-64 text-zinc-400 hover:bg-zinc-100 transition-all text-left"
             >
-              <Search size={18} className="text-black" />
+              <Search size={16} />
+              <span className="text-[12px] font-medium">Caută produse...</span>
             </button>
-            <form
-              onSubmit={handleSearch}
-              className="relative hidden xl:block w-64"
-            >
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Caută produse..."
-                value={searchQuery}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-zinc-50 border-none rounded-full py-2.5 pl-11 pr-4 text-[12px] font-medium focus:ring-2 focus:ring-zinc-200 transition-all outline-none"
-              />
-            </form>
           </div>
 
           <div className="flex-shrink-0 flex items-center justify-center px-2">
@@ -255,7 +235,7 @@ const Navbar = () => {
                   >
                     <div className="bg-zinc-50 p-4 rounded-xl mb-1">
                       <p className="text-[9px] font-black uppercase text-[var(--french-blue)] tracking-widest">
-                        Cont Premium
+                        Contul tău
                       </p>
                       <p className="truncate text-xs font-bold text-[var(--deep-twilight)]">
                         {user.email}
@@ -275,6 +255,18 @@ const Navbar = () => {
                       className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50"
                     >
                       <Package size={16} /> Comenzile mele
+                    </Link>
+                    <Link
+                      to="/account/addresses"
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50"
+                    >
+                      <MapPin size={16} /> Adresele mele
+                    </Link>
+                    <Link
+                      to="/account/settings"
+                      className="flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold hover:bg-zinc-50"
+                    >
+                      <Settings size={16} /> Setări cont
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -325,7 +317,7 @@ const Navbar = () => {
               }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
-                {/* 1. LEFT PANEL: COLECtII */}
+                {/* 1. LEFT PANEL: COLECTII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -499,21 +491,20 @@ const Navbar = () => {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-left">
+              {/* MOBILE SEARCH: Un singur buton clar care deschide Modalul */}
               {!mobileView.parent && (
-                <form onSubmit={handleSearch} className="relative mb-8">
-                  <Search
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Ce cauți astăzi?"
-                    value={searchQuery}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-zinc-50 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-zinc-100 transition-all outline-none"
-                  />
-                </form>
+                <div
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setSearchOpen(true);
+                  }}
+                  className="relative mb-8 bg-zinc-50 hover:bg-zinc-100 transition-colors rounded-2xl py-4 px-6 text-zinc-400 font-bold text-sm flex items-center gap-3 cursor-pointer"
+                >
+                  <Search size={18} className="text-zinc-400" /> Caută
+                  produse...
+                </div>
               )}
+
               {!mobileView.parent ? (
                 <motion.div
                   initial="hidden"
