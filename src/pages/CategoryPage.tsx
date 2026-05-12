@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -39,7 +39,6 @@ const CategoryPage = () => {
 
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  // Fetch Vouchere Ticker
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
       .then((res) => res.json())
@@ -98,11 +97,11 @@ const CategoryPage = () => {
     <div className="bg-[#fcfcfc] min-h-screen flex flex-col overflow-x-hidden selection:bg-zinc-900 selection:text-white">
       <Navbar />
 
-      {/* 1. FIX SUPRAPUNERE: Margin top pentru a lăsa loc Navbar-ului fixed */}
-      <div className="mt-[5.5rem] lg:mt-[6.5rem]">
+      {/* FIX 1: Margin top exact cât înălțimea Navbar-ului (4.5rem pe mobil, 5.5rem pe desktop) */}
+      <div className="mt-[4.5rem] lg:mt-[5.5rem] w-full">
         <AnimatePresence>
           {vouchers.length > 0 && (
-            <section className="w-full bg-[#050505] py-4 border-b border-zinc-900 relative overflow-hidden z-40">
+            <section className="w-full bg-[#050505] py-3 md:py-4 border-b border-zinc-900 relative overflow-hidden z-30">
               <div className="flex whitespace-nowrap">
                 <motion.div
                   animate={{ x: ["0%", "-50%"] }}
@@ -111,26 +110,26 @@ const CategoryPage = () => {
                     repeat: Infinity,
                     ease: "linear",
                   }}
-                  className="flex gap-24 md:gap-48 items-center px-10"
+                  className="flex gap-16 md:gap-48 items-center px-6 md:px-10"
                 >
                   {[...vouchers, ...vouchers].map((v, idx) => (
                     <div
                       key={`${v.id}-${idx}`}
-                      className="flex items-center gap-10"
+                      className="flex items-center gap-6 md:gap-10"
                     >
                       <div className="flex flex-col text-left">
-                        <span className="text-[#9bdda2] text-2xl font-black tracking-tighter">
+                        <span className="text-[#9bdda2] text-xl md:text-2xl font-black tracking-tighter">
                           {v.discount_value}
                         </span>
-                        <span className="text-zinc-500 text-[9px] uppercase font-bold tracking-widest">
+                        <span className="text-zinc-500 text-[8px] md:text-[9px] uppercase font-bold tracking-widest">
                           {v.description}
                         </span>
                       </div>
                       <button
                         onClick={() => copyToClipboard(v.code)}
-                        className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-2.5 hover:border-[#9bdda2] transition-all rounded-sm"
+                        className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 md:px-6 md:py-2.5 hover:border-[#9bdda2] transition-all rounded-md"
                       >
-                        <span className="text-sm font-mono font-black text-white">
+                        <span className="text-xs md:text-sm font-mono font-black text-white">
                           {v.code}
                         </span>
                         {copiedCode === v.code ? (
@@ -148,23 +147,25 @@ const CategoryPage = () => {
         </AnimatePresence>
       </div>
 
-      <main className="flex-grow w-full max-w-[90%] 2xl:max-w-[1400px] mx-auto py-12">
-        {/* HEADER & ACTIONS */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16 border-b border-zinc-100 pb-10">
-          <div className="text-left">
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-zinc-950 mb-2">
+      <main className="flex-grow w-full max-w-[92%] 2xl:max-w-[1400px] mx-auto py-8 md:py-12">
+        {/* HEADER SECTION (Titlu + Acțiuni) */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 md:mb-16 border-b border-zinc-100 pb-8 md:pb-10">
+          <div className="text-left w-full md:w-auto">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-zinc-950 mb-2 leading-none">
               {filtersData?.category_name || slug?.replace(/-/g, " ")}
             </h1>
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-3">
               {products.length} Articole disponibile
             </p>
           </div>
 
-          <div className="flex gap-4 w-full md:w-auto">
+          {/* SECȚIUNEA DE BUTOANE (Filtre Mobil + Sortare) */}
+          <div className="flex items-center gap-3 w-full md:w-auto z-40">
+            {/* Buton Filtre - Doar pe mobil */}
             <div className="lg:hidden flex-1">
               <Sheet>
                 <SheetTrigger asChild>
-                  <button className="w-full h-12 flex items-center justify-center gap-3 border border-zinc-200 bg-white text-[10px] font-black uppercase tracking-widest">
+                  <button className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-zinc-50 transition-colors">
                     <SlidersHorizontal size={14} /> Filtre
                   </button>
                 </SheetTrigger>
@@ -172,28 +173,28 @@ const CategoryPage = () => {
                   side="right"
                   className="w-full bg-white border-none p-0 z-[1001]"
                 >
-                  <SheetHeader className="p-8 border-b">
-                    <SheetTitle className="text-2xl font-black uppercase">
+                  <SheetHeader className="p-6 border-b">
+                    <SheetTitle className="text-xl font-black uppercase">
                       Filtre
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="p-8 h-full overflow-y-auto">
+                  <div className="p-6 h-full overflow-y-auto">
                     {filtersData && <FilterSidebar filtersData={filtersData} />}
                   </div>
                 </SheetContent>
               </Sheet>
             </div>
 
-            {/* SortDropdown fix: Container solid pentru a preveni flick-ul și transparența */}
-            <div className="relative min-w-[180px] bg-white rounded-md shadow-sm border border-zinc-100">
+            {/* SortDropdown */}
+            <div className="flex-1 md:flex-none">
               <SortDropdown />
             </div>
           </div>
         </div>
 
-        <div className="flex gap-16 items-start relative">
-          {/* 2. FIX STICKY: Sidebar-ul rămâne fix în stânga în timpul scroll-ului */}
-          <aside className="hidden lg:block w-[280px] shrink-0 sticky top-32 self-start max-h-[calc(100vh-10rem)] overflow-y-auto pr-6 luxury-scrollbar">
+        {/* CONTENT (Sidebar Desktop + Grid Produse) */}
+        <div className="flex gap-12 items-start relative">
+          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-28 self-start max-h-[calc(100vh-8rem)] overflow-y-auto pr-6 luxury-scrollbar">
             <div className="h-full">
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mb-8 block text-left">
                 Filtrează Colecția
@@ -202,32 +203,30 @@ const CategoryPage = () => {
             </div>
           </aside>
 
-          {/* GRID PRODUSE */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
               <ProductGridSkeleton count={8} />
             ) : (
-              <div className="flex flex-col gap-20">
-                <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-12 md:gap-x-8 md:gap-y-16">
+              <div className="flex flex-col gap-16">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6 md:gap-y-16">
                   {products.map((p, i) => (
                     <ProductCard key={`${p.id}-${i}`} product={p} />
                   ))}
                 </div>
 
-                {/* LOAD MORE */}
-                <div className="flex flex-col items-center py-20 border-t border-zinc-100">
+                <div className="flex flex-col items-center py-16 border-t border-zinc-100">
                   {currentPage < totalPages ? (
                     <button
                       onClick={() => fetchProducts(currentPage + 1, true)}
                       disabled={loadingMore}
-                      className="group flex flex-col items-center gap-4"
+                      className="group flex flex-col items-center gap-3"
                     >
-                      <div className="w-16 h-16 rounded-full border border-zinc-200 flex items-center justify-center group-hover:border-black transition-all bg-white shadow-sm">
+                      <div className="w-14 h-14 rounded-full border border-zinc-200 flex items-center justify-center group-hover:border-black transition-all bg-white shadow-sm">
                         {loadingMore ? (
                           <Loader2 className="animate-spin text-zinc-400" />
                         ) : (
                           <ChevronDown
-                            size={24}
+                            size={20}
                             className="group-hover:translate-y-1 transition-transform"
                           />
                         )}
@@ -249,28 +248,14 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* Global CSS fixes */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        /* Asigură că dropdown-ul de sortare (Radix) este deasupra oricărui element și are fundal alb */
-        [data-radix-popper-content-wrapper] { 
-          z-index: 9999 !important; 
-        }
-        
-        .luxury-scrollbar::-webkit-scrollbar { 
-          width: 3px; 
-        }
-        .luxury-scrollbar::-webkit-scrollbar-track { 
-          background: transparent; 
-        }
-        .luxury-scrollbar::-webkit-scrollbar-thumb { 
-          background: #eee; 
-          border-radius: 10px;
-        }
-        .luxury-scrollbar:hover::-webkit-scrollbar-thumb { 
-          background: #ddd; 
-        }
+        [data-radix-popper-content-wrapper] { z-index: 9999 !important; }
+        .luxury-scrollbar::-webkit-scrollbar { width: 3px; }
+        .luxury-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+        .luxury-scrollbar:hover::-webkit-scrollbar-thumb { background: #d4d4d8; }
       `,
         }}
       />
