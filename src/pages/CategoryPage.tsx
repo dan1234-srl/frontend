@@ -100,10 +100,12 @@ const CategoryPage = () => {
       <Navbar />
 
       {/* 
-        ELIMINAT SPACER-UL VECHI! 
-        Navbar-ul tău are deja spacer-ul lui inclus la finalul componentei, 
-        deci acum Voucherele se vor lipi perfect de el.
+        COMPENSARE PENTRU BARA DE SUS (TOP BAR-UL): 
+        Navbar-ul are un spacer intern de 5.5rem (care acoperă meniul alb principal),
+        dar a omis bara mov de sus care are h-8 (32px). 
+        Acest div adaugă fix acei 32px lipsă ca banner-ul să se lipească impecabil.
       */}
+      <div className="h-8 w-full shrink-0" aria-hidden="true" />
 
       {/* VOUCHER TICKER */}
       <AnimatePresence>
@@ -181,7 +183,7 @@ const CategoryPage = () => {
                       Filtre
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="p-6 h-full overflow-y-auto">
+                  <div className="p-6 h-full overflow-y-auto luxury-scrollbar">
                     {filtersData && <FilterSidebar filtersData={filtersData} />}
                   </div>
                 </SheetContent>
@@ -198,7 +200,7 @@ const CategoryPage = () => {
         {/* CONTENT (Desktop Sidebar + Product Grid) */}
         <div className="flex gap-8 lg:gap-12 items-start relative">
           {/* DESKTOP SIDEBAR - STICKY POSITIONING */}
-          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto luxury-scrollbar pr-6">
+          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-36 max-h-[calc(100vh-10rem)] overflow-y-auto luxury-scrollbar pr-6">
             <div className="h-full">
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mb-8 block text-left">
                 Filtrează Colecția
@@ -260,8 +262,8 @@ const CategoryPage = () => {
           __html: `
         /* 
           1. FIX PENTRU "SHIFT/FLICKER"
-          Aceasta forteaza browser-ul sa ignore padding-ul pe care Radix 
-          il adauga cand blocheaza scroll-ul (cand deschizi dropdown-ul).
+          Aceasta forțează browser-ul să ignore padding-ul pe care Radix 
+          îl adaugă pe body când blochează scroll-ul (la deschiderea SortDropdown).
         */
         html {
           scrollbar-gutter: stable;
@@ -270,7 +272,7 @@ const CategoryPage = () => {
           padding-right: 0px !important;
           margin-right: 0px !important;
         }
-        /* Asiguram ca nici header-ul fixed nu se misca */
+        /* Asigurăm că nici header-ul fixed nu se mișcă */
         [data-scroll-locked] .fixed {
           padding-right: 0px !important;
           margin-right: 0px !important;
