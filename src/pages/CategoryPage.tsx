@@ -97,55 +97,51 @@ const CategoryPage = () => {
     <div className="bg-[#fcfcfc] min-h-screen flex flex-col overflow-x-hidden selection:bg-zinc-900 selection:text-white">
       <Navbar />
 
-      {/* FIX 1: Margin top exact cât înălțimea Navbar-ului (4.5rem pe mobil, 5.5rem pe desktop) */}
-      <div className="mt-[4.5rem] lg:mt-[5.5rem] w-full">
-        <AnimatePresence>
-          {vouchers.length > 0 && (
-            <section className="w-full bg-[#050505] py-3 md:py-4 border-b border-zinc-900 relative overflow-hidden z-30">
-              <div className="flex whitespace-nowrap">
-                <motion.div
-                  animate={{ x: ["0%", "-50%"] }}
-                  transition={{
-                    duration: 40,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="flex gap-16 md:gap-48 items-center px-6 md:px-10"
-                >
-                  {[...vouchers, ...vouchers].map((v, idx) => (
-                    <div
-                      key={`${v.id}-${idx}`}
-                      className="flex items-center gap-6 md:gap-10"
-                    >
-                      <div className="flex flex-col text-left">
-                        <span className="text-[#9bdda2] text-xl md:text-2xl font-black tracking-tighter">
-                          {v.discount_value}
-                        </span>
-                        <span className="text-zinc-500 text-[8px] md:text-[9px] uppercase font-bold tracking-widest">
-                          {v.description}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => copyToClipboard(v.code)}
-                        className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 md:px-6 md:py-2.5 hover:border-[#9bdda2] transition-all rounded-md"
-                      >
-                        <span className="text-xs md:text-sm font-mono font-black text-white">
-                          {v.code}
-                        </span>
-                        {copiedCode === v.code ? (
-                          <Check size={14} className="text-[#9bdda2]" />
-                        ) : (
-                          <Copy size={14} className="text-zinc-500" />
-                        )}
-                      </button>
+      {/* FIX SPACER: Acest div goale impinge conținutul exact cât înălțimea Navbar-ului fixed (5.5rem = 88px) */}
+      <div className="pt-[88px]" aria-hidden="true" />
+
+      <AnimatePresence>
+        {vouchers.length > 0 && (
+          <section className="w-full bg-[#050505] py-3 md:py-4 border-b border-zinc-900 relative overflow-hidden z-30">
+            <div className="flex whitespace-nowrap">
+              <motion.div
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                className="flex gap-16 md:gap-48 items-center px-6 md:px-10"
+              >
+                {[...vouchers, ...vouchers].map((v, idx) => (
+                  <div
+                    key={`${v.id}-${idx}`}
+                    className="flex items-center gap-6 md:gap-10"
+                  >
+                    <div className="flex flex-col text-left">
+                      <span className="text-[#9bdda2] text-xl md:text-2xl font-black tracking-tighter">
+                        {v.discount_value}
+                      </span>
+                      <span className="text-zinc-500 text-[8px] md:text-[9px] uppercase font-bold tracking-widest">
+                        {v.description}
+                      </span>
                     </div>
-                  ))}
-                </motion.div>
-              </div>
-            </section>
-          )}
-        </AnimatePresence>
-      </div>
+                    <button
+                      onClick={() => copyToClipboard(v.code)}
+                      className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 md:px-6 md:py-2.5 hover:border-[#9bdda2] transition-all rounded-md"
+                    >
+                      <span className="text-xs md:text-sm font-mono font-black text-white">
+                        {v.code}
+                      </span>
+                      {copiedCode === v.code ? (
+                        <Check size={14} className="text-[#9bdda2]" />
+                      ) : (
+                        <Copy size={14} className="text-zinc-500" />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+          </section>
+        )}
+      </AnimatePresence>
 
       <main className="flex-grow w-full max-w-[92%] 2xl:max-w-[1400px] mx-auto py-8 md:py-12">
         {/* HEADER SECTION (Titlu + Acțiuni) */}
@@ -159,8 +155,8 @@ const CategoryPage = () => {
             </p>
           </div>
 
-          {/* SECȚIUNEA DE BUTOANE (Filtre Mobil + Sortare) */}
-          <div className="flex items-center gap-3 w-full md:w-auto z-40">
+          {/* BUTOANE FILTRE (MOBIL) SI SORTARE */}
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 z-40">
             {/* Buton Filtre - Doar pe mobil */}
             <div className="lg:hidden flex-1">
               <Sheet>
@@ -185,7 +181,7 @@ const CategoryPage = () => {
               </Sheet>
             </div>
 
-            {/* SortDropdown */}
+            {/* SortDropdown container */}
             <div className="flex-1 md:flex-none">
               <SortDropdown />
             </div>
@@ -251,7 +247,12 @@ const CategoryPage = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        [data-radix-popper-content-wrapper] { z-index: 9999 !important; }
+        /* Forțăm popover-ul să fie deasupra și să nu cauzeze shift la layout */
+        [data-radix-popper-content-wrapper] { 
+          z-index: 9999 !important; 
+          width: 220px !important;
+        }
+        
         .luxury-scrollbar::-webkit-scrollbar { width: 3px; }
         .luxury-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
