@@ -39,6 +39,13 @@ const CategoryPage = () => {
 
   const currentPage = parseInt(searchParams.get("page") || "1");
 
+  // Funcție de formatare fallback în cazul în care filtersData nu a ajuns încă
+  const formatFallbackName = (str: string | undefined) => {
+    if (!str) return "";
+    // Elimină prefixul 'cat-' dacă există și înlocuiește cratimele cu spații
+    return str.replace(/^cat-/, "").replace(/-/g, " ");
+  };
+
   // Fetch Vouchers Ticker
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
@@ -156,8 +163,9 @@ const CategoryPage = () => {
         {/* HEADER SECTION (Title + Actions) */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-16 border-b border-zinc-100 pb-8 md:pb-10">
           <div className="text-left w-full md:w-auto">
+            {/* CORECtIE TITLU: Afișăm numele din API sau fallback-ul curățat */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-zinc-950 mb-2 leading-none">
-              {filtersData?.category_name || slug?.replace(/-/g, " ")}
+              {filtersData?.category_name || formatFallbackName(slug)}
             </h1>
             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-2 md:mt-3">
               {products.length} Articole disponibile
@@ -200,7 +208,7 @@ const CategoryPage = () => {
         {/* CONTENT (Desktop Sidebar + Product Grid) */}
         <div className="flex gap-8 lg:gap-12 items-start relative">
           {/* DESKTOP SIDEBAR - STICKY POSITIONING */}
-          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-36 max-h-[calc(100vh-10rem)] overflow-y-auto luxury-scrollbar pr-6">
+          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto luxury-scrollbar pr-6">
             <div className="h-full">
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-300 mb-8 block text-left">
                 Filtrează Colecția
@@ -260,11 +268,6 @@ const CategoryPage = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        /* 
-          1. FIX PENTRU "SHIFT/FLICKER"
-          Aceasta forțează browser-ul să ignore padding-ul pe care Radix 
-          îl adaugă pe body când blochează scroll-ul (la deschiderea SortDropdown).
-        */
         html {
           scrollbar-gutter: stable;
         }
@@ -272,18 +275,13 @@ const CategoryPage = () => {
           padding-right: 0px !important;
           margin-right: 0px !important;
         }
-        /* Asigurăm că nici header-ul fixed nu se mișcă */
         [data-scroll-locked] .fixed {
           padding-right: 0px !important;
           margin-right: 0px !important;
         }
-
-        /* 2. Z-Index corect pentru meniuri */
         [data-radix-popper-content-wrapper] { 
           z-index: 9999 !important; 
         }
-        
-        /* 3. SCROLLBAR LUXURY PENTRU SIDEBAR */
         .luxury-scrollbar::-webkit-scrollbar { width: 3px; }
         .luxury-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
