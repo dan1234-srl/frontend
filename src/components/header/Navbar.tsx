@@ -13,8 +13,6 @@ import {
   Package,
   ChevronDown,
   ArrowRight,
-  MapPin,
-  Settings,
   Sparkles,
   Search,
 } from "lucide-react";
@@ -211,27 +209,21 @@ const Navbar = () => {
             </form>
           </div>
 
-          {/* CENTER: LOGO (IMAGINI DIN PUBLIC) */}
+          {/* CENTER: LOGO (SINGLE IMAGE) */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <Link
               to="/"
-              className="pointer-events-auto group flex items-center gap-2 sm:gap-3"
+              className="pointer-events-auto group flex items-center justify-center"
             >
               <motion.div
-                whileHover={{ rotate: -5, scale: 1.05 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 className="flex items-center"
               >
                 <img
-                  src="/logo-icon.png"
-                  alt="Icon"
-                  className="h-9 w-auto object-contain sm:h-12"
-                />
-              </motion.div>
-              <motion.div whileHover={{ x: 2 }} className="flex items-center">
-                <img
-                  src="/logo-text.png"
-                  alt="Evem"
-                  className="h-7 w-auto object-contain sm:h-10"
+                  src="/Copilot_20260512_191942.png"
+                  alt="Evem Luxury"
+                  className="h-7 sm:h-9 lg:h-11 w-auto object-contain transition-all duration-300"
                 />
               </motion.div>
             </Link>
@@ -330,8 +322,15 @@ const Navbar = () => {
                 if (megaMenuTimeoutRef.current)
                   clearTimeout(megaMenuTimeoutRef.current);
               }}
+              onMouseLeave={() => {
+                megaMenuTimeoutRef.current = setTimeout(
+                  () => setMegaOpen(false),
+                  250,
+                );
+              }}
             >
               <div className="mx-auto flex h-[600px] max-w-[1600px] overflow-hidden">
+                {/* 1. LEFT PANEL: COLECtII */}
                 <div className="w-[340px] flex flex-col border-r border-zinc-100 bg-zinc-50/30 h-full">
                   <div className="px-10 pt-12 pb-6 shrink-0">
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--french-blue)]">
@@ -371,11 +370,13 @@ const Navbar = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* 2. CENTER PANEL: CATEGORII */}
                 <div className="flex-1 flex flex-col h-full bg-white">
                   <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={activeParent?.id || "empty"}
+                        key={activeParent?.id || "empty-content"}
                         initial="hidden"
                         animate="show"
                         exit="hidden"
@@ -430,6 +431,8 @@ const Navbar = () => {
                     </AnimatePresence>
                   </div>
                 </div>
+
+                {/* 3. RIGHT PANEL: VISUAL SHOWCASE */}
                 <div className="w-[480px] p-10 bg-zinc-50/30">
                   <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
                     <AnimatePresence mode="wait">
@@ -487,9 +490,12 @@ const Navbar = () => {
             className="fixed inset-0 z-[300] flex flex-col bg-white lg:hidden"
           >
             <div className="flex h-20 items-center justify-between border-b border-zinc-100 px-6">
-              <span className="text-xl font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
-                Meniu
-              </span>
+              {/* LOGO IN MOBILE MENU */}
+              <img
+                src="/Copilot_20260512_191942.png"
+                alt="Evem Luxury"
+                className="h-6 w-auto object-contain"
+              />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="rounded-full bg-zinc-50 p-3"

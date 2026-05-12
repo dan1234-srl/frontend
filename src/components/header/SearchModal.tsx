@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { InstantSearch, SearchBox, Hits, Configure } from "react-instantsearch";
 import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Search, ChevronRight, AlertCircle } from "lucide-react";
+import { X, ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const SearchModal = ({
@@ -13,52 +13,54 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
-  const MEILI_URL = import.meta.env.VITE_MEILI_URL;
-  const MEILI_KEY = import.meta.env.VITE_MEILI_SEARCH_KEY;
 
   const client = useMemo(() => {
-    if (!MEILI_URL || !MEILI_URL.startsWith("http")) return null;
-    try {
-      const { searchClient } = instantMeiliSearch(MEILI_URL, MEILI_KEY);
-      return searchClient;
-    } catch {
-      return null;
-    }
-  }, [MEILI_URL, MEILI_KEY]);
+    const url = import.meta.env.VITE_MEILI_URL;
+    const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
+    if (!url || !url.startsWith("http")) return null;
+    return instantMeiliSearch(url, key).searchClient;
+  }, []);
 
   const Hit = ({ hit }: any) => (
-    <button
-      type="button"
+    <motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       onClick={() => {
         navigate(`/product/${hit.slug}`);
         onClose();
       }}
-      className="flex items-center gap-4 px-6 py-4 hover:bg-surface w-full text-left border-b border-border last:border-0 group transition-colors"
+      className="group flex flex-col gap-4 p-4 hover:bg-zinc-50 transition-all border border-transparent hover:border-zinc-100 rounded-lg"
     >
-      <div className="aspect-[3/4] w-12 bg-surface shrink-0 overflow-hidden">
+      <div className="aspect-[4/5] w-full overflow-hidden bg-zinc-50 relative">
         <img
           src={hit.image_url}
-          alt=""
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          alt={hit.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
+        {hit.sale_price && (
+          <div className="absolute top-2 left-2 bg-black text-white text-[8px] font-black px-2 py-1 uppercase tracking-widest">
+            Ofertă
+          </div>
+        )}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="label-micro text-muted-foreground mb-0.5">
-          {hit.brand || "Evem"}
+      <div className="text-left space-y-1">
+        <p className="text-[9px] uppercase tracking-[0.2em] text-zinc-400 font-bold">
+          {hit.category || "Evem Collection"}
         </p>
-        <h4 className="text-sm font-semibold text-foreground truncate">
+        <h4 className="text-[11px] font-bold uppercase tracking-tight text-zinc-900 group-hover:text-black">
           {hit.name}
         </h4>
+        <div className="flex items-center gap-2">
+          <p className="text-[12px] font-black text-black">
+            {hit.price?.toLocaleString()} RON
+          </p>
+          <ArrowRight
+            size={10}
+            className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+          />
+        </div>
       </div>
-      <p className="text-sm font-bold text-foreground shrink-0">
-        {hit.price?.toLocaleString()} RON
-      </p>
-      <ChevronRight
-        size={14}
-        strokeWidth={1.4}
-        className="text-muted-foreground group-hover:text-foreground transition-colors"
-      />
-    </button>
+    </motion.button>
   );
 
   return (
@@ -68,70 +70,73 @@ const SearchModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[800] flex flex-col bg-foreground/40 backdrop-blur-md pt-20 sm:pt-28 px-4"
+          className="fixed inset-0 z-[1000] bg-white/98 backdrop-blur-xl flex flex-col"
         >
-          <motion.div
-            initial={{ y: -16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -16, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-3xl mx-auto bg-card shadow-luxe border border-border flex flex-col max-h-[75vh] overflow-hidden"
-          >
+          {/* HEADER MODAL */}
+          <div className="flex items-center justify-between px-6 lg:px-16 py-8 border-b border-zinc-50">
+            <div className="flex items-center gap-3">
+              <Sparkles size={14} className="text-zinc-400" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em]">
+                Căutare Inteligentă
+              </span>
+            </div>
+            <button onClick={onClose} className="flex items-center gap-3 group">
+              <span className="text-[10px] font-black uppercase tracking-widest group-hover:mr-2 transition-all">
+                Închide
+              </span>
+              <div className="h-10 w-10 bg-black text-white rounded-full flex items-center justify-center">
+                <X size={16} />
+              </div>
+            </button>
+          </div>
+
+          {/* SEARCH CORE */}
+          <div className="flex-1 overflow-hidden flex flex-col max-w-7xl mx-auto w-full px-6 lg:px-16 pt-12">
             {client ? (
               <InstantSearch indexName="products" searchClient={client}>
-                <div className="px-6 py-5 border-b border-border flex items-center gap-4">
-                  <Search
-                    size={18}
-                    strokeWidth={1.4}
-                    className="text-muted-foreground"
-                  />
+                <Configure hitsPerPage={12} />
+
+                <div className="mb-16">
                   <SearchBox
                     autoFocus
-                    placeholder="Caută bijuterii, materiale, colecții…"
+                    placeholder="Ce piesă rară cauți astăzi?"
                     classNames={{
-                      root: "flex-1",
+                      root: "w-full",
                       input:
-                        "w-full bg-transparent border-none focus:ring-0 text-base outline-none placeholder:text-muted-foreground/60",
+                        "w-full bg-transparent border-b-2 border-zinc-100 py-6 text-2xl lg:text-5xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-200",
                       submit: "hidden",
                       reset: "hidden",
                     }}
                   />
-                  <button
-                    onClick={onClose}
-                    className="h-9 w-9 grid place-items-center border border-border hover:bg-foreground hover:text-background transition-colors"
-                    aria-label="Close"
-                  >
-                    <X size={14} strokeWidth={1.4} />
-                  </button>
+                  <div className="mt-4 flex gap-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                    <span>Sugestii:</span>
+                    <button className="text-black hover:underline">
+                      Inel Diamant
+                    </button>
+                    <button className="text-black hover:underline">
+                      Aur 18K
+                    </button>
+                    <button className="text-black hover:underline">
+                      Coliere
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto luxury-scrollbar">
-                  <Configure hitsPerPage={8} />
+                <div className="flex-1 overflow-y-auto pb-20 custom-scrollbar">
                   <Hits
                     hitComponent={Hit}
-                    classNames={{ list: "flex flex-col" }}
+                    classNames={{
+                      list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8",
+                    }}
                   />
                 </div>
               </InstantSearch>
             ) : (
-              <div className="px-10 py-16 text-center space-y-3">
-                <AlertCircle
-                  size={28}
-                  strokeWidth={1.2}
-                  className="mx-auto text-muted-foreground"
-                />
-                <p className="label-luxury">Căutarea nu este configurată</p>
-                <button
-                  onClick={onClose}
-                  className="mt-4 text-[10px] font-bold uppercase tracking-[0.3em] text-foreground border-b border-foreground pb-1 hover:opacity-70 transition-opacity"
-                >
-                  Închide
-                </button>
+              <div className="h-full flex items-center justify-center text-zinc-300 uppercase tracking-[0.5em] text-xs">
+                Sistemul de căutare se încarcă...
               </div>
             )}
-          </motion.div>
-          <div className="flex-1" onClick={onClose} />
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
