@@ -207,18 +207,41 @@ const AdminProducts = () => {
     if (p) {
       setEditingProduct(p);
 
-      // Fix: Parsăm manual string-urile JSON pentru a preveni array-uri de caractere
-      let parsedExtraImages = [];
-      if (p.additional_image_link) {
+      // 1. Extragere Galerie din structura hibridă (gallery sau additional_image_link)
+      let galleryImages: string[] = [];
+
+      // Verificăm dacă avem structura nouă cu .gallery
+      if (
+        p.image_url &&
+        typeof p.image_url === "object" &&
+        Array.isArray(p.image_url.gallery)
+      ) {
+        galleryImages = p.image_url.gallery.map((img: any) =>
+          typeof img === "string" ? img : img.medium || img.large || img.url,
+        );
+      }
+      // Fallback pe structura veche additional_image_link
+      else if (p.additional_image_link) {
         try {
-          parsedExtraImages =
+          const parsed =
             typeof p.additional_image_link === "string"
               ? JSON.parse(p.additional_image_link)
               : p.additional_image_link;
-          if (!Array.isArray(parsedExtraImages)) parsedExtraImages = [];
+          if (Array.isArray(parsed)) galleryImages = parsed;
         } catch {
-          parsedExtraImages = [];
+          galleryImages = [];
         }
+      }
+
+      // 2. Extragere Imagine Principală
+      let mainImg = "";
+      if (p.image_url && typeof p.image_url === "object" && p.image_url.main) {
+        mainImg =
+          p.image_url.main.medium ||
+          p.image_url.main.large ||
+          p.image_url.main.url;
+      } else {
+        mainImg = p.image_url || "";
       }
 
       let parsedAttributes = {};
@@ -236,8 +259,9 @@ const AdminProducts = () => {
       setFormData({
         ...initialFormState,
         ...p,
+        image_url: mainImg, // Setăm string-ul pentru preview
         category_id: p.category_id || "",
-        additional_image_link: parsedExtraImages,
+        additional_image_link: galleryImages, // Aici populăm cele 4 sloturi
         attributes_json: parsedAttributes,
       });
     } else {
