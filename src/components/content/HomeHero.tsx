@@ -12,82 +12,58 @@ import heroBanner from "@/assets/evem-hero-banner.jpg";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  subcategories?: Category[];
-}
-
 const HomeHero = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeParent, setActiveParent] = useState<Category | null>(null);
+  const [activeParent, setActiveParent] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch(`${API_BASE_URL}/api/v1/categories/tree`);
-        const data = await r.json();
-        setCategories(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.warn("categories fetch failed", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    fetch(`${API_BASE_URL}/api/v1/categories/tree`)
+      .then((r) => r.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
-    <section className="w-full px-4 md:px-12 pt-24 md:pt-32 pb-10">
-      {/* 
-        Containerul are acum items-stretch pentru a forța sidebar-ul și poza 
-        să aibă aceeași înălțime, dar am setat o înălțime fixă (500px) pe desktop.
-      */}
-      <div className="mx-auto max-w-[1700px] flex flex-col lg:flex-row gap-8 items-stretch lg:h-[520px]">
-        {/* SIDEBAR CATEGORII - Design Modern & Compact */}
-        <aside className="w-full lg:w-[350px] flex flex-col">
+    <section className="w-full px-4 md:px-6 pt-20 md:pt-24 pb-6">
+      {/* gap-4 asigura ca sunt foarte apropiate */}
+      <div className="mx-auto max-w-[1750px] flex flex-col lg:flex-row gap-4 items-stretch lg:h-[480px]">
+        {/* SIDEBAR CATEGORII */}
+        <aside className="w-full lg:w-[300px] flex flex-col shrink-0">
           <motion.div
-            initial={{ opacity: 0, x: -15 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col h-full rounded-[2.5rem] border border-zinc-100 bg-white/80 backdrop-blur-xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] overflow-hidden"
+            className="flex flex-col h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
           >
-            {/* Header fix al meniului */}
-            <div className="p-8 pb-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-zinc-50 rounded-xl">
-                  <LayoutGrid size={14} className="text-zinc-900" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                  Explorare
+            <div className="p-6 pb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <LayoutGrid size={12} className="text-zinc-400" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                  Navigare
                 </span>
               </div>
-
               <AnimatePresence mode="wait">
                 {!activeParent ? (
                   <motion.h3
                     key="t1"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="text-2xl font-black tracking-tighter text-zinc-900"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-lg font-black tracking-tighter"
                   >
-                    Colecții <span className="text-zinc-300">EVEM</span>
+                    Colecții
                   </motion.h3>
                 ) : (
                   <motion.button
                     key="t2"
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     onClick={() => setActiveParent(null)}
-                    className="flex items-center gap-3 group"
+                    className="flex items-center gap-2 text-zinc-900 font-bold"
                   >
-                    <div className="p-2 rounded-full border border-zinc-100 group-hover:bg-zinc-900 group-hover:text-white transition-all">
-                      <ChevronLeft size={16} />
-                    </div>
-                    <span className="text-xl font-black tracking-tighter truncate text-zinc-900">
+                    <ChevronLeft size={16} />{" "}
+                    <span className="truncate text-sm">
                       {activeParent.name}
                     </span>
                   </motion.button>
@@ -95,163 +71,108 @@ const HomeHero = () => {
               </AnimatePresence>
             </div>
 
-            {/* Listă cu Scrollbar invizibil pentru un look Luxury */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-5">
-              <div className="flex flex-col gap-1">
-                {loading ? (
-                  Array.from({ length: 6 }).map((_, i) => (
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4">
+              {loading ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-14 w-full rounded-2xl bg-zinc-50 animate-pulse my-0.5"
+                      className="h-10 bg-zinc-50 animate-pulse rounded-xl"
                     />
-                  ))
-                ) : (
-                  <AnimatePresence mode="wait">
-                    {!activeParent ? (
-                      <motion.div
-                        key="m"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="space-y-1"
-                      >
-                        {categories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            onClick={() =>
-                              cat.subcategories?.length
-                                ? setActiveParent(cat)
-                                : navigate(`/category/${cat.slug}`)
-                            }
-                            className="w-full flex items-center justify-between p-4 rounded-[1.2rem] hover:bg-zinc-50 transition-all duration-300 group text-left"
-                          >
-                            <span className="text-[14px] font-bold text-zinc-600 group-hover:text-zinc-900 group-hover:translate-x-1 transition-transform">
-                              {cat.name}
-                            </span>
-                            {cat.subcategories?.length ? (
-                              <ChevronRight
-                                size={14}
-                                className="text-zinc-300 group-hover:text-zinc-900"
-                              />
-                            ) : (
-                              <ArrowUpRight
-                                size={14}
-                                className="text-zinc-200 opacity-0 group-hover:opacity-100"
-                              />
-                            )}
-                          </button>
-                        ))}
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="s"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="space-y-1"
-                      >
-                        <Link
-                          to={`/category/${activeParent.slug}`}
-                          className="flex items-center justify-between p-4 mb-3 rounded-[1.2rem] bg-zinc-950 text-white font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-zinc-200"
+                  ))}
+                </div>
+              ) : (
+                <AnimatePresence mode="wait">
+                  {!activeParent ? (
+                    <motion.div
+                      key="m"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-1"
+                    >
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() =>
+                            cat.subcategories?.length
+                              ? setActiveParent(cat)
+                              : navigate(`/category/${cat.slug}`)
+                          }
+                          className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-zinc-50 transition-all text-left"
                         >
-                          Toate produsele
-                          <ArrowUpRight size={14} />
+                          <span className="text-xs font-bold text-zinc-600">
+                            {cat.name}
+                          </span>
+                          <ChevronRight size={12} className="text-zinc-300" />
+                        </button>
+                      ))}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="s"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-1"
+                    >
+                      <Link
+                        to={`/category/${activeParent.slug}`}
+                        className="flex items-center justify-between p-3 mb-2 rounded-xl bg-zinc-900 text-white font-bold text-[10px] uppercase tracking-widest"
+                      >
+                        Toate produsele <ArrowUpRight size={12} />
+                      </Link>
+                      {activeParent.subcategories?.map((sub: any) => (
+                        <Link
+                          key={sub.id}
+                          to={`/category/${sub.slug}`}
+                          className="block p-3 text-xs font-bold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl"
+                        >
+                          {sub.name}
                         </Link>
-                        {activeParent.subcategories?.map((sub) => (
-                          <Link
-                            key={sub.id}
-                            to={`/category/${sub.slug}`}
-                            className="block p-4 text-[14px] font-bold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded-[1.2rem] transition-all"
-                          >
-                            {sub.name}
-                          </Link>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                )}
-              </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
             </div>
-
-            {/* Link Catalog la baza sidebar-ului */}
             <Link
               to="/shop"
-              className="p-6 bg-zinc-50/50 text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-between hover:bg-zinc-900 hover:text-white transition-all group"
+              className="p-4 bg-zinc-50/50 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between text-zinc-400 hover:text-zinc-900 border-t border-zinc-100"
             >
-              Vezi catalogul complet
-              <ChevronRight
-                size={14}
-                className="group-hover:translate-x-1 transition-transform"
-              />
+              Catalog Complet <ChevronRight size={12} />
             </Link>
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL - Aspect Ratio Cinematografic */}
+        {/* BANNER PRINCIPAL */}
         <div className="flex-1">
           <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative h-full w-full rounded-[3rem] overflow-hidden bg-zinc-100 group shadow-[0_30px_70px_-20px_rgba(0,0,0,0.15)]"
+            className="relative h-full w-full rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
           >
             <img
               src={heroBanner}
-              alt="EVEM Premium"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              alt="Hero"
+              className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
             />
-            {/* Overlay dublu gradient */}
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
-
-            <div className="relative h-full flex flex-col justify-center p-10 md:p-20 text-white">
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center gap-3 mb-6"
-              >
-                <div className="h-px w-10 bg-white/40" />
-                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/80">
-                  Concept Premium
-                </span>
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-                className="text-5xl md:text-7xl font-black leading-[0.9] tracking-tighter mb-8"
-              >
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
+            <div className="relative h-full flex flex-col justify-center p-8 md:p-16 text-white">
+              <h1 className="text-4xl md:text-6xl font-black leading-[1] tracking-tighter mb-6">
                 STILUL TĂU, <br />
-                <span className="font-light italic opacity-60 text-4xl md:text-6xl">
+                <span className="font-light italic opacity-60 text-3xl md:text-5xl">
                   REDEFINIT.
                 </span>
-              </motion.h1>
-
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
+              </h1>
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all w-fit shadow-xl"
               >
-                <Link
-                  to="/shop"
-                  className="inline-flex items-center gap-4 bg-white text-zinc-950 px-10 py-5 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-zinc-950 hover:text-white transition-all shadow-xl hover:shadow-2xl"
-                >
-                  <ShoppingBag size={16} />
-                  Cumpără acum
-                </Link>
-              </motion.div>
+                <ShoppingBag size={14} /> Cumpără acum
+              </Link>
             </div>
           </motion.div>
         </div>
       </div>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `,
-        }}
-      />
     </section>
   );
 };

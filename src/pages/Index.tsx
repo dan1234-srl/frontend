@@ -19,13 +19,6 @@ const Index = () => {
         </div>
 
         <CategoryShowcase />
-
-        <div className="bg-foreground/[0.02] py-4">
-          <ProductCarousel
-            title="Noutăți în colecție"
-            subtitle="Just Dropped"
-          />
-        </div>
       </main>
       <Footer />
     </div>
