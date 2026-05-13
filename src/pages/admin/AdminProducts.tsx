@@ -190,7 +190,12 @@ const AdminProducts = () => {
       setProducts(prodData.items || []);
       setTotalPages(prodData.pages || 1);
       setTotalItems(prodData.total || 0);
-      setCategories(Array.isArray(catData) ? catData : []);
+
+      // 🚀 FIX: Asigurăm extragerea corectă a categoriilor indiferent de formatul API-ului
+      const fetchedCategories = Array.isArray(catData)
+        ? catData
+        : catData.items || [];
+      setCategories(fetchedCategories);
     } catch (error) {
       toast.error("Eroare server la încărcarea datelor.");
     } finally {
@@ -256,7 +261,7 @@ const AdminProducts = () => {
         ...initialFormState,
         ...p,
         image_url: mainImg,
-        category_id: p.category_id || "",
+        category_id: p.category_id || p.category?.id || "", // 🚀 FIX: Fallback pentru category_id
         additional_image_link: galleryImages,
         attributes_json: parsedAttributes,
       });
