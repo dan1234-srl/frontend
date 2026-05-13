@@ -54,7 +54,7 @@ const AuthModals = ({ loginOpen, setLoginOpen }: AuthModalsProps) => {
       <RegisterDrawer
         isOpen={registerOpen}
         onClose={() => setRegisterOpen(false)}
-        onBackToLogin={() => {
+        onSwitchToLogin={() => {
           setRegisterOpen(false);
 
           setTimeout(() => {
