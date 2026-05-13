@@ -27,21 +27,23 @@ const HomeHero = () => {
   }, []);
 
   return (
-    <section className="w-full px-4 md:px-6 pt-20 md:pt-24 pb-6">
-      <div className="mx-auto max-w-[1750px] flex flex-col lg:flex-row gap-4 items-stretch lg:h-[480px]">
+    /* 
+       CORECȚIE 1: pt-16 pe mobil (în loc de 20/24) și pb-0 pentru a lipi caruselul.
+    */
+    <section className="w-full px-4 md:px-6 pt-16 md:pt-24 pb-0 md:pb-6">
+      {/* 
+         CORECȚIE 2: gap-2 pe mobil (în loc de 4) pentru a apropia Sidebar-ul de Banner.
+      */}
+      <div className="mx-auto max-w-[1750px] flex flex-col lg:flex-row gap-2 md:gap-4 items-stretch lg:h-[480px]">
         {/* SIDEBAR CATEGORII */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            /* 
-               FIX MOBIL: Am adaugat h-[350px] pentru mobil si lg:h-full pentru desktop.
-               Asta previne lista sa se lungeasca infinit in jos pe telefon.
-            */
-            className="flex flex-col h-[350px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
+            className="flex flex-col h-[320px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
           >
-            <div className="p-6 pb-4 shrink-0">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="p-5 pb-3 shrink-0">
+              <div className="flex items-center gap-2 mb-2">
                 <LayoutGrid size={12} className="text-zinc-400" />
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">
                   Navigare
@@ -74,14 +76,13 @@ const HomeHero = () => {
               </AnimatePresence>
             </div>
 
-            {/* Zona de scroll - acum limitata de inaltimea parintelui */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-2">
               {loading ? (
                 <div className="space-y-2">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(4)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-10 bg-zinc-50 animate-pulse rounded-xl"
+                      className="h-9 bg-zinc-50 animate-pulse rounded-xl"
                     />
                   ))}
                 </div>
@@ -102,7 +103,7 @@ const HomeHero = () => {
                               ? setActiveParent(cat)
                               : navigate(`/category/${cat.slug}`)
                           }
-                          className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-zinc-50 transition-all text-left"
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-zinc-50 transition-all text-left"
                         >
                           <span className="text-xs font-bold text-zinc-600">
                             {cat.name}
@@ -128,7 +129,7 @@ const HomeHero = () => {
                         <Link
                           key={sub.id}
                           to={`/category/${sub.slug}`}
-                          className="block p-3 text-xs font-bold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl"
+                          className="block p-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-900 rounded-xl"
                         >
                           {sub.name}
                         </Link>
@@ -141,7 +142,7 @@ const HomeHero = () => {
 
             <Link
               to="/shop"
-              className="p-4 bg-zinc-50/50 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between text-zinc-400 hover:text-zinc-900 border-t border-zinc-100 shrink-0"
+              className="p-4 bg-zinc-50/50 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between text-zinc-400 border-t border-zinc-100 shrink-0"
             >
               Catalog Complet <ChevronRight size={12} />
             </Link>
@@ -149,20 +150,20 @@ const HomeHero = () => {
         </aside>
 
         {/* BANNER PRINCIPAL */}
-        <div className="flex-1 min-h-[300px] md:min-h-0">
+        <div className="flex-1">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative h-full w-full rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
+            className="relative h-full w-full min-h-[280px] rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
           >
             <img
               src={heroBanner}
               alt="Hero"
-              className="absolute inset-0 w-full h-full object-cover opacity-80 transition-transform duration-1000 group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover opacity-80"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
-            <div className="relative h-full flex flex-col justify-center p-8 md:p-16 text-white">
-              <h1 className="text-3xl md:text-6xl font-black leading-[1.1] md:leading-[1] tracking-tighter mb-6">
+            <div className="relative h-full flex flex-col justify-center p-6 md:p-16 text-white">
+              <h1 className="text-3xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-4">
                 STILUL TĂU, <br />
                 <span className="font-light italic opacity-60 text-2xl md:text-5xl">
                   REDEFINIT.
@@ -170,7 +171,7 @@ const HomeHero = () => {
               </h1>
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-zinc-100 transition-all w-fit shadow-xl"
+                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest w-fit shadow-xl"
               >
                 <ShoppingBag size={14} /> Cumpără acum
               </Link>
@@ -178,15 +179,6 @@ const HomeHero = () => {
           </motion.div>
         </div>
       </div>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `,
-        }}
-      />
     </section>
   );
 };
