@@ -19,8 +19,6 @@ import {
   Hash,
   Scale,
   Maximize,
-  Type,
-  FileText,
   Save,
   ShieldCheck,
 } from "lucide-react";
@@ -40,7 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
@@ -58,22 +56,46 @@ const generateSlug = (text: string) => {
     .replace(/--+/g, "-");
 };
 
+// Fallback robust
+const PLACEHOLDER_IMG =
+  "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
+
 const getValidImageUrl = (imageSource: any) => {
-  if (!imageSource) return "/placeholder-jewelry.jpg";
-  if (typeof imageSource === "string" && imageSource.startsWith("http"))
-    return imageSource;
-  try {
-    const parsed =
-      typeof imageSource === "string" ? JSON.parse(imageSource) : imageSource;
-    return (
-      parsed.main?.medium ||
-      parsed.url ||
-      parsed.medium ||
-      "/placeholder-jewelry.jpg"
-    );
-  } catch {
-    return "/placeholder-jewelry.jpg";
+  if (!imageSource) return PLACEHOLDER_IMG;
+
+  let url = "";
+
+  if (typeof imageSource === "string") {
+    if (imageSource.startsWith("http") || imageSource.startsWith("/")) {
+      url = imageSource;
+    } else {
+      try {
+        const parsed = JSON.parse(imageSource);
+        url =
+          parsed?.main?.medium ||
+          parsed?.main?.small ||
+          parsed?.url ||
+          parsed?.medium ||
+          imageSource;
+      } catch {
+        url = imageSource;
+      }
+    }
+  } else if (typeof imageSource === "object") {
+    url =
+      imageSource?.main?.medium ||
+      imageSource?.main?.small ||
+      imageSource?.url ||
+      imageSource?.medium ||
+      PLACEHOLDER_IMG;
   }
+
+  // Daca e o cale relativa, ii atasam domeniul de backend
+  if (url.startsWith("/")) {
+    url = `${API_BASE_URL}${url}`;
+  }
+
+  return url || PLACEHOLDER_IMG;
 };
 
 const getStatusBadge = (status: string) => {
@@ -171,7 +193,7 @@ const AdminProducts = () => {
       setTotalItems(prodData.total || 0);
       setCategories(Array.isArray(catData) ? catData : []);
     } catch (error) {
-      toast.error("Eroare server");
+      toast.error("Eroare server la încărcarea datelor.");
     } finally {
       setLoading(false);
     }
@@ -184,14 +206,39 @@ const AdminProducts = () => {
   const openEdit = (p: any = null) => {
     if (p) {
       setEditingProduct(p);
+
+      // Fix: Parsăm manual string-urile JSON pentru a preveni array-uri de caractere
+      let parsedExtraImages = [];
+      if (p.additional_image_link) {
+        try {
+          parsedExtraImages =
+            typeof p.additional_image_link === "string"
+              ? JSON.parse(p.additional_image_link)
+              : p.additional_image_link;
+          if (!Array.isArray(parsedExtraImages)) parsedExtraImages = [];
+        } catch {
+          parsedExtraImages = [];
+        }
+      }
+
+      let parsedAttributes = {};
+      if (p.attributes_json) {
+        try {
+          parsedAttributes =
+            typeof p.attributes_json === "string"
+              ? JSON.parse(p.attributes_json)
+              : p.attributes_json;
+        } catch {
+          parsedAttributes = {};
+        }
+      }
+
       setFormData({
         ...initialFormState,
         ...p,
         category_id: p.category_id || "",
-        attributes_json: p.attributes_json || {},
-        additional_image_link: Array.isArray(p.additional_image_link)
-          ? p.additional_image_link
-          : [],
+        additional_image_link: parsedExtraImages,
+        attributes_json: parsedAttributes,
       });
     } else {
       setEditingProduct(null);
@@ -206,6 +253,7 @@ const AdminProducts = () => {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setUploading(index === "main" ? "main" : `extra-${index}`);
     const data = new FormData();
     data.append("file", file);
@@ -217,19 +265,24 @@ const AdminProducts = () => {
         credentials: "include",
       });
       const result = await res.json();
+
+      // Fallback robust pentru răspunsul endpoint-ului de upload
+      const uploadedUrl = result.url || result.file_url || result.data?.url;
+      if (!uploadedUrl) throw new Error("Format răspuns invalid de la server");
+
       if (index === "main") {
-        setFormData((prev) => ({ ...prev, image_url: result.url }));
+        setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
       } else {
         const nl = [...formData.additional_image_link];
-        nl[index as number] = result.url;
+        nl[index as number] = uploadedUrl;
         setFormData((prev) => ({
           ...prev,
-          additional_image_link: nl.filter((i) => i),
+          additional_image_link: nl.filter(Boolean),
         }));
       }
-      toast.success("Imagine încărcată.");
+      toast.success("Imagine încărcată cu succes.");
     } catch {
-      toast.error("Eroare upload.");
+      toast.error("Eroare la încărcarea imaginii.");
     } finally {
       setUploading(null);
     }
@@ -253,6 +306,8 @@ const AdminProducts = () => {
       length: Number(formData.length),
       width: Number(formData.width),
       height: Number(formData.height),
+      // Curățăm array-ul gol
+      additional_image_link: formData.additional_image_link.filter(Boolean),
     };
 
     const url = editingProduct
@@ -272,11 +327,15 @@ const AdminProducts = () => {
         fetchData();
         setIsModalOpen(false);
       } else {
-        toast.error("Eroare la salvare.");
+        toast.error("Eroare la salvare. Verifică datele introduse.");
       }
     } catch {
-      toast.error("Eroare server.");
+      toast.error("Eroare severă la conexiune.");
     }
+  };
+
+  const handleImageError = (e: any) => {
+    e.target.src = PLACEHOLDER_IMG;
   };
 
   if (!isAdmin) return null;
@@ -287,18 +346,12 @@ const AdminProducts = () => {
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-zinc-100 pb-10">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span
-              className="w-8 h-[2px]"
-              style={{ background: "var(--royal-violet)" }}
-            />
-            <span
-              className="text-[10px] font-black uppercase tracking-[0.4em]"
-              style={{ color: "var(--royal-violet)" }}
-            >
+            <span className="w-8 h-[2px] bg-black" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">
               Inventory Management
             </span>
           </div>
-          <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-black">
             Catalog Produse
           </h1>
         </div>
@@ -306,20 +359,19 @@ const AdminProducts = () => {
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <div className="relative group flex-1">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)]"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-black"
               size={16}
             />
             <input
-              className="w-full sm:w-[300px] pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-2 focus:ring-[var(--royal-violet)]/10 outline-none transition-all text-sm font-bold shadow-inner"
-              placeholder="SKU sau Nume..."
+              className="w-full sm:w-[300px] pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:border-black outline-none transition-all text-sm font-bold shadow-inner"
+              placeholder="Caută SKU sau Nume..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button
             onClick={() => openEdit()}
-            className="text-white px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95 whitespace-nowrap"
-            style={{ background: "var(--primary-gradient)" }}
+            className="bg-black text-white px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg whitespace-nowrap"
           >
             <Plus size={16} /> Adaugă Produs
           </button>
@@ -327,7 +379,7 @@ const AdminProducts = () => {
       </header>
 
       {/* FILTER TABS */}
-      <div className="flex items-center justify-between border-b border-zinc-50 pb-2 overflow-x-auto no-scrollbar">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-50 pb-2 overflow-x-auto no-scrollbar">
         <div className="flex gap-8">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
             <button
@@ -336,164 +388,169 @@ const AdminProducts = () => {
                 setStatusFilter(f);
                 setCurrentPage(1);
               }}
-              className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
+              className={`pb-4 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
                 statusFilter === f
-                  ? "text-[var(--dark-amethyst)]"
-                  : "text-zinc-300 hover:text-zinc-500"
+                  ? "text-black"
+                  : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
               {f.replace(/_/g, " ")}
               {statusFilter === f && (
                 <motion.div
                   layoutId="statusTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ background: "var(--royal-violet)" }}
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-black"
                 />
               )}
             </button>
           ))}
         </div>
-        <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
+        <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest whitespace-nowrap">
           {totalItems} Articole în total
         </div>
       </div>
 
-      {/* MAIN TABLE */}
+      {/* MAIN TABLE (Responsive Scrollable Container) */}
       <div className="bg-white rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader className="bg-zinc-50/50">
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="py-5 px-8 text-[9px] font-black uppercase tracking-widest">
-                Produs
-              </TableHead>
-              <TableHead className="text-center text-[9px] font-black uppercase tracking-widest">
-                Status
-              </TableHead>
-              <TableHead className="text-center text-[9px] font-black uppercase tracking-widest">
-                Stoc
-              </TableHead>
-              <TableHead className="text-right px-8 text-[9px] font-black uppercase tracking-widest">
-                Preț / Acțiuni
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              [...Array(6)].map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell className="px-8 py-5">
-                    <div className="flex items-center gap-4">
-                      <Skeleton className="h-16 w-12 rounded-lg" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-40" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-6 w-20 mx-auto rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-8 mx-auto" />
-                  </TableCell>
-                  <TableCell className="px-8 text-right">
-                    <Skeleton className="h-6 w-24 ml-auto" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : products.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="py-32 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
-                >
-                  Nu au fost găsite rezultate.
-                </TableCell>
+        <div className="overflow-x-auto luxury-scrollbar">
+          <Table className="min-w-[800px]">
+            <TableHeader className="bg-zinc-50/50">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="py-5 px-6 md:px-8 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Produs
+                </TableHead>
+                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Status
+                </TableHead>
+                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Stoc
+                </TableHead>
+                <TableHead className="text-right px-6 md:px-8 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Preț / Acțiuni
+                </TableHead>
               </TableRow>
-            ) : (
-              products.map((p) => (
-                <TableRow
-                  key={p.id}
-                  className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
-                >
-                  <TableCell className="py-5 px-8">
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
-                        <img
-                          src={getValidImageUrl(p.image_url)}
-                          className="object-contain h-full w-full"
-                          alt=""
-                        />
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                [...Array(6)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="px-6 md:px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-16 w-12 rounded-lg" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32 md:w-40" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
                       </div>
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-[var(--dark-amethyst)] text-sm line-clamp-1">
-                          {p.name}
-                        </p>
-                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">
-                          {p.sku} • {p.brand_name || "Evem"}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span
-                      className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusBadge(p.status)}`}
-                    >
-                      {p.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-center font-black text-xs text-[var(--dark-amethyst)]">
-                    {p.stock_quantity ?? 0}
-                  </TableCell>
-                  <TableCell className="text-right px-8">
-                    <div className="flex items-center justify-end gap-6">
-                      <div className="text-right">
-                        <p className="font-black text-[var(--dark-amethyst)]">
-                          {p.price}{" "}
-                          <span className="text-[9px] opacity-40">RON</span>
-                        </p>
-                        {p.sale_price && (
-                          <p className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter">
-                            Sale: {p.sale_price}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                          onClick={() => openEdit(p)}
-                          className="p-2 hover:text-[var(--royal-violet)] transition-colors"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button className="p-2 hover:text-rose-500 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 mx-auto rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-8 mx-auto" />
+                    </TableCell>
+                    <TableCell className="px-6 md:px-8">
+                      <Skeleton className="h-6 w-24 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : products.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="py-32 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Nu au fost găsite rezultate.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                products.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
+                  >
+                    <TableCell className="py-5 px-6 md:px-8">
+                      <div className="flex items-center gap-4 text-left">
+                        <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
+                          <img
+                            src={getValidImageUrl(p.image_url)}
+                            onError={handleImageError}
+                            className="object-contain h-full w-full"
+                            alt="Produs"
+                          />
+                        </div>
+                        <div className="space-y-0.5 max-w-[200px] sm:max-w-[300px]">
+                          <p
+                            className="font-bold text-black text-sm truncate"
+                            title={p.name}
+                          >
+                            {p.name}
+                          </p>
+                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter truncate">
+                            {p.sku} • {p.brand_name || "Evem"}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span
+                        className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status)}`}
+                      >
+                        {p.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center font-black text-xs text-black">
+                      {p.stock_quantity ?? 0}
+                    </TableCell>
+                    <TableCell className="text-right px-6 md:px-8">
+                      <div className="flex items-center justify-end gap-4 md:gap-6">
+                        <div className="text-right">
+                          <p className="font-black text-black text-sm whitespace-nowrap">
+                            {p.price}{" "}
+                            <span className="text-[9px] opacity-40">RON</span>
+                          </p>
+                          {p.sale_price && (
+                            <p className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter whitespace-nowrap">
+                              Sale: {p.sale_price}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={() => openEdit(p)}
+                            className="p-2 bg-zinc-50 rounded-md hover:bg-black hover:text-white transition-colors"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button className="p-2 bg-zinc-50 rounded-md hover:bg-rose-500 hover:text-white transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
         {/* PAGINATION FOOTER */}
         {!loading && totalPages > 1 && (
-          <div className="p-6 bg-zinc-50/50 border-t flex justify-center items-center gap-4">
+          <div className="p-4 md:p-6 bg-zinc-50/50 border-t flex justify-center items-center gap-4">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20"
+              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20 transition-colors"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
+            <span className="text-[10px] font-black uppercase tracking-widest text-black">
               {currentPage} / {totalPages}
             </span>
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20"
+              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20 transition-colors"
             >
               <ChevronRight size={16} />
             </button>
@@ -503,49 +560,47 @@ const AdminProducts = () => {
 
       {/* FULL PRODUCT DIALOG */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[1300px] w-[95vw] h-[95vh] p-0 rounded-[2.5rem] border-none bg-[#FBFBFD] shadow-2xl flex flex-col overflow-hidden font-sans">
-          <header className="px-10 py-8 flex justify-between items-center bg-white border-b shrink-0">
+        <DialogContent className="max-w-[1300px] w-[95vw] h-[95vh] p-0 rounded-[1.5rem] md:rounded-[2.5rem] border-none bg-[#FBFBFD] shadow-2xl flex flex-col overflow-hidden font-sans">
+          <header className="px-6 md:px-10 py-6 md:py-8 flex justify-between items-center bg-white border-b shrink-0">
             <div className="flex items-center gap-4">
-              <div
-                className="p-3 rounded-2xl bg-zinc-50"
-                style={{ color: "var(--royal-violet)" }}
-              >
+              <div className="p-3 rounded-2xl bg-zinc-950 text-white hidden md:block">
                 <Package size={24} />
               </div>
               <div>
-                <DialogTitle className="heading-serif text-3xl italic text-[var(--dark-amethyst)]">
+                <DialogTitle className="text-xl md:text-3xl font-black uppercase tracking-tighter text-black truncate max-w-[200px] sm:max-w-md">
                   {formData.sku
-                    ? `Configurare: ${formData.name}`
+                    ? `Configurare: ${formData.sku}`
                     : "Adăugare Articol Nou"}
                 </DialogTitle>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
+                <p className="text-[9px] md:text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
                   Catalog Management System
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsModalOpen(false)}
-              className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+              className="size-10 md:size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
             >
               <X size={20} />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-10 luxury-scrollbar text-left">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
               {/* LEFT: MEDIA & VISUALS */}
-              <div className="lg:col-span-4 space-y-10">
+              <div className="xl:col-span-4 space-y-8 md:space-y-10">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-brand ml-1 flex items-center gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black ml-1 flex items-center gap-2">
                     <ImageIcon size={14} /> Imagine Principală
                   </Label>
-                  <div className="aspect-[3/4] bg-white rounded-[2.5rem] border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden shadow-sm">
+                  <div className="aspect-[3/4] bg-white rounded-[2rem] border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden shadow-sm">
                     {formData.image_url ? (
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
-                          className="h-full w-full object-contain p-8"
-                          alt=""
+                          onError={handleImageError}
+                          className="h-full w-full object-contain p-4 md:p-8"
+                          alt="Principal"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                           <button
@@ -559,14 +614,14 @@ const AdminProducts = () => {
                         </div>
                       </>
                     ) : (
-                      <label className="cursor-pointer text-zinc-300 flex flex-col items-center gap-4 hover:text-[var(--royal-violet)] transition-colors">
+                      <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-4 hover:text-black transition-colors w-full h-full justify-center">
                         {uploading === "main" ? (
                           <Loader2 className="animate-spin" size={40} />
                         ) : (
                           <Upload size={40} strokeWidth={1.5} />
                         )}
-                        <span className="text-[9px] font-black uppercase tracking-widest">
-                          Alege fișier master
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center px-4">
+                          Upload Imagine
                         </span>
                         <input
                           type="file"
@@ -579,14 +634,14 @@ const AdminProducts = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-brand ml-1 flex items-center gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black ml-1 flex items-center gap-2">
                     <Layers size={14} /> Galerie (Max 4)
                   </Label>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-4 gap-2 md:gap-3">
                     {[0, 1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="aspect-square bg-white rounded-2xl border border-zinc-200 relative overflow-hidden group"
+                        className="aspect-square bg-white rounded-xl md:rounded-2xl border border-zinc-200 relative overflow-hidden group"
                       >
                         {formData.additional_image_link[i] ? (
                           <>
@@ -594,8 +649,9 @@ const AdminProducts = () => {
                               src={getValidImageUrl(
                                 formData.additional_image_link[i],
                               )}
+                              onError={handleImageError}
                               className="w-full h-full object-cover"
-                              alt=""
+                              alt={`Secundar ${i}`}
                             />
                             <button
                               onClick={() => {
@@ -608,15 +664,15 @@ const AdminProducts = () => {
                               }}
                               className="absolute inset-0 bg-rose-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                             >
-                              <X size={14} />
+                              <X size={16} />
                             </button>
                           </>
                         ) : (
-                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-50 transition-colors">
+                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-50 hover:text-black transition-colors">
                             {uploading === `extra-${i}` ? (
-                              <Loader2 className="animate-spin" size={14} />
+                              <Loader2 className="animate-spin" size={16} />
                             ) : (
-                              <Plus size={16} />
+                              <Plus size={20} />
                             )}
                             <input
                               type="file"
@@ -632,15 +688,15 @@ const AdminProducts = () => {
               </div>
 
               {/* RIGHT: CORE DATA */}
-              <div className="lg:col-span-8 space-y-12">
+              <div className="xl:col-span-8 space-y-8 md:space-y-12">
                 {/* Basic Info Box */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-8">
+                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-brand uppercase tracking-widest">
-                      Nume Complet Articol
+                    <Label className="text-[9px] md:text-[10px] font-black text-black uppercase tracking-widest ml-2">
+                      Nume Articol
                     </Label>
                     <input
-                      className="w-full bg-transparent border-b-2 border-zinc-100 py-3 text-4xl font-bold outline-none focus:border-[var(--royal-violet)] transition-all placeholder:text-zinc-100"
+                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-3 text-2xl md:text-4xl font-bold outline-none focus:border-black transition-all placeholder:text-zinc-200"
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({
@@ -649,11 +705,11 @@ const AdminProducts = () => {
                           slug: generateSlug(e.target.value),
                         })
                       }
-                      placeholder="Numele vizibil clientului..."
+                      placeholder="Introdu numele..."
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <PremiumInput
                       label="Cod SKU"
                       icon={<Hash size={12} />}
@@ -663,7 +719,7 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Cod EAN / Barcode"
+                      label="Cod EAN"
                       icon={<Hash size={12} />}
                       value={formData.ean}
                       onChange={(e: any) =>
@@ -675,7 +731,7 @@ const AdminProducts = () => {
                         Categorie Master
                       </Label>
                       <select
-                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all appearance-none"
+                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-1 focus:ring-black transition-all appearance-none"
                         value={formData.category_id}
                         onChange={(e) =>
                           setFormData({
@@ -696,18 +752,19 @@ const AdminProducts = () => {
                 </div>
 
                 {/* Logistics & Price Box */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-8">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
-                    <DollarSign size={14} /> Detalii Financiare & Logistică
+                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-black flex items-center gap-2">
+                    <DollarSign size={14} /> Financiare & Logistică
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-2">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
                         Preț Listă
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-xl font-black text-center text-[var(--dark-amethyst)] outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
                         value={formData.price}
                         onChange={(e) =>
                           setFormData({
@@ -717,13 +774,13 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-4 bg-rose-50/30 rounded-2xl border border-rose-100 text-center">
-                      <Label className="text-[9px] font-black text-rose-400 uppercase tracking-widest block mb-2">
+                    <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
+                      <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
                         Preț Promo
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-xl font-black text-center text-rose-600 outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
                         value={formData.sale_price || ""}
                         onChange={(e) =>
                           setFormData({
@@ -734,12 +791,12 @@ const AdminProducts = () => {
                       />
                     </div>
                     <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-2">
-                        Stoc Unic
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
+                        Stoc
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-xl font-black text-center text-[var(--dark-amethyst)] outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
                         value={formData.stock_quantity}
                         onChange={(e) =>
                           setFormData({
@@ -750,7 +807,7 @@ const AdminProducts = () => {
                       />
                     </div>
                     <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block mb-2">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
                         Status
                       </Label>
                       <select
@@ -767,9 +824,9 @@ const AdminProducts = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-zinc-50">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4 border-t border-zinc-50">
                     <PremiumInput
-                      label="Greutate (g)"
+                      label="Greutate(g)"
                       icon={<Scale size={12} />}
                       value={formData.weight}
                       onChange={(e: any) =>
@@ -780,7 +837,7 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Lungime (cm)"
+                      label="Lungime(cm)"
                       icon={<Maximize size={12} />}
                       value={formData.length}
                       onChange={(e: any) =>
@@ -791,7 +848,7 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Lățime (cm)"
+                      label="Lățime(cm)"
                       icon={<Maximize size={12} />}
                       value={formData.width}
                       onChange={(e: any) =>
@@ -802,7 +859,7 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Înălțime (cm)"
+                      label="Înălțime(cm)"
                       icon={<Maximize size={12} />}
                       value={formData.height}
                       onChange={(e: any) =>
@@ -816,13 +873,13 @@ const AdminProducts = () => {
                 </div>
 
                 {/* Content & SEO Box */}
-                <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-8">
+                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
-                      <AlignLeft size={14} /> Povestea Atelierului (Descriere)
+                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black flex items-center gap-2">
+                      <AlignLeft size={14} /> Descriere Produs
                     </Label>
                     <textarea
-                      className="w-full h-44 bg-zinc-50 rounded-[1.5rem] p-6 text-sm leading-relaxed border-none outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all resize-none"
+                      className="w-full h-32 md:h-44 bg-zinc-50 rounded-2xl p-4 md:p-6 text-sm leading-relaxed border-none outline-none focus:ring-1 focus:ring-black transition-all resize-none"
                       value={formData.description}
                       onChange={(e) =>
                         setFormData({
@@ -830,17 +887,17 @@ const AdminProducts = () => {
                           description: e.target.value,
                         })
                       }
-                      placeholder="Spune clienților despre măiestria din spatele acestui produs..."
+                      placeholder="Descrierea produsului..."
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-zinc-50">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-zinc-50">
                     <div className="space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-black flex items-center gap-2">
                         <Globe size={14} /> Indexare & SEO
                       </h4>
                       <PremiumInput
-                        label="Master Slug (URL)"
+                        label="URL (Slug)"
                         value={formData.slug}
                         onChange={(e: any) =>
                           setFormData({ ...formData, slug: e.target.value })
@@ -861,7 +918,7 @@ const AdminProducts = () => {
                           Meta Description
                         </Label>
                         <textarea
-                          className="w-full h-24 bg-zinc-50 rounded-xl p-4 text-xs font-medium border-none outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all resize-none"
+                          className="w-full h-24 bg-zinc-50 rounded-xl p-4 text-xs font-medium border-none outline-none focus:ring-1 focus:ring-black transition-all resize-none"
                           value={formData.meta_description}
                           onChange={(e) =>
                             setFormData({
@@ -875,12 +932,14 @@ const AdminProducts = () => {
 
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-black flex items-center gap-2">
                           <Layers size={14} /> Atribute Tehnice
                         </h4>
                         <button
                           onClick={() => {
-                            const k = prompt("Nume atribut nou:");
+                            const k = prompt(
+                              "Nume atribut nou (ex: Culoare, Material):",
+                            );
                             if (k)
                               setFormData({
                                 ...formData,
@@ -890,7 +949,7 @@ const AdminProducts = () => {
                                 },
                               });
                           }}
-                          className="text-[9px] font-black uppercase tracking-widest text-[var(--royal-violet)] hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-black hover:underline"
                         >
                           + Adaugă Parametru
                         </button>
@@ -902,11 +961,15 @@ const AdminProducts = () => {
                               key={idx}
                               className="flex gap-3 items-center bg-zinc-50 p-2 rounded-xl group border border-transparent hover:border-zinc-200 transition-all"
                             >
-                              <span className="text-[9px] font-black uppercase text-zinc-400 w-1/3 pl-3 truncate">
+                              <span
+                                className="text-[9px] font-black uppercase text-zinc-500 w-1/3 pl-3 truncate"
+                                title={k}
+                              >
                                 {k}
                               </span>
                               <input
-                                className="w-2/3 bg-transparent text-xs font-bold outline-none"
+                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-black"
+                                placeholder="Valoare..."
                                 value={v as string}
                                 onChange={(e) =>
                                   setFormData({
@@ -927,9 +990,9 @@ const AdminProducts = () => {
                                     attributes_json: up,
                                   });
                                 }}
-                                className="text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity pr-2"
+                                className="text-rose-400 opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity pr-2"
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
                           ),
@@ -942,24 +1005,23 @@ const AdminProducts = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-10 py-8 bg-white border-t shrink-0 flex items-center justify-between">
+          <DialogFooter className="px-6 md:px-10 py-6 md:py-8 bg-white border-t shrink-0 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-zinc-400">
               <ShieldCheck size={16} />
-              <p className="text-[9px] font-black uppercase tracking-widest">
-                Propagare securizată în infrastructura Evem Cloud
+              <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-center md:text-left">
+                Propagare securizată în infrastructura EVEM
               </p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-4 w-full md:w-auto">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-8 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-all"
+                className="flex-1 md:flex-none px-6 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 transition-all border border-zinc-200"
               >
-                Revocă
+                Anulează
               </button>
               <button
                 onClick={handleSave}
-                className="text-white px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center gap-3"
-                style={{ background: "var(--primary-gradient)" }}
+                className="flex-1 md:flex-none bg-black text-white px-8 md:px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-zinc-800 active:scale-95 transition-all flex items-center justify-center gap-3"
               >
                 <Save size={16} />{" "}
                 {editingProduct ? "Salvează Modificările" : "Publică Produsul"}
@@ -968,6 +1030,17 @@ const AdminProducts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `,
+        }}
+      />
     </div>
   );
 };
@@ -978,9 +1051,10 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
       {icon} {label}
     </Label>
     <input
-      className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all shadow-inner"
+      className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-black border-none outline-none focus:ring-1 focus:ring-black transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
+      placeholder="..."
     />
   </div>
 );
