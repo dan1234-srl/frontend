@@ -1,7 +1,8 @@
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext"; // Importă contextul de auth
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react"; // Adăugate hooks pentru stare
 import {
   ShoppingBag,
   Heart,
@@ -11,45 +12,117 @@ import {
   Truck,
 } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
+
 interface ProductInfoProps {
   product: any;
 }
 
 const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
+  const { user } = useAuth(); // Extrage utilizatorul curent
+  const [isFavorite, setIsFavorite] = useState(false);
 
-  // --- CALCUL PREȚ REAL (Prioritate pe sale_price) ---
+  // --- LOGICĂ VERIFICARE FAVORIT ---
+  useEffect(() => {
+    const checkFavorite = () => {
+      if (user) {
+        const savedIds = JSON.parse(
+          localStorage.getItem("user_wishlist_ids") || "[]",
+        );
+        setIsFavorite(savedIds.includes(product.id));
+      } else {
+        const local = JSON.parse(
+          localStorage.getItem("guest_wishlist") || "[]",
+        );
+        setIsFavorite(local.some((item: any) => item.id === product.id));
+      }
+    };
+    checkFavorite();
+  }, [user, product.id]);
+
+  // --- LOGICĂ CALCUL PREȚ ---
   const priceStats = useMemo(() => {
-    // Dacă sale_price există și e valid, acela e prețul final.
-    // Altfel, prețul final este cel din câmpul price.
     const rawPrice = Number(product.price || 0);
     const rawSalePrice = product.sale_price ? Number(product.sale_price) : 0;
-
     const hasDiscount = rawSalePrice > 0 && rawSalePrice < rawPrice;
 
     return {
-      // Prețul de bază (cel tăiat)
       basePrice: rawPrice,
-      // Prețul real de vânzare (cel mic)
       finalPrice: hasDiscount ? rawSalePrice : rawPrice,
       hasDiscount,
     };
   }, [product]);
 
+  // --- FUNCȚIE TOGGLE WISHLIST ---
+  const handleWishlistToggle = async () => {
+    if (user) {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/wishlist/toggle/${product.id}`,
+          {
+            method: "POST",
+            credentials: "include",
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const active = data.action === "added";
+          setIsFavorite(active);
+
+          const savedIds = JSON.parse(
+            localStorage.getItem("user_wishlist_ids") || "[]",
+          );
+          const newIds = active
+            ? [...savedIds, product.id]
+            : savedIds.filter((id: string) => id !== product.id);
+          localStorage.setItem("user_wishlist_ids", JSON.stringify(newIds));
+
+          toast.success(
+            active ? "Adăugat la favorite" : "Eliminat de la favorite",
+          );
+        }
+      } catch (err) {
+        toast.error("Eroare la sincronizarea listei");
+      }
+    } else {
+      // Logica pentru Guest (Vizitator)
+      const local = JSON.parse(localStorage.getItem("guest_wishlist") || "[]");
+      const exists = local.some((item: any) => item.id === product.id);
+      let updated;
+
+      if (exists) {
+        updated = local.filter((item: any) => item.id !== product.id);
+        toast.info("Eliminat din favorite");
+      } else {
+        updated = [
+          ...local,
+          {
+            id: product.id,
+            name: product.name,
+            price: priceStats.finalPrice,
+            image_url: product.image_url,
+            slug: product.slug,
+          },
+        ];
+        toast.success("Salvat în wishlist");
+      }
+      localStorage.setItem("guest_wishlist", JSON.stringify(updated));
+      setIsFavorite(!exists);
+    }
+  };
+
   const itemInCart = cart.find((item) => item.sku === product.sku);
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
-
   const isOutOfStock = product.stock_quantity <= 0;
   const isLimitReached = quantityInCart >= product.stock_quantity;
 
   const handleAddToCart = () => {
     if (!product) return;
-
     if (isOutOfStock) {
       toast.error("Produsul nu mai este în stoc.");
       return;
     }
-
     if (isLimitReached) {
       toast.error("Stoc insuficient", {
         description: `Ai deja toate cele ${product.stock_quantity} unități disponibile în coș.`,
@@ -61,7 +134,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       id: product.id,
       sku: product.sku,
       name: product.name,
-      price: priceStats.finalPrice, // 🚀 TRANSMITEM PREȚUL REDUS ÎN COȘ
+      price: priceStats.finalPrice,
       image_url: product.image_url,
       stock_quantity: product.stock_quantity,
       category_id: product.category_id,
@@ -144,15 +217,12 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       <div className="py-8 border-y border-neutral-100">
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline gap-3">
-            {/* 🚀 AFIȘĂM PREȚUL FINAL CALCULAT */}
             <span className="text-3xl font-black text-[var(--dark-amethyst)]">
               {priceStats.finalPrice?.toLocaleString("ro-RO")}
             </span>
             <span className="text-sm font-bold text-[var(--dark-amethyst)]">
               RON
             </span>
-
-            {/* 🚀 AFIȘĂM PREȚUL VECHI TĂIAT DOAR DACĂ EXISTĂ REDUCERE */}
             {priceStats.hasDiscount && (
               <span className="text-lg text-neutral-300 line-through ml-2">
                 {priceStats.basePrice?.toLocaleString("ro-RO")} RON
@@ -206,11 +276,21 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             </div>
           </button>
 
+          {/* 🚀 BUTONUL DE WISHLIST ACTUALIZAT */}
           <Button
             variant="outline"
-            className="h-16 w-full border-neutral-200 rounded-none uppercase text-[10px] font-black tracking-[0.4em] hover:bg-[var(--background)] hover:text-[var(--royal-violet)] hover:border-[var(--royal-violet)] transition-all"
+            onClick={handleWishlistToggle}
+            className={`h-16 w-full border-neutral-200 rounded-none uppercase text-[10px] font-black tracking-[0.4em] transition-all hover:bg-[var(--background)] ${
+              isFavorite
+                ? "text-rose-500 border-rose-500 bg-rose-50/50"
+                : "hover:text-[var(--royal-violet)] hover:border-[var(--royal-violet)]"
+            }`}
           >
-            <Heart size={16} className="mr-3" /> Wishlist
+            <Heart
+              size={16}
+              className={`mr-3 ${isFavorite ? "fill-rose-500" : ""}`}
+            />
+            {isFavorite ? "În listă" : "Wishlist"}
           </Button>
         </div>
       </div>
