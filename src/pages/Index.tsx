@@ -11,7 +11,8 @@ const Index = () => {
       <main>
         <HomeHero />
 
-        <div className="mt-8 md:mt-16">
+        {/* Am eliminat mt-8 md:mt-16 pentru a lipi caruselul de secțiunea de sus */}
+        <div className="-mt-4 md:-mt-8 relative z-10">
           <ProductCarousel
             title="Cele mai iubite"
             subtitle="Bestsellers EVEM"
