@@ -3,16 +3,19 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   User,
   ShoppingBag as BagIcon,
+  Menu,
   LogOut,
   ShieldCheck,
   Heart,
+  X,
+  ChevronRight,
+  ChevronLeft,
   Package,
   ArrowRight,
   Sparkles,
   Search,
   MapPin,
   Settings,
-  ChevronRight,
 } from "lucide-react";
 import {
   motion,
@@ -66,6 +69,7 @@ const Navbar = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeParent, setActiveParent] = useState<Category | null>(null);
   const [megaOpen, setMegaOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [bagOpen, setBagOpen] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -73,6 +77,10 @@ const Navbar = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const [mobileView, setMobileView] = useState<{ parent: Category | null }>({
+    parent: null,
+  });
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,7 +118,9 @@ const Navbar = () => {
 
   useEffect(() => {
     setMegaOpen(false);
+    setMobileOpen(false);
     setUserMenuOpen(false);
+    setMobileView({ parent: null });
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -140,6 +150,7 @@ const Navbar = () => {
             transition={{ duration: 3, repeat: Infinity }}
             className="flex items-center gap-2"
           >
+            <Sparkles size={10} className="text-cyan-200" />
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">
               Design Premium — Calitate Impecabilă
             </p>
@@ -149,9 +160,26 @@ const Navbar = () => {
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
           className="relative flex items-center justify-between border-b border-zinc-100 backdrop-blur-md px-3 sm:px-6 lg:px-12 transform-gpu shadow-sm transition-all"
+          onMouseLeave={() => {
+            megaMenuTimeoutRef.current = setTimeout(
+              () => setMegaOpen(false),
+              250,
+            );
+          }}
         >
-          {/* LEFT: Search Only (Hamburger Removed) */}
           <div className="z-20 flex flex-1 items-center justify-start gap-1 sm:gap-4">
+            <button
+              onClick={() => setMobileOpen(true)}
+              onMouseEnter={() => {
+                if (megaMenuTimeoutRef.current)
+                  clearTimeout(megaMenuTimeoutRef.current);
+                setMegaOpen(true);
+              }}
+              className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-zinc-50 hover:bg-zinc-100 transition-colors"
+            >
+              <Menu size={18} className="text-black" />
+            </button>
+
             {/* MOBILE SEARCH ICON */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -160,9 +188,8 @@ const Navbar = () => {
               <Search size={18} className="text-black" />
             </button>
 
-            {/* DESKTOP SEARCH BUTTON */}
+            {/* DESKTOP SEARCH BUTTON - onMouseEnter eliminat pentru a opri deschiderea categoriilor la hover */}
             <button
-              onMouseEnter={() => setMegaOpen(true)} // Optional: triggers mega menu on desktop search hover if desired
               onClick={() => setSearchOpen(true)}
               className="hidden xl:flex items-center gap-3 bg-zinc-50 rounded-full py-2.5 px-5 w-64 text-zinc-400 hover:bg-zinc-100 transition-all text-left"
             >
@@ -171,18 +198,26 @@ const Navbar = () => {
             </button>
           </div>
 
-          {/* LOGO */}
           <div className="flex-shrink-0 flex items-center justify-center px-2">
             <Link to="/" className="group flex items-center justify-center">
-              <img
-                src="/Copilot_20260512_191942.png"
-                alt="Evem Luxury"
-                className="h-6 sm:h-7 lg:h-9 w-auto object-contain"
-              />
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center justify-center"
+              >
+                <img
+                  src="/Copilot_20260512_191942.png"
+                  alt="Evem Luxury"
+                  className="h-6 sm:h-7 lg:h-9 w-auto object-contain transition-all duration-500"
+                  style={{
+                    imageRendering: "auto",
+                    filter: "drop-shadow(0px 1px 1px rgba(0,0,0,0.05))",
+                  }}
+                />
+              </motion.div>
             </Link>
           </div>
 
-          {/* RIGHT: Actions */}
           <div className="z-20 flex flex-1 items-center justify-end gap-1 sm:gap-2 lg:gap-4">
             <motion.button
               whileHover={{ y: -2 }}
@@ -191,7 +226,6 @@ const Navbar = () => {
             >
               <Heart size={18} />
             </motion.button>
-
             <div className="relative" ref={userMenuRef}>
               <motion.button
                 whileHover={{ y: -2 }}
@@ -255,7 +289,6 @@ const Navbar = () => {
                 )}
               </AnimatePresence>
             </div>
-
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -273,10 +306,11 @@ const Navbar = () => {
           </div>
         </motion.nav>
 
-        {/* MEGA MENU DESKTOP (Stays for navigation) */}
+        {/* MEGA MENU DESKTOP */}
         <AnimatePresence>
           {megaOpen && (
             <motion.div
+              key="mega-menu-container"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -333,6 +367,7 @@ const Navbar = () => {
                     </div>
                   </div>
                 </div>
+
                 <div className="flex-1 flex flex-col h-full bg-white">
                   <div className="flex-1 overflow-y-auto p-16 custom-scrollbar">
                     <AnimatePresence mode="wait">
@@ -392,6 +427,7 @@ const Navbar = () => {
                     </AnimatePresence>
                   </div>
                 </div>
+
                 <div className="w-[480px] p-10 bg-zinc-50/30">
                   <motion.div className="group/card relative h-full w-full overflow-hidden rounded-[2.5rem] bg-zinc-100 shadow-[0_30px_60px_rgba(0,0,0,0.1)] transform-gpu">
                     <AnimatePresence mode="wait">
@@ -407,6 +443,12 @@ const Navbar = () => {
                     </AnimatePresence>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute bottom-10 left-10 right-10 z-10 text-left">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="h-px w-8 bg-white/60" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/80">
+                          Highlight
+                        </p>
+                      </div>
                       <h4 className="mb-8 text-4xl font-black uppercase leading-[1.1] tracking-tighter text-white">
                         {activeParent?.name}
                       </h4>
@@ -432,14 +474,116 @@ const Navbar = () => {
         </AnimatePresence>
       </header>
 
-      {/* SEARCH MODAL */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
-      {/* DRAWERS & DIALOGS */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 250 }}
+            className="fixed inset-0 z-[300] flex flex-col bg-white lg:hidden"
+          >
+            <div className="flex h-20 items-center justify-between border-b border-zinc-100 px-6">
+              <img
+                src="/Copilot_20260512_191942.png"
+                alt="Evem Luxury"
+                className="h-6 w-auto object-contain"
+              />
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="rounded-full bg-zinc-50 p-3"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar text-left">
+              {!mobileView.parent ? (
+                <motion.div
+                  initial="hidden"
+                  animate="show"
+                  exit="hidden"
+                  variants={{ show: { transition: { staggerChildren: 0.05 } } }}
+                  className="flex flex-col gap-3"
+                >
+                  {categories.map((cat) => (
+                    <motion.button
+                      key={cat.id}
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        show: {
+                          opacity: 1,
+                          x: 0,
+                          transition: springTransition,
+                        },
+                      }}
+                      onClick={() =>
+                        cat.subcategories?.length
+                          ? setMobileView({ parent: cat })
+                          : (navigate(`/category/${cat.slug}`),
+                            setMobileOpen(false))
+                      }
+                      className="flex items-center justify-between rounded-[1.5rem] bg-zinc-50/80 p-6 active:bg-zinc-100 transition-colors"
+                    >
+                      <span className="text-[18px] font-black uppercase tracking-tighter text-[var(--deep-twilight)]">
+                        {cat.name}
+                      </span>
+                      {cat.subcategories?.length > 0 && (
+                        <ChevronRight size={20} className="text-zinc-400" />
+                      )}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={springTransition}
+                  className="flex flex-col gap-8 pb-10"
+                >
+                  <button
+                    onClick={() => setMobileView({ parent: null })}
+                    className="flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-[var(--french-blue)] w-fit"
+                  >
+                    <ChevronLeft size={18} /> Înapoi
+                  </button>
+                  <h2 className="text-4xl font-black uppercase tracking-tighter px-2 text-[var(--deep-twilight)]">
+                    {mobileView.parent.name}
+                  </h2>
+                  <div className="flex flex-col gap-8 px-2">
+                    {mobileView.parent.subcategories?.map((sub: Category) => (
+                      <div key={sub.id} className="space-y-4">
+                        <div className="text-[15px] font-black uppercase tracking-widest text-[var(--deep-twilight)] flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--french-blue)]" />{" "}
+                          {sub.name}
+                        </div>
+                        <div className="flex flex-wrap gap-2.5">
+                          {sub.subcategories?.map((child) => (
+                            <Link
+                              key={child.id}
+                              to={`/category/${child.slug}`}
+                              onClick={() => setMobileOpen(false)}
+                              className="rounded-full bg-zinc-100 px-5 py-2.5 text-[13px] font-bold text-zinc-600 active:scale-95 transition-all"
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="h-[5.5rem] w-full" />
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
-
       <Login
         isOpen={loginOpen}
         onClose={() => setLoginOpen(false)}
