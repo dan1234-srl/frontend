@@ -1,6 +1,7 @@
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useMemo } from "react"; // Adăugat useMemo pentru calculul prețului
 import {
   ShoppingBag,
   Heart,
@@ -8,7 +9,6 @@ import {
   Star,
   ShieldCheck,
   Truck,
-  Loader2,
 } from "lucide-react";
 
 interface ProductInfoProps {
@@ -17,6 +17,30 @@ interface ProductInfoProps {
 
 const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
+
+  // --- CALCUL PREȚ REAL (Logic similară cu ProductCard) ---
+  const priceStats = useMemo(() => {
+    // În Meilisearch/API:
+    // original_price sau base_price = prețul vechi
+    // price = prețul final calculat (cel de 123 RON)
+    const basePrice = Number(
+      product.original_price || product.base_price || product.price || 0,
+    );
+    const finalPrice = Number(product.price || 0);
+    const salePrice = product.sale_price ? Number(product.sale_price) : null;
+
+    const hasDiscount = !!(
+      salePrice &&
+      salePrice > 0 &&
+      finalPrice < basePrice
+    );
+
+    return {
+      basePrice,
+      finalPrice,
+      hasDiscount,
+    };
+  }, [product]);
 
   const itemInCart = cart.find((item) => item.sku === product.sku);
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
@@ -39,15 +63,13 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       return;
     }
 
-    // --- MODIFICARE AICI PENTRU VOUCHERE ---
     addToCart({
       id: product.id,
       sku: product.sku,
       name: product.name,
-      price: product.price,
+      price: priceStats.finalPrice, // Folosim prețul final calculat
       image_url: product.image_url,
       stock_quantity: product.stock_quantity,
-      // Trimitem datele de segmentare către context
       category_id: product.category_id,
       brand_name: product.brand_name || "",
     });
@@ -89,7 +111,6 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
 
   return (
     <div className="flex flex-col gap-10 text-left">
-      {/* ... (Header & Title sections remain the same) ... */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="flex gap-0.5">
@@ -127,20 +148,27 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       </div>
 
       <div className="py-8 border-y border-neutral-100">
-        <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-black text-[var(--dark-amethyst)]">
-            {product.price?.toLocaleString("ro-RO")}
-          </span>
-          <span className="text-sm font-bold text-[var(--dark-amethyst)]">
-            RON
-          </span>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-baseline gap-3">
+            <span className="text-3xl font-black text-[var(--dark-amethyst)]">
+              {priceStats.finalPrice?.toLocaleString("ro-RO")}
+            </span>
+            <span className="text-sm font-bold text-[var(--dark-amethyst)]">
+              RON
+            </span>
+            {priceStats.hasDiscount && (
+              <span className="text-lg text-neutral-300 line-through ml-2">
+                {priceStats.basePrice?.toLocaleString("ro-RO")} RON
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-3 text-neutral-400">
           <Info size={12} />
           <p className="text-[9px] font-bold uppercase tracking-widest">
             Cel mai mic preț 30 zile:{" "}
             <span className="text-[var(--dark-amethyst)]">
-              {product.lowest_price_30d || product.price} RON
+              {product.lowest_price_30d || priceStats.finalPrice} RON
             </span>
           </p>
         </div>
