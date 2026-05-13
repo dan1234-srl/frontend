@@ -16,16 +16,23 @@ const ProductDescription = ({ product }: { product: any }) => {
   const parsedData = useMemo(() => {
     if (!product?.description) return { hasRichContent: false, cleanHtml: "" };
 
-    // Verificăm dacă descrierea conține tag-uri HTML care necesită randare specială
+    const rawDescription = product.description;
+
+    // 1. Verificăm dacă descrierea conține tag-uri HTML (Rich Content)
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(rawDescription);
+
+    // 2. Verificăm dacă este text simplu dar are rânduri noi (\n)
+    const hasNewLines = rawDescription.includes("\n");
+
     const hasRichContent =
-      product.description.includes("<img") ||
-      product.description.includes("<iframe") ||
-      product.description.includes("<div") ||
-      product.description.includes("<table");
+      hasHtmlTags ||
+      hasNewLines ||
+      rawDescription.includes("<img") ||
+      rawDescription.includes("<iframe");
 
     return {
       hasRichContent,
-      cleanHtml: product.description,
+      cleanHtml: rawDescription,
     };
   }, [product?.description]);
 
@@ -40,7 +47,7 @@ const ProductDescription = ({ product }: { product: any }) => {
       </div>
 
       <div className="relative">
-        {/* Container principal cu limitare de înălțime pentru descrierile lungi */}
+        {/* Container principal cu limitare de înălțime */}
         <div
           className={`transition-all duration-1000 ease-in-out overflow-hidden relative ${
             !isExpanded ? "max-h-[800px]" : "max-h-full"
@@ -48,12 +55,14 @@ const ProductDescription = ({ product }: { product: any }) => {
         >
           <div
             className="prose prose-zinc max-w-none 
+              /* 🚀 FIX CRITIC: whitespace-pre-line permite randarea rândurilor noi (\n) din textul simplu */
+              whitespace-pre-line 
+              
               /* RESETARE POZITIONARI FIXE/ABSOLUTE CARE STRICA LAYOUT-UL */
               [&_div]:static [&_div]:!inset-0 [&_div]:!w-full [&_div]:!max-w-full
               [&_section]:static [&_section]:!w-full
               
               /* REDIMENSIONARE SI CENTRARE IMAGINI */
-              /* Am setat max-w-[600px] pentru ca imaginile sa nu ocupe tot ecranul pe desktop */
               [&_img]:max-w-full md:[&_img]:max-w-[600px] [&_img]:h-auto [&_img]:block 
               [&_img]:mx-auto [&_img]:rounded-xl [&_img]:shadow-md [&_img]:my-8
               
@@ -74,26 +83,28 @@ const ProductDescription = ({ product }: { product: any }) => {
         </div>
 
         {/* Butonul Arată Mai Mult / Mai Puțin */}
-        <div className="mt-10 flex justify-center">
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="group flex items-center gap-3 px-8 py-3 bg-zinc-900 text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all duration-300 z-20"
-          >
-            {isExpanded ? (
-              <>
-                Mai puține detalii <ChevronUp size={16} />
-              </>
-            ) : (
-              <>
-                Vezi toată prezentarea{" "}
-                <ChevronDown
-                  size={16}
-                  className="group-hover:translate-y-1 transition-transform"
-                />
-              </>
-            )}
-          </button>
-        </div>
+        {parsedData.hasRichContent && (
+          <div className="mt-10 flex justify-center">
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="group flex items-center gap-3 px-8 py-3 bg-zinc-900 text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-xl hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all duration-300 z-20"
+            >
+              {isExpanded ? (
+                <>
+                  Mai puține detalii <ChevronUp size={16} />
+                </>
+              ) : (
+                <>
+                  Vezi toată prezentarea{" "}
+                  <ChevronDown
+                    size={16}
+                    className="group-hover:translate-y-1 transition-transform"
+                  />
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
