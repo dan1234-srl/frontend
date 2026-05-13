@@ -83,7 +83,7 @@ const Navbar = () => {
   });
 
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const megaMenuTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { scrollY } = useScroll();
   const navHeight = useTransform(scrollY, [0, 50], ["5.5rem", "4.5rem"]);
@@ -130,8 +130,8 @@ const Navbar = () => {
     navigate("/");
   };
 
-  const springTransition = { type: "spring", stiffness: 350, damping: 30 };
-  const fadeTransition = { duration: 0.4, ease: [0.16, 1, 0.3, 1] };
+  const springTransition = { type: "spring" as const, stiffness: 350, damping: 30 };
+  const fadeTransition = { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const };
 
   return (
     <>

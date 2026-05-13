@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import Login from "@/pages/auth/Login";
+import Login from "@/components/auth/Login";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 
 // dacă ai register:
-import RegisterDrawer from "@/pages/auth/RegisterDrawer";
+import RegisterDrawer from "@/components/auth/Register";
 
 interface AuthModalsProps {
   loginOpen: boolean;
