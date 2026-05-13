@@ -1,7 +1,7 @@
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useMemo } from "react"; // Adăugat useMemo pentru calculul prețului
+import { useMemo } from "react";
 import {
   ShoppingBag,
   Heart,
@@ -18,26 +18,20 @@ interface ProductInfoProps {
 const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
 
-  // --- CALCUL PREȚ REAL (Logic similară cu ProductCard) ---
+  // --- CALCUL PREȚ REAL (Prioritate pe sale_price) ---
   const priceStats = useMemo(() => {
-    // În Meilisearch/API:
-    // original_price sau base_price = prețul vechi
-    // price = prețul final calculat (cel de 123 RON)
-    const basePrice = Number(
-      product.original_price || product.base_price || product.price || 0,
-    );
-    const finalPrice = Number(product.price || 0);
-    const salePrice = product.sale_price ? Number(product.sale_price) : null;
+    // Dacă sale_price există și e valid, acela e prețul final.
+    // Altfel, prețul final este cel din câmpul price.
+    const rawPrice = Number(product.price || 0);
+    const rawSalePrice = product.sale_price ? Number(product.sale_price) : 0;
 
-    const hasDiscount = !!(
-      salePrice &&
-      salePrice > 0 &&
-      finalPrice < basePrice
-    );
+    const hasDiscount = rawSalePrice > 0 && rawSalePrice < rawPrice;
 
     return {
-      basePrice,
-      finalPrice,
+      // Prețul de bază (cel tăiat)
+      basePrice: rawPrice,
+      // Prețul real de vânzare (cel mic)
+      finalPrice: hasDiscount ? rawSalePrice : rawPrice,
       hasDiscount,
     };
   }, [product]);
@@ -67,7 +61,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       id: product.id,
       sku: product.sku,
       name: product.name,
-      price: priceStats.finalPrice, // Folosim prețul final calculat
+      price: priceStats.finalPrice, // 🚀 TRANSMITEM PREȚUL REDUS ÎN COȘ
       image_url: product.image_url,
       stock_quantity: product.stock_quantity,
       category_id: product.category_id,
@@ -150,12 +144,15 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       <div className="py-8 border-y border-neutral-100">
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline gap-3">
+            {/* 🚀 AFIȘĂM PREȚUL FINAL CALCULAT */}
             <span className="text-3xl font-black text-[var(--dark-amethyst)]">
               {priceStats.finalPrice?.toLocaleString("ro-RO")}
             </span>
             <span className="text-sm font-bold text-[var(--dark-amethyst)]">
               RON
             </span>
+
+            {/* 🚀 AFIȘĂM PREȚUL VECHI TĂIAT DOAR DACĂ EXISTĂ REDUCERE */}
             {priceStats.hasDiscount && (
               <span className="text-lg text-neutral-300 line-through ml-2">
                 {priceStats.basePrice?.toLocaleString("ro-RO")} RON
@@ -218,7 +215,6 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
         </div>
       </div>
 
-      {/* Trust Badges */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex items-center gap-4 p-4 border border-neutral-100 rounded-none">
           <Truck size={20} className="text-[var(--royal-violet)]" />
