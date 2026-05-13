@@ -56,12 +56,15 @@ const generateSlug = (text: string) => {
     .replace(/--+/g, "-");
 };
 
+// Fallback robust
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
+
   let url = "";
+
   if (typeof imageSource === "string") {
     if (imageSource.startsWith("http") || imageSource.startsWith("/")) {
       url = imageSource;
@@ -72,15 +75,25 @@ const getValidImageUrl = (imageSource: any) => {
           parsed?.main?.medium ||
           parsed?.main?.small ||
           parsed?.url ||
+          parsed?.medium ||
           imageSource;
       } catch {
         url = imageSource;
       }
     }
   } else if (typeof imageSource === "object") {
-    url = imageSource?.main?.medium || imageSource?.url || PLACEHOLDER_IMG;
+    url =
+      imageSource?.main?.medium ||
+      imageSource?.main?.small ||
+      imageSource?.url ||
+      imageSource?.medium ||
+      PLACEHOLDER_IMG;
   }
-  if (url.startsWith("/")) url = `${API_BASE_URL}${url}`;
+
+  if (url.startsWith("/")) {
+    url = `${API_BASE_URL}${url}`;
+  }
+
   return url || PLACEHOLDER_IMG;
 };
 
@@ -138,6 +151,7 @@ const AdminProducts = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  // --- LOGIC ---
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -178,7 +192,7 @@ const AdminProducts = () => {
       setTotalItems(prodData.total || 0);
       setCategories(Array.isArray(catData) ? catData : []);
     } catch (error) {
-      toast.error("Eroare server.");
+      toast.error("Eroare server la încărcarea datelor.");
     } finally {
       setLoading(false);
     }
@@ -191,9 +205,10 @@ const AdminProducts = () => {
   const openEdit = (p: any = null) => {
     if (p) {
       setEditingProduct(p);
+
+      // 1. Extragere Galerie din structura hibridă (gallery sau additional_image_link)
       let galleryImages: string[] = [];
 
-      // Fix imagine galerie hibrida
       if (
         p.image_url &&
         typeof p.image_url === "object" &&
@@ -214,6 +229,7 @@ const AdminProducts = () => {
         }
       }
 
+      // 2. Extragere Imagine Principală
       let mainImg = "";
       if (p.image_url && typeof p.image_url === "object" && p.image_url.main) {
         mainImg =
@@ -257,9 +273,11 @@ const AdminProducts = () => {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setUploading(index === "main" ? "main" : `extra-${index}`);
     const data = new FormData();
     data.append("file", file);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/upload/image`, {
         method: "POST",
@@ -267,7 +285,10 @@ const AdminProducts = () => {
         credentials: "include",
       });
       const result = await res.json();
+
       const uploadedUrl = result.url || result.file_url || result.data?.url;
+      if (!uploadedUrl) throw new Error("Format răspuns invalid de la server");
+
       if (index === "main") {
         setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
       } else {
@@ -278,9 +299,9 @@ const AdminProducts = () => {
           additional_image_link: nl.filter(Boolean),
         }));
       }
-      toast.success("Imagine încărcată.");
+      toast.success("Imagine încărcată cu succes.");
     } catch {
-      toast.error("Eroare upload.");
+      toast.error("Eroare la încărcarea imaginii.");
     } finally {
       setUploading(null);
     }
@@ -289,6 +310,7 @@ const AdminProducts = () => {
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
+
     const payload = {
       ...formData,
       sku:
@@ -299,12 +321,17 @@ const AdminProducts = () => {
       price: Number(formData.price),
       sale_price: formData.sale_price > 0 ? Number(formData.sale_price) : null,
       stock_quantity: Number(formData.stock_quantity),
+      weight: Number(formData.weight),
+      length: Number(formData.length),
+      width: Number(formData.width),
+      height: Number(formData.height),
       additional_image_link: formData.additional_image_link.filter(Boolean),
     };
 
     const url = editingProduct
       ? `${API_BASE_URL}/api/v1/products/${editingProduct.sku}`
       : `${API_BASE_URL}/api/v1/products/`;
+
     try {
       const res = await fetch(url, {
         method: editingProduct ? "PUT" : "POST",
@@ -312,22 +339,28 @@ const AdminProducts = () => {
         credentials: "include",
         body: JSON.stringify(payload),
       });
+
       if (res.ok) {
         toast.success("Catalog actualizat!");
         fetchData();
         setIsModalOpen(false);
       } else {
-        toast.error("Eroare la salvare.");
+        toast.error("Eroare la salvare. Verifică datele introduse.");
       }
     } catch {
-      toast.error("Eroare conexiune.");
+      toast.error("Eroare severă la conexiune.");
     }
+  };
+
+  const handleImageError = (e: any) => {
+    e.target.src = PLACEHOLDER_IMG;
   };
 
   if (!isAdmin) return null;
 
   return (
     <div className="w-full space-y-8 pb-20 animate-in fade-in duration-700 font-sans text-left">
+      {/* HEADER SECTION */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-zinc-100 pb-10">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -363,6 +396,7 @@ const AdminProducts = () => {
         </div>
       </header>
 
+      {/* FILTER TABS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-50 pb-2 overflow-x-auto no-scrollbar">
         <div className="flex gap-8">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
@@ -389,10 +423,11 @@ const AdminProducts = () => {
           ))}
         </div>
         <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest whitespace-nowrap">
-          {totalItems} Articole total
+          {totalItems} Articole în total
         </div>
       </div>
 
+      {/* MAIN TABLE */}
       <div className="bg-white rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
         <div className="overflow-x-auto luxury-scrollbar">
           <Table className="min-w-[800px]">
@@ -413,104 +448,127 @@ const AdminProducts = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading
-                ? [...Array(6)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="px-6 md:px-8 py-5">
+              {loading ? (
+                [...Array(6)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="px-6 md:px-8 py-5">
+                      <div className="flex items-center gap-4">
                         <Skeleton className="h-16 w-12 rounded-lg" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-20 mx-auto rounded-full" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-8 mx-auto" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-24 ml-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : products.map((p) => (
-                    <TableRow
-                      key={p.id}
-                      className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
-                    >
-                      <TableCell className="py-5 px-6 md:px-8 text-left">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 p-1">
-                            <img
-                              src={getValidImageUrl(p.image_url)}
-                              className="object-contain h-full w-full"
-                              alt=""
-                            />
-                          </div>
-                          <div className="space-y-0.5 max-w-[300px]">
-                            <p className="font-bold text-[var(--dark-amethyst)] text-sm truncate">
-                              {p.name}
-                            </p>
-                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter">
-                              {p.sku}
-                            </p>
-                          </div>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32 md:w-40" />
+                          <Skeleton className="h-3 w-20" />
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span
-                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${getStatusBadge(p.status)}`}
-                        >
-                          {p.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center font-black text-xs text-[var(--dark-amethyst)]">
-                        {p.stock_quantity ?? 0}
-                      </TableCell>
-                      <TableCell className="text-right px-6 md:px-8">
-                        <div className="flex items-center justify-end gap-6">
-                          <div className="text-right">
-                            <p className="font-black text-[var(--dark-amethyst)] text-sm">
-                              {p.price} RON
-                            </p>
-                            {p.sale_price && (
-                              <p className="text-[8px] text-rose-500 font-bold uppercase">
-                                Sale: {p.sale_price}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
-                            <button
-                              onClick={() => openEdit(p)}
-                              className="p-2 bg-zinc-50 rounded-md hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button className="p-2 bg-zinc-50 rounded-md hover:bg-rose-500 hover:text-white transition-colors">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 mx-auto rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-8 mx-auto" />
+                    </TableCell>
+                    <TableCell className="px-6 md:px-8">
+                      <Skeleton className="h-6 w-24 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : products.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="py-32 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Nu au fost găsite rezultate.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                products.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
+                  >
+                    <TableCell className="py-5 px-6 md:px-8">
+                      <div className="flex items-center gap-4 text-left">
+                        <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
+                          <img
+                            src={getValidImageUrl(p.image_url)}
+                            onError={handleImageError}
+                            className="object-contain h-full w-full"
+                            alt="Produs"
+                          />
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        <div className="space-y-0.5 max-w-[200px] sm:max-w-[300px]">
+                          <p
+                            className="font-bold text-[var(--dark-amethyst)] text-sm truncate"
+                            title={p.name}
+                          >
+                            {p.name}
+                          </p>
+                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter truncate">
+                            {p.sku} • {p.brand_name || "Evem"}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span
+                        className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status)}`}
+                      >
+                        {p.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center font-black text-xs text-[var(--dark-amethyst)]">
+                      {p.stock_quantity ?? 0}
+                    </TableCell>
+                    <TableCell className="text-right px-6 md:px-8">
+                      <div className="flex items-center justify-end gap-4 md:gap-6">
+                        <div className="text-right">
+                          <p className="font-black text-[var(--dark-amethyst)] text-sm whitespace-nowrap">
+                            {p.price}{" "}
+                            <span className="text-[9px] opacity-40">RON</span>
+                          </p>
+                          {p.sale_price && (
+                            <p className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter whitespace-nowrap">
+                              Sale: {p.sale_price}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                          <button
+                            onClick={() => openEdit(p)}
+                            className="p-2 bg-zinc-50 rounded-md hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button className="p-2 bg-zinc-50 rounded-md hover:bg-rose-500 hover:text-white transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
 
+        {/* PAGINATION FOOTER */}
         {!loading && totalPages > 1 && (
-          <div className="p-6 bg-zinc-50/50 border-t flex justify-center items-center gap-4">
+          <div className="p-4 md:p-6 bg-zinc-50/50 border-t flex justify-center items-center gap-4">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20"
+              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20 transition-colors"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest">
+            <span className="text-[10px] font-black uppercase tracking-widest text-black">
               {currentPage} / {totalPages}
             </span>
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20"
+              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20 transition-colors"
             >
               <ChevronRight size={16} />
             </button>
@@ -518,37 +576,39 @@ const AdminProducts = () => {
         )}
       </div>
 
+      {/* FULL PRODUCT DIALOG */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[1300px] w-[95vw] h-[95vh] p-0 rounded-[2.5rem] border-none bg-[#FBFBFD] shadow-2xl flex flex-col overflow-hidden font-sans">
-          <header className="px-10 py-8 flex justify-between items-center bg-white border-b shrink-0">
-            <div className="flex items-center gap-4 text-left">
+        <DialogContent className="max-w-[1300px] w-[95vw] h-[95vh] p-0 rounded-[1.5rem] md:rounded-[2.5rem] border-none bg-[#FBFBFD] shadow-2xl flex flex-col overflow-hidden font-sans">
+          <header className="px-6 md:px-10 py-6 md:py-8 flex justify-between items-center bg-white border-b shrink-0">
+            <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-[var(--dark-amethyst)] text-white hidden md:block">
                 <Package size={24} />
               </div>
               <div>
-                <DialogTitle className="text-xl md:text-3xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] truncate">
+                <DialogTitle className="text-xl md:text-3xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] truncate max-w-[200px] sm:max-w-md">
                   {formData.sku
                     ? `Configurare: ${formData.sku}`
                     : "Adăugare Articol Nou"}
                 </DialogTitle>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
+                <p className="text-[9px] md:text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
                   Catalog Management System
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsModalOpen(false)}
-              className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+              className="size-10 md:size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
             >
               <X size={20} />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-10 luxury-scrollbar text-left">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-              <div className="xl:col-span-4 space-y-10">
+          <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
+              {/* LEFT: MEDIA & VISUALS */}
+              <div className="xl:col-span-4 space-y-8 md:space-y-10">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] flex items-center gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] ml-1 flex items-center gap-2">
                     <ImageIcon size={14} /> Imagine Principală
                   </Label>
                   <div className="aspect-[3/4] bg-white rounded-[2rem] border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden shadow-sm">
@@ -556,8 +616,9 @@ const AdminProducts = () => {
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
-                          className="h-full w-full object-contain p-8"
-                          alt=""
+                          onError={handleImageError}
+                          className="h-full w-full object-contain p-4 md:p-8"
+                          alt="Principal"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
                           <button
@@ -577,7 +638,7 @@ const AdminProducts = () => {
                         ) : (
                           <Upload size={40} strokeWidth={1.5} />
                         )}
-                        <span className="text-[9px] font-black uppercase tracking-widest">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center px-4">
                           Upload Imagine
                         </span>
                         <input
@@ -591,14 +652,14 @@ const AdminProducts = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] flex items-center gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] ml-1 flex items-center gap-2">
                     <Layers size={14} /> Galerie (Max 4)
                   </Label>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-4 gap-2 md:gap-3">
                     {[0, 1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="aspect-square bg-white rounded-2xl border border-zinc-200 relative overflow-hidden group"
+                        className="aspect-square bg-white rounded-xl md:rounded-2xl border border-zinc-200 relative overflow-hidden group"
                       >
                         {formData.additional_image_link[i] ? (
                           <>
@@ -606,8 +667,9 @@ const AdminProducts = () => {
                               src={getValidImageUrl(
                                 formData.additional_image_link[i],
                               )}
+                              onError={handleImageError}
                               className="w-full h-full object-cover"
-                              alt=""
+                              alt={`Secundar ${i}`}
                             />
                             <button
                               onClick={() => {
@@ -643,14 +705,16 @@ const AdminProducts = () => {
                 </div>
               </div>
 
-              <div className="xl:col-span-8 space-y-12">
-                <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-8">
+              {/* RIGHT: CORE DATA */}
+              <div className="xl:col-span-8 space-y-8 md:space-y-12">
+                {/* Basic Info Box */}
+                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest">
+                    <Label className="text-[9px] md:text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest ml-2">
                       Nume Articol
                     </Label>
                     <input
-                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-3 text-4xl font-bold outline-none focus:border-[var(--royal-violet)] transition-all"
+                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-3 text-2xl md:text-4xl font-bold outline-none focus:border-[var(--royal-violet)] transition-all placeholder:text-zinc-200"
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({
@@ -659,11 +723,13 @@ const AdminProducts = () => {
                           slug: generateSlug(e.target.value),
                         })
                       }
+                      placeholder="Introdu numele..."
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-6">
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <PremiumInput
-                      label="SKU"
+                      label="Cod SKU"
                       icon={<Hash size={12} />}
                       value={formData.sku}
                       onChange={(e: any) =>
@@ -671,7 +737,7 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="EAN"
+                      label="Cod EAN"
                       icon={<Hash size={12} />}
                       value={formData.ean}
                       onChange={(e: any) =>
@@ -679,11 +745,11 @@ const AdminProducts = () => {
                       }
                     />
                     <div className="space-y-2">
-                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                        Categorie
+                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                        Categorie Master
                       </Label>
                       <select
-                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] appearance-none"
+                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all appearance-none"
                         value={formData.category_id}
                         onChange={(e) =>
                           setFormData({
@@ -703,18 +769,20 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-8">
+                {/* Logistics & Price Box */}
+                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <DollarSign size={14} /> Financiare & Logistică
                   </h3>
-                  <div className="grid grid-cols-4 gap-6">
-                    <div className="p-4 bg-zinc-50 rounded-2xl text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase block mb-2">
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
                         Preț Listă
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-xl font-black text-center outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
                         value={formData.price}
                         onChange={(e) =>
                           setFormData({
@@ -725,12 +793,12 @@ const AdminProducts = () => {
                       />
                     </div>
                     <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
-                      <Label className="text-[9px] font-black text-rose-500 uppercase block mb-2">
+                      <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
                         Preț Promo
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-xl font-black text-center text-rose-600 outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
                         value={formData.sale_price || ""}
                         onChange={(e) =>
                           setFormData({
@@ -740,13 +808,13 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-4 bg-zinc-50 rounded-2xl text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase block mb-2">
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
                         Stoc
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-xl font-black text-center outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
                         value={formData.stock_quantity}
                         onChange={(e) =>
                           setFormData({
@@ -756,12 +824,12 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-4 bg-zinc-50 rounded-2xl text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase block mb-2">
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
                         Status
                       </Label>
                       <select
-                        className="w-full bg-transparent text-[10px] font-black text-center uppercase outline-none"
+                        className="w-full bg-transparent text-[10px] font-black text-center uppercase border-none outline-none mt-1"
                         value={formData.status}
                         onChange={(e) =>
                           setFormData({ ...formData, status: e.target.value })
@@ -773,15 +841,64 @@ const AdminProducts = () => {
                       </select>
                     </div>
                   </div>
+
+                  {/* Dimensiuni si Greutate */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4 border-t border-zinc-50">
+                    <PremiumInput
+                      label="Greutate(g)"
+                      icon={<Scale size={12} />}
+                      value={formData.weight}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          weight: Number(e.target.value),
+                        })
+                      }
+                    />
+                    <PremiumInput
+                      label="Lungime(cm)"
+                      icon={<Maximize size={12} />}
+                      value={formData.length}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          length: Number(e.target.value),
+                        })
+                      }
+                    />
+                    <PremiumInput
+                      label="Lățime(cm)"
+                      icon={<Maximize size={12} />}
+                      value={formData.width}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          width: Number(e.target.value),
+                        })
+                      }
+                    />
+                    <PremiumInput
+                      label="Înălțime(cm)"
+                      icon={<Maximize size={12} />}
+                      value={formData.height}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          height: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
                 </div>
 
-                <div className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-8">
+                {/* Content & SEO Box */}
+                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-4">
                     <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] flex items-center gap-2">
-                      <AlignLeft size={14} /> Descriere
+                      <AlignLeft size={14} /> Descriere Produs
                     </Label>
                     <textarea
-                      className="w-full h-44 bg-zinc-50 rounded-2xl p-6 text-sm leading-relaxed border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] resize-none"
+                      className="w-full h-32 md:h-44 bg-zinc-50 rounded-2xl p-4 md:p-6 text-sm leading-relaxed border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none"
                       value={formData.description}
                       onChange={(e) =>
                         setFormData({
@@ -789,30 +906,141 @@ const AdminProducts = () => {
                           description: e.target.value,
                         })
                       }
+                      placeholder="Descrierea produsului..."
                     />
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-zinc-50">
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                        <Globe size={14} /> Indexare & SEO
+                      </h4>
+                      <PremiumInput
+                        label="URL (Slug)"
+                        value={formData.slug}
+                        onChange={(e: any) =>
+                          setFormData({ ...formData, slug: e.target.value })
+                        }
+                      />
+                      <PremiumInput
+                        label="Meta Title"
+                        value={formData.meta_title}
+                        onChange={(e: any) =>
+                          setFormData({
+                            ...formData,
+                            meta_title: e.target.value,
+                          })
+                        }
+                      />
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                          Meta Description
+                        </Label>
+                        <textarea
+                          className="w-full h-24 bg-zinc-50 rounded-xl p-4 text-xs font-medium border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none"
+                          value={formData.meta_description}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              meta_description: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                          <Layers size={14} /> Atribute Tehnice
+                        </h4>
+                        <button
+                          onClick={() => {
+                            const k = prompt(
+                              "Nume atribut nou (ex: Culoare, Material):",
+                            );
+                            if (k)
+                              setFormData({
+                                ...formData,
+                                attributes_json: {
+                                  ...formData.attributes_json,
+                                  [k]: "",
+                                },
+                              });
+                          }}
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
+                        >
+                          + Adaugă Parametru
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {Object.entries(formData.attributes_json || {}).map(
+                          ([k, v], idx) => (
+                            <div
+                              key={idx}
+                              className="flex gap-3 items-center bg-zinc-50 p-2 rounded-xl group border border-transparent hover:border-zinc-200 transition-all"
+                            >
+                              <span
+                                className="text-[9px] font-black uppercase text-zinc-500 w-1/3 pl-3 truncate"
+                                title={k}
+                              >
+                                {k}
+                              </span>
+                              <input
+                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-[var(--dark-amethyst)]"
+                                placeholder="Valoare..."
+                                value={v as string}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    attributes_json: {
+                                      ...formData.attributes_json,
+                                      [k]: e.target.value,
+                                    },
+                                  })
+                                }
+                              />
+                              <button
+                                onClick={() => {
+                                  const up = { ...formData.attributes_json };
+                                  delete up[k];
+                                  setFormData({
+                                    ...formData,
+                                    attributes_json: up,
+                                  });
+                                }}
+                                className="text-rose-400 opacity-0 md:group-hover:opacity-100 transition-opacity pr-2"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="px-10 py-8 bg-white border-t shrink-0 flex items-center justify-between">
+          <DialogFooter className="px-6 md:px-10 py-6 md:py-8 bg-white border-t shrink-0 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-zinc-400">
               <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
-              <p className="text-[9px] font-black uppercase tracking-widest">
+              <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-center md:text-left">
                 Propagare securizată în infrastructura EVEM
               </p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-4 w-full md:w-auto">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-6 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 transition-all border border-zinc-200"
+                className="flex-1 md:flex-none px-6 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 transition-all border border-zinc-200"
               >
                 Anulează
               </button>
               <button
                 onClick={handleSave}
-                className="bg-black text-white px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[var(--dark-amethyst)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                className="flex-1 md:flex-none bg-[var(--dark-amethyst)] text-white px-8 md:px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[var(--royal-violet)] active:scale-95 transition-all flex items-center justify-center gap-3"
               >
                 <Save size={16} />{" "}
                 {editingProduct ? "Salvează Modificările" : "Publică Produsul"}
@@ -821,6 +1049,17 @@ const AdminProducts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `,
+        }}
+      />
     </div>
   );
 };
@@ -831,9 +1070,10 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
       {icon} {label}
     </Label>
     <input
-      className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner"
+      className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
+      placeholder="..."
     />
   </div>
 );
