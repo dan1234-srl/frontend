@@ -16,14 +16,7 @@ const Index = () => {
 
         <div className="mt-8 md:mt-16">
           <ProductCarousel
-            title={
-              <>
-                Cele mai{" "}
-                <span className="italic font-light text-foreground/50">
-                  iubite
-                </span>
-              </>
-            as any}
+            title="Cele mai iubite"
             subtitle="Bestsellers EVEM"
           />
         </div>
@@ -31,17 +24,7 @@ const Index = () => {
         <CategoryShowcase />
 
         <div className="bg-foreground/[0.02] py-4">
-          <ProductCarousel
-            title={
-              <>
-                Noutăți{" "}
-                <span className="italic font-light text-foreground/50">
-                  în colecție
-                </span>
-              </>
-            as any}
-            subtitle="Just Dropped"
-          />
+          <ProductCarousel title="Noutăți în colecție" subtitle="Just Dropped" />
         </div>
 
         <BrandManifesto />
