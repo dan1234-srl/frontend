@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Star, Info, Heart } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { SmartImage } from "@/components/ui/smart-image";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { prefetchProduct, prefetchImage } from "@/lib/prefetch";
@@ -16,12 +16,12 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.215, 0.61, 0.355, 1] },
+    transition: { duration: 0.6, ease: [0.215, 0.61, 0.355, 1] as const },
   },
 };
 

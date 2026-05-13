@@ -296,7 +296,6 @@ const AdminBrands = () => {
                     <button
                       onClick={() => openEdit(brand)}
                       className="p-3 rounded-xl bg-white shadow-sm border border-zinc-100 transition-colors text-zinc-600"
-                      style={{ hover: { color: "var(--royal-violet)" } }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.color = "var(--royal-violet)")
                       }
@@ -421,7 +420,6 @@ const AdminBrands = () => {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 className="w-full bg-transparent border-b-2 border-zinc-100 outline-none py-3 text-xl font-black uppercase transition-all"
-                style={{ focus: { borderColor: "var(--royal-violet)" } }}
                 onFocus={(e) =>
                   (e.target.style.borderColor = "var(--royal-violet)")
                 }
