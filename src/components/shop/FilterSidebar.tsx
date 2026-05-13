@@ -6,7 +6,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+import { X, RotateCcw } from "lucide-react";
 
 interface Props {
   filtersData: {
@@ -37,63 +38,73 @@ export const FilterSidebar = ({ filtersData }: Props) => {
   const activeBrands = searchParams.getAll("brand");
 
   return (
-    <div className="w-full space-y-2">
-      <Accordion type="multiple" className="w-full">
-        {/* BRANDURI */}
-        <AccordionItem value="brands" className="border-b border-zinc-50">
-          <AccordionTrigger className="py-4 text-[11px] font-black uppercase tracking-widest hover:no-underline">
-            Branduri
+    <div className="w-full flex flex-col h-full">
+      <Accordion type="multiple" defaultValue={["brands"]} className="w-full">
+        {/* BRANDURI - Afișate ca o listă elegantă cu numărător */}
+        <AccordionItem value="brands" className="border-none mb-4">
+          <AccordionTrigger className="py-4 px-2 text-[12px] font-black uppercase tracking-[0.2em] hover:no-underline bg-zinc-50 rounded-t-2xl">
+            Branduri Selecte
           </AccordionTrigger>
-          <AccordionContent className="pt-0 pb-6 space-y-3">
-            {filtersData.brands.map((brand) => (
-              <div
-                key={brand}
-                className="flex items-center space-x-3 group cursor-pointer"
-                onClick={() => handleUpdateFilter("brand", brand)}
-              >
-                <Checkbox
-                  id={`brand-${brand}`}
-                  checked={activeBrands.includes(brand)}
-                  className="rounded-sm border-zinc-200 data-[state=checked]:bg-brand data-[state=checked]:border-brand"
-                />
-                <label className="text-xs font-medium text-zinc-500 group-hover:text-black uppercase cursor-pointer transition-colors">
-                  {brand}
-                </label>
-              </div>
-            ))}
+          <AccordionContent className="p-4 bg-zinc-50/50 rounded-b-2xl border border-t-0 border-zinc-50">
+            <div className="grid grid-cols-1 gap-2">
+              {filtersData.brands.map((brand) => {
+                const isSelected = activeBrands.includes(brand);
+                return (
+                  <button
+                    key={brand}
+                    onClick={() => handleUpdateFilter("brand", brand)}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                      isSelected
+                        ? "bg-white border-black shadow-sm ring-1 ring-black"
+                        : "bg-transparent border-zinc-100 hover:border-zinc-300"
+                    }`}
+                  >
+                    <span
+                      className={`text-[11px] font-bold uppercase tracking-tight ${isSelected ? "text-black" : "text-zinc-500"}`}
+                    >
+                      {brand}
+                    </span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId="check"
+                        className="w-1.5 h-1.5 rounded-full bg-black"
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </AccordionContent>
         </AccordionItem>
 
-        {/* ATRIBUTE DINAMICE */}
+        {/* ATRIBUTE DINAMICE (Culoare, Material, etc.) */}
         {Object.entries(filtersData.attributes).map(([key, data]) => {
           const activeValues = searchParams.getAll(key);
+          const isColor = key.toLowerCase().includes("culoare");
+
           return (
-            <AccordionItem
-              key={key}
-              value={key}
-              className="border-b border-zinc-50"
-            >
-              <AccordionTrigger className="py-4 text-[11px] font-black uppercase tracking-widest hover:no-underline">
+            <AccordionItem key={key} value={key} className="border-none mb-4">
+              <AccordionTrigger className="py-4 px-2 text-[12px] font-black uppercase tracking-[0.2em] hover:no-underline bg-zinc-50 rounded-t-2xl">
                 {data.label}
               </AccordionTrigger>
-              <AccordionContent className="pt-0 pb-6">
+              <AccordionContent className="p-4 bg-zinc-50/50 rounded-b-2xl border border-t-0 border-zinc-50">
                 <div className="flex flex-wrap gap-2">
-                  {data.values.map((val) => (
-                    <Badge
-                      key={val}
-                      variant={
-                        activeValues.includes(val) ? "default" : "outline"
-                      }
-                      className={`cursor-pointer rounded-none uppercase text-[9px] px-3 py-1.5 transition-all border-zinc-200 shadow-none font-bold ${
-                        activeValues.includes(val)
-                          ? "bg-brand-deep text-white border-brand-deep"
-                          : "bg-white text-zinc-500 hover:border-black"
-                      }`}
-                      onClick={() => handleUpdateFilter(key, val)}
-                    >
-                      {val}
-                    </Badge>
-                  ))}
+                  {data.values.map((val) => {
+                    const isSelected = activeValues.includes(val);
+                    return (
+                      <button
+                        key={val}
+                        onClick={() => handleUpdateFilter(key, val)}
+                        className={`px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all rounded-full border ${
+                          isSelected
+                            ? "bg-black text-white border-black shadow-lg scale-105"
+                            : "bg-white text-zinc-500 border-zinc-100 hover:border-zinc-300"
+                        }`}
+                      >
+                        {val}
+                      </button>
+                    );
+                  })}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -101,14 +112,23 @@ export const FilterSidebar = ({ filtersData }: Props) => {
         })}
       </Accordion>
 
-      {/* BUTON RESETARE RAPIDĂ */}
+      {/* FOOTER FIX ÎN DRAWER - Doar dacă există filtre active */}
       {searchParams.toString() !== "" && (
-        <button
-          onClick={() => setSearchParams({})}
-          className="w-full mt-6 text-[9px] font-black uppercase tracking-[0.2em] py-4 border border-dashed border-zinc-200 hover:bg-zinc-50 transition-colors"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 sticky bottom-4"
         >
-          Resetează Filtrele
-        </button>
+          <button
+            onClick={() => setSearchParams({})}
+            className="w-full flex items-center justify-center gap-3 py-5 bg-zinc-900 text-white rounded-2xl shadow-2xl hover:bg-black transition-all active:scale-95"
+          >
+            <RotateCcw size={16} />
+            <span className="text-[11px] font-black uppercase tracking-[0.3em]">
+              Resetează Tot
+            </span>
+          </button>
+        </motion.div>
       )}
     </div>
   );
