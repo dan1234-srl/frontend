@@ -40,21 +40,27 @@ const HomeHero = () => {
   }, []);
 
   return (
-    <section className="w-full px-4 md:px-8 pt-4 md:pt-6">
-      <div className="mx-auto max-w-[1600px] flex flex-col lg:flex-row gap-6 items-start">
-        {/* SIDEBAR CATEGORII - LATIME SI INALTIME FIXATA PENTRU COMPACTNESS */}
-        <aside className="w-full lg:w-[320px] shrink-0">
+    <section className="w-full px-4 md:px-12 pt-24 md:pt-32 pb-10">
+      {/* 
+        Containerul are acum items-stretch pentru a forța sidebar-ul și poza 
+        să aibă aceeași înălțime, dar am setat o înălțime fixă (500px) pe desktop.
+      */}
+      <div className="mx-auto max-w-[1700px] flex flex-col lg:flex-row gap-8 items-stretch lg:h-[520px]">
+        {/* SIDEBAR CATEGORII - Design Modern & Compact */}
+        <aside className="w-full lg:w-[350px] flex flex-col">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col rounded-[2rem] border border-zinc-100 bg-white shadow-[0_15px_35px_-10px_rgba(0,0,0,0.05)] overflow-hidden"
+            initial={{ opacity: 0, x: -15 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex flex-col h-full rounded-[2.5rem] border border-zinc-100 bg-white/80 backdrop-blur-xl shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] overflow-hidden"
           >
-            {/* Header Meniu */}
-            <div className="p-6 pb-4 bg-zinc-50/50">
-              <div className="flex items-center gap-3 mb-3">
-                <LayoutGrid size={14} className="text-zinc-400" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                  Categorii
+            {/* Header fix al meniului */}
+            <div className="p-8 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-zinc-50 rounded-xl">
+                  <LayoutGrid size={14} className="text-zinc-900" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                  Explorare
                 </span>
               </div>
 
@@ -62,25 +68,26 @@ const HomeHero = () => {
                 {!activeParent ? (
                   <motion.h3
                     key="t1"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xl font-black tracking-tight text-zinc-900"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="text-2xl font-black tracking-tighter text-zinc-900"
                   >
-                    Colecții <span className="text-zinc-400">EVEM</span>
+                    Colecții <span className="text-zinc-300">EVEM</span>
                   </motion.h3>
                 ) : (
                   <motion.button
                     key="t2"
-                    initial={{ opacity: 0, x: -5 }}
+                    initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
                     onClick={() => setActiveParent(null)}
-                    className="flex items-center gap-2 group text-zinc-900"
+                    className="flex items-center gap-3 group"
                   >
-                    <ChevronLeft
-                      size={18}
-                      className="group-hover:-translate-x-1 transition-transform"
-                    />
-                    <span className="text-lg font-bold truncate">
+                    <div className="p-2 rounded-full border border-zinc-100 group-hover:bg-zinc-900 group-hover:text-white transition-all">
+                      <ChevronLeft size={16} />
+                    </div>
+                    <span className="text-xl font-black tracking-tighter truncate text-zinc-900">
                       {activeParent.name}
                     </span>
                   </motion.button>
@@ -88,14 +95,14 @@ const HomeHero = () => {
               </AnimatePresence>
             </div>
 
-            {/* LISTA CU INALTIME LIMITATA SI SCROLL */}
-            <div className="max-h-[320px] overflow-y-auto px-2 py-2 luxury-scrollbar">
+            {/* Listă cu Scrollbar invizibil pentru un look Luxury */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-5">
               <div className="flex flex-col gap-1">
                 {loading ? (
                   Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
-                      className="h-11 w-full rounded-xl bg-zinc-50 animate-pulse"
+                      className="h-14 w-full rounded-2xl bg-zinc-50 animate-pulse my-0.5"
                     />
                   ))
                 ) : (
@@ -105,7 +112,7 @@ const HomeHero = () => {
                         key="m"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="space-y-0.5"
+                        className="space-y-1"
                       >
                         {categories.map((cat) => (
                           <button
@@ -115,9 +122,9 @@ const HomeHero = () => {
                                 ? setActiveParent(cat)
                                 : navigate(`/category/${cat.slug}`)
                             }
-                            className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-zinc-50 transition-all group text-left"
+                            className="w-full flex items-center justify-between p-4 rounded-[1.2rem] hover:bg-zinc-50 transition-all duration-300 group text-left"
                           >
-                            <span className="text-[13px] font-semibold text-zinc-600 group-hover:text-zinc-900">
+                            <span className="text-[14px] font-bold text-zinc-600 group-hover:text-zinc-900 group-hover:translate-x-1 transition-transform">
                               {cat.name}
                             </span>
                             {cat.subcategories?.length ? (
@@ -128,7 +135,7 @@ const HomeHero = () => {
                             ) : (
                               <ArrowUpRight
                                 size={14}
-                                className="text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="text-zinc-200 opacity-0 group-hover:opacity-100"
                               />
                             )}
                           </button>
@@ -139,11 +146,11 @@ const HomeHero = () => {
                         key="s"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="space-y-0.5"
+                        className="space-y-1"
                       >
                         <Link
                           to={`/category/${activeParent.slug}`}
-                          className="flex items-center justify-between p-3.5 mb-2 rounded-xl bg-zinc-900 text-white font-bold text-[11px] uppercase tracking-widest"
+                          className="flex items-center justify-between p-4 mb-3 rounded-[1.2rem] bg-zinc-950 text-white font-bold text-[11px] uppercase tracking-widest shadow-xl shadow-zinc-200"
                         >
                           Toate produsele
                           <ArrowUpRight size={14} />
@@ -152,7 +159,7 @@ const HomeHero = () => {
                           <Link
                             key={sub.id}
                             to={`/category/${sub.slug}`}
-                            className="block p-3.5 text-[13px] font-semibold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl transition-all"
+                            className="block p-4 text-[14px] font-bold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded-[1.2rem] transition-all"
                           >
                             {sub.name}
                           </Link>
@@ -164,63 +171,84 @@ const HomeHero = () => {
               </div>
             </div>
 
-            {/* Catalog Button */}
+            {/* Link Catalog la baza sidebar-ului */}
             <Link
               to="/shop"
-              className="mt-auto p-5 border-t border-zinc-50 bg-zinc-50/30 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-between text-zinc-400 hover:text-zinc-900 transition-colors group"
+              className="p-6 bg-zinc-50/50 text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-between hover:bg-zinc-900 hover:text-white transition-all group"
             >
               Vezi catalogul complet
               <ChevronRight
-                size={12}
+                size={14}
                 className="group-hover:translate-x-1 transition-transform"
               />
             </Link>
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL - INALTIMEA ESTE ACUM INDEPENDENTA */}
-        <div className="flex-1 w-full">
-          <div className="relative w-full h-[400px] lg:h-[480px] rounded-[2.5rem] overflow-hidden bg-zinc-100 group shadow-2xl shadow-zinc-200">
+        {/* BANNER PRINCIPAL - Aspect Ratio Cinematografic */}
+        <div className="flex-1">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative h-full w-full rounded-[3rem] overflow-hidden bg-zinc-100 group shadow-[0_30px_70px_-20px_rgba(0,0,0,0.15)]"
+          >
             <img
               src={heroBanner}
               alt="EVEM Premium"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
             />
-            {/* Overlay subtil */}
-            <div className="absolute inset-0 bg-black/20" />
+            {/* Overlay dublu gradient */}
+            <div className="absolute inset-0 bg-black/10" />
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
 
-            <div className="relative h-full flex flex-col justify-center p-8 md:p-16 text-white">
-              <motion.h1
-                initial={{ opacity: 0, x: -20 }}
+            <div className="relative h-full flex flex-col justify-center p-10 md:p-20 text-white">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-4xl md:text-6xl font-black leading-[1] tracking-tighter mb-6"
+                transition={{ delay: 0.2 }}
+                className="flex items-center gap-3 mb-6"
+              >
+                <div className="h-px w-10 bg-white/40" />
+                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/80">
+                  Concept Premium
+                </span>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="text-5xl md:text-7xl font-black leading-[0.9] tracking-tighter mb-8"
               >
                 STILUL TĂU, <br />
-                <span className="font-light italic opacity-70 text-3xl md:text-5xl">
+                <span className="font-light italic opacity-60 text-4xl md:text-6xl">
                   REDEFINIT.
                 </span>
               </motion.h1>
 
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-3 bg-white text-zinc-900 w-fit px-8 py-4 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all shadow-xl"
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
               >
-                <ShoppingBag size={14} />
-                Cumpără acum
-              </Link>
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center gap-4 bg-white text-zinc-950 px-10 py-5 rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-zinc-950 hover:text-white transition-all shadow-xl hover:shadow-2xl"
+                >
+                  <ShoppingBag size={16} />
+                  Cumpără acum
+                </Link>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        .luxury-scrollbar::-webkit-scrollbar { width: 4px; }
-        .luxury-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #f1f1f1; border-radius: 10px; }
-        .luxury-scrollbar:hover::-webkit-scrollbar-thumb { background: #e2e2e2; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `,
         }}
       />
