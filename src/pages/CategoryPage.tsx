@@ -87,7 +87,6 @@ const CategoryPage = () => {
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-black selection:text-white">
       <Navbar />
 
-      {/* Spacer fix pentru a preveni intrarea sub navbar */}
       <div className="h-8 md:h-12 w-full shrink-0" />
 
       {/* VOUCHER TICKER */}
@@ -119,7 +118,7 @@ const CategoryPage = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-grow w-full max-w-[1700px] mx-auto px-4 md:px-12 py-6 md:py-10">
+      <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-10 py-6 md:py-10">
         {/* HEADER SECTION */}
         <div className="mb-8 md:mb-12">
           <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-black leading-tight mb-2">
@@ -130,7 +129,7 @@ const CategoryPage = () => {
           </p>
         </div>
 
-        {/* NAVIGARE MOBIL - Drawer + Carousel - Fixat pentru a nu intra sub navbar */}
+        {/* NAVIGARE MOBIL */}
         <div className="lg:hidden flex items-center gap-2 mb-8 sticky top-20 z-30 bg-white/95 py-2 backdrop-blur-sm">
           <Sheet>
             <SheetTrigger asChild>
@@ -185,7 +184,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* ACTIONS BAR - FILTRE STICKY */}
+        {/* ACTIONS BAR */}
         <div className="flex items-center justify-between py-5 mb-10 border-y border-zinc-50 sticky top-[4.5rem] bg-white/95 backdrop-blur-md z-40">
           <Sheet>
             <SheetTrigger asChild>
@@ -214,16 +213,15 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        <div className="flex gap-14 items-start">
-          {/* SIDEBAR DESKTOP - Compactat cu scroll intern */}
-          <aside className="hidden lg:block w-[260px] shrink-0 sticky top-40">
+        <div className="flex gap-8 items-start">
+          {/* SIDEBAR DESKTOP */}
+          <aside className="hidden lg:block w-[240px] shrink-0 sticky top-40">
             <div className="flex items-center gap-2 mb-6">
               <LayoutGrid size={14} className="text-zinc-300" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">
                 Navigare
               </span>
             </div>
-            {/* max-h-450px previne intinderea pana jos a categoriilor */}
             <nav className="flex flex-col gap-1 max-h-[450px] overflow-y-auto luxury-scrollbar pr-2">
               {categoriesTree.map((cat) => {
                 const isParentActive =
@@ -233,7 +231,7 @@ const CategoryPage = () => {
                   <div key={cat.id} className="flex flex-col gap-1">
                     <Link
                       to={`/category/${cat.slug}`}
-                      className={`py-2.5 px-4 rounded-xl text-[11px] font-bold uppercase tracking-tight transition-all ${isParentActive ? "bg-zinc-50 text-black" : "text-zinc-400 hover:text-black"}`}
+                      className={`py-2 px-4 rounded-xl text-[11px] font-bold uppercase tracking-tight transition-all ${isParentActive ? "bg-zinc-50 text-black" : "text-zinc-400 hover:text-black"}`}
                     >
                       {cat.name}
                     </Link>
@@ -256,13 +254,17 @@ const CategoryPage = () => {
             </nav>
           </aside>
 
-          {/* PRODUCT GRID */}
+          {/* PRODUCT GRID - ACTUALIZAT LA 5 COLOANE PE XL */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
-              <ProductGridSkeleton count={6} />
+              <ProductGridSkeleton count={10} />
             ) : (
               <div className="flex flex-col gap-16">
-                <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-12">
+                {/* 
+                  xl:grid-cols-5 asigură 5 produse pe rând pe ecrane mari.
+                  gap-x-4 a fost redus puțin pentru a compensa lățimea mai mică a cardurilor.
+                */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10">
                   {products.map((p, i) => (
                     <ProductCard key={`${p.id}-${i}`} product={p} />
                   ))}
