@@ -38,6 +38,11 @@ const CategoryPage = () => {
 
   const currentPage = parseInt(searchParams.get("page") || "1");
 
+  const formatFallbackName = (str: string | undefined) => {
+    if (!str) return "";
+    return str.replace(/^cat-/, "").replace(/-/g, " ");
+  };
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
       .then((res) => res.json())
@@ -85,11 +90,11 @@ const CategoryPage = () => {
 
   return (
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-black selection:text-white">
+      {/* Navbar este acum in spatele Sheet-ului datorita z-indexului din CSS */}
       <Navbar />
 
       <div className="h-8 md:h-12 w-full shrink-0" />
 
-      {/* VOUCHER TICKER */}
       <AnimatePresence>
         {vouchers.length > 0 && (
           <section className="w-full bg-black py-3 border-b border-zinc-900 relative overflow-hidden z-20">
@@ -119,10 +124,9 @@ const CategoryPage = () => {
       </AnimatePresence>
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-10 py-6 md:py-10">
-        {/* HEADER SECTION */}
         <div className="mb-8 md:mb-12">
           <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-black leading-tight mb-2">
-            {filtersData?.category_name || slug?.replace(/-/g, " ")}
+            {filtersData?.category_name || formatFallbackName(slug)}
           </h1>
           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
             {products.length} Articole Disponibile
@@ -139,7 +143,7 @@ const CategoryPage = () => {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[85%] p-0 border-none bg-white"
+              className="w-[85%] p-0 border-none bg-white z-[10001]"
             >
               <SheetHeader className="p-8 border-b">
                 <SheetTitle className="text-xl font-black uppercase tracking-tighter text-left">
@@ -184,37 +188,61 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* ACTIONS BAR */}
+        {/* ACTIONS BAR - FILTRARE MODERNA */}
         <div className="flex items-center justify-between py-5 mb-10 border-y border-zinc-50 sticky top-[4.5rem] bg-white/95 backdrop-blur-md z-40">
           <Sheet>
             <SheetTrigger asChild>
-              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900">
-                <SlidersHorizontal size={14} /> Filtrează
+              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
+                <div className="p-2 bg-zinc-50 rounded-full group-hover:bg-black group-hover:text-white transition-all">
+                  <SlidersHorizontal size={14} />
+                </div>
+                Rafinează
               </button>
             </SheetTrigger>
+
+            {/* SheetContent are acum fundal alb solid si z-index maxim pentru a acoperi si navbarul */}
             <SheetContent
               side="right"
-              className="w-full sm:w-[450px] p-0 border-none bg-white shadow-2xl z-[10000]"
+              className="w-full sm:w-[450px] p-0 border-none bg-white shadow-2xl z-[10001]"
             >
               <div className="flex flex-col h-full bg-white">
-                <SheetHeader className="p-8 border-b">
+                <SheetHeader className="p-8 border-b bg-white">
+                  <div className="flex items-center gap-2 opacity-30 mb-2">
+                    <span className="h-px w-4 bg-black" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.4em]">
+                      Selection
+                    </span>
+                  </div>
                   <SheetTitle className="text-3xl font-black uppercase tracking-tighter text-left">
-                    Rafinează
+                    Parametri Filtrare
                   </SheetTitle>
                 </SheetHeader>
-                <div className="flex-1 overflow-y-auto p-10 bg-white luxury-scrollbar">
+                <div className="flex-1 overflow-y-auto p-8 bg-white luxury-scrollbar">
                   {filtersData && <FilterSidebar filtersData={filtersData} />}
+                </div>
+                <div className="p-6 border-t bg-white grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setSearchParams({})}
+                    className="py-4 text-[10px] font-black uppercase border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all"
+                  >
+                    Resetare
+                  </button>
+                  <SheetTrigger asChild>
+                    <button className="py-4 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-zinc-800 transition-all">
+                      Aplică
+                    </button>
+                  </SheetTrigger>
                 </div>
               </div>
             </SheetContent>
           </Sheet>
+
           <div className="w-40 md:w-56">
             <SortDropdown />
           </div>
         </div>
 
         <div className="flex gap-8 items-start">
-          {/* SIDEBAR DESKTOP */}
           <aside className="hidden lg:block w-[240px] shrink-0 sticky top-40">
             <div className="flex items-center gap-2 mb-6">
               <LayoutGrid size={14} className="text-zinc-300" />
@@ -231,7 +259,7 @@ const CategoryPage = () => {
                   <div key={cat.id} className="flex flex-col gap-1">
                     <Link
                       to={`/category/${cat.slug}`}
-                      className={`py-2 px-4 rounded-xl text-[11px] font-bold uppercase tracking-tight transition-all ${isParentActive ? "bg-zinc-50 text-black" : "text-zinc-400 hover:text-black"}`}
+                      className={`py-2.5 px-4 rounded-xl text-[11px] font-bold uppercase tracking-tight transition-all ${isParentActive ? "bg-zinc-50 text-black" : "text-zinc-400 hover:text-black"}`}
                     >
                       {cat.name}
                     </Link>
@@ -254,16 +282,11 @@ const CategoryPage = () => {
             </nav>
           </aside>
 
-          {/* PRODUCT GRID - ACTUALIZAT LA 5 COLOANE PE XL */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
               <ProductGridSkeleton count={10} />
             ) : (
               <div className="flex flex-col gap-16">
-                {/* 
-                  xl:grid-cols-5 asigură 5 produse pe rând pe ecrane mari.
-                  gap-x-4 a fost redus puțin pentru a compensa lățimea mai mică a cardurilor.
-                */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10">
                   {products.map((p, i) => (
                     <ProductCard key={`${p.id}-${i}`} product={p} />
@@ -295,9 +318,18 @@ const CategoryPage = () => {
         </div>
       </main>
       <Footer />
+
       <style
         dangerouslySetInnerHTML={{
           __html: `
+        /* Overlay-ul negru blurat care acopera si navbarul */
+        [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
+        div[data-state="open"] > .fixed.inset-0 { 
+          z-index: 10000 !important; 
+          backdrop-filter: blur(8px) !important;
+          background-color: rgba(0,0,0,0.4) !important;
+        }
+
         html { scrollbar-gutter: stable !important; }
         body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
