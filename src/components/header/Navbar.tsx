@@ -84,7 +84,6 @@ const Navbar = () => {
         >
           {/* LEFT SECTION: MODERN SEARCH */}
           <div className="flex flex-1 items-center justify-start">
-            {/* Desktop: Elegant Pill Search */}
             <button
               onClick={() => setSearchOpen(true)}
               className="hidden md:flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-full py-2 px-5 group hover:bg-zinc-100 transition-all duration-300"
@@ -98,7 +97,6 @@ const Navbar = () => {
               </span>
             </button>
 
-            {/* Mobile: Minimalist Icon Search */}
             <button
               onClick={() => setSearchOpen(true)}
               className="md:hidden flex items-center justify-center h-10 w-10 rounded-full hover:bg-zinc-50 transition-colors"
@@ -222,7 +220,6 @@ const Navbar = () => {
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* OVERLAYS & MODALS */}
-      <div className="h-[5.5rem] w-full" aria-hidden="true" />
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
       <Login

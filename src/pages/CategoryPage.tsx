@@ -99,11 +99,10 @@ const CategoryPage = () => {
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      <div className="h-8 md:h-12 w-full shrink-0" />
-
+      {/* VOUCHERS TICKER ANCORAT CORRECT SUB NAVBAR */}
       <AnimatePresence>
         {vouchers.length > 0 && (
-          <section className="w-full bg-zinc-950 py-3 border-b border-zinc-900 relative overflow-hidden z-20">
+          <section className="w-full bg-zinc-950 py-3 border-b border-zinc-900 relative overflow-hidden z-20 mt-[7.5rem] md:mt-[7.5rem]">
             <div className="flex whitespace-nowrap">
               <motion.div
                 animate={{ x: ["0%", "-50%"] }}
@@ -129,7 +128,10 @@ const CategoryPage = () => {
         )}
       </AnimatePresence>
 
-      <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8 md:py-14">
+      {/* CONȚINUTUL PRIMEȘTE PADDING DOAR DACĂ NU SUNT VOUCHERE ACTIVE PENTRU A EVITA SPAȚIILE GOLURI */}
+      <main
+        className={`flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8 md:py-14 ${vouchers.length === 0 ? "pt-[9rem]" : "pt-8"}`}
+      >
         <div className="mb-10 md:mb-16">
           <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none mb-3">
             {filtersData?.category_name || formatFallbackName(slug)}
@@ -194,7 +196,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* ACTIONS BAR - FILTRARE MODERNA (STICKY TOP ALINIAT LA NAVBAR-HEIGHT) */}
+        {/* ACTIONS BAR - FILTRARE MODERNA */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-[4.5rem] bg-white/95 backdrop-blur-md z-40">
           <button
             onClick={() => setFiltersOpen(true)}
@@ -252,7 +254,6 @@ const CategoryPage = () => {
 
         {/* CONTAINER CONȚINUT */}
         <div className="flex gap-12 items-start">
-          {/* ASIDE STICKY DESKTOP ALINIAT SUB NAVBAR */}
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-[6.5rem]">
             <div className="flex items-center gap-2 mb-6 pl-2">
               <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
@@ -347,18 +348,16 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* 🚀 STILIZARE AVANSATĂ CORELATĂ CU ÎNĂLȚIMEA NAVBAR-ULUI */}
+      {/* 🚀 STILIZARE ARHITECTURALĂ CONFORM DESIGNULUI INIȚIAL */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         :root {
-          --navbar-height: 4.5rem; /* Înălțimea exactă a navbar-ului tău (72px) */
+          --navbar-height: 4.5rem;
         }
 
-        /* Suprascrierea containerului Radix pentru prioritatea overlay-ului global */
         [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
         
-        /* Efect Milky Blur ancorat dedesubtul navbar-ului */
         div[data-state="open"] > .fixed.inset-0 { 
           z-index: 10000 !important; 
           top: var(--navbar-height) !important;
@@ -367,7 +366,6 @@ const CategoryPage = () => {
           animation: milkyFadeIn 0.5s ease forward;
         }
 
-        /* Prelungirea exactă a Drawer-ului de filtre din marginea de jos a navbar-ului */
         div[role="dialog"][data-state="open"] {
           z-index: 10001 !important;
           top: var(--navbar-height) !important;
@@ -376,7 +374,6 @@ const CategoryPage = () => {
           border-top: 1px solid rgba(0, 0, 0, 0.02) !important;
         }
 
-        /* Forțare corecție pentru zone fixe laterale */
         .fixed.right-0 {
           top: var(--navbar-height) !important;
           height: calc(100vh - var(--navbar-height)) !important;
