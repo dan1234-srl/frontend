@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
-import { SortDropdown } from "../components/components/shop/SortDropdown";
+import { SortDropdown } from "../components/shop/SortDropdown"; // 🚀 REPARAT: Calea de import corectă pentru a trece build-ul
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import {
@@ -27,12 +27,12 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ NOUĂ: CARUSEL EDITORIAL LUXURY
+// COMPONENTĂ: MULTI-BANNER HERO CAROUSEL (DEDICAT + GLOBAL INTEGRAT)
 // ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
 
-  // Auto-play la 6 secunde dacă există mai mult de 1 banner
+  // Auto-play la interval de 6 secunde dacă există mai mult de o campanie activă
   useEffect(() => {
     if (banners.length <= 1) return;
     const timer = setInterval(() => {
@@ -44,17 +44,17 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   if (!banners || banners.length === 0) return null;
 
   return (
-    <div className="relative w-full aspect-[16/10] md:aspect-[24/7] rounded-[2rem] overflow-hidden mb-14 shadow-sm border border-zinc-100 group bg-zinc-50">
+    <div className="relative w-full aspect-[14/10] sm:aspect-[16/8] md:aspect-[21/7] rounded-[2rem] overflow-hidden mb-14 shadow-sm border border-zinc-100 group bg-zinc-50 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
-          initial={{ opacity: 0, scale: 1.02 }}
+          initial={{ opacity: 0, scale: 1.01 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-0"
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute inset-0 w-full h-full"
         >
-          {/* Imagine cu lazy loading adaptiv */}
+          {/* Imagine adaptivă responsive desktop vs mobile */}
           <picture className="absolute inset-0 w-full h-full">
             <source
               srcSet={
@@ -65,17 +65,19 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
             <img
               src={banners[current].image_desktop}
               alt={banners[current].title}
-              className="w-full h-full object-cover scale-100 group-hover:scale-[1.02] transition-transform duration-[2s] ease-out"
+              className="w-full h-full object-cover scale-100 group-hover:scale-[1.015] transition-transform duration-[2.5s] ease-out"
+              loading="eager"
+              fetchpriority="high"
             />
           </picture>
 
-          {/* Gradient overlay pentru contrast text */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          {/* Overlay gradient premium pentru lizibilitatea textelor */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
 
-          {/* Zona de Text */}
+          {/* Zonă conținut text (Stil Boutique Editorial) */}
           <div className="absolute inset-x-0 bottom-0 p-8 md:p-16 flex flex-col items-start text-left text-white max-w-xl md:max-w-3xl space-y-3">
             <span className="h-[2px] w-12 bg-white/80 block mb-2" />
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none drop-shadow-md">
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none drop-shadow-sm">
               {banners[current].title}
             </h2>
             {banners[current].subtitle && (
@@ -83,14 +85,14 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
                 {banners[current].subtitle}
               </p>
             )}
-            <button className="mt-4 px-8 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-zinc-950 hover:text-white transition-all shadow-xl active:scale-95">
-              {banners[current].button_text || "Descoperă Colecția"}
+            <button className="mt-4 px-8 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-zinc-950 hover:text-white transition-all shadow-xl active:scale-95 duration-300">
+              {banners[current].button_text || "DESCOPERĂ COLECȚIA"}
             </button>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicatori de navigație (Apar doar dacă ai 2 sau mai multe bannere) */}
+      {/* Indicatori liniari pentru carusel activ */}
       {banners.length > 1 && (
         <div className="absolute bottom-8 right-8 flex gap-2 z-10">
           {banners.map((_, i) => (
@@ -120,7 +122,7 @@ const CategoryPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  /* ── State NOU pentru Bannere ── */
+  /* ── State pentru stocarea listei de campanii promoționale ── */
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
 
   /* ── Context filtre reparat atomic ── */
@@ -138,7 +140,7 @@ const CategoryPage = () => {
     if (!str) return "";
     return str
       .replace(/^cat-/, "")
-      .replace(/-[a-f0-9]{6}$/i, "") // Taie hash-ul din URL la randarea de siguranță
+      .replace(/-[a-f0-9]{6}$/i, "")
       .replace(/-/g, " ");
   };
 
@@ -167,10 +169,9 @@ const CategoryPage = () => {
       .catch(() => {});
   }, [slug, setFiltersData]);
 
-  /* ── Fetch Bannere Editoriale ── */
+  /* ── Fetch Bannere Promoționale (Sistem Unificat cu Fallback Global) ── */
   useEffect(() => {
     if (!slug) return;
-    // Cautam pe noul endpoint unificat de marketing (sau router-ul setat de tine in main.py)
     fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -179,8 +180,7 @@ const CategoryPage = () => {
         } else if (Array.isArray(data)) {
           setCampaignBanners(data);
         } else {
-          // Wrap in array pentru a folosi componenta de Carusel chiar si pentru 1 element
-          setCampaignBanners([data]);
+          setCampaignBanners([data]); // Transformă obiectul unic în array pentru consistența caruselului
         }
       })
       .catch(() => setCampaignBanners([]));
@@ -196,7 +196,6 @@ const CategoryPage = () => {
         params.set("page", page.toString());
         params.set("category_slug", slug || "");
 
-        // Sincronizare sortare
         const currentSort = searchParams.get("sort");
         if (currentSort === "pret-crescator") params.set("sort", "price_asc");
         if (currentSort === "pret-descrescator")
@@ -271,7 +270,7 @@ const CategoryPage = () => {
               {loading ? "—" : products.length} Articole Disponibile
             </p>
             {activeFiltersCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--royal-violet)]/8 border border-[var(--royal-violet)]/15 text-[var(--royal-violet)]">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--royal-violet)]/8 border border border-zinc-100 text-[var(--royal-violet)]">
                 <span className="text-[8px] font-black uppercase tracking-widest">
                   {activeFiltersCount}{" "}
                   {activeFiltersCount === 1 ? "filtru activ" : "filtre active"}
@@ -281,7 +280,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* 🚀 AICI INJECTĂM CARUSELUL EDITORIAL */}
+        {/* 🚀 CARUSEL DE CAMPANIE (DEDICAT SAU FALLBACK GLOBAL DIN NOUL ENDPOINT) */}
         <CategoryHeroCarousel banners={campaignBanners} />
 
         {/* MOBILE NAV */}

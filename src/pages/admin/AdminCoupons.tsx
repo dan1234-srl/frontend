@@ -21,6 +21,7 @@ import {
   Ban,
   Image as ImageIcon,
   LayoutTemplate,
+  Globe2,
 } from "lucide-react";
 import {
   Table,
@@ -97,7 +98,6 @@ const AdminCoupons = () => {
     applicable_product_ids: [] as string[],
   });
 
-  // State Căutare Produse (Pentru Vouchere)
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [searchedProducts, setSearchedProducts] = useState<any[]>([]);
   const [selectedProductsData, setSelectedProductsData] = useState<any[]>([]);
@@ -107,8 +107,11 @@ const AdminCoupons = () => {
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isEditingBanner, setIsEditingBanner] = useState(false);
 
+  // Folosim un id special ("global_campaign_id") pentru a marca un banner ca fiind global.
+  // La trimiterea către backend, dacă id-ul e "global_campaign_id", îl vom transforma în `null`.
   const [bannerFormData, setBannerFormData] = useState({
-    category_id: "",
+    id: "", // Folosit pentru update
+    category_id: "global_campaign_id", // Default pe GLOBAL
     title: "",
     subtitle: "",
     button_text: "DESCOPERĂ COLECȚIA",
@@ -130,7 +133,7 @@ const AdminCoupons = () => {
         fetch(`${API_BASE_URL}/api/v1/categories/`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/api/v1/vouchers/admin/banners`, {
           credentials: "include",
-        }), // Endpoint-ul nou creat de noi
+        }),
       ]);
 
       const vouchersData = await vouchersRes.json();
@@ -288,12 +291,13 @@ const AdminCoupons = () => {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5. HANDLERS BANNERE EDITORIALE
+  // 5. HANDLERS BANNERE EDITORIALE (Modificat pentru GLOBAL fallback)
   // ─────────────────────────────────────────────────────────────────────────────
   const handleOpenBannerCreate = () => {
     setIsEditingBanner(false);
     setBannerFormData({
-      category_id: categories.length > 0 ? categories[0].id : "",
+      id: "",
+      category_id: "global_campaign_id", // Predefinim ca fiind Global
       title: "",
       subtitle: "",
       button_text: "DESCOPERĂ COLECȚIA",
@@ -307,7 +311,9 @@ const AdminCoupons = () => {
   const handleOpenBannerEdit = (banner: any) => {
     setIsEditingBanner(true);
     setBannerFormData({
-      category_id: banner.category_id,
+      id: banner.id,
+      // Dacă bannerul a venit din DB cu category_id=null, îl mapam la ID-ul nostru fictiv pentru UI
+      category_id: banner.category_id || "global_campaign_id",
       title: banner.title,
       subtitle: banner.subtitle || "",
       button_text: banner.button_text || "DESCOPERĂ COLECȚIA",
@@ -335,24 +341,27 @@ const AdminCoupons = () => {
   };
 
   const handleSaveBanner = async () => {
-    if (
-      !bannerFormData.category_id ||
-      !bannerFormData.title ||
-      !bannerFormData.image_desktop_url
-    ) {
-      return toast.error(
-        "Categoria, Titlul și Imaginea Desktop sunt obligatorii.",
-      );
+    if (!bannerFormData.title || !bannerFormData.image_desktop_url) {
+      return toast.error("Titlul și Imaginea Desktop sunt obligatorii.");
     }
+
+    // Convertim ID-ul special înapoi în null pentru Backend
+    const payload = {
+      ...bannerFormData,
+      category_id:
+        bannerFormData.category_id === "global_campaign_id"
+          ? null
+          : bannerFormData.category_id,
+    };
 
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/vouchers/admin/save-banner`,
         {
-          method: "POST", // Endpoint-ul de save face UPSERT pe baza category_id conform backend-ului scris anterior
+          method: "POST", // Endpointul backend știe să facă update dacă trimitem id
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(bannerFormData),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -369,8 +378,10 @@ const AdminCoupons = () => {
     }
   };
 
-  // Helper pentru a găsi numele categoriei în tabel
-  const getCategoryName = (id: string) => {
+  // Helper curat pentru afișarea numelui categoriei (sau Global) în tabel
+  const getCategoryName = (id: string | null) => {
+    if (!id || id === "global_campaign_id")
+      return "🌍 CAMPANIE GLOBALĂ (TOT SITE-UL)";
     const cat = categories.find((c) => c.id === id);
     if (cat) return cat.name;
     for (const mainCat of categories) {
@@ -379,7 +390,7 @@ const AdminCoupons = () => {
         if (sub) return `${mainCat.name} > ${sub.name}`;
       }
     }
-    return "Categorie Necunoscută";
+    return "Categorie ștearsă/necunoscută";
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -472,7 +483,7 @@ const AdminCoupons = () => {
                 : "text-zinc-400 hover:text-zinc-700"
             }`}
           >
-            <LayoutTemplate size={16} /> Bannere Categorii
+            <LayoutTemplate size={16} /> Bannere Editoriale
           </button>
         </div>
 
@@ -512,7 +523,7 @@ const AdminCoupons = () => {
                         Titlu & Text
                       </TableHead>
                       <TableHead className="text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Afișare (Categorie)
+                        Afișare (Target)
                       </TableHead>
                       <TableHead className="text-center text-[10px] uppercase font-black text-zinc-400 tracking-widest">
                         Status
@@ -554,7 +565,8 @@ const AdminCoupons = () => {
                       colSpan={5}
                       className="py-40 text-center text-zinc-400 font-bold uppercase text-[10px] tracking-widest"
                     >
-                      Niciun banner editorial configurat momentan.
+                      Niciun banner editorial configurat momentan. Adăugați un
+                      Banner Global pentru a începe.
                     </TableCell>
                   </TableRow>
                 ) : activeTab === "VOUCHERS" ? (
@@ -657,66 +669,76 @@ const AdminCoupons = () => {
                   })
                 ) : (
                   // RENDERING TABEL BANNERE
-                  banners.map((b) => (
-                    <TableRow
-                      key={b.id}
-                      className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50 last:border-none"
-                    >
-                      <TableCell className="px-12 py-6">
-                        <div className="w-40 h-16 rounded-xl overflow-hidden shadow-sm border border-zinc-100 bg-zinc-100 relative">
-                          <img
-                            src={b.image_desktop_url}
-                            alt="Banner"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[11px] font-black text-[var(--brand-dark)] uppercase tracking-widest">
-                            {b.title}
-                          </span>
-                          <span className="text-[10px] text-zinc-400 truncate max-w-[200px]">
-                            {b.subtitle || "Fără subtitlu"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-3 py-1 rounded-md uppercase tracking-wider">
-                          {getCategoryName(b.category_id)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span
-                          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase border shadow-sm ${b.is_active ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-zinc-50 text-zinc-400 border-zinc-200"}`}
-                        >
-                          {b.is_active ? (
-                            <CheckCircle2 size={10} />
+                  banners.map((b) => {
+                    const isGlobal = !b.category_id;
+                    return (
+                      <TableRow
+                        key={b.id}
+                        className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50 last:border-none"
+                      >
+                        <TableCell className="px-12 py-6">
+                          <div className="w-40 h-16 rounded-xl overflow-hidden shadow-sm border border-zinc-100 bg-zinc-100 relative">
+                            <img
+                              src={b.image_desktop_url}
+                              alt="Banner"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] font-black text-[var(--brand-dark)] uppercase tracking-widest">
+                              {b.title}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 truncate max-w-[200px]">
+                              {b.subtitle || "Fără subtitlu"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {isGlobal ? (
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 uppercase tracking-wider">
+                              <Globe2 size={12} />
+                              CAMPANIE GLOBALĂ
+                            </span>
                           ) : (
-                            <Ban size={10} />
+                            <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-3 py-1.5 rounded-md uppercase tracking-wider">
+                              {getCategoryName(b.category_id)}
+                            </span>
                           )}
-                          {b.is_active ? "Afișat" : "Ascuns"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-12 text-right">
-                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleOpenBannerEdit(b)}
-                            className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all"
-                            style={{ background: "var(--brand-gradient)" }}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span
+                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase border shadow-sm ${b.is_active ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-zinc-50 text-zinc-400 border-zinc-200"}`}
                           >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBanner(b.id)}
-                            className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all bg-rose-500"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                            {b.is_active ? (
+                              <CheckCircle2 size={10} />
+                            ) : (
+                              <Ban size={10} />
+                            )}
+                            {b.is_active ? "Afișat" : "Ascuns"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-12 text-right">
+                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleOpenBannerEdit(b)}
+                              className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all"
+                              style={{ background: "var(--brand-gradient)" }}
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBanner(b.id)}
+                              className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all bg-rose-500"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -774,7 +796,7 @@ const AdminCoupons = () => {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────────────────
-          MODAL CONFIGURARE VOUCHER (Neschimbat structural)
+          MODAL CONFIGURARE VOUCHER
           ───────────────────────────────────────────────────────────────────────────── */}
       <Dialog open={isVoucherModalOpen} onOpenChange={setIsVoucherModalOpen}>
         <DialogContent className="max-w-[1200px] w-[96vw] h-[92vh] p-0 rounded-[3.5rem] border-none shadow-2xl flex flex-col overflow-hidden bg-[#FBFBFD] [&>button]:hidden">
@@ -981,7 +1003,7 @@ const AdminCoupons = () => {
               </div>
             </div>
 
-            {/* Secțiune 3: Segmentare Categorii/Produse (Simplificat vizual pentru spațiu) */}
+            {/* Secțiune 3: Segmentare Categorii/Produse */}
             <div className="space-y-10">
               <div className="flex items-center gap-5">
                 <span
@@ -1148,7 +1170,7 @@ const AdminCoupons = () => {
       </Dialog>
 
       {/* ─────────────────────────────────────────────────────────────────────────────
-          MODAL CONFIGURARE BANNER EDITORIAL (NOU)
+          MODAL CONFIGURARE BANNER EDITORIAL (GLOBAL + LOCAL SUPORT)
           ───────────────────────────────────────────────────────────────────────────── */}
       <Dialog open={isBannerModalOpen} onOpenChange={setIsBannerModalOpen}>
         <DialogContent className="max-w-[800px] w-[96vw] max-h-[90vh] p-0 rounded-[3.5rem] border-none shadow-2xl flex flex-col overflow-hidden bg-white [&>button]:hidden">
@@ -1197,10 +1219,10 @@ const AdminCoupons = () => {
           </header>
 
           <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-10 luxury-scrollbar bg-[#FAFAFA]">
-            {/* Selectie Categorie */}
+            {/* Selectie Categorie (cu opțiunea de GLOBAL) */}
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                Afișat în Categoria *
+                Targetare Afișare *
               </Label>
               <select
                 className="w-full h-14 bg-white border border-zinc-200 rounded-2xl px-6 text-xs font-black uppercase outline-none shadow-sm focus:border-[var(--brand-primary)] transition-all"
@@ -1211,10 +1233,9 @@ const AdminCoupons = () => {
                     category_id: e.target.value,
                   })
                 }
-                disabled={isEditingBanner} // Odată creat, e mai safe să îl ștergi și să faci altul dacă vrei să schimbi categoria
               >
-                <option value="" disabled>
-                  Selectează destinația...
+                <option value="global_campaign_id">
+                  🌍 CAMPANIE GLOBALĂ (TOT SITE-UL)
                 </option>
                 {categories.map((cat) => (
                   <optgroup label={cat.name} key={cat.id}>
@@ -1229,7 +1250,7 @@ const AdminCoupons = () => {
               </select>
             </div>
 
-            {/* Imagini (Upload simulat prin link S3 pentru compatibilitate maximă) */}
+            {/* Imagini */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest flex justify-between">
@@ -1279,7 +1300,7 @@ const AdminCoupons = () => {
                   </div>
                   <input
                     className="w-full h-12 bg-zinc-50 rounded-xl px-4 text-[10px] font-medium outline-none border border-transparent focus:border-[var(--brand-primary)]/30"
-                    placeholder="URL Mobile (dacă se lasă gol, folosește imaginea Desktop)"
+                    placeholder="URL Mobile (dacă se lasă gol, folosește Desktop)"
                     value={bannerFormData.image_mobile_url}
                     onChange={(e) =>
                       setBannerFormData({
