@@ -54,7 +54,6 @@ const Navbar = () => {
     ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.98)"],
   );
 
-  // Preluăm voucherele direct aici pentru a le include nativ în fluxul fix de sus
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
       .then((res) => res.json())
@@ -72,7 +71,7 @@ const Navbar = () => {
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col w-full bg-white shadow-sm border-b border-zinc-100">
-        {/* 1. TOP BAR - MESAJ PROMO */}
+        {/* TOP BAR - MESAJ PROMO */}
         <div
           className="z-30 flex h-8 w-full items-center justify-center px-4 text-center text-white shrink-0"
           style={{ background: "var(--primary-gradient)" }}
@@ -89,12 +88,12 @@ const Navbar = () => {
           </motion.div>
         </div>
 
-        {/* 2. NAVBAR NAVIGATION */}
+        {/* NAVBAR NAVIGATION */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
           className="relative flex w-full items-center justify-between px-4 sm:px-6 lg:px-12 transform-gpu transition-all"
         >
-          {/* LEFT SECTION: MODERN SEARCH */}
+          {/* LEFT SECTION: SEARCH */}
           <div className="flex flex-1 items-center justify-start">
             <button
               onClick={() => setSearchOpen(true)}
@@ -224,7 +223,7 @@ const Navbar = () => {
           </div>
         </motion.nav>
 
-        {/* 3. VOUCHERS TICKER - INTEGRAT NATIV ÎN INVELIȘUL FIXED */}
+        {/* VOUCHERS TICKER */}
         <AnimatePresence>
           {vouchers.length > 0 && (
             <section className="w-full bg-zinc-950 py-3 border-t border-zinc-900 relative overflow-hidden shrink-0">
