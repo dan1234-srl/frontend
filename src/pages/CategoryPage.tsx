@@ -174,12 +174,14 @@ const CategoryPage = () => {
             Rafinează Portofoliul
           </button>
 
+          {/* 🚀 TRANSMITEM ÎNĂLȚIMEA EXACTĂ DIRECT PE COMPONENTĂ CA ATRIBUT DE STILIZARE TAILWIND */}
           <LuxuryDrawer
             isOpen={filtersOpen}
             onClose={() => setFiltersOpen(false)}
             side="right"
             title="Parametri Filtrare"
             eyebrow="Selection"
+            className="top-[9.25rem] !h-[calc(100vh-9.25rem)]"
             footer={
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -314,50 +316,19 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* 🚀 CSS RADICAL EXTRA-PRECIZAT PRIN SELECTORI DOM PENTRU REZOLVAREA DIRECTĂ A DRAWERULUI CUSTOM */}
+      {/* 🚀 STRUCTURĂ MINIMALĂ DOAR PENTRU BLUR-UL DE FUNDAL RADIX CARE REFUZĂ SĂ CITEASCĂ CLASELE DIRECTE */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        :root {
-          --exact-header-height: 9.25rem;
-        }
-
-        /* 1. Forțăm PRIORITATEA portalului Radix peste orice alte elemente din pagină */
-        [data-radix-focus-guard] + [role="dialog"],
-        div[role="dialog"] { 
-          z-index: 10001 !important; 
-        }
+        [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
         
-        /* 2. Forțăm OVERLAY-UL (fundalul cu blur) să pornească cu precizie chirurgicală de sub navbar */
         div[data-state="open"] > .fixed.inset-0,
         .fixed.inset-0[data-state="open"] { 
           z-index: 10000 !important; 
-          top: var(--exact-header-height) !important;
-          height: calc(100vh - var(--exact-header-height)) !important;
+          top: 9.25rem !important;
+          height: calc(100vh - 9.25rem) !important;
           backdrop-filter: blur(14px) cubic-bezier(0.16, 1, 0.3, 1) !important;
           background-color: rgba(255, 255, 255, 0.45) !important;
-          animation: milkyFadeIn 0.3s ease forward !important;
-        }
-
-        /* 3. Forțăm CONTAINERUL DRAWER-ULUI (panoul alb din dreapta) să se lipească sub header */
-        div[role="dialog"][data-state="open"],
-        div[role="dialog"],
-        .fixed.right-0 {
-          top: var(--exact-header-height) !important;
-          height: calc(100vh - var(--exact-header-height)) !important;
-          box-shadow: -15px 20px 40px rgba(0, 0, 0, 0.03) !important;
-          border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
-        }
-
-        /* 4. Corecție tehnică pentru elementele interne din structura dialogului generat de Radix */
-        div[role="dialog"] > div, 
-        div[role="dialog"] > form {
-          height: 100% !important;
-        }
-
-        @keyframes milkyFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
         }
 
         html { scrollbar-gutter: stable !important; }
