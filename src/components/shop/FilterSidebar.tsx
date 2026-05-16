@@ -218,7 +218,7 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pt-2 pb-4 px-1 space-y-4">
-                    {/* Căutare internă în atribute voluminoase (ex: dimensiuni sau culori multe) */}
+                    {/* Căutare internă în atribute voluminoase */}
                     {data.values.length > 8 && (
                       <div className="relative flex items-center group/search">
                         <Search
@@ -240,7 +240,7 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
                       </div>
                     )}
 
-                    {/* Afișare optimizată sub formă de tags elastice */}
+                    {/* Afișare sub formă de tags elastice */}
                     <div className="max-h-48 overflow-y-auto luxury-scrollbar pr-1 flex flex-wrap gap-2">
                       {filteredValues.map((val: string) => {
                         const isSelected = activeValues.includes(val);

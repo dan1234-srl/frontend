@@ -194,7 +194,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* ACTIONS BAR - FILTRARE MODERNA */}
+        {/* ACTIONS BAR - FILTRARE MODERNA (STICKY TOP ALINIAT LA NAVBAR-HEIGHT) */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-[4.5rem] bg-white/95 backdrop-blur-md z-40">
           <button
             onClick={() => setFiltersOpen(true)}
@@ -234,7 +234,10 @@ const CategoryPage = () => {
               <FilterSidebar filtersData={filtersData} />
             ) : (
               <div className="flex flex-col items-center justify-center py-32 gap-3">
-                <Loader2 className="animate-spin text-[var(--royal-violet)]" size={28} />
+                <Loader2
+                  className="animate-spin text-[var(--royal-violet)]"
+                  size={28}
+                />
                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Se încarcă parametrii...
                 </span>
@@ -249,7 +252,8 @@ const CategoryPage = () => {
 
         {/* CONTAINER CONȚINUT */}
         <div className="flex gap-12 items-start">
-          <aside className="hidden lg:block w-[250px] shrink-0 sticky top-44">
+          {/* ASIDE STICKY DESKTOP ALINIAT SUB NAVBAR */}
+          <aside className="hidden lg:block w-[250px] shrink-0 sticky top-[6.5rem]">
             <div className="flex items-center gap-2 mb-6 pl-2">
               <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
@@ -306,7 +310,11 @@ const CategoryPage = () => {
               <div className="flex flex-col gap-16">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
                   {products.map((p, i) => (
-                    <ProductCard key={`${p.id}-${i}`} product={p} eager={i < 8} />
+                    <ProductCard
+                      key={`${p.id}-${i}`}
+                      product={p}
+                      eager={i < 8}
+                    />
                   ))}
                 </div>
                 {currentPage < totalPages && (
@@ -339,19 +347,39 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* 🚀 ARHITECTURĂ BLUR COMPLETĂ - STILIZARE HIGH-END CONFORM TRIPLEBYTE HIRE */}
+      {/* 🚀 STILIZARE AVANSATĂ CORELATĂ CU ÎNĂLȚIMEA NAVBAR-ULUI */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        /* Suprascrierea containerului Radix pentru a asigura prioritatea overlay-ului */
+        :root {
+          --navbar-height: 4.5rem; /* Înălțimea exactă a navbar-ului tău (72px) */
+        }
+
+        /* Suprascrierea containerului Radix pentru prioritatea overlay-ului global */
         [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
         
-        /* Efect Milky Blur curat peste TOT ecranul din spatele sidebarului (Fără nuanțe închise de negru) */
+        /* Efect Milky Blur ancorat dedesubtul navbar-ului */
         div[data-state="open"] > .fixed.inset-0 { 
           z-index: 10000 !important; 
+          top: var(--navbar-height) !important;
           backdrop-filter: blur(14px) cubic-bezier(0.16, 1, 0.3, 1) !important;
           background-color: rgba(255, 255, 255, 0.45) !important;
           animation: milkyFadeIn 0.5s ease forward;
+        }
+
+        /* Prelungirea exactă a Drawer-ului de filtre din marginea de jos a navbar-ului */
+        div[role="dialog"][data-state="open"] {
+          z-index: 10001 !important;
+          top: var(--navbar-height) !important;
+          height: calc(100vh - var(--navbar-height)) !important;
+          box-shadow: -10px 20px 40px rgba(0, 0, 0, 0.02) !important;
+          border-top: 1px solid rgba(0, 0, 0, 0.02) !important;
+        }
+
+        /* Forțare corecție pentru zone fixe laterale */
+        .fixed.right-0 {
+          top: var(--navbar-height) !important;
+          height: calc(100vh - var(--navbar-height)) !important;
         }
 
         @keyframes milkyFadeIn {
