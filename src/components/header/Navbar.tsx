@@ -27,8 +27,16 @@ import Register from "@/components/auth/Register";
 import { toast } from "sonner";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 import SearchModal from "./SearchModal";
+import { FilterSidebar } from "./FilterSidebar"; // Importă componenta creată mai sus
 
-const Navbar = () => {
+interface NavbarProps {
+  filtersData?: {
+    brands: string[];
+    attributes: Record<string, { label: string; values: string[] }>;
+  };
+}
+
+const Navbar = ({ filtersData }: NavbarProps) => {
   const { user, signOut, isAdmin } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
@@ -40,6 +48,9 @@ const Navbar = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // State dedicat pentru controlul deschiderii filtrelor globale
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -82,8 +93,8 @@ const Navbar = () => {
           style={{ height: navHeight, backgroundColor: navBg }}
           className="relative flex items-center justify-between border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu shadow-sm transition-all"
         >
-          {/* LEFT SECTION: MODERN SEARCH */}
-          <div className="flex flex-1 items-center justify-start">
+          {/* LEFT SECTION: MODERN SEARCH & GLOBAL FILTERS BUTTON */}
+          <div className="flex flex-1 items-center justify-start gap-3">
             {/* Desktop: Elegant Pill Search */}
             <button
               onClick={() => setSearchOpen(true)}
@@ -105,6 +116,16 @@ const Navbar = () => {
             >
               <Search size={20} className="text-black" />
             </button>
+
+            {/* Buton dinamic: apare doar dacă pagina activă/backend-ul trimite date de filtrare */}
+            {filtersData && (
+              <button
+                onClick={() => setFilterOpen(true)}
+                className="flex items-center justify-center px-4 h-10 rounded-full border border-zinc-100 text-[10px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] hover:bg-zinc-50 transition-all shadow-sm"
+              >
+                Filtrează
+              </button>
+            )}
           </div>
 
           {/* CENTER SECTION: LOGO */}
@@ -221,7 +242,7 @@ const Navbar = () => {
       {/* SEARCH MODAL */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
-      {/* OVERLAYS & MODALS */}
+      {/* OVERLAYS, MODALS & GLOBAL DRAWERS */}
       <div className="h-[5.5rem] w-full" aria-hidden="true" />
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
@@ -253,6 +274,15 @@ const Navbar = () => {
           setTimeout(() => setLoginOpen(true), 150);
         }}
       />
+
+      {/* INSTANȚIEREA FILTRELOR CU BLUR GLOBAL ȘI DATE REALE DIN BACKEND */}
+      {filtersData && (
+        <FilterSidebar
+          isOpen={filterOpen}
+          onClose={() => setFilterOpen(false)}
+          filtersData={filtersData}
+        />
+      )}
     </>
   );
 };

@@ -25,21 +25,22 @@ export const FilterSidebar = ({
 }: FilterSidebarProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Stări pentru barele de căutare din interiorul filtrelor voluminoase
   const [brandSearch, setBrandSearch] = useState("");
   const [attrSearch, setAttrSearch] = useState<Record<string, string>>({});
 
-  // --- LOGICĂ LOCK SCROLL ---
-  // Oprește scroll-ul pe fundal când meniul de filtre este deschis global
+  // Efect pentru blocarea scroll-ului pe body când filtrul este activ global
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "unset";
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
-  // --- LOGICĂ URCARE PARAMETRI ÎN URL ---
+  // Modificare parametri în URL
   const handleUpdateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
     const existing = params.getAll(key);
@@ -55,7 +56,6 @@ export const FilterSidebar = ({
     setSearchParams(params);
   };
 
-  // --- LOGICĂ FILTRARE PREȚ ---
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
 
@@ -70,13 +70,11 @@ export const FilterSidebar = ({
     setSearchParams(params);
   };
 
-  // --- DATE ACTIVE EXTRACTE ---
   const activeBrands = useMemo(
     () => searchParams.getAll("brand"),
     [searchParams],
   );
 
-  // Filtrarea brandurilor în timp real din bara de căutare internă
   const filteredBrands = useMemo(() => {
     if (!filtersData?.brands) return [];
     return filtersData.brands.filter((b) =>
@@ -87,8 +85,9 @@ export const FilterSidebar = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[700] flex justify-end">
-          {/* Fundal întunecat cu efect de BLUR (Backdrop) */}
+        /* z-[999] garantează poziționarea peste absolut orice alt layout din pagină */
+        <div className="fixed inset-0 z-[999] flex justify-end">
+          {/* BACKGROUND BLUR OVERLAY (Identic cu ShoppingBag) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -97,22 +96,22 @@ export const FilterSidebar = ({
             className="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm"
           />
 
-          {/* Corpul Sidebar-ului care glisează de la dreapta la stânga */}
+          {/* SIDERBAR-UL PROPRIU-ZIS */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 200 }}
-            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[460px] flex-col bg-white shadow-2xl"
+            className="relative z-[1000] flex h-[100dvh] w-full sm:max-w-[460px] flex-col bg-white shadow-2xl"
           >
-            {/* HEADER-UL SIDEBAR-ULUI (Sincronizat vizual cu cel din ShoppingBag) */}
+            {/* HEADER */}
             <header className="flex items-center justify-between px-8 py-8 border-b border-zinc-100 bg-white shrink-0">
-              <div className="space-y-1">
+              <div className="space-y-1 text-left">
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]">
                   Filtrare
                 </p>
                 <p className="heading-serif text-3xl tracking-tighter text-[var(--dark-amethyst)]">
-                  Filtre Produse
+                  Filtre Colecție
                 </p>
               </div>
               <button
@@ -123,14 +122,14 @@ export const FilterSidebar = ({
               </button>
             </header>
 
-            {/* CONȚINUTUL FILTRELOR (Cu scroll intern de lux) */}
+            {/* CONȚINUT FILTRE SENSIDILE LA SCROLL */}
             <div className="flex-1 overflow-y-auto px-8 py-6 luxury-scrollbar text-left select-none">
               <Accordion
                 type="multiple"
                 defaultValue={["price", "brands"]}
                 className="w-full"
               >
-                {/* INTERVAL DE PREȚ */}
+                {/* INTERVAL PREȚ */}
                 <AccordionItem
                   value="price"
                   className="border-b border-zinc-100 py-3"
@@ -147,34 +146,30 @@ export const FilterSidebar = ({
                   </AccordionTrigger>
                   <AccordionContent className="pt-2 pb-4 px-1">
                     <div className="flex items-center gap-3">
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          placeholder="Min (RON)"
-                          value={minPrice}
-                          onChange={(e) =>
-                            handlePriceChange("minPrice", e.target.value)
-                          }
-                          className="w-full bg-zinc-50 border border-zinc-100 rounded-xl p-3 text-xs font-bold text-[var(--dark-amethyst)] focus:border-[var(--royal-violet)] focus:bg-white outline-none transition-all shadow-inner placeholder:text-zinc-300"
-                        />
-                      </div>
+                      <input
+                        type="number"
+                        placeholder="Min (RON)"
+                        value={minPrice}
+                        onChange={(e) =>
+                          handlePriceChange("minPrice", e.target.value)
+                        }
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl p-3 text-xs font-bold text-[var(--dark-amethyst)] focus:border-[var(--royal-violet)] focus:bg-white outline-none transition-all shadow-inner placeholder:text-zinc-300"
+                      />
                       <span className="text-zinc-300 font-bold text-xs">—</span>
-                      <div className="relative flex-1">
-                        <input
-                          type="number"
-                          placeholder="Max (RON)"
-                          value={maxPrice}
-                          onChange={(e) =>
-                            handlePriceChange("maxPrice", e.target.value)
-                          }
-                          className="w-full bg-zinc-50 border border-zinc-100 rounded-xl p-3 text-xs font-bold text-[var(--dark-amethyst)] focus:border-[var(--royal-violet)] focus:bg-white outline-none transition-all shadow-inner placeholder:text-zinc-300"
-                        />
-                      </div>
+                      <input
+                        type="number"
+                        placeholder="Max (RON)"
+                        value={maxPrice}
+                        onChange={(e) =>
+                          handlePriceChange("maxPrice", e.target.value)
+                        }
+                        className="w-full bg-zinc-50 border border-zinc-100 rounded-xl p-3 text-xs font-bold text-[var(--dark-amethyst)] focus:border-[var(--royal-violet)] focus:bg-white outline-none transition-all shadow-inner placeholder:text-zinc-300"
+                      />
                     </div>
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* PRODUCĂTORI / BRANDURI */}
+                {/* BRANDURI */}
                 {filtersData?.brands && filtersData.brands.length > 0 && (
                   <AccordionItem
                     value="brands"
@@ -219,22 +214,14 @@ export const FilterSidebar = ({
                             >
                               <div className="flex items-center gap-3">
                                 <div
-                                  className={`w-4 h-4 rounded-md border transition-all flex items-center justify-center ${
-                                    isSelected
-                                      ? "border-[var(--royal-violet)] bg-[var(--royal-violet)] text-white"
-                                      : "border-zinc-200 group-hover/item:border-[var(--royal-violet)]"
-                                  }`}
+                                  className={`w-4 h-4 rounded-md border transition-all flex items-center justify-center ${isSelected ? "border-[var(--royal-violet)] bg-[var(--royal-violet)] text-white" : "border-zinc-200 group-hover/item:border-[var(--royal-violet)]"}`}
                                 >
                                   {isSelected && (
                                     <Check size={10} strokeWidth={4} />
                                   )}
                                 </div>
                                 <span
-                                  className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                                    isSelected
-                                      ? "text-black font-black"
-                                      : "text-zinc-400 group-hover/item:text-black"
-                                  }`}
+                                  className={`text-[10px] font-bold uppercase tracking-widest transition-colors ${isSelected ? "text-black font-black" : "text-zinc-400 group-hover/item:text-black"}`}
                                 >
                                   {brand}
                                 </span>
@@ -247,13 +234,12 @@ export const FilterSidebar = ({
                   </AccordionItem>
                 )}
 
-                {/* FILTRE DINAMICE DIN MEILISEARCH / DB */}
+                {/* ATRIBUTE DINAMICE */}
                 {filtersData?.attributes &&
                   Object.entries(filtersData.attributes).map(
                     ([key, data]: [string, any]) => {
                       const activeValues = searchParams.getAll(key);
                       const currentSearch = attrSearch[key] || "";
-
                       const filteredValues = data.values.filter((v: string) =>
                         v.toLowerCase().includes(currentSearch.toLowerCase()),
                       );
@@ -297,7 +283,6 @@ export const FilterSidebar = ({
                                 />
                               </div>
                             )}
-
                             <div className="max-h-48 overflow-y-auto luxury-scrollbar pr-1 flex flex-wrap gap-2">
                               {filteredValues.map((val: string) => {
                                 const isSelected = activeValues.includes(val);
@@ -305,11 +290,7 @@ export const FilterSidebar = ({
                                   <button
                                     key={val}
                                     onClick={() => handleUpdateFilter(key, val)}
-                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
-                                      isSelected
-                                        ? "bg-[var(--royal-violet)] text-white border-[var(--royal-violet)] shadow-sm"
-                                        : "bg-white text-zinc-400 border-zinc-100 hover:border-[var(--royal-violet)] hover:text-black"
-                                    }`}
+                                    className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${isSelected ? "bg-[var(--royal-violet)] text-white border-[var(--royal-violet)] shadow-sm" : "bg-white text-zinc-400 border-zinc-100 hover:border-[var(--royal-violet)] hover:text-black"}`}
                                   >
                                     {val}
                                   </button>
@@ -323,7 +304,6 @@ export const FilterSidebar = ({
                   )}
               </Accordion>
 
-              {/* BUTON RESET GLOBAL */}
               {searchParams.toString() !== "" && (
                 <button
                   onClick={() => {
@@ -338,7 +318,7 @@ export const FilterSidebar = ({
               )}
             </div>
 
-            {/* FOOTER ACTIONABIL - BUTON "VEZI REZULTATE" */}
+            {/* FOOTER ACTIONABIL */}
             <div className="p-8 border-t border-zinc-100 bg-white shrink-0 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
               <button
                 onClick={onClose}
@@ -347,7 +327,7 @@ export const FilterSidebar = ({
               >
                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center justify-center gap-4 font-black uppercase text-[11px] tracking-[0.5em]">
-                  Aplica & Vezi Produse
+                  Aplică filtrele
                 </div>
               </button>
             </div>
