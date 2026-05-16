@@ -94,7 +94,7 @@ const CategoryPage = () => {
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      {/* SPACER FLUID PENTRU CONȚINUT - REZOLVĂ SUPRAPUNEREA NAVBAR-ULUI FIX */}
+      {/* SPACER PRECISAMENTE MASURAT (TOP MESSAGES + NAVBAR + TICKER) */}
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
@@ -174,14 +174,14 @@ const CategoryPage = () => {
             Rafinează Portofoliul
           </button>
 
-          {/* 🚀 TRANSMITEM ÎNĂLȚIMEA EXACTĂ DIRECT PE COMPONENTĂ CA ATRIBUT DE STILIZARE TAILWIND */}
+          {/* Forțăm dinamic top-ul clasei fixed pe bază de înălțime header */}
           <LuxuryDrawer
             isOpen={filtersOpen}
             onClose={() => setFiltersOpen(false)}
             side="right"
             title="Parametri Filtrare"
             eyebrow="Selection"
-            className="top-[9.25rem] !h-[calc(100vh-9.25rem)]"
+            className="header-aligned top-[9.25rem] !bottom-0"
             footer={
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -316,21 +316,9 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* 🚀 STRUCTURĂ MINIMALĂ DOAR PENTRU BLUR-UL DE FUNDAL RADIX CARE REFUZĂ SĂ CITEASCĂ CLASELE DIRECTE */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
-        
-        div[data-state="open"] > .fixed.inset-0,
-        .fixed.inset-0[data-state="open"] { 
-          z-index: 10000 !important; 
-          top: 9.25rem !important;
-          height: calc(100vh - 9.25rem) !important;
-          backdrop-filter: blur(14px) cubic-bezier(0.16, 1, 0.3, 1) !important;
-          background-color: rgba(255, 255, 255, 0.45) !important;
-        }
-
         html { scrollbar-gutter: stable !important; }
         body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }

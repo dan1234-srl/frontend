@@ -11,13 +11,12 @@ interface LuxuryDrawerProps {
   width?: string; // e.g. "sm:max-w-[460px]"
   children: ReactNode;
   footer?: ReactNode;
-  className?: string; // 🚀 Adăugat pentru a permite alinierea custom (ex: sub navbar)
+  className?: string; // Permite alinierea custom
 }
 
 /**
  * Premium slide-in drawer with a milky backdrop blur matching the
- * Shopping Bag experience. Built on framer-motion (no Radix overlay)
- * so we get the exact same look across the whole app.
+ * Shopping Bag experience. Built on framer-motion.
  */
 export const LuxuryDrawer = ({
   isOpen,
@@ -28,7 +27,7 @@ export const LuxuryDrawer = ({
   width = "sm:max-w-[460px]",
   children,
   footer,
-  className = "", // 🚀 Valoare default goală pentru a nu sparge designul în restul aplicației
+  className = "",
 }: LuxuryDrawerProps) => {
   useEffect(() => {
     if (isOpen) document.body.style.overflow = "hidden";
@@ -41,31 +40,34 @@ export const LuxuryDrawer = ({
   const fromX = side === "right" ? "100%" : "-100%";
   const justify = side === "right" ? "justify-end" : "justify-start";
 
-  // Verificăm dacă i s-a trimis o clasă de repoziționare (cum ar fi top-[9.25rem])
-  // Dacă da, ajustăm h-[100dvh] nativ pentru a calcula dinamic înălțimea rămasă pe ecran
-  const hasCustomTop = className.includes("top-");
-  const heightClass = hasCustomTop ? "" : "h-[100dvh]";
+  // Verificăm dacă i s-a trimis o clasă de repoziționare din exterior (ex: top-)
+  const hasCustomTop =
+    className.includes("top-") || className.includes("header-aligned");
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className={`fixed inset-0 z-[700] flex ${justify} ${className}`}>
-          {/* Milky backdrop — identical to ShoppingBag */}
+        <div
+          className={`fixed inset-0 z-[700] flex ${justify} ${className}`}
+          style={hasCustomTop ? { height: "calc(100vh - 9.25rem)" } : undefined}
+        >
+          {/* Milky backdrop — se va opri la limita containerului părinte */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.3, ease: "linear" }}
             onClick={onClose}
-            className="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm pointer-events-auto"
+            className="absolute inset-0 bg-zinc-900/25 backdrop-blur-md pointer-events-auto w-full h-full"
           />
 
+          {/* Panoul Alb de Filtrare */}
           <motion.aside
             initial={{ x: fromX }}
             animate={{ x: 0 }}
             exit={{ x: fromX }}
-            transition={{ type: "spring", damping: 28, stiffness: 200 }}
-            className={`relative z-[701] flex w-full ${width} ${heightClass} flex-col bg-white shadow-2xl pointer-events-auto`}
+            transition={{ type: "spring", damping: 30, stiffness: 220 }}
+            className={`relative z-[701] flex w-full ${width} h-full flex-col bg-white shadow-2xl pointer-events-auto`}
           >
             <header className="flex items-center justify-between px-8 py-8 border-b border-zinc-100 bg-white shrink-0">
               <div className="space-y-1">
