@@ -35,7 +35,7 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const currentPage = parseInt(searchParams.get("page") || "1");
 
   const formatFallbackName = (str: string | undefined) => {
