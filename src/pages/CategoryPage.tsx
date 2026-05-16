@@ -306,7 +306,7 @@ const CategoryPage = () => {
               <div className="flex flex-col gap-16">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
                   {products.map((p, i) => (
-                    <ProductCard key={`${p.id}-${i}`} product={p} />
+                    <ProductCard key={`${p.id}-${i}`} product={p} eager={i < 8} />
                   ))}
                 </div>
                 {currentPage < totalPages && (
