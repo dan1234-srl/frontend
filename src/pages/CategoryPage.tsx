@@ -6,7 +6,6 @@ import {
   Loader2,
   ChevronDown,
   LayoutGrid,
-  ChevronRight,
   Grid2X2,
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
@@ -60,6 +59,8 @@ const CategoryPage = () => {
         const params = new URLSearchParams(searchParams);
         params.set("page", page.toString());
         params.set("category_slug", slug || "");
+
+        // Trimitem query-ul curat către backend-ul FastAPI / Meilisearch
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
         );
@@ -76,21 +77,29 @@ const CategoryPage = () => {
     [slug, searchParams],
   );
 
+  // 🚀 REPARAȚIE CRITICĂ: Încărcăm datele despre filtrele categoriei curente
   useEffect(() => {
+    if (!slug) return;
     fetch(`${API_BASE_URL}/api/v1/products/filters/${slug}`)
       .then((res) => res.json())
       .then(setFiltersData);
+  }, [slug]);
+
+  // 🚀 REPARAȚIE CRITICĂ: Ascultăm TOATE schimbările din URL, inclusiv minPrice și maxPrice
+  useEffect(() => {
     fetchProducts(1, false);
   }, [
     slug,
     searchParams.get("sort"),
     searchParams.get("brand"),
-    searchParams.get("minPrice"),
+    searchParams.get("minPrice"), // Ascultă schimburile noului parametru numeric
+    searchParams.get("maxPrice"), // Ascultă schimburile noului parametru numeric
+    // Ascultăm dinamic orice alt atribut din URL
+    searchParams.toString(),
   ]);
 
   return (
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-black selection:text-white">
-      {/* Navbar este acum in spatele Sheet-ului datorita z-indexului din CSS */}
       <Navbar />
 
       <div className="h-8 md:h-12 w-full shrink-0" />
@@ -200,7 +209,6 @@ const CategoryPage = () => {
               </button>
             </SheetTrigger>
 
-            {/* SheetContent are acum fundal alb solid si z-index maxim pentru a acoperi si navbarul */}
             <SheetContent
               side="right"
               className="w-full sm:w-[450px] p-0 border-none bg-white shadow-2xl z-[10001]"
@@ -218,7 +226,19 @@ const CategoryPage = () => {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-8 bg-white luxury-scrollbar">
-                  {filtersData && <FilterSidebar filtersData={filtersData} />}
+                  {/* 🚀 INTEGRARE SIDEBAR: Randează componenta doar când datele de la API sunt pregătite */}
+                  {filtersData &&
+                  filtersData.brands &&
+                  filtersData.attributes ? (
+                    <FilterSidebar filtersData={filtersData} />
+                  ) : (
+                    <div className="flex items-center justify-center py-20">
+                      <Loader2
+                        className="animate-spin text-zinc-300"
+                        size={32}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="p-6 border-t bg-white grid grid-cols-2 gap-4">
                   <button
@@ -269,7 +289,7 @@ const CategoryPage = () => {
                           <Link
                             key={sub.id}
                             to={`/category/${sub.slug}`}
-                            className={`py-1.5 text-[10px] font-bold uppercase tracking-tight ${slug === sub.slug ? "text-black" : "text-zinc-300 hover:text-black"}`}
+                            className={`py-1.5 text-[10px] font-bold uppercase tracking-tight ${slug === sub.slug ? "text-black" : "text-zinc-300"}`}
                           >
                             {sub.name}
                           </Link>
@@ -282,9 +302,15 @@ const CategoryPage = () => {
             </nav>
           </aside>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-grow min-w-0">
             {loading && products.length === 0 ? (
               <ProductGridSkeleton count={10} />
+            ) : products.length === 0 ? (
+              <div className="text-center py-32 border border-zinc-100 rounded-3xl">
+                <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                  Nu am găsit produse pentru selecția curentă.
+                </p>
+              </div>
             ) : (
               <div className="flex flex-col gap-16">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10">
@@ -322,14 +348,12 @@ const CategoryPage = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        /* Overlay-ul negru blurat care acopera si navbarul */
         [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
         div[data-state="open"] > .fixed.inset-0 { 
           z-index: 10000 !important; 
           backdrop-filter: blur(8px) !important;
           background-color: rgba(0,0,0,0.4) !important;
         }
-
         html { scrollbar-gutter: stable !important; }
         body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
