@@ -133,7 +133,7 @@ const CategoryPage = () => {
                         className={`text-xs font-black uppercase tracking-widest block transition-colors ${slug === cat.slug ? "text-[var(--royal-violet)]" : "text-zinc-400 hover:text-black"}`}
                       >
                         {cat.name}
-                      </{Link>}
+                      </Link>
                       {cat.subcategories?.map((sub: any) => (
                         <Link
                           key={sub.id}
@@ -202,7 +202,10 @@ const CategoryPage = () => {
               <FilterSidebar filtersData={filtersData} />
             ) : (
               <div className="flex flex-col items-center justify-center py-32 gap-3">
-                <Loader2 className="animate-spin text-[var(--royal-violet)]" size={28} />
+                <Loader2
+                  className="animate-spin text-[var(--royal-violet)]"
+                  size={28}
+                />
                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Se încarcă parametrii...
                 </span>
@@ -274,7 +277,11 @@ const CategoryPage = () => {
               <div className="flex flex-col gap-16">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
                   {products.map((p, i) => (
-                    <ProductCard key={`${p.id}-${i}`} product={p} eager={i < 8} />
+                    <ProductCard
+                      key={`${p.id}-${i}`}
+                      product={p}
+                      eager={i < 8}
+                    />
                   ))}
                 </div>
                 {currentPage < totalPages && (
