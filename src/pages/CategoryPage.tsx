@@ -94,7 +94,7 @@ const CategoryPage = () => {
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      {/* SPACER PRECISAMENTE MASURAT (TOP MESSAGES + NAVBAR + TICKER) */}
+      {/* SPACER PENTRU NAVBAR (Top Messages + Navbar + Ticker) */}
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
@@ -174,14 +174,15 @@ const CategoryPage = () => {
             Rafinează Portofoliul
           </button>
 
-          {/* Forțăm dinamic top-ul clasei fixed pe bază de înălțime header */}
+          {/* 🚀 AICI SE ÎNTÂMPLĂ MAGIA: Nu mai forțăm nicio clasă pe LuxuryDrawer.
+              El va prelua comportamentul său nativ (fixed inset-0 z-[700]), 
+              acoperind tot ecranul, inclusiv Navbar-ul, cu efectul perfect de blur. */}
           <LuxuryDrawer
             isOpen={filtersOpen}
             onClose={() => setFiltersOpen(false)}
             side="right"
             title="Parametri Filtrare"
             eyebrow="Selection"
-            className="header-aligned top-[9.25rem] !bottom-0"
             footer={
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -316,6 +317,8 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
+      {/* Am curățat toate suprascrierile toxice de z-index sau margin.
+          Au rămas doar stilizările custom absolut necesare pentru scrollbar-ul fin. */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
