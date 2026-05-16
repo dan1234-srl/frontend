@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
-import { SortDropdown } from "../components/shop/SortDropdown";
+import { SortDropdown } from "../components/components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import {
@@ -22,8 +22,93 @@ import {
 import { useFilters } from "@/contexts/FiltersContext";
 import { LuxuryDrawer } from "@/components/ui/luxury-drawer";
 import { FilterSidebar } from "../components/shop/FilterSidebar";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTĂ NOUĂ: CARUSEL EDITORIAL LUXURY
+// ─────────────────────────────────────────────────────────────────────────────
+const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
+  const [current, setCurrent] = useState(0);
+
+  // Auto-play la 6 secunde dacă există mai mult de 1 banner
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % banners.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
+  if (!banners || banners.length === 0) return null;
+
+  return (
+    <div className="relative w-full aspect-[16/10] md:aspect-[24/7] rounded-[2rem] overflow-hidden mb-14 shadow-sm border border-zinc-100 group bg-zinc-50">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={current}
+          initial={{ opacity: 0, scale: 1.02 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute inset-0"
+        >
+          {/* Imagine cu lazy loading adaptiv */}
+          <picture className="absolute inset-0 w-full h-full">
+            <source
+              srcSet={
+                banners[current].image_mobile || banners[current].image_desktop
+              }
+              media="(max-width: 768px)"
+            />
+            <img
+              src={banners[current].image_desktop}
+              alt={banners[current].title}
+              className="w-full h-full object-cover scale-100 group-hover:scale-[1.02] transition-transform duration-[2s] ease-out"
+            />
+          </picture>
+
+          {/* Gradient overlay pentru contrast text */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
+          {/* Zona de Text */}
+          <div className="absolute inset-x-0 bottom-0 p-8 md:p-16 flex flex-col items-start text-left text-white max-w-xl md:max-w-3xl space-y-3">
+            <span className="h-[2px] w-12 bg-white/80 block mb-2" />
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none drop-shadow-md">
+              {banners[current].title}
+            </h2>
+            {banners[current].subtitle && (
+              <p className="text-[11px] md:text-xs font-medium text-zinc-200 uppercase tracking-widest leading-relaxed drop-shadow-sm max-w-md">
+                {banners[current].subtitle}
+              </p>
+            )}
+            <button className="mt-4 px-8 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-zinc-950 hover:text-white transition-all shadow-xl active:scale-95">
+              {banners[current].button_text || "Descoperă Colecția"}
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Indicatori de navigație (Apar doar dacă ai 2 sau mai multe bannere) */}
+      {banners.length > 1 && (
+        <div className="absolute bottom-8 right-8 flex gap-2 z-10">
+          {banners.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                current === i
+                  ? "w-8 bg-white"
+                  : "w-3 bg-white/40 hover:bg-white/80"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CategoryPage = () => {
   const { slug } = useParams();
@@ -34,6 +119,9 @@ const CategoryPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = parseInt(searchParams.get("page") || "1");
+
+  /* ── State NOU pentru Bannere ── */
+  const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
 
   /* ── Context filtre reparat atomic ── */
   const {
@@ -79,6 +167,25 @@ const CategoryPage = () => {
       .catch(() => {});
   }, [slug, setFiltersData]);
 
+  /* ── Fetch Bannere Editoriale ── */
+  useEffect(() => {
+    if (!slug) return;
+    // Cautam pe noul endpoint unificat de marketing (sau router-ul setat de tine in main.py)
+    fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) {
+          setCampaignBanners([]);
+        } else if (Array.isArray(data)) {
+          setCampaignBanners(data);
+        } else {
+          // Wrap in array pentru a folosi componenta de Carusel chiar si pentru 1 element
+          setCampaignBanners([data]);
+        }
+      })
+      .catch(() => setCampaignBanners([]));
+  }, [slug]);
+
   /* ── Fetch produse reactiv ── */
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
@@ -89,7 +196,7 @@ const CategoryPage = () => {
         params.set("page", page.toString());
         params.set("category_slug", slug || "");
 
-        // Sincronizare sortare: convertim termenii dropdown-ului în parametrii doriți de Meilisearch pe backend
+        // Sincronizare sortare
         const currentSort = searchParams.get("sort");
         if (currentSort === "pret-crescator") params.set("sort", "price_asc");
         if (currentSort === "pret-descrescator")
@@ -174,6 +281,9 @@ const CategoryPage = () => {
           </div>
         </div>
 
+        {/* 🚀 AICI INJECTĂM CARUSELUL EDITORIAL */}
+        <CategoryHeroCarousel banners={campaignBanners} />
+
         {/* MOBILE NAV */}
         <div className="lg:hidden flex items-center gap-2 mb-8 sticky top-36 z-30 bg-white/95 py-2 backdrop-blur-sm">
           <Sheet>
@@ -244,7 +354,6 @@ const CategoryPage = () => {
 
         {/* ACTIONS BAR */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
-          {/* 🚀 REPARAT ACUM: Înlocuit apelul defect openFilters cu funcția declarată setFiltersOpen(true) */}
           <button
             onClick={() => setFiltersOpen(true)}
             className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
