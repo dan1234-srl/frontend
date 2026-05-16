@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  SlidersHorizontal,
   Loader2,
   ChevronDown,
   LayoutGrid,
   Grid2X2,
+  SlidersHorizontal,
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
@@ -29,7 +28,6 @@ const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
-  const [vouchers, setVouchers] = useState<any[]>([]);
   const [filtersData, setFiltersData] = useState<any>(null);
   const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,9 +42,6 @@ const CategoryPage = () => {
   };
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
-      .then((res) => res.json())
-      .then(setVouchers);
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
       .then(setCategoriesTree);
@@ -96,42 +91,11 @@ const CategoryPage = () => {
   ]);
 
   return (
-    <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
+    <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased page-container">
       <Navbar />
 
-      {/* VOUCHERS TICKER ANCORAT CORRECT SUB NAVBAR */}
-      <AnimatePresence>
-        {vouchers.length > 0 && (
-          <section className="w-full bg-zinc-950 py-3 border-b border-zinc-900 relative overflow-hidden z-20 mt-[7.5rem] md:mt-[7.5rem]">
-            <div className="flex whitespace-nowrap">
-              <motion.div
-                animate={{ x: ["0%", "-50%"] }}
-                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-                className="flex gap-24 items-center px-10"
-              >
-                {[...vouchers, ...vouchers].map((v, idx) => (
-                  <div
-                    key={`${v.id}-${idx}`}
-                    className="flex items-center gap-6"
-                  >
-                    <span className="text-[#9bdda2] text-sm font-black tracking-wide">
-                      {v.discount_value}
-                    </span>
-                    <span className="text-zinc-500 text-[9px] uppercase font-bold tracking-[0.3em]">
-                      {v.code}
-                    </span>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-          </section>
-        )}
-      </AnimatePresence>
-
-      {/* CONȚINUTUL PRIMEȘTE PADDING DOAR DACĂ NU SUNT VOUCHERE ACTIVE PENTRU A EVITA SPAȚIILE GOLURI */}
-      <main
-        className={`flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8 md:py-14 ${vouchers.length === 0 ? "pt-[9rem]" : "pt-8"}`}
-      >
+      {/* ELEMENTUL PRINCIPAL SE ALINIAZĂ PERFECT DIN PADDING CSS VAR */}
+      <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8 md:py-14 content-layout">
         <div className="mb-10 md:mb-16">
           <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none mb-3">
             {filtersData?.category_name || formatFallbackName(slug)}
@@ -142,7 +106,7 @@ const CategoryPage = () => {
         </div>
 
         {/* NAVIGARE MOBIL */}
-        <div className="lg:hidden flex items-center gap-2 mb-8 sticky top-20 z-30 bg-white/95 py-2 backdrop-blur-sm">
+        <div className="lg:hidden flex items-center gap-2 mb-8 sticky mobile-nav-sticky z-30 bg-white/95 py-2 backdrop-blur-sm">
           <Sheet>
             <SheetTrigger asChild>
               <button className="flex items-center justify-center min-w-[50px] h-[50px] rounded-2xl bg-zinc-950 text-white shadow-lg shrink-0 active:scale-95 transition-transform">
@@ -197,7 +161,7 @@ const CategoryPage = () => {
         </div>
 
         {/* ACTIONS BAR - FILTRARE MODERNA */}
-        <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-[4.5rem] bg-white/95 backdrop-blur-md z-40">
+        <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky actions-bar-sticky bg-white/95 backdrop-blur-md z-40">
           <button
             onClick={() => setFiltersOpen(true)}
             className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
@@ -254,7 +218,7 @@ const CategoryPage = () => {
 
         {/* CONTAINER CONȚINUT */}
         <div className="flex gap-12 items-start">
-          <aside className="hidden lg:block w-[250px] shrink-0 sticky top-[6.5rem]">
+          <aside className="hidden lg:block w-[250px] shrink-0 sticky aside-nav-sticky">
             <div className="flex items-center gap-2 mb-6 pl-2">
               <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
@@ -348,35 +312,56 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* 🚀 STILIZARE ARHITECTURALĂ CONFORM DESIGNULUI INIȚIAL */}
+      {/* 🚀 ARHITECTURĂ ULTRA-MODERNĂ DE CALCUL AL ALINIERII REALE PRIN VARIABLE MATEMATICE CSS */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         :root {
-          --navbar-height: 4.5rem;
+          /* Înălțimea cumulată reală a întregului bloc de sus (Promo Bar 32px + Navbar 88px + Ticker Vouchere 44px) */
+          --header-total-height: 10.25rem; 
+          --navbar-only-height: 7.5rem;
         }
 
+        /* Împingem layout-ul din padding curat, fără elemente de tip spacer artificial */
+        .content-layout {
+          padding-top: calc(var(--header-total-height) + 1.5rem) !important;
+        }
+
+        /* Aliniere dinamică pentru barele de acțiuni tip sticky */
+        .actions-bar-sticky {
+          top: var(--header-total-height) !important;
+        }
+        
+        .mobile-nav-sticky {
+          top: calc(var(--header-total-height) - 1.5rem) !important;
+        }
+
+        .aside-nav-sticky {
+          top: calc(var(--header-total-height) + 2rem) !important;
+        }
+
+        /* Suprascrierea portalului Radix pentru a deschide drawerul EXACT sub tot blocul fix de sus */
         [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
         
         div[data-state="open"] > .fixed.inset-0 { 
           z-index: 10000 !important; 
-          top: var(--navbar-height) !important;
+          top: var(--header-total-height) !important;
           backdrop-filter: blur(14px) cubic-bezier(0.16, 1, 0.3, 1) !important;
           background-color: rgba(255, 255, 255, 0.45) !important;
-          animation: milkyFadeIn 0.5s ease forward;
+          animation: milkyFadeIn 0.4s ease forward;
         }
 
         div[role="dialog"][data-state="open"] {
           z-index: 10001 !important;
-          top: var(--navbar-height) !important;
-          height: calc(100vh - var(--navbar-height)) !important;
+          top: var(--header-total-height) !important;
+          height: calc(100vh - var(--header-total-height)) !important;
           box-shadow: -10px 20px 40px rgba(0, 0, 0, 0.02) !important;
-          border-top: 1px solid rgba(0, 0, 0, 0.02) !important;
+          border-top: 1px solid rgba(0, 0, 0, 0.01) !important;
         }
 
         .fixed.right-0 {
-          top: var(--navbar-height) !important;
-          height: calc(100vh - var(--navbar-height)) !important;
+          top: var(--header-total-height) !important;
+          height: calc(100vh - var(--header-total-height)) !important;
         }
 
         @keyframes milkyFadeIn {

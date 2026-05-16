@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   User,
@@ -28,11 +28,14 @@ import { toast } from "sonner";
 import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 import SearchModal from "./SearchModal";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
+
 const Navbar = () => {
   const { user, signOut, isAdmin } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
 
+  const [vouchers, setVouchers] = useState<any[]>([]);
   const [bagOpen, setBagOpen] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -51,6 +54,14 @@ const Navbar = () => {
     ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.98)"],
   );
 
+  // Preluăm voucherele direct aici pentru a le include nativ în fluxul fix de sus
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
+      .then((res) => res.json())
+      .then(setVouchers)
+      .catch(() => {});
+  }, []);
+
   const handleLogout = async () => {
     await signOut();
     toast.success("Sesiune încheiată.");
@@ -60,10 +71,10 @@ const Navbar = () => {
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col">
-        {/* TOP BAR - MESAJ PROMO */}
+      <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col w-full bg-white shadow-sm border-b border-zinc-100">
+        {/* 1. TOP BAR - MESAJ PROMO */}
         <div
-          className="z-30 flex h-8 items-center justify-center px-4 text-center text-white"
+          className="z-30 flex h-8 w-full items-center justify-center px-4 text-center text-white shrink-0"
           style={{ background: "var(--primary-gradient)" }}
         >
           <motion.div
@@ -78,9 +89,10 @@ const Navbar = () => {
           </motion.div>
         </div>
 
+        {/* 2. NAVBAR NAVIGATION */}
         <motion.nav
           style={{ height: navHeight, backgroundColor: navBg }}
-          className="relative flex items-center justify-between border-b border-zinc-100 backdrop-blur-md px-4 sm:px-6 lg:px-12 transform-gpu shadow-sm transition-all"
+          className="relative flex w-full items-center justify-between px-4 sm:px-6 lg:px-12 transform-gpu transition-all"
         >
           {/* LEFT SECTION: MODERN SEARCH */}
           <div className="flex flex-1 items-center justify-start">
@@ -114,9 +126,6 @@ const Navbar = () => {
                 src="/Copilot_20260512_191942.png"
                 alt="Evem Luxury"
                 className="h-6 sm:h-7 lg:h-9 w-auto object-contain transition-all"
-                style={{
-                  filter: "drop-shadow(0px 1px 1px rgba(0,0,0,0.05))",
-                }}
               />
             </Link>
           </div>
@@ -214,6 +223,39 @@ const Navbar = () => {
             </motion.button>
           </div>
         </motion.nav>
+
+        {/* 3. VOUCHERS TICKER - INTEGRAT NATIV ÎN INVELIȘUL FIXED */}
+        <AnimatePresence>
+          {vouchers.length > 0 && (
+            <section className="w-full bg-zinc-950 py-3 border-t border-zinc-900 relative overflow-hidden shrink-0">
+              <div className="flex whitespace-nowrap">
+                <motion.div
+                  animate={{ x: ["0%", "-50%"] }}
+                  transition={{
+                    duration: 40,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="flex gap-24 items-center px-10"
+                >
+                  {[...vouchers, ...vouchers].map((v, idx) => (
+                    <div
+                      key={`${v.id}-${idx}`}
+                      className="flex items-center gap-6"
+                    >
+                      <span className="text-[#9bdda2] text-sm font-black tracking-wide">
+                        {v.discount_value}
+                      </span>
+                      <span className="text-zinc-500 text-[9px] uppercase font-bold tracking-[0.3em]">
+                        {v.code}
+                      </span>
+                    </div>
+                  ))}
+                </motion.div>
+              </div>
+            </section>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* SEARCH MODAL */}
