@@ -24,7 +24,7 @@ import {
   Globe2,
   AlertCircle,
   ShoppingBag,
-  UploadCloud, // 🚀 ICONIȚĂ ADĂUGATĂ: Pentru zona de upload imagini
+  UploadCloud, // 🚀 REPARAT CHIRURGICAL: Folosit în zona unificată de upload automat
 } from "lucide-react";
 import {
   Table,
@@ -109,9 +109,7 @@ const AdminCoupons = () => {
   const [banners, setBanners] = useState<any[]>([]);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isEditingBanner, setIsEditingBanner] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState<
-    "desktop" | "mobile" | null
-  >(null);
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false); // 🚀 Unificat din Enum în Boolean simplu
 
   const [bannerFormData, setBannerFormData] = useState({
     id: "",
@@ -124,9 +122,8 @@ const AdminCoupons = () => {
     is_active: true,
   });
 
-  // REFS PENTRU INPUT-URILE ASCUNSE DE TIP FILE (UPLOAD)
-  const desktopInputRef = useRef<HTMLInputElement>(null);
-  const mobileInputRef = useRef<HTMLInputElement>(null);
+  // 🚀 REFS REIDEEATE: O singură referință ascunsă pentru fișierul master de campanie
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 3. API CONNECTIVITY
@@ -298,18 +295,14 @@ const AdminCoupons = () => {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5. HANDLERS BANNERE EDITORIALE & IMAGE UPLOAD ENGINE
+  // 5. HANDLERS BANNERE EDITORIALE & AUTOMATED PIPELINE
   // ─────────────────────────────────────────────────────────────────────────────
 
-  // 🚀 METODĂ DE UPLOAD DIRECT PE S3 PRIN BACKEND
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: "desktop" | "mobile",
-  ) => {
+  // 🚀 REVIZUIT: Flow-ul care trimite poze către noul endpoint asincron /banner
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validare simplă instanțiată în frontend
     if (file.size > 5 * 1024 * 1024) {
       return toast.error("Fișierul depășește limita admisă de 5MB.");
     }
@@ -318,40 +311,42 @@ const AdminCoupons = () => {
     formData.append("file", file);
 
     try {
-      setUploadingImage(type);
-      toast.loading(`Se procesează imaginea ${type}...`, {
-        id: "upload-toast",
+      setUploadingImage(true);
+      toast.loading("Generare automată versiuni responsive (WebP)...", {
+        id: "banner-upload",
       });
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/images/image`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/images/banner`, {
         method: "POST",
-        credentials: "include", // esențial pentru verificarea curentului admin
+        credentials: "include",
         body: formData,
       });
 
       if (!res.ok) {
-        throw new Error("Eroare la nivelul serverului S3.");
+        throw new Error("Eroare pe serverul de procesare.");
       }
 
       const data = await res.json();
 
-      // Salvăm versiunea 'large' procesată automată sub formă de WebP elastic
-      if (type === "desktop") {
-        setBannerFormData((prev) => ({ ...prev, image_desktop_url: data.url }));
-      } else {
-        setBannerFormData((prev) => ({ ...prev, image_mobile_url: data.url }));
-      }
+      // Măpăm ambele variante dintr-un singur răspuns JSON structurat
+      setBannerFormData((prev) => ({
+        ...prev,
+        image_desktop_url: data.desktop_url,
+        image_mobile_url: data.mobile_url,
+      }));
 
-      toast.success(`Imaginea ${type} a fost securizată și salvată în Cloud.`, {
-        id: "upload-toast",
-      });
-    } catch (err) {
-      toast.error(
-        "Procesarea imaginii a eșuat. Verificați formatul fișierului.",
-        { id: "upload-toast" },
+      toast.success(
+        "Banner mapat și optimizat cu succes pe toate rezoluțiile!",
+        {
+          id: "banner-upload",
+        },
       );
+    } catch (err) {
+      toast.error("Optimizarea imaginii a eșuat. Reîncercați.", {
+        id: "banner-upload",
+      });
     } finally {
-      setUploadingImage(null);
+      setUploadingImage(false);
     }
   };
 
@@ -403,7 +398,7 @@ const AdminCoupons = () => {
 
   const handleSaveBanner = async () => {
     if (!bannerFormData.title || !bannerFormData.image_desktop_url) {
-      return toast.error("Titlul și Imaginea Desktop sunt obligatorii.");
+      return toast.error("Titlul și Imaginea sunt obligatorii.");
     }
 
     const payload = {
@@ -1301,97 +1296,65 @@ const AdminCoupons = () => {
               </select>
             </div>
 
-            {/* ── ZONA DE UPLOAD IMAGINI (FĂRĂ INPUT TEXT) ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* HIDDEN INPUTS PENTRU FILE PICKER */}
+            {/* ── ZONA DE UPLOAD UNIFICATĂ (O SINGURĂ IMAGINE -> 2 VERSIUNI GENERATE) ── */}
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
+                Imagine Campanie (Automat Desktop Wide & Mobile Portrait) *
+              </Label>
+
               <input
                 type="file"
-                ref={desktopInputRef}
+                ref={bannerInputRef}
                 className="hidden"
                 accept="image/*"
-                onChange={(e) => handleImageUpload(e, "desktop")}
-              />
-              <input
-                type="file"
-                ref={mobileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "mobile")}
+                onChange={handleBannerUpload}
               />
 
-              {/* BLOC IMAGINE DESKTOP */}
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                  Imagine Desktop (Landscape) *
-                </Label>
-                <div
-                  onClick={() =>
-                    !uploadingImage && desktopInputRef.current?.click()
-                  }
-                  className="p-4 bg-white border-2 border-dashed border-zinc-200 hover:border-[var(--brand-primary)] rounded-[2rem] shadow-sm space-y-4 cursor-pointer transition-all group relative"
-                >
-                  <div className="aspect-[21/9] w-full bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-100 relative flex flex-col items-center justify-center gap-2 text-center p-4">
-                    {uploadingImage === "desktop" ? (
+              <div
+                onClick={() =>
+                  !uploadingImage && bannerInputRef.current?.click()
+                }
+                className="p-6 bg-white border-2 border-dashed border-zinc-200 hover:border-[var(--brand-primary)] rounded-[2.5rem] shadow-sm cursor-pointer transition-all group relative overflow-hidden"
+              >
+                <div className="aspect-[21/7] w-full bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-100 relative flex flex-col items-center justify-center gap-3 text-center p-6">
+                  {uploadingImage ? (
+                    <div className="flex flex-col items-center gap-2">
                       <Loader2
-                        size={30}
+                        size={36}
                         className="text-[var(--brand-primary)] animate-spin"
                       />
-                    ) : bannerFormData.image_desktop_url ? (
+                      <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                        Se compilează variantele responsive...
+                      </span>
+                    </div>
+                  ) : bannerFormData.image_desktop_url ? (
+                    <div className="absolute inset-0 w-full h-full">
                       <img
                         src={bannerFormData.image_desktop_url}
-                        alt="Desktop Preview"
-                        className="w-full h-full object-cover absolute inset-0"
+                        alt="Desktop Dynamic Preview"
+                        className="w-full h-full object-cover"
                       />
-                    ) : (
-                      <>
-                        <UploadCloud
-                          size={28}
-                          className="text-zinc-400 group-hover:text-[var(--brand-primary)] transition-colors"
-                        />
-                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">
-                          Apasă pentru upload
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* BLOC IMAGINE MOBILE */}
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                  Imagine Mobile (Portrait - Opțional)
-                </Label>
-                <div
-                  onClick={() =>
-                    !uploadingImage && mobileInputRef.current?.click()
-                  }
-                  className="p-4 bg-white border-2 border-dashed border-zinc-200 hover:border-[var(--brand-primary)] rounded-[2rem] shadow-sm space-y-4 cursor-pointer transition-all group"
-                >
-                  <div className="aspect-[4/5] w-[140px] mx-auto bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-100 relative flex flex-col items-center justify-center gap-2 text-center p-2">
-                    {uploadingImage === "mobile" ? (
-                      <Loader2
-                        size={24}
-                        className="text-[var(--brand-primary)] animate-spin"
+                      <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white font-black text-[8px] uppercase tracking-widest px-3 py-1.5 rounded-xl border border-white/10">
+                        ✓ Ambele variante stocate asincron
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <UploadCloud
+                        size={36}
+                        className="text-zinc-400 group-hover:text-[var(--brand-primary)] transition-colors"
                       />
-                    ) : bannerFormData.image_mobile_url ? (
-                      <img
-                        src={bannerFormData.image_mobile_url}
-                        alt="Mobile Preview"
-                        className="w-full h-full object-cover absolute inset-0"
-                      />
-                    ) : (
-                      <>
-                        <UploadCloud
-                          size={22}
-                          className="text-zinc-400 group-hover:text-[var(--brand-primary)] transition-colors"
-                        />
-                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                          Apasă pentru upload
-                        </span>
-                      </>
-                    )}
-                  </div>
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-black text-zinc-500 uppercase tracking-wider">
+                          Selectează imaginea master pentru banner
+                        </p>
+                        <p className="text-[9px] text-zinc-400 font-medium">
+                          Sistemul S3 generează automat rezoluții diferite
+                          pentru desktop (1600px) și mobil (600px).
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -1454,7 +1417,7 @@ const AdminCoupons = () => {
           <DialogFooter className="px-8 md:px-12 py-8 bg-white border-t border-zinc-100 shrink-0">
             <button
               onClick={handleSaveBanner}
-              disabled={!!uploadingImage}
+              disabled={uploadingImage}
               className="w-full py-6 rounded-[2rem] text-white text-xs font-black uppercase tracking-[0.4em] shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-3 border-none disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: brand.primary_gradient }}
             >
