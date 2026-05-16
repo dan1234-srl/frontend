@@ -94,10 +94,7 @@ const CategoryPage = () => {
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      {/* SPACER NATIV: Aceasta înlocuiește spațiul pe care Navbar-ul "fixed" 
-        îl ia din ecran, pentru a nu intra textul sub el. 
-        (Aproximativ 9.25rem = Topbar + Navbar + Vouchere) 
-      */}
+      {/* SPACER FLUID PENTRU CONȚINUT - REZOLVĂ SUPRAPUNEREA NAVBAR-ULUI FIX */}
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
@@ -136,12 +133,12 @@ const CategoryPage = () => {
                         className={`text-xs font-black uppercase tracking-widest block transition-colors ${slug === cat.slug ? "text-[var(--royal-violet)]" : "text-zinc-400 hover:text-black"}`}
                       >
                         {cat.name}
-                      </Link>
+                      </{Link>}
                       {cat.subcategories?.map((sub: any) => (
                         <Link
                           key={sub.id}
                           to={`/category/${sub.slug}`}
-                          className={`block pl-4 text-[10px] font-bold uppercase transition-colors ${slug === sub.slug ? "text-[var(--royal-violet)] font-black" : "text-zinc-300 hover:text-zinc-600"}`}
+                          className={`block pl-4 text-[10px] font-bold uppercase transition-colors ${slug === sub.slug ? "text-[var(--royal-violet)] font-black" : "text-zinc-300 hover:text-french-blue"}`}
                         >
                           {sub.name}
                         </Link>
@@ -205,10 +202,7 @@ const CategoryPage = () => {
               <FilterSidebar filtersData={filtersData} />
             ) : (
               <div className="flex flex-col items-center justify-center py-32 gap-3">
-                <Loader2
-                  className="animate-spin text-[var(--royal-violet)]"
-                  size={28}
-                />
+                <Loader2 className="animate-spin text-[var(--royal-violet)]" size={28} />
                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Se încarcă parametrii...
                 </span>
@@ -280,11 +274,7 @@ const CategoryPage = () => {
               <div className="flex flex-col gap-16">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
                   {products.map((p, i) => (
-                    <ProductCard
-                      key={`${p.id}-${i}`}
-                      product={p}
-                      eager={i < 8}
-                    />
+                    <ProductCard key={`${p.id}-${i}`} product={p} eager={i < 8} />
                   ))}
                 </div>
                 {currentPage < totalPages && (
@@ -317,33 +307,45 @@ const CategoryPage = () => {
       </main>
       <Footer />
 
-      {/* STILIZARE PRECISĂ PENTRU A LINIJA DRAWER-UL FIX SUB NAVBAR */}
+      {/* 🚀 CSS RADICAL EXTRA-PRECIZAT PRIN SELECTORI DOM PENTRU REZOLVAREA DIRECTĂ A DRAWERULUI CUSTOM */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         :root {
-          /* Aceasta este înălțimea cumulată a header-ului tău (Topbar + Navbar + Vouchere) */
           --exact-header-height: 9.25rem;
         }
 
-        [data-radix-focus-guard] + [role="dialog"] { z-index: 10001 !important; }
-        
-        /* Modificăm coordonatele overlay-ului (blur-ului) să pornească de sub navbar */
-        div[data-state="open"] > .fixed.inset-0 { 
-          z-index: 150 !important; 
-          top: var(--exact-header-height) !important;
-          backdrop-filter: blur(14px) cubic-bezier(0.16, 1, 0.3, 1) !important;
-          background-color: rgba(255, 255, 255, 0.45) !important;
-          animation: milkyFadeIn 0.3s ease forward;
+        /* 1. Forțăm PRIORITATEA portalului Radix peste orice alte elemente din pagină */
+        [data-radix-focus-guard] + [role="dialog"],
+        div[role="dialog"] { 
+          z-index: 10001 !important; 
         }
-
-        /* Setăm Drawer-ul propriu-zis să pornească fix sub navbar și să se întindă până jos */
-        div[role="dialog"][data-state="open"] {
-          z-index: 151 !important;
+        
+        /* 2. Forțăm OVERLAY-UL (fundalul cu blur) să pornească cu precizie chirurgicală de sub navbar */
+        div[data-state="open"] > .fixed.inset-0,
+        .fixed.inset-0[data-state="open"] { 
+          z-index: 10000 !important; 
           top: var(--exact-header-height) !important;
           height: calc(100vh - var(--exact-header-height)) !important;
-          box-shadow: -10px 20px 40px rgba(0, 0, 0, 0.03) !important;
-          border-top: 1px solid rgba(0,0,0,0.03);
+          backdrop-filter: blur(14px) cubic-bezier(0.16, 1, 0.3, 1) !important;
+          background-color: rgba(255, 255, 255, 0.45) !important;
+          animation: milkyFadeIn 0.3s ease forward !important;
+        }
+
+        /* 3. Forțăm CONTAINERUL DRAWER-ULUI (panoul alb din dreapta) să se lipească sub header */
+        div[role="dialog"][data-state="open"],
+        div[role="dialog"],
+        .fixed.right-0 {
+          top: var(--exact-header-height) !important;
+          height: calc(100vh - var(--exact-header-height)) !important;
+          box-shadow: -15px 20px 40px rgba(0, 0, 0, 0.03) !important;
+          border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
+        }
+
+        /* 4. Corecție tehnică pentru elementele interne din structura dialogului generat de Radix */
+        div[role="dialog"] > div, 
+        div[role="dialog"] > form {
+          height: 100% !important;
         }
 
         @keyframes milkyFadeIn {
