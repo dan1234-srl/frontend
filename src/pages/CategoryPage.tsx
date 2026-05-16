@@ -21,6 +21,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { LuxuryDrawer } from "@/components/ui/luxury-drawer";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -34,7 +35,7 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const currentPage = parseInt(searchParams.get("page") || "1");
 
   const formatFallbackName = (str: string | undefined) => {
@@ -195,67 +196,51 @@ const CategoryPage = () => {
 
         {/* ACTIONS BAR - FILTRARE MODERNA */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-[4.5rem] bg-white/95 backdrop-blur-md z-40">
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
-                <div className="p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
-                  <SlidersHorizontal size={14} />
-                </div>
-                Rafinează Portofoliul
-              </button>
-            </SheetTrigger>
+          <button
+            onClick={() => setFiltersOpen(true)}
+            className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
+          >
+            <div className="p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
+              <SlidersHorizontal size={14} />
+            </div>
+            Rafinează Portofoliul
+          </button>
 
-            <SheetContent
-              side="right"
-              className="w-full sm:w-[460px] p-0 border-none bg-white z-[10001] flex flex-col h-full"
-            >
-              <div className="flex flex-col h-full bg-white relative z-50">
-                <SheetHeader className="p-8 border-b border-zinc-100 bg-white shrink-0">
-                  <div className="flex items-center gap-2 opacity-40 mb-1">
-                    <span className="h-[1px] w-4 bg-[var(--royal-violet)]" />
-                    <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]">
-                      Selection
-                    </span>
-                  </div>
-                  <SheetTitle className="text-3xl font-black uppercase tracking-tighter text-left text-[var(--dark-amethyst)]">
-                    Parametri Filtrare
-                  </SheetTitle>
-                </SheetHeader>
-
-                <div className="flex-1 overflow-y-auto p-8 bg-white luxury-scrollbar">
-                  {filtersData &&
-                  filtersData.brands &&
-                  filtersData.attributes ? (
-                    <FilterSidebar filtersData={filtersData} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-32 gap-3">
-                      <Loader2
-                        className="animate-spin text-[var(--royal-violet)]"
-                        size={28}
-                      />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                        Se încarcă parametrii...
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-8 border-t border-zinc-100 bg-white grid grid-cols-2 gap-4 shrink-0">
-                  <button
-                    onClick={() => setSearchParams({})}
-                    className="py-4 text-[10px] font-black uppercase border border-zinc-200 rounded-xl hover:bg-zinc-50 hover:border-zinc-400 transition-all duration-300"
-                  >
-                    Resetare
-                  </button>
-                  <SheetTrigger asChild>
-                    <button className="py-4 bg-zinc-950 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl hover:bg-[var(--royal-violet)] transition-all duration-300 active:scale-98">
-                      Aplică Filtrele
-                    </button>
-                  </SheetTrigger>
-                </div>
+          <LuxuryDrawer
+            isOpen={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            side="right"
+            title="Parametri Filtrare"
+            eyebrow="Selection"
+            footer={
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setSearchParams({})}
+                  className="py-4 text-[10px] font-black uppercase tracking-widest border border-zinc-200 rounded-xl hover:bg-zinc-50 hover:border-zinc-400 transition-all duration-300 text-[var(--dark-amethyst)]"
+                >
+                  Resetare
+                </button>
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="py-4 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl hover:brightness-110 active:scale-[0.98] transition-all duration-300"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  Aplică Filtrele
+                </button>
               </div>
-            </SheetContent>
-          </Sheet>
+            }
+          >
+            {filtersData && filtersData.brands && filtersData.attributes ? (
+              <FilterSidebar filtersData={filtersData} />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-32 gap-3">
+                <Loader2 className="animate-spin text-[var(--royal-violet)]" size={28} />
+                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                  Se încarcă parametrii...
+                </span>
+              </div>
+            )}
+          </LuxuryDrawer>
 
           <div className="w-44 md:w-60">
             <SortDropdown />
@@ -321,7 +306,7 @@ const CategoryPage = () => {
               <div className="flex flex-col gap-16">
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
                   {products.map((p, i) => (
-                    <ProductCard key={`${p.id}-${i}`} product={p} />
+                    <ProductCard key={`${p.id}-${i}`} product={p} eager={i < 8} />
                   ))}
                 </div>
                 {currentPage < totalPages && (

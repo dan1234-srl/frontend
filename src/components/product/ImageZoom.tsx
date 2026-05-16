@@ -98,15 +98,10 @@ const ImageZoom = ({
         </div>
       </div>
 
-      <style jsx global>{`
-        .luxury-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .luxury-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 10px;
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 6px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+      ` }} />
     </div>,
     document.body,
   );
