@@ -12,8 +12,9 @@ import {
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { FiltersProvider } from "@/contexts/FiltersContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, lazy, Suspense } from "react"; // Adăugat lazy și Suspense
+import { useState, useEffect, lazy, Suspense } from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -43,7 +44,7 @@ const WebsiteSettings = lazy(() => import("./pages/main/Settings"));
 const SuccessPage = lazy(() => import("./pages/stripe/SuccessPage"));
 const CancelPage = lazy(() => import("./pages/stripe/CancelPage"));
 
-// --- ADMIN (Lazy Loaded - Aici economisești cel mai mult!) ---
+// --- ADMIN (Lazy Loaded) ---
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
@@ -59,7 +60,6 @@ const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const AdminWishlistAnalytics = lazy(
   () => import("./pages/admin/AdminWishlistAnalytics"),
 );
-
 const AdminEmailTemplates = lazy(
   () => import("./pages/admin/AdminEmailTemplates"),
 );
@@ -75,29 +75,10 @@ const AdminGeneralSettings = lazy(
 
 const queryClient = new QueryClient();
 
-// Loader subtil pentru tranziția între pagini
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-50">
     <div className="w-8 h-8 border-2 border-zinc-200 border-t-zinc-800 rounded-full animate-spin" />
   </div>
-);
-
-const InitialLoader = () => (
-  <motion.div
-    initial={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-    className="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
-  >
-    <motion.h1
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="text-2xl font-light uppercase tracking-[0.5em] text-foreground"
-    >
-      Evem
-    </motion.h1>
-  </motion.div>
 );
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => (
@@ -124,7 +105,7 @@ const AnimatedRoutes = () => {
     <Suspense fallback={<PageLoader />}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          {/* RUTE PUBLICE PRINCIPALE */}
+          {/* RUTE PUBLICE */}
           <Route
             path="/"
             element={
@@ -150,7 +131,7 @@ const AnimatedRoutes = () => {
             }
           />
 
-          {/* RESET PASSWORD - Mutată sus pentru prioritate */}
+          {/* AUTH */}
           <Route
             path="/reset-password"
             element={
@@ -160,7 +141,7 @@ const AnimatedRoutes = () => {
             }
           />
 
-          {/* STRIPE CONFIRMATIONS */}
+          {/* STRIPE */}
           <Route
             path="/order-confirmation"
             element={
@@ -178,7 +159,7 @@ const AnimatedRoutes = () => {
             }
           />
 
-          {/* USER ACCOUNT */}
+          {/* ACCOUNT */}
           <Route
             path="/account/profile"
             element={
@@ -212,7 +193,7 @@ const AnimatedRoutes = () => {
             }
           />
 
-          {/* PAGINI DESPRE / INFO */}
+          {/* INFO */}
           <Route
             path="/about/our-story"
             element={
@@ -270,7 +251,7 @@ const AnimatedRoutes = () => {
             }
           />
 
-          {/* ADMIN COMPLEX ROUTING */}
+          {/* ADMIN */}
           <Route
             path="/admin"
             element={
@@ -302,7 +283,7 @@ const AnimatedRoutes = () => {
             <Route path="settings" element={<AdminGeneralSettings />} />
           </Route>
 
-          {/* 404 CATCH ALL */}
+          {/* 404 */}
           <Route
             path="*"
             element={
@@ -323,14 +304,22 @@ const App = () => (
       <LanguageProvider>
         <AuthProvider>
           <CartProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner position="top-center" expand={false} richColors />
-              <BrowserRouter>
-                <ScrollToTop />
-                <AnimatedRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
+            {/*
+              FiltersProvider învelește TooltipProvider astfel încât
+              Navbar (care montează FilterDrawer) și CategoryPage
+              (care apelează openFilters / setFiltersData) să partajeze
+              același context indiferent de poziția lor în arbore.
+            */}
+            <FiltersProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner position="top-center" expand={false} richColors />
+                <BrowserRouter>
+                  <ScrollToTop />
+                  <AnimatedRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </FiltersProvider>
           </CartProvider>
         </AuthProvider>
       </LanguageProvider>
