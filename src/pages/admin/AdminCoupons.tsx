@@ -22,6 +22,8 @@ import {
   Image as ImageIcon,
   LayoutTemplate,
   Globe2,
+  AlertCircle,
+  ShoppingBag, // 🚀 REPARAT CHIRURGICAL: Importul adăugat care elimina eroarea fatală de ReferenceError
 } from "lucide-react";
 import {
   Table,
@@ -107,11 +109,9 @@ const AdminCoupons = () => {
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isEditingBanner, setIsEditingBanner] = useState(false);
 
-  // Folosim un id special ("global_campaign_id") pentru a marca un banner ca fiind global.
-  // La trimiterea către backend, dacă id-ul e "global_campaign_id", îl vom transforma în `null`.
   const [bannerFormData, setBannerFormData] = useState({
-    id: "", // Folosit pentru update
-    category_id: "global_campaign_id", // Default pe GLOBAL
+    id: "",
+    category_id: "global_campaign_id",
     title: "",
     subtitle: "",
     button_text: "DESCOPERĂ COLECȚIA",
@@ -157,7 +157,6 @@ const AdminCoupons = () => {
     fetchData();
   }, [fetchData]);
 
-  // Căutare Produse Debounce
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       if (productSearchTerm.length >= 2) {
@@ -291,13 +290,13 @@ const AdminCoupons = () => {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5. HANDLERS BANNERE EDITORIALE (Modificat pentru GLOBAL fallback)
+  // 5. HANDLERS BANNERE EDITORIALE
   // ─────────────────────────────────────────────────────────────────────────────
   const handleOpenBannerCreate = () => {
     setIsEditingBanner(false);
     setBannerFormData({
       id: "",
-      category_id: "global_campaign_id", // Predefinim ca fiind Global
+      category_id: "global_campaign_id",
       title: "",
       subtitle: "",
       button_text: "DESCOPERĂ COLECȚIA",
@@ -312,7 +311,6 @@ const AdminCoupons = () => {
     setIsEditingBanner(true);
     setBannerFormData({
       id: banner.id,
-      // Dacă bannerul a venit din DB cu category_id=null, îl mapam la ID-ul nostru fictiv pentru UI
       category_id: banner.category_id || "global_campaign_id",
       title: banner.title,
       subtitle: banner.subtitle || "",
@@ -345,7 +343,6 @@ const AdminCoupons = () => {
       return toast.error("Titlul și Imaginea Desktop sunt obligatorii.");
     }
 
-    // Convertim ID-ul special înapoi în null pentru Backend
     const payload = {
       ...bannerFormData,
       category_id:
@@ -358,7 +355,7 @@ const AdminCoupons = () => {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/vouchers/admin/save-banner`,
         {
-          method: "POST", // Endpointul backend știe să facă update dacă trimitem id
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(payload),
@@ -378,7 +375,6 @@ const AdminCoupons = () => {
     }
   };
 
-  // Helper curat pentru afișarea numelui categoriei (sau Global) în tabel
   const getCategoryName = (id: string | null) => {
     if (!id || id === "global_campaign_id")
       return "🌍 CAMPANIE GLOBALĂ (TOT SITE-UL)";
@@ -393,9 +389,6 @@ const AdminCoupons = () => {
     return "Categorie ștearsă/necunoscută";
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 6. RENDER UI ENGINE
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div
       style={dynamicStyles}
@@ -570,7 +563,6 @@ const AdminCoupons = () => {
                     </TableCell>
                   </TableRow>
                 ) : activeTab === "VOUCHERS" ? (
-                  // RENDERING TABEL VOUCHERE
                   coupons.map((c) => {
                     const usage = c.usage_limit
                       ? Math.min(100, (c.times_used / c.usage_limit) * 100)
@@ -678,10 +670,15 @@ const AdminCoupons = () => {
                       >
                         <TableCell className="px-12 py-6">
                           <div className="w-40 h-16 rounded-xl overflow-hidden shadow-sm border border-zinc-100 bg-zinc-100 relative">
+                            {/* Folosim tag nativ img anti-CORS și adăugăm un handler discret onError */}
                             <img
                               src={b.image_desktop_url}
                               alt="Banner"
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://placehold.co/600x400?text=S3+Secure+Image";
+                              }}
                             />
                           </div>
                         </TableCell>
@@ -784,7 +781,7 @@ const AdminCoupons = () => {
                 </div>
                 <button
                   disabled={page === totalPages}
-                  onClick={() => setPage((p) => p + 1)}
+                  onClick={() => setPage((p) => p - 1)}
                   className="p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm disabled:opacity-30 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-all"
                 >
                   <ChevronRight size={20} />
@@ -833,7 +830,7 @@ const AdminCoupons = () => {
                       is_active: !voucherFormData.is_active,
                     })
                   }
-                  className={`w-14 h-7 rounded-full transition-all duration-300 relative flex items-center px-1.5 shadow-inner ${voucherFormData.is_active ? "bg-emerald-500" : "bg-zinc-300"}`}
+                  className={`w-14 h-7 rounded-full transition-all duration-300 relative flex items-center px-1 shadow-inner ${voucherFormData.is_active ? "bg-emerald-500" : "bg-zinc-300"}`}
                 >
                   <motion.div
                     layout
@@ -852,7 +849,6 @@ const AdminCoupons = () => {
           </header>
 
           <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-12 luxury-scrollbar">
-            {/* Secțiune 1: Core */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
               <div className="xl:col-span-2 bg-white p-8 md:p-12 rounded-[3rem] border border-zinc-100 shadow-sm space-y-8">
                 <div className="flex items-center gap-3 mb-4">
@@ -942,7 +938,6 @@ const AdminCoupons = () => {
               </div>
             </div>
 
-            {/* Secțiune 2: Praguri */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               <div className="bg-white p-10 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 flex flex-col justify-center text-left">
                 <Label className="text-[10px] font-black uppercase flex items-center gap-3 text-zinc-400">
@@ -1003,7 +998,6 @@ const AdminCoupons = () => {
               </div>
             </div>
 
-            {/* Secțiune 3: Segmentare Categorii/Produse */}
             <div className="space-y-10">
               <div className="flex items-center gap-5">
                 <span
@@ -1219,7 +1213,6 @@ const AdminCoupons = () => {
           </header>
 
           <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-10 luxury-scrollbar bg-[#FAFAFA]">
-            {/* Selectie Categorie (cu opțiunea de GLOBAL) */}
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
                 Targetare Afișare *
@@ -1250,7 +1243,6 @@ const AdminCoupons = () => {
               </select>
             </div>
 
-            {/* Imagini */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest flex justify-between">
@@ -1313,7 +1305,6 @@ const AdminCoupons = () => {
               </div>
             </div>
 
-            {/* Texte Promotie */}
             <div className="bg-white p-8 rounded-[2rem] border border-zinc-200 shadow-sm space-y-6">
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
