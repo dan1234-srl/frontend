@@ -27,7 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ: MULTI-BANNER HERO CAROUSEL (DEDICAT + GLOBAL INTEGRAT)
+// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER (CONVERTIT CHIRURGICAL)
 // ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
@@ -44,65 +44,72 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   if (!banners || banners.length === 0) return null;
 
   return (
-    <div className="relative w-full aspect-[14/10] sm:aspect-[16/8] md:aspect-[21/7] rounded-[2rem] overflow-hidden mb-14 shadow-sm border border-zinc-100 group bg-zinc-50 select-none">
+    <div className="relative w-full aspect-[21/9] sm:aspect-[21/7] md:aspect-[32/10] rounded-[2.5rem] overflow-hidden mb-16 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-zinc-100 group bg-zinc-950 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
-          initial={{ opacity: 0, scale: 1.01 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-0 w-full h-full"
+          initial={{ opacity: 0, filter: "blur(4px)" }}
+          animate={{ opacity: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, filter: "blur(4px)" }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute inset-0 w-full h-full flex items-center"
         >
-          {/* Imagine adaptivă responsive desktop vs mobile */}
-          <picture className="absolute inset-0 w-full h-full">
-            <source
-              srcSet={
-                banners[current].image_mobile || banners[current].image_desktop
-              }
-              media="(max-width: 768px)"
-            />
-            <img
-              src={banners[current].image_desktop}
-              alt={banners[current].title}
-              className="w-full h-full object-cover scale-100 group-hover:scale-[1.015] transition-transform duration-[2.5s] ease-out"
-              loading="eager"
-              fetchpriority="high"
-            />
-          </picture>
+          {/* 🚀 LOGICĂ INTEGRATĂ RESPONSIVE: Incarcă varianta desktop pe ecrane mari și varianta mobile pe ecrane < 640px */}
+          <img
+            src={
+              window.innerWidth < 640 && banners[current].image_mobile_url
+                ? banners[current].image_mobile_url
+                : banners[current].image_desktop_url
+            }
+            alt={banners[current].title}
+            className="w-full h-full object-cover object-center scale-100 group-hover:scale-[1.015] transition-transform duration-[4s] ease-out"
+            loading="eager"
+            fetchpriority="high"
+          />
 
-          {/* Overlay gradient premium pentru lizibilitatea textelor */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
+          {/* Overlay cinematic asimetric pentru protecția și contrastul textului */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10" />
 
-          {/* Zonă conținut text (Stil Boutique Editorial) */}
-          <div className="absolute inset-x-0 bottom-0 p-8 md:p-16 flex flex-col items-start text-left text-white max-w-xl md:max-w-3xl space-y-3">
-            <span className="h-[2px] w-12 bg-white/80 block mb-2" />
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-none drop-shadow-sm">
+          {/* Zonă conținut text (Stil Premium Editorial Studio) */}
+          <div className="absolute inset-y-0 left-0 p-8 sm:p-12 md:p-20 flex flex-col justify-center items-start text-left text-white max-w-md md:max-w-2xl z-20 space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="h-[1px] w-8 bg-white/60 block" />
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-300">
+                Campanie Exclusivă
+              </span>
+            </div>
+
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
               {banners[current].title}
             </h2>
+
             {banners[current].subtitle && (
-              <p className="text-[11px] md:text-xs font-medium text-zinc-200 uppercase tracking-widest leading-relaxed drop-shadow-sm max-w-md">
+              <p className="text-[10px] md:text-xs font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
                 {banners[current].subtitle}
               </p>
             )}
-            <button className="mt-4 px-8 py-4 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-zinc-950 hover:text-white transition-all shadow-xl active:scale-95 duration-300">
-              {banners[current].button_text || "DESCOPERĂ COLECȚIA"}
-            </button>
+
+            <div className="pt-2">
+              <button className="px-8 py-4 bg-white text-zinc-950 text-[10px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-2xl active:scale-95 duration-300">
+                {banners[current].button_text || "DESCOPERĂ COLECȚIA"}
+              </button>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicatori liniari pentru carusel activ */}
+      {/* Indicatori minimali poziționați discret în colțul din dreapta jos */}
       {banners.length > 1 && (
-        <div className="absolute bottom-8 right-8 flex gap-2 z-10">
+        <div className="absolute bottom-6 right-10 flex gap-2.5 z-30">
           {banners.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`h-1.5 rounded-full transition-all duration-500 ${
+              className={`h-1 rounded-full transition-all duration-500 ${
                 current === i
                   ? "w-8 bg-white"
-                  : "w-3 bg-white/40 hover:bg-white/80"
+                  : "w-2 bg-white/30 hover:bg-white/60"
               }`}
             />
           ))}
@@ -180,7 +187,7 @@ const CategoryPage = () => {
         } else if (Array.isArray(data)) {
           setCampaignBanners(data);
         } else {
-          setCampaignBanners([data]); // Transformă obiectul unic în array pentru consistența caruselului
+          setCampaignBanners([data]); // 🚀 CORECTAT: Obiectul unic se stochează nativ în array pentru siguranța loop-ului
         }
       })
       .catch(() => setCampaignBanners([]));
@@ -270,7 +277,7 @@ const CategoryPage = () => {
               {loading ? "—" : products.length} Articole Disponibile
             </p>
             {activeFiltersCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--royal-violet)]/8 border border border-zinc-100 text-[var(--royal-violet)]">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--royal-violet)]/8 border border-zinc-100 text-[var(--royal-violet)]">
                 <span className="text-[8px] font-black uppercase tracking-widest">
                   {activeFiltersCount}{" "}
                   {activeFiltersCount === 1 ? "filtru activ" : "filtre active"}
