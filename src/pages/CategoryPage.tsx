@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import {
   Loader2,
@@ -20,6 +20,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useFilters } from "@/contexts/FiltersContext";
+import { LuxuryDrawer } from "@/components/ui/luxury-drawer";
+import { FilterSidebar } from "../components/shop/FilterSidebar";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -33,19 +35,23 @@ const CategoryPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  /* ── Context filtre ── */
+  /* ── Context filtre globalizat ── */
   const {
-    openFilters,
+    filtersOpen,
+    setFiltersOpen,
     setFiltersData,
     filtersData,
     registerResetHandler,
     unregisterResetHandler,
   } = useFilters();
 
-  /* ── Helper afișare nume fallback ── */
+  /* ── Helper afișare nume fallback (folosit doar până când se încarcă datele din API) ── */
   const formatFallbackName = (str: string | undefined) => {
     if (!str) return "";
-    return str.replace(/^cat-/, "").replace(/-/g, " ");
+    return str
+      .replace(/^cat-/, "")
+      .replace(/-[a-f0-9]{6}$/i, "") // Taie hash-ul din URL dacă dă cineva refresh direct pe pagină
+      .replace(/-/g, " ");
   };
 
   /* ── Înregistrare handler reset pentru butonul din FilterDrawer ── */
@@ -55,7 +61,7 @@ const CategoryPage = () => {
     return () => unregisterResetHandler();
   }, [registerResetHandler, unregisterResetHandler, setSearchParams]);
 
-  /* ── Fetch categories tree ── */
+  /* ── Fetch structură categorii tree ── */
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
@@ -66,14 +72,14 @@ const CategoryPage = () => {
   /* ── Fetch filtre disponibile pentru categoria curentă ── */
   useEffect(() => {
     if (!slug) return;
-    setFiltersData(null); // reset la schimbarea categoriei
+    setFiltersData(null);
     fetch(`${API_BASE_URL}/api/v1/products/filters/${slug}`)
       .then((res) => res.json())
       .then((data) => setFiltersData(data))
       .catch(() => {});
   }, [slug, setFiltersData]);
 
-  /* ── Fetch produse ── */
+  /* ── Fetch produse reactiv la URL ── */
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
       if (append) setLoadingMore(true);
@@ -92,7 +98,7 @@ const CategoryPage = () => {
         );
         setTotalPages(data.pages || 1);
       } catch {
-        // silently fail
+        // fail silently
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -103,8 +109,7 @@ const CategoryPage = () => {
 
   useEffect(() => {
     fetchProducts(1, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, searchParams.toString()]);
+  }, [slug, searchParams]);
 
   /* ── Număr filtre active (pentru badge pe buton) ── */
   const activeFiltersCount = (() => {
@@ -115,11 +120,14 @@ const CategoryPage = () => {
     return count;
   })();
 
+  /* ── 🚀 TITLU DINAMIC PREMIUM: Citește direct 'category_name' trimis de noul tău API de backend ── */
+  const categoryTitle = filtersData?.category_name || formatFallbackName(slug);
+
   return (
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      {/* SPACER */}
+      {/* SPACER PENTRU NAVBAR FIXED */}
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
@@ -127,26 +135,25 @@ const CategoryPage = () => {
         <div className="mb-10 md:mb-14">
           <div className="flex items-baseline gap-4 flex-wrap">
             <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
-              {filtersData?.category_name || formatFallbackName(slug)}
+              {categoryTitle}
             </h1>
           </div>
           <div className="flex items-center gap-3 mt-3">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-              {loading ? "—" : products.length} Articole
+              {loading ? "—" : products.length} Articole Disponibile
             </p>
             {activeFiltersCount > 0 && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--royal-violet)]/8 border border-[var(--royal-violet)]/15 text-[var(--royal-violet)]">
                 <span className="text-[8px] font-black uppercase tracking-widest">
-                  {activeFiltersCount} filtr
-                  {activeFiltersCount === 1 ? "u" : "e"} activ
-                  {activeFiltersCount === 1 ? "" : "e"}
+                  {activeFiltersCount}{" "}
+                  {activeFiltersCount === 1 ? "filtru activ" : "filtre active"}
                 </span>
               </span>
             )}
           </div>
         </div>
 
-        {/* MOBILE NAV */}
+        {/* MOBILE CATEGORIES NAV */}
         <div className="lg:hidden flex items-center gap-2 mb-8 sticky top-36 z-30 bg-white/95 py-2 backdrop-blur-sm">
           <Sheet>
             <SheetTrigger asChild>
@@ -169,11 +176,7 @@ const CategoryPage = () => {
                     <div key={cat.id} className="space-y-3">
                       <Link
                         to={`/category/${cat.slug}`}
-                        className={`text-xs font-black uppercase tracking-widest block transition-colors ${
-                          slug === cat.slug
-                            ? "text-[var(--royal-violet)]"
-                            : "text-zinc-400 hover:text-black"
-                        }`}
+                        className={`text-xs font-black uppercase tracking-widest block transition-colors ${slug === cat.slug ? "text-[var(--royal-violet)]" : "text-zinc-400 hover:text-black"}`}
                       >
                         {cat.name}
                       </Link>
@@ -181,11 +184,7 @@ const CategoryPage = () => {
                         <Link
                           key={sub.id}
                           to={`/category/${sub.slug}`}
-                          className={`block pl-4 text-[10px] font-bold uppercase transition-colors ${
-                            slug === sub.slug
-                              ? "text-[var(--royal-violet)] font-black"
-                              : "text-zinc-300 hover:text-french-blue"
-                          }`}
+                          className={`block pl-4 text-[10px] font-bold uppercase transition-colors ${slug === sub.slug ? "text-[var(--royal-violet)] font-black" : "text-zinc-300 hover:text-french-blue"}`}
                         >
                           {sub.name}
                         </Link>
@@ -197,17 +196,12 @@ const CategoryPage = () => {
             </SheetContent>
           </Sheet>
 
-          {/* Horizontal categories scroll */}
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {categoriesTree.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className={`whitespace-nowrap px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                  slug === cat.slug
-                    ? "bg-zinc-100 text-black border-zinc-200 shadow-sm"
-                    : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"
-                }`}
+                className={`whitespace-nowrap px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${slug === cat.slug ? "bg-zinc-100 text-black border-zinc-200 shadow-sm" : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"}`}
               >
                 {cat.name}
               </Link>
@@ -217,7 +211,6 @@ const CategoryPage = () => {
 
         {/* ACTIONS BAR */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
-          {/* Buton deschidere filter drawer global */}
           <button
             onClick={openFilters}
             className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
@@ -234,6 +227,45 @@ const CategoryPage = () => {
             <span className="sm:hidden">Filtre</span>
           </button>
 
+          <LuxuryDrawer
+            isOpen={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            side="right"
+            title="Parametri Filtrare"
+            eyebrow="Selection"
+            footer={
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setSearchParams({})}
+                  className="py-4 text-[10px] font-black uppercase tracking-widest border border-zinc-200 rounded-xl hover:bg-zinc-50 hover:border-zinc-400 transition-all duration-300 text-[var(--dark-amethyst)]"
+                >
+                  Resetare
+                </button>
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="py-4 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl hover:brightness-110 active:scale-[0.98] transition-all duration-300"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  Aplică Filtrele
+                </button>
+              </div>
+            }
+          >
+            {filtersData ? (
+              <FilterSidebar filtersData={filtersData} />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-32 gap-3">
+                <Loader2
+                  className="animate-spin text-[var(--royal-violet)]"
+                  size={28}
+                />
+                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                  Se încarcă parametrii...
+                </span>
+              </div>
+            )}
+          </LuxuryDrawer>
+
           <div className="w-44 md:w-60">
             <SortDropdown />
           </div>
@@ -241,7 +273,6 @@ const CategoryPage = () => {
 
         {/* LAYOUT: SIDEBAR + GRID */}
         <div className="flex gap-12 items-start">
-          {/* DESKTOP SIDEBAR — navigare categorii */}
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">
               <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
@@ -258,11 +289,7 @@ const CategoryPage = () => {
                   <div key={cat.id} className="flex flex-col gap-1">
                     <Link
                       to={`/category/${cat.slug}`}
-                      className={`py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 ${
-                        isParentActive
-                          ? "bg-zinc-50 text-[var(--royal-violet)] shadow-sm"
-                          : "text-zinc-400 hover:text-black hover:bg-zinc-50/50"
-                      }`}
+                      className={`py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 ${isParentActive ? "bg-zinc-50 text-[var(--royal-violet)] shadow-sm" : "text-zinc-400 hover:text-black hover:bg-zinc-50/50"}`}
                     >
                       {cat.name}
                     </Link>
@@ -272,11 +299,7 @@ const CategoryPage = () => {
                           <Link
                             key={sub.id}
                             to={`/category/${sub.slug}`}
-                            className={`text-[10px] font-bold uppercase tracking-tight transition-colors ${
-                              slug === sub.slug
-                                ? "text-[var(--royal-violet)] font-black"
-                                : "text-zinc-300 hover:text-zinc-700"
-                            }`}
+                            className={`text-[10px] font-bold uppercase tracking-tight transition-colors ${slug === sub.slug ? "text-[var(--royal-violet)] font-black" : "text-zinc-300 hover:text-zinc-700"}`}
                           >
                             {sub.name}
                           </Link>
@@ -367,7 +390,7 @@ const CategoryPage = () => {
         dangerouslySetInnerHTML={{
           __html: `
             html { scrollbar-gutter: stable !important; }
-            body[data-scroll-locked] { padding-right: 0 !important; margin-right: 0 !important; overflow: hidden !important; }
+            body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
