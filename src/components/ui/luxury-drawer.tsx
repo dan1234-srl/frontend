@@ -11,6 +11,7 @@ interface LuxuryDrawerProps {
   width?: string; // e.g. "sm:max-w-[460px]"
   children: ReactNode;
   footer?: ReactNode;
+  className?: string; // 🚀 Adăugat pentru a permite alinierea custom (ex: sub navbar)
 }
 
 /**
@@ -27,6 +28,7 @@ export const LuxuryDrawer = ({
   width = "sm:max-w-[460px]",
   children,
   footer,
+  className = "", // 🚀 Valoare default goală pentru a nu sparge designul în restul aplicației
 }: LuxuryDrawerProps) => {
   useEffect(() => {
     if (isOpen) document.body.style.overflow = "hidden";
@@ -39,10 +41,15 @@ export const LuxuryDrawer = ({
   const fromX = side === "right" ? "100%" : "-100%";
   const justify = side === "right" ? "justify-end" : "justify-start";
 
+  // Verificăm dacă i s-a trimis o clasă de repoziționare (cum ar fi top-[9.25rem])
+  // Dacă da, ajustăm h-[100dvh] nativ pentru a calcula dinamic înălțimea rămasă pe ecran
+  const hasCustomTop = className.includes("top-");
+  const heightClass = hasCustomTop ? "" : "h-[100dvh]";
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className={`fixed inset-0 z-[700] flex ${justify}`}>
+        <div className={`fixed inset-0 z-[700] flex ${justify} ${className}`}>
           {/* Milky backdrop — identical to ShoppingBag */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -50,7 +57,7 @@ export const LuxuryDrawer = ({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             onClick={onClose}
-            className="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm"
+            className="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm pointer-events-auto"
           />
 
           <motion.aside
@@ -58,7 +65,7 @@ export const LuxuryDrawer = ({
             animate={{ x: 0 }}
             exit={{ x: fromX }}
             transition={{ type: "spring", damping: 28, stiffness: 200 }}
-            className={`relative z-[701] flex h-[100dvh] w-full ${width} flex-col bg-white shadow-2xl`}
+            className={`relative z-[701] flex w-full ${width} ${heightClass} flex-col bg-white shadow-2xl pointer-events-auto`}
           >
             <header className="flex items-center justify-between px-8 py-8 border-b border-zinc-100 bg-white shrink-0">
               <div className="space-y-1">
