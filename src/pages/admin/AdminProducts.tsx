@@ -56,7 +56,6 @@ const generateSlug = (text: string) => {
     .replace(/--+/g, "-");
 };
 
-// Fallback robust
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
@@ -151,7 +150,6 @@ const AdminProducts = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  // --- LOGIC ---
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -191,7 +189,6 @@ const AdminProducts = () => {
       setTotalPages(prodData.pages || 1);
       setTotalItems(prodData.total || 0);
 
-      // 🚀 FIX: Asigurăm extragerea corectă a categoriilor indiferent de formatul API-ului
       const fetchedCategories = Array.isArray(catData)
         ? catData
         : catData.items || [];
@@ -210,8 +207,6 @@ const AdminProducts = () => {
   const openEdit = (p: any = null) => {
     if (p) {
       setEditingProduct(p);
-
-      // 1. Extragere Galerie din structura hibridă (gallery sau additional_image_link)
       let galleryImages: string[] = [];
 
       if (
@@ -234,7 +229,6 @@ const AdminProducts = () => {
         }
       }
 
-      // 2. Extragere Imagine Principală
       let mainImg = "";
       if (p.image_url && typeof p.image_url === "object" && p.image_url.main) {
         mainImg =
@@ -261,7 +255,7 @@ const AdminProducts = () => {
         ...initialFormState,
         ...p,
         image_url: mainImg,
-        category_id: p.category_id || p.category?.id || "", // 🚀 FIX: Fallback pentru category_id
+        category_id: p.category_id || p.category?.id || "",
         additional_image_link: galleryImages,
         attributes_json: parsedAttributes,
       });
@@ -290,7 +284,6 @@ const AdminProducts = () => {
         credentials: "include",
       });
       const result = await res.json();
-
       const uploadedUrl = result.url || result.file_url || result.data?.url;
       if (!uploadedUrl) throw new Error("Format răspuns invalid de la server");
 
@@ -316,21 +309,36 @@ const AdminProducts = () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
 
+    // 🚀 O(1) PAYLOAD SANITIZATION: Trimitem doar atributele curate pe care backend-ul le acceptă
+    // Elimină complet erorile de tip "multiple values pentru lowest_price_30d"
     const payload = {
-      ...formData,
-      sku:
-        formData.sku ||
-        `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
+      sku: formData.sku
+        ? bleach.clean(formData.sku.trim().upper())
+        : `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
+      ean: formData.ean ? formData.ean.trim() : "",
       slug: formData.slug || generateSlug(formData.name),
+      name: formData.name.trim(),
+      brand_name: formData.brand_name || "Evem",
       status: formData.status.toUpperCase(),
       price: Number(formData.price),
       sale_price: formData.sale_price > 0 ? Number(formData.sale_price) : null,
       stock_quantity: Number(formData.stock_quantity),
-      weight: Number(formData.weight),
-      length: Number(formData.length),
-      width: Number(formData.width),
-      height: Number(formData.height),
+      category_id: formData.category_id,
+      image_url: formData.image_url,
+      description: formData.description || "",
+      weight: Number(formData.weight || 0),
+      length: Number(formData.length || 0),
+      width: Number(formData.width || 0),
+      height: Number(formData.height || 0),
+      meta_title: formData.meta_title || "",
+      meta_description: formData.meta_description || "",
+      canonical_url: formData.canonical_url || "",
       additional_image_link: formData.additional_image_link.filter(Boolean),
+      // 🚀 FIX: Serializăm în string atributele pentru a mapa corect tipul JSON din SQLAlchemy
+      attributes_json:
+        typeof formData.attributes_json === "object"
+          ? JSON.stringify(formData.attributes_json)
+          : formData.attributes_json,
     };
 
     const url = editingProduct
@@ -350,7 +358,10 @@ const AdminProducts = () => {
         fetchData();
         setIsModalOpen(false);
       } else {
-        toast.error("Eroare la salvare. Verifică datele introduse.");
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(
+          errorData.detail || "Eroare la salvare. Verifică datele introduse.",
+        );
       }
     } catch {
       toast.error("Eroare severă la conexiune.");
@@ -496,6 +507,7 @@ const AdminProducts = () => {
                         <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
                           <img
                             src={getValidImageUrl(p.image_url)}
+                            crossOrigin="anonymous" // 🚀 DEBLOCARE CORS DIRECTĂ ÎN BROWSER PENTRU TABEL
                             onError={handleImageError}
                             className="object-contain h-full w-full"
                             alt="Produs"
@@ -621,6 +633,7 @@ const AdminProducts = () => {
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
+                          crossOrigin="anonymous" // 🚀 DEBLOCARE CORS IMAGINE PRINCIPALA MODAL
                           onError={handleImageError}
                           className="h-full w-full object-contain p-4 md:p-8"
                           alt="Principal"
@@ -672,6 +685,7 @@ const AdminProducts = () => {
                               src={getValidImageUrl(
                                 formData.additional_image_link[i],
                               )}
+                              crossOrigin="anonymous" // 🚀 DEBLOCARE CORS IMAGINI EXTRA GALERIE
                               onError={handleImageError}
                               className="w-full h-full object-cover"
                               alt={`Secundar ${i}`}
@@ -712,7 +726,6 @@ const AdminProducts = () => {
 
               {/* RIGHT: CORE DATA */}
               <div className="xl:col-span-8 space-y-8 md:space-y-12">
-                {/* Basic Info Box */}
                 <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-2">
                     <Label className="text-[9px] md:text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest ml-2">
@@ -728,7 +741,6 @@ const AdminProducts = () => {
                           slug: generateSlug(e.target.value),
                         })
                       }
-                      placeholder="Introdu numele..."
                     />
                   </div>
 
@@ -774,12 +786,10 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* Logistics & Price Box */}
                 <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <DollarSign size={14} /> Financiare & Logistică
                   </h3>
-
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                     <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
                       <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
@@ -847,7 +857,6 @@ const AdminProducts = () => {
                     </div>
                   </div>
 
-                  {/* Dimensiuni si Greutate */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4 border-t border-zinc-50">
                     <PremiumInput
                       label="Greutate(g)"
@@ -896,7 +905,6 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* Content & SEO Box */}
                 <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-4">
                     <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] flex items-center gap-2">
@@ -911,7 +919,6 @@ const AdminProducts = () => {
                           description: e.target.value,
                         })
                       }
-                      placeholder="Descrierea produsului..."
                     />
                   </div>
 
@@ -1078,7 +1085,6 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
       className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
-      placeholder="..."
     />
   </div>
 );
