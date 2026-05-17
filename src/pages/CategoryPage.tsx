@@ -33,15 +33,12 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // 🚀 FIX CRITIC: Determinare reactivă stabilă a tipului de ecran (Mobile vs Desktop)
+  // Determinare reactivă stabilă a tipului de ecran (Mobile vs Desktop)
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640);
     };
-
-    // Rulăm o dată la încărcarea paginii
     handleResize();
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -60,11 +57,11 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const currentBanner = banners[current];
   if (!currentBanner) return null;
 
-  // Selectăm URL-ul imaginii pe baza stării reactive monitorizate de hook
+  // 🚀 REPARAT ATOMIC: Schimbat din .image_mobile_url/.image_desktop_url în .image_mobile/.image_desktop conform bazei de date
   const resolvedImageUrl =
-    isMobile && currentBanner.image_mobile_url
-      ? currentBanner.image_mobile_url
-      : currentBanner.image_desktop_url;
+    isMobile && currentBanner.image_mobile
+      ? currentBanner.image_mobile
+      : currentBanner.image_desktop;
 
   return (
     <div className="relative w-full aspect-[21/9] sm:aspect-[21/7] md:aspect-[32/10] rounded-[2.5rem] overflow-hidden mb-16 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-zinc-100 group bg-zinc-950 select-none">
@@ -81,23 +78,23 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
             <img
               src={resolvedImageUrl}
               alt={currentBanner.title || "Campanie"}
-              crossOrigin="anonymous" // 🚀 FIX CORS: Permite browserului să încarce imaginea chiar dacă regulile S3 sunt stricte
+              crossOrigin="anonymous"
               className="w-full h-full object-cover object-center scale-100 group-hover:scale-[1.015] transition-transform duration-[4s] ease-out"
               loading="eager"
               fetchPriority="high"
               onError={(e: any) => {
-                e.target.style.display = "none"; // Ascunde elementul dacă URL-ul returnează 403/404 ca să nu strice interfața
+                e.target.style.display = "none";
               }}
             />
           ) : (
             <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
           )}
 
-          {/* Overlay cinematic asimetric pentru protecția și contrastul textului */}
+          {/* Overlay cinematic asimetric pentru contrastul textului */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-10" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10" />
 
-          {/* Zonă conținut text (Stil Premium Editorial Studio) */}
+          {/* Zonă conținut text */}
           <div className="absolute inset-y-0 left-0 p-8 sm:p-12 md:p-20 flex flex-col justify-center items-start text-left text-white max-w-md md:max-w-2xl z-20 space-y-4">
             <div className="flex items-center gap-3">
               <span className="h-[1px] w-8 bg-white/60 block" />
@@ -125,7 +122,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicatori minimali poziționați discret în colțul din dreapta jos */}
+      {/* Indicatori puncte */}
       {banners.length > 1 && (
         <div className="absolute bottom-6 right-10 flex gap-2.5 z-30">
           {banners.map((_, i) => (
