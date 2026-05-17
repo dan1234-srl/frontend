@@ -330,7 +330,7 @@ const CategoryPage = () => {
             >
               <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
                 <SheetTitle className="text-xl font-black uppercase tracking-tighter text-left text-[var(--dark-amethyst)]">
-                  Colecții
+                  Categorii
                 </SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar">

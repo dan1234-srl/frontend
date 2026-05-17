@@ -57,7 +57,7 @@ const HomeHero = () => {
                     animate={{ opacity: 1 }}
                     className="text-lg font-black tracking-tighter"
                   >
-                    Colecții
+                    Categorii
                   </motion.h3>
                 ) : (
                   <motion.button
