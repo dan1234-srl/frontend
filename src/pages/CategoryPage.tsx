@@ -211,11 +211,18 @@ const CategoryPage = () => {
       if (append) setLoadingMore(true);
       else setLoading(true);
       try {
-        const params = new URLSearchParams(searchParams);
+        const params = new URLSearchParams();
         params.set("page", page.toString());
         params.set("category_slug", slug || "");
 
-        // 🚀 REPARAT ATOMIC: Transmitem exact formatul de sortare pe care noul backend îl validează prin whitelist
+        // Adăugăm toate filtrele active (atribute, branduri, interval preț) din URL în request
+        searchParams.forEach((value, key) => {
+          if (!["page", "category_slug", "sort", "sort_by", "sort_order"].includes(key)) {
+            params.append(key, value);
+          }
+        });
+
+        // 🚀 REPARAT ATOMIC: Transmitem exact formatul curat pe care noul backend îl validează în system_params
         const currentSort = searchParams.get("sort");
         if (currentSort === "pret-crescator") {
           params.set("sort_by", "price");
@@ -227,7 +234,6 @@ const CategoryPage = () => {
           params.set("sort_by", "created_at");
           params.set("sort_order", "desc");
         } else {
-          // Default logică stabilită în noul sistem unificat de indexare
           params.set("sort_by", "updated_at");
           params.set("sort_order", "desc");
         }
@@ -241,7 +247,7 @@ const CategoryPage = () => {
         );
         setTotalPages(data.pages || 1);
       } catch {
-        // fail silently
+        # fail silently
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -257,13 +263,7 @@ const CategoryPage = () => {
   const activeFiltersCount = (() => {
     let count = 0;
     searchParams.forEach((val, key) => {
-      if (
-        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
-          key,
-        ) &&
-        val
-      )
-        count++;
+      if (!["page", "sort", "category_slug", "sort_by", "sort_order"].includes(key) && val) count++;
     });
     return count;
   })();
@@ -586,7 +586,6 @@ const CategoryPage = () => {
   );
 };
 
-// Componentă utilitară internă pentru auto-detecție (Previne eventualele warning-uri de compilare Vite)
 const ThemeMarker = () => (
   <div className="hidden bg-[var(--royal-violet)] bg-[var(--dark-amethyst)]" />
 );
