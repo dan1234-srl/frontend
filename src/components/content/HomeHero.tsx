@@ -27,19 +27,21 @@ const HomeHero = () => {
   }, []);
 
   return (
-    /* 🚀 REPARAT ATOMIC: Am schimbat pt-24 în pt-32 pe mobil și sm:pt-36 pentru a împinge 
-       secțiunea în jos, sub marginea fixă a Navbar-ului cu Ticker. Am pus pb-2 în loc de pb-6.
+    /* 🚀 REPARAT ATOMIC: Am curățat toate padding-urile superioare (pt-0) deoarece 
+       acum distanțarea sub Navbar este controlată curat prin Spacer-ul din Index.tsx
     */
-    <section className="w-full px-4 md:px-6 pt-32 sm:pt-36 md:pt-28 pb-2 md:pb-6 text-left">
-      {/* 🚀 REPARAT ATOMIC: Am redus gap-ul de la gap-4 la gap-3 pe mobil pentru a apropia Sidebar-ul de Banner */}
-      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-3 md:gap-4 items-stretch lg:h-[480px]">
-        {/* SIDEBAR CATEGORII (SUB BANNER PE MOBIL) */}
+    <section className="w-full px-4 md:px-6 pt-0 pb-0 md:pb-6 text-left">
+      {/* 🚀 REPARAT ATOMIC: Am schimbat h-[480px] în h-auto pe mobil și doar lg:h-[460px] pe desktop.
+         Astfel, pe mobil containerul se strânge organic în jurul elementelor și elimină complet golul alb!
+      */}
+      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 items-stretch h-auto lg:h-[460px]">
+        {/* SIDEBAR CATEGORII (COBOARĂ SUB BANNER PE MOBIL - STRÂNS CONTEXTUAL) */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            /* 🚀 REPARAT ATOMIC: Am scăzut înălțimea fixă de mobil la h-[280px] pentru a nu mai lăsa acel gol imens sub imagine */
-            className="flex flex-col h-[280px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
+            /* 🚀 REPARAT ATOMIC: Am redus h-[320px] la h-[300px] pe mobil pentru a compacta meniul sub banner */
+            className="flex flex-col h-[300px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
           >
             <div className="p-5 pb-3 shrink-0">
               <div className="flex items-center gap-2 mb-2">
@@ -54,7 +56,7 @@ const HomeHero = () => {
                     key="t1"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-sm font-black uppercase tracking-wider text-left"
+                    className="text-sm font-black uppercase tracking-wider text-left text-zinc-800"
                   >
                     Categorii
                   </motion.h3>
@@ -148,8 +150,8 @@ const HomeHero = () => {
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL (PRIMUL PE MOBIL) */}
-        <div className="flex-1 min-h-[260px] lg:min-h-0">
+        {/* BANNER PRINCIPAL (URCĂ INTUITIV PRIMUL PE MOBIL) */}
+        <div className="flex-1 min-h-[280px] sm:min-h-[340px] lg:min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -162,9 +164,9 @@ const HomeHero = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
             <div className="relative h-full flex flex-col justify-center p-6 sm:p-10 md:p-16 text-white items-start">
-              <h1 className="text-2xl sm:text-4xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-4 text-left">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black leading-[1.1] tracking-tighter mb-4 text-left">
                 STILUL TĂU, <br />
-                <span className="font-light italic opacity-60 text-xl sm:text-3xl md:text-5xl">
+                <span className="font-light italic opacity-60 text-xl sm:text-2xl md:text-4xl">
                   REDEFINIT.
                 </span>
               </h1>
