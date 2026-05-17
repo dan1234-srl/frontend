@@ -25,6 +25,7 @@ import {
   EyeOff,
   ArrowUpDown,
   Filter,
+  Trash2,
 } from "lucide-react";
 import {
   Table,
