@@ -27,20 +27,17 @@ const HomeHero = () => {
   }, []);
 
   return (
-    /* 🚀 REPARAT ATOMIC: Am curățat toate padding-urile superioare (pt-0) deoarece 
-       acum distanțarea sub Navbar este controlată curat prin Spacer-ul din Index.tsx
-    */
     <section className="w-full px-4 md:px-6 pt-0 pb-0 md:pb-6 text-left">
-      {/* 🚀 REPARAT ATOMIC: Am schimbat h-[480px] în h-auto pe mobil și doar lg:h-[460px] pe desktop.
-         Astfel, pe mobil containerul se strânge organic în jurul elementelor și elimină complet golul alb!
+      {/* 🚀 CORECȚIE CRITICĂ: Am schimbat 'items-stretch' în 'items-start lg:items-stretch'.
+         Acest lucru oprește calculul eronat de înălțime pe mobil, strânge tot spațiul alb 
+         și lipește meniul de categorii direct sub imaginea de banner!
       */}
-      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 items-stretch h-auto lg:h-[460px]">
-        {/* SIDEBAR CATEGORII (COBOARĂ SUB BANNER PE MOBIL - STRÂNS CONTEXTUAL) */}
-        <aside className="w-full lg:w-[300px] flex flex-col shrink-0">
+      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px]">
+        {/* SIDEBAR CATEGORII (LIPIT SUB IMAGINE PE MOBIL) */}
+        <aside className="w-full lg:w-[300px] flex flex-col shrink-0 mt-2 lg:mt-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            /* 🚀 REPARAT ATOMIC: Am redus h-[320px] la h-[300px] pe mobil pentru a compacta meniul sub banner */
             className="flex flex-col h-[300px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
           >
             <div className="p-5 pb-3 shrink-0">
@@ -150,12 +147,12 @@ const HomeHero = () => {
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL (URCĂ INTUITIV PRIMUL PE MOBIL) */}
-        <div className="flex-1 min-h-[280px] sm:min-h-[340px] lg:min-h-0">
+        {/* BANNER PRINCIPAL (URCĂ DEASUPRA ACUM CU ÎNĂLȚIME CORECTĂ PE MOBIL) */}
+        <div className="w-full flex-1 min-h-[180px] sm:min-h-[260px] lg:min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative h-full w-full rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
+            className="relative h-[220px] sm:h-[280px] lg:h-full w-full rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
           >
             <img
               src={heroBanner}
@@ -164,9 +161,9 @@ const HomeHero = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
             <div className="relative h-full flex flex-col justify-center p-6 sm:p-10 md:p-16 text-white items-start">
-              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black leading-[1.1] tracking-tighter mb-4 text-left">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black leading-[1.1] tracking-tighter mb-3 text-left">
                 STILUL TĂU, <br />
-                <span className="font-light italic opacity-60 text-xl sm:text-2xl md:text-4xl">
+                <span className="font-light italic opacity-60 text-lg sm:text-2xl md:text-4xl">
                   REDEFINIT.
                 </span>
               </h1>

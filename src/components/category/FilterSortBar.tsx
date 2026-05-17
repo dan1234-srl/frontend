@@ -41,11 +41,11 @@ const FilterSortBar = ({
   ];
   const materials = ["Gold", "Silver", "Rose Gold", "Platinum"];
 
-  // 🚀 REPARAT ATOMIC: Logica de scriere directă în URL-ul magazinului pentru a trezi sortarea din Python
+  // Logica de scriere directă în URL-ul magazinului pentru a trezi sortarea din Python
   const handleSortChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("sort", value);
-    params.set("page", "1"); // Resetează pagina la 1 când se schimbă ordinea
+    params.set("page", "1");
     setSearchParams(params);
   };
 
@@ -186,7 +186,6 @@ const FilterSortBar = ({
               </SheetContent>
             </Sheet>
 
-            {/* 🚀 REPARAT ATOMIC: Sincronizat opțiunile dropdown cu whitelist-ul cerut de backend-ul Python */}
             <Select value={currentSortValue} onValueChange={handleSortChange}>
               <SelectTrigger className="w-auto border-none bg-transparent text-[10px] font-black uppercase tracking-widest shadow-none rounded-none pr-2 focus:ring-0 focus:ring-offset-0 text-zinc-800">
                 <SelectValue />
@@ -216,16 +215,20 @@ const FilterSortBar = ({
         </div>
       </section>
 
-      {/* 🚀 STIL INJECTAT: Forțează overlay-ul să blureze spatele complet (inclusiv Header-ul) la deschidere */}
+      {/* 🚀 REPARAT ATOMIC: Am extins selectoarele pentru a prinde clasa dinamică de overlay din Radix 
+         (bg-black/80, fixed inset-0) și am ridicat z-index-ul fundalului la z-[99990] ca să acopere Navbar-ul fixed
+      */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          [data-radix-focus-trap] ~ div[class*="bg-black/80"],
-          div[class*="fixed inset-0 bg-black"] {
+          [data-radix-focus-trap] ~ div[class*="bg-black/"],
+          div[class*="fixed inset-0 bg-black"],
+          div[data-state="open"][class*="fixed inset-0"] {
             z-index: 99990 !important;
             backdrop-filter: blur(12px) !important;
             -webkit-backdrop-filter: blur(12px) !important;
             background-color: rgba(9, 9, 11, 0.4) !important;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
           }
         `,
         }}
