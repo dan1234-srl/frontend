@@ -1,5 +1,5 @@
+import { useSearchParams } from "react-router-dom";
 import { useState } from "react";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -25,46 +25,84 @@ interface FilterSortBarProps {
   itemCount: number;
 }
 
-const FilterSortBar = ({ filtersOpen, setFiltersOpen, itemCount }: FilterSortBarProps) => {
-  const [sortBy, setSortBy] = useState("featured");
+const FilterSortBar = ({
+  filtersOpen,
+  setFiltersOpen,
+  itemCount,
+}: FilterSortBarProps) => {
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const categories = ["Earrings", "Bracelets", "Rings", "Necklaces"];
-  const priceRanges = ["Under €1,000", "€1,000 - €2,000", "€2,000 - €3,000", "Over €3,000"];
+  const priceRanges = [
+    "Under €1,000",
+    "€1,000 - €2,000",
+    "€2,000 - €3,000",
+    "Over €3,000",
+  ];
   const materials = ["Gold", "Silver", "Rose Gold", "Platinum"];
+
+  // 🚀 REPARAT ATOMIC: Logica de scriere directă în URL-ul magazinului pentru a trezi sortarea din Python
+  const handleSortChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", value);
+    params.set("page", "1"); // Resetează pagina la 1 când se schimbă ordinea
+    setSearchParams(params);
+  };
+
+  // Preluăm valoarea curentă din URL cu fallback pe "cele-mai-noi"
+  const currentSortValue = searchParams.get("sort") || "cele-mai-noi";
 
   return (
     <>
-      <section className="w-full px-6 mb-8 border-b border-border pb-4">
+      <section className="w-full px-6 mb-8 border-b border-zinc-100 pb-4 text-left select-none">
         <div className="flex justify-between items-center">
-          <p className="text-sm font-light text-muted-foreground">
-            {itemCount} items
+          <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
+            {itemCount} Articole Găsite
           </p>
-          
+
           <div className="flex items-center gap-4">
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
               <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
-                  className="font-light hover:bg-transparent"
+                  className="text-[10px] font-black uppercase tracking-widest hover:bg-transparent"
                 >
-                  Filters
+                  Filtre
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80 bg-background border-none shadow-none">
-                <SheetHeader className="mb-6 border-b border-border pb-4">
-                  <SheetTitle className="text-lg font-light">Filters</SheetTitle>
+
+              {/* 🚀 REPARAT ATOMIC: z-[99999] forțează trecerea ferestrei de filtre PESTE Navbar-ul fixed */}
+              <SheetContent
+                side="right"
+                className="w-80 bg-white border-none shadow-2xl z-[99999] p-6 flex flex-col h-full text-left"
+              >
+                <SheetHeader className="mb-6 border-b border-zinc-100 pb-4 shrink-0">
+                  <SheetTitle className="text-md font-black uppercase tracking-wider text-zinc-800">
+                    Filtre
+                  </SheetTitle>
                 </SheetHeader>
-                
-                <div className="space-y-8">
+
+                <div className="flex-1 overflow-y-auto no-scrollbar space-y-8 pr-1">
                   {/* Category Filter */}
                   <div>
-                    <h3 className="text-sm font-light mb-4 text-foreground">Category</h3>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest mb-4 text-zinc-500">
+                      Category
+                    </h3>
                     <div className="space-y-3">
                       {categories.map((category) => (
-                        <div key={category} className="flex items-center space-x-3">
-                          <Checkbox id={category} className="border-border data-[state=checked]:bg-foreground data-[state=checked]:border-foreground" />
-                          <Label htmlFor={category} className="text-sm font-light text-foreground cursor-pointer">
+                        <div
+                          key={category}
+                          className="flex items-center space-x-3"
+                        >
+                          <Checkbox
+                            id={category}
+                            className="border-zinc-200 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
+                          />
+                          <Label
+                            htmlFor={category}
+                            className="text-xs font-bold text-zinc-600 cursor-pointer uppercase tracking-wider"
+                          >
                             {category}
                           </Label>
                         </div>
@@ -72,16 +110,27 @@ const FilterSortBar = ({ filtersOpen, setFiltersOpen, itemCount }: FilterSortBar
                     </div>
                   </div>
 
-                  <Separator className="border-border" />
+                  <Separator className="bg-zinc-100" />
 
                   {/* Price Filter */}
                   <div>
-                    <h3 className="text-sm font-light mb-4 text-foreground">Price</h3>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest mb-4 text-zinc-500">
+                      Price
+                    </h3>
                     <div className="space-y-3">
                       {priceRanges.map((range) => (
-                        <div key={range} className="flex items-center space-x-3">
-                          <Checkbox id={range} className="border-border data-[state=checked]:bg-foreground data-[state=checked]:border-foreground" />
-                          <Label htmlFor={range} className="text-sm font-light text-foreground cursor-pointer">
+                        <div
+                          key={range}
+                          className="flex items-center space-x-3"
+                        >
+                          <Checkbox
+                            id={range}
+                            className="border-zinc-200 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
+                          />
+                          <Label
+                            htmlFor={range}
+                            className="text-xs font-bold text-zinc-600 cursor-pointer uppercase tracking-wider"
+                          >
                             {range}
                           </Label>
                         </div>
@@ -89,52 +138,98 @@ const FilterSortBar = ({ filtersOpen, setFiltersOpen, itemCount }: FilterSortBar
                     </div>
                   </div>
 
-                  <Separator className="border-border" />
+                  <Separator className="bg-zinc-100" />
 
                   {/* Material Filter */}
                   <div>
-                    <h3 className="text-sm font-light mb-4 text-foreground">Material</h3>
+                    <h3 className="text-[11px] font-black uppercase tracking-widest mb-4 text-zinc-500">
+                      Material
+                    </h3>
                     <div className="space-y-3">
                       {materials.map((material) => (
-                        <div key={material} className="flex items-center space-x-3">
-                          <Checkbox id={material} className="border-border data-[state=checked]:bg-foreground data-[state=checked]:border-foreground" />
-                          <Label htmlFor={material} className="text-sm font-light text-foreground cursor-pointer">
+                        <div
+                          key={material}
+                          className="flex items-center space-x-3"
+                        >
+                          <Checkbox
+                            id={material}
+                            className="border-zinc-200 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
+                          />
+                          <Label
+                            htmlFor={material}
+                            className="text-xs font-bold text-zinc-600 cursor-pointer uppercase tracking-wider"
+                          >
                             {material}
                           </Label>
                         </div>
                       ))}
                     </div>
                   </div>
+                </div>
 
-                  <Separator className="border-border" />
-
-                  <div className="flex flex-col gap-2 pt-4">
-                    <Button variant="ghost" size="sm" className="w-full border-none hover:bg-transparent hover:underline font-normal text-left justify-start">
-                      Apply Filters
-                    </Button>
-                    <Button variant="ghost" size="sm" className="w-full border-none hover:bg-transparent hover:underline font-light text-left justify-start">
-                      Clear All
-                    </Button>
-                  </div>
+                <div className="flex flex-col gap-2 pt-4 border-t border-zinc-100 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-[10px] font-black uppercase tracking-widest justify-start pl-2 py-3 bg-zinc-900 text-white rounded-xl hover:bg-zinc-800"
+                  >
+                    Apply Filters
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-[10px] font-black uppercase tracking-widest justify-start pl-2 py-3 text-zinc-400 hover:bg-zinc-50 rounded-xl"
+                  >
+                    Clear All
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-auto border-none bg-transparent text-sm font-light shadow-none rounded-none pr-2">
+            {/* 🚀 REPARAT ATOMIC: Sincronizat opțiunile dropdown cu whitelist-ul cerut de backend-ul Python */}
+            <Select value={currentSortValue} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-auto border-none bg-transparent text-[10px] font-black uppercase tracking-widest shadow-none rounded-none pr-2 focus:ring-0 focus:ring-offset-0 text-zinc-800">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="shadow-none border-none rounded-none bg-background">
-                <SelectItem value="featured" className="hover:bg-transparent hover:underline data-[state=checked]:bg-transparent data-[state=checked]:underline pl-2 [&>span:first-child]:hidden">Featured</SelectItem>
-                <SelectItem value="price-low" className="hover:bg-transparent hover:underline data-[state=checked]:bg-transparent data-[state=checked]:underline pl-2 [&>span:first-child]:hidden">Price: Low to High</SelectItem>
-                <SelectItem value="price-high" className="hover:bg-transparent hover:underline data-[state=checked]:bg-transparent data-[state=checked]:underline pl-2 [&>span:first-child]:hidden">Price: High to Low</SelectItem>
-                <SelectItem value="newest" className="hover:bg-transparent hover:underline data-[state=checked]:bg-transparent data-[state=checked]:underline pl-2 [&>span:first-child]:hidden">Newest</SelectItem>
-                <SelectItem value="name" className="hover:bg-transparent hover:underline data-[state=checked]:bg-transparent data-[state=checked]:underline pl-2 [&>span:first-child]:hidden">Name A-Z</SelectItem>
+              <SelectContent className="shadow-2xl border border-zinc-100 rounded-xl bg-white w-48 z-[9999]">
+                <SelectItem
+                  value="cele-mai-noi"
+                  className="text-[10px] font-black uppercase tracking-widest py-3 pl-4 focus:bg-zinc-50 cursor-pointer"
+                >
+                  Cele mai noi
+                </SelectItem>
+                <SelectItem
+                  value="pret-crescator"
+                  className="text-[10px] font-black uppercase tracking-widest py-3 pl-4 focus:bg-zinc-50 cursor-pointer"
+                >
+                  Preț: Mic - Mare
+                </SelectItem>
+                <SelectItem
+                  value="pret-descrescator"
+                  className="text-[10px] font-black uppercase tracking-widest py-3 pl-4 focus:bg-zinc-50 cursor-pointer"
+                >
+                  Preț: Mare - Mic
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </section>
+
+      {/* 🚀 STIL INJECTAT: Forțează overlay-ul să blureze spatele complet (inclusiv Header-ul) la deschidere */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          [data-radix-focus-trap] ~ div[class*="bg-black/80"],
+          div[class*="fixed inset-0 bg-black"] {
+            z-index: 99990 !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            background-color: rgba(9, 9, 11, 0.4) !important;
+          }
+        `,
+        }}
+      />
     </>
   );
 };

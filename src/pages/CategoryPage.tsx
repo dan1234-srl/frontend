@@ -1,32 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import {
-  Loader2,
-  ChevronDown,
-  LayoutGrid,
-  Grid2X2,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Loader2, ChevronDown, LayoutGrid, Grid2X2 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
-import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
-import { FilterSidebar } from "../components/shop/FilterSidebar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import FilterSortBar from "@/components/shop/FilterSortBar";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER
-// ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -45,7 +28,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 6000);
-    return () => clearInterval(timer);
+    return () => setInterval(timer);
   }, [banners?.length]);
 
   if (!banners || banners.length === 0) return null;
@@ -134,9 +117,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE (FLYOUT SIDEBAR EMBEDDED SYSTEM)
-// ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -148,6 +128,7 @@ const CategoryPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = parseInt(searchParams.get("page") || "1");
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const formatFallbackName = (str: string | undefined) => {
     if (!str) return "";
@@ -212,19 +193,17 @@ const CategoryPage = () => {
           }
         });
 
+        // 🚀 ASIGURAT: Măsură asimetrică de fallback direct din frontend spre backend-ul Python
         const currentSort = searchParams.get("sort");
-        if (currentSort === "pret-crescator") {
-          params.set("sort_by", "price");
-          params.set("sort_order", "asc");
-        } else if (currentSort === "pret-descrescator") {
-          params.set("sort_by", "price");
-          params.set("sort_order", "desc");
-        } else if (currentSort === "cele-mai-noi") {
-          params.set("sort_by", "created_at");
-          params.set("sort_order", "desc");
+        if (currentSort === "pret-crescator" || currentSort === "price_asc") {
+          params.set("sort", "pret-crescator");
+        } else if (
+          currentSort === "pret-descrescator" ||
+          currentSort === "price_desc"
+        ) {
+          params.set("sort", "pret-descrescator");
         } else {
-          params.set("sort_by", "updated_at");
-          params.set("sort_order", "desc");
+          params.set("sort", "cele-mai-noi");
         }
 
         const res = await fetch(
@@ -248,20 +227,6 @@ const CategoryPage = () => {
   useEffect(() => {
     fetchProducts(1, false);
   }, [slug, searchParams, fetchProducts]);
-
-  const activeFiltersCount = (() => {
-    let count = 0;
-    searchParams.forEach((val, key) => {
-      if (
-        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
-          key,
-        ) &&
-        val
-      )
-        count++;
-    });
-    return count;
-  })();
 
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) {
@@ -297,20 +262,12 @@ const CategoryPage = () => {
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
               {loading ? "—" : products.length} Articole Disponibile
             </p>
-            {activeFiltersCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--royal-violet)]/8 border border-zinc-100 text-[var(--royal-violet)]">
-                <span className="text-[8px] font-black uppercase tracking-widest">
-                  {activeFiltersCount}{" "}
-                  {activeFiltersCount === 1 ? "filtru activ" : "filtre active"}
-                </span>
-              </span>
-            )}
           </div>
         </div>
 
         <CategoryHeroCarousel banners={campaignBanners} />
 
-        {/* MOBILE CATEGORIES TREE */}
+        {/* MOBILE CATEGORIES */}
         <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
           <div className="flex gap-2">
             {categoriesTree.map((cat) => (
@@ -329,62 +286,14 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* ACTIONS BAR BUTTON FILTER */}
-        <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
-                <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
-                  <SlidersHorizontal size={14} />
-                  {activeFiltersCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black border border-white">
-                      {activeFiltersCount}
-                    </span>
-                  )}
-                </div>
-                <span>Rafinează Portofoliul</span>
-              </button>
-            </SheetTrigger>
+        {/* 🚀 CONECTAT: Pasăm stările sigure către noul FilterSortBar unificat */}
+        <FilterSortBar
+          filtersOpen={filtersOpen}
+          setFiltersOpen={setFiltersOpen}
+          itemCount={products.length}
+        />
 
-            {/* 🚀 REPARAT ATOMIC: Am injectat clasele corecte de overlay globale Radix: 
-               - z-[99999] forțează trecerea containerului deasupra Navbar-ului fixed
-               - luxury-blur-overlay activează filtrul Gaußian blur profund pe toată pagina din spate
-            */}
-            <SheetContent
-              side="right"
-              className="w-[90%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
-            >
-              <ThemeMarker />
-              <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
-                <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
-                  Filtre Portofoliu
-                </SheetTitle>
-              </SheetHeader>
-
-              <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar">
-                {filtersData ? (
-                  <FilterSidebar filtersData={filtersData} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2
-                      className="animate-spin text-[var(--royal-violet)]"
-                      size={24}
-                    />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                      Se încarcă matricea...
-                    </span>
-                  </div>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          <div className="w-44 md:w-60">
-            <SortDropdown />
-          </div>
-        </div>
-
-        {/* PRODUCTS GRID */}
+        {/* LAYOUT PRODUCTS */}
         <div className="flex gap-12 items-start">
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">
@@ -441,24 +350,13 @@ const CategoryPage = () => {
             ) : products.length === 0 ? (
               <div className="text-center py-40 border border-zinc-100 rounded-[2rem] bg-zinc-50/30 flex flex-col items-center justify-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
-                  <SlidersHorizontal size={20} className="text-zinc-300" />
+                  <Grid2X2 size={16} className="text-zinc-300" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
                     Niciun rezultat găsit
                   </p>
-                  <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                    Încearcă să resetezi parametrii selectați.
-                  </p>
                 </div>
-                {activeFiltersCount > 0 && (
-                  <button
-                    onClick={() => setSearchParams({})}
-                    className="mt-2 px-6 py-3 text-[9px] font-black uppercase tracking-widest border border-zinc-200 rounded-full hover:bg-zinc-950 hover:text-white hover:border-zinc-950 transition-all duration-300"
-                  >
-                    Resetează filtrele
-                  </button>
-                )}
               </div>
             ) : (
               <div className="flex flex-col gap-16">
@@ -490,9 +388,7 @@ const CategoryPage = () => {
                         )}
                       </div>
                       <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-black transition-colors">
-                        {loadingMore
-                          ? "Se încarcă..."
-                          : "Încarcă Mai Multe Articole"}
+                        Încarcă Mai Multe
                       </span>
                     </button>
                   </div>
@@ -504,30 +400,6 @@ const CategoryPage = () => {
       </main>
 
       <Footer />
-
-      {/* 🚀 CSS GLOBAL INJECTAT PENTRU EFECTUL DE BLUR GAUSSIAN COMPLET PESTE APPLICAȚIE DIN RADIX */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          html { scrollbar-gutter: stable !important; }
-          body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
-          .no-scrollbar::-webkit-scrollbar { display: none; }
-          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-          .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-          .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
-          
-          /* Forțează overlay-ul nativ din Radix UI/Shadcn să blureze tot ecranul, inclusiv Header-ul */
-          [data-radix-focus-trap] ~ div[class*="bg-black/80"],
-          div[class*="fixed inset-0 bg-black"] {
-            z-index: 99990 !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            background-color: rgba(9, 9, 11, 0.4) !important;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          }
-        `,
-        }}
-      />
     </div>
   );
 };
