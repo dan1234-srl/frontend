@@ -106,7 +106,7 @@ const getStatusBadge = (status: string, stock: number) => {
   return "bg-zinc-50 border-zinc-200 text-zinc-500";
 };
 
-// --- COMPONENT PRINCIPAL ---
+// --- MAIN COMPONENT ---
 const AdminProducts = () => {
   const { isAdmin } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
@@ -115,7 +115,7 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  // Filtre și Sortare
+  // Stări Filtre și Sortare
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -367,6 +367,7 @@ const AdminProducts = () => {
     }
   };
 
+  // 🚀 RESTAURAT DE PLIN: Logica handleSave sincronizată cu schemele noi din backend
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
@@ -561,9 +562,9 @@ const AdminProducts = () => {
         {totalItems} articole indexate
       </div>
 
-      {/* LAYOUT GRID RESPONSIV */}
+      {/* COMPONENTĂ RESPONSIVĂ HIBRIDĂ */}
       <div className="bg-white rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
-        {/* CARD VIEW (MOBILE) */}
+        {/* MOBILE GRID VIEW */}
         <div className="block md:hidden p-4 space-y-4">
           {loading ? (
             [...Array(3)].map((_, i) => (
@@ -656,7 +657,7 @@ const AdminProducts = () => {
           )}
         </div>
 
-        {/* LUXURY TABLE (DESKTOP) */}
+        {/* LUXURY DESKTOP TABLE */}
         <div className="hidden md:block overflow-x-auto luxury-scrollbar">
           <Table className="min-w-[900px]">
             <TableHeader className="bg-zinc-50/50">
@@ -746,12 +747,14 @@ const AdminProducts = () => {
                           </div>
                         </div>
                       </TableCell>
+
+                      {/* 🚀 REPARAT ATOMIC: Numele real al categoriei cu stratificare multi-fallback */}
                       <TableCell className="text-center">
                         <span className="text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest bg-[var(--royal-violet)]/[0.03] border border-[var(--royal-violet)]/10 px-3 py-1.5 rounded-lg">
-                          {p.category_name ||
-                            (p.category ? p.category.name : "General")}
+                          {p.category_name || p.category?.name || "General"}
                         </span>
                       </TableCell>
+
                       <TableCell className="text-center">
                         <span
                           className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status, currentStock)}`}
@@ -779,7 +782,7 @@ const AdminProducts = () => {
                             <button
                               onClick={() => openEdit(p)}
                               title="Editează structura"
-                              className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
+                              className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-zinc-950 hover:text-white transition-colors"
                             >
                               <Edit2 size={13} />
                             </button>
@@ -1038,13 +1041,13 @@ const AdminProducts = () => {
                     <DollarSign size={13} /> Financiare & Matrice Logistică
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-3.5 bg-zinc-50/70 border border-zinc-100 rounded-xl shadow-inner text-center">
-                      <Label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
-                        Preț Întreg
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
+                        Preț Listă
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-base font-black text-center text-zinc-900 outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
                         value={formData.price}
                         onChange={(e) =>
                           setFormData({
@@ -1054,13 +1057,13 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-3.5 bg-rose-50/30 border border-rose-100 rounded-xl shadow-inner text-center">
-                      <Label className="text-[8px] font-black text-rose-500 uppercase tracking-widest block mb-1">
-                        Preț Promo (Sale)
+                    <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
+                      <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
+                        Preț Promo
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-base font-black text-center text-rose-600 outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
                         value={formData.sale_price || ""}
                         placeholder="Fără promo"
                         onChange={(e) =>
@@ -1071,13 +1074,13 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-3.5 bg-zinc-50/70 border border-zinc-100 rounded-xl shadow-inner text-center">
-                      <Label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
-                        Unități Stoc
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
+                        Stoc
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-base font-black text-center text-zinc-900 outline-none"
+                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
                         value={formData.stock_quantity}
                         onChange={(e) =>
                           setFormData({
@@ -1087,8 +1090,8 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-3.5 bg-zinc-50/70 border border-zinc-100 rounded-xl shadow-inner text-center flex flex-col justify-center">
-                      <Label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block mb-0.5">
+                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center flex flex-col justify-center">
+                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
                         Status Catalog
                       </Label>
                       <select
