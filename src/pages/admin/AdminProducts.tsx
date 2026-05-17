@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
-  Archive,
   Loader2,
   DollarSign,
   AlignLeft,
@@ -43,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
@@ -64,6 +63,7 @@ const generateSlug = (text: string) => {
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
+// 🚀 REPARAT: Extragere universală de imagini pentru absolut orice structură de DB hibridă
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
   let url = "";
@@ -77,9 +77,10 @@ const getValidImageUrl = (imageSource: any) => {
         url =
           parsed?.main?.medium ||
           parsed?.main?.small ||
+          parsed?.main?.url ||
           parsed?.url ||
           parsed?.medium ||
-          imageSource;
+          (Array.isArray(parsed) ? parsed[0] : imageSource);
       } catch {
         url = imageSource;
       }
@@ -88,24 +89,25 @@ const getValidImageUrl = (imageSource: any) => {
     url =
       imageSource?.main?.medium ||
       imageSource?.main?.small ||
+      imageSource?.main?.url ||
       imageSource?.url ||
       imageSource?.medium ||
-      PLACEHOLDER_IMG;
+      (Array.isArray(imageSource) ? imageSource[0] : PLACEHOLDER_IMG);
   }
 
-  if (url.startsWith("/")) {
+  if (url && typeof url === "string" && url.startsWith("/")) {
     url = `${API_BASE_URL}${url}`;
   }
 
   return url || PLACEHOLDER_IMG;
 };
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, stock: number) => {
+  if (stock === 0) return "bg-rose-50 text-rose-600 border-rose-100";
   const s = status?.toLowerCase() || "";
   if (s === "active")
     return "bg-emerald-50 text-emerald-600 border-emerald-100";
   if (s === "draft") return "bg-amber-50 text-amber-600 border-amber-100";
-  if (s === "out_of_stock") return "bg-rose-50 text-rose-600 border-rose-100";
   return "bg-zinc-100 text-zinc-500 border-zinc-200";
 };
 
@@ -161,7 +163,6 @@ const AdminProducts = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  // Debounce căutare
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -178,18 +179,27 @@ const AdminProducts = () => {
         ? `${API_BASE_URL}/api/v1/products/search/live`
         : `${API_BASE_URL}/api/v1/products/admin-inventory`;
 
+      // 🚀 REPARAT ATOMIC: Transmitem starea stocului corelată cu tab-ul de sus selectat
+      let queryStatus = statusFilter;
+      let queryStock = stockFilter;
+
+      if (statusFilter === "OUT_OF_STOCK") {
+        queryStatus = "ALL";
+        queryStock = "OUT_OF_STOCK";
+      }
+
       const params = new URLSearchParams({
         page: currentPage.toString(),
         page_size: itemsPerPage.toString(),
         sort_by: sortBy,
         sort_order: sortOrder,
-        status: statusFilter,
-        stock_status: stockFilter,
+        status: queryStatus,
+        stock_status: queryStock,
       });
 
       if (debouncedSearch) {
-        params.append("search", debouncedSearch); // Noul format din backend accepta 'search'
-        params.append("q", debouncedSearch); // Fallback vechi
+        params.append("search", debouncedSearch);
+        params.append("q", debouncedSearch);
         params.append("is_admin_view", "true");
       }
 
@@ -231,7 +241,6 @@ const AdminProducts = () => {
     fetchData();
   }, [fetchData]);
 
-  // --- ACȚIUNE RAPIDĂ: TRECERE ÎN DRAFT ---
   const handleToggleStatus = async (sku: string, currentStatus: string) => {
     const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
     try {
@@ -426,12 +435,12 @@ const AdminProducts = () => {
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-zinc-100 pb-10">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="w-8 h-[2px] bg-[var(--royal-violet)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]">
+            <span className="w-8 h-[2px] bg-black" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">
               Inventory Management
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-black">
             Catalog Produse
           </h1>
         </div>
@@ -439,11 +448,11 @@ const AdminProducts = () => {
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <div className="relative group flex-1">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)]"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-black"
               size={16}
             />
             <input
-              className="w-full sm:w-[300px] pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:border-[var(--royal-violet)] outline-none transition-all text-sm font-bold shadow-inner"
+              className="w-full sm:w-[300px] pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:border-black outline-none transition-all text-sm font-bold shadow-inner"
               placeholder="Caută SKU sau Nume..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -451,7 +460,7 @@ const AdminProducts = () => {
           </div>
           <button
             onClick={() => openEdit()}
-            className="bg-[var(--royal-violet)] text-white px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-[var(--dark-amethyst)] transition-all flex items-center justify-center gap-2 shadow-lg whitespace-nowrap"
+            className="bg-black text-white px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg whitespace-nowrap"
           >
             <Plus size={16} /> Adaugă Produs
           </button>
@@ -460,7 +469,6 @@ const AdminProducts = () => {
 
       {/* ADVANCED FILTER TABS & DROPDOWNS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-50 pb-4">
-        {/* Main Status Tabs */}
         <div className="flex gap-6 overflow-x-auto no-scrollbar">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
             <button
@@ -471,7 +479,7 @@ const AdminProducts = () => {
               }}
               className={`pb-2 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
                 statusFilter === f
-                  ? "text-[var(--royal-violet)]"
+                  ? "text-black font-black"
                   : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
@@ -479,14 +487,13 @@ const AdminProducts = () => {
               {statusFilter === f && (
                 <motion.div
                   layoutId="statusTab"
-                  className="absolute -bottom-4 left-0 right-0 h-0.5 bg-[var(--royal-violet)]"
+                  className="absolute -bottom-4 left-0 right-0 h-0.5 bg-black"
                 />
               )}
             </button>
           ))}
         </div>
 
-        {/* Secondary Filters: Category, Stock, Sort */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
             <Filter size={12} className="text-zinc-400 mr-2" />
@@ -496,7 +503,7 @@ const AdminProducts = () => {
                 setCategoryIdFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-black outline-none cursor-pointer appearance-none pr-4"
             >
               <option value="">Toate Categoriile</option>
               {categories.map((c) => (
@@ -515,7 +522,7 @@ const AdminProducts = () => {
                 setStockFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-black outline-none cursor-pointer appearance-none pr-4"
             >
               <option value="ALL">Stoc: Toate</option>
               <option value="LOW_STOCK">Stoc Critic (≤5)</option>
@@ -533,7 +540,7 @@ const AdminProducts = () => {
                 setSortOrder(order);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-black outline-none cursor-pointer appearance-none pr-4"
             >
               <option value="updated_at-desc">Cele mai noi</option>
               <option value="price-asc">Preț: Crescător</option>
@@ -609,98 +616,97 @@ const AdminProducts = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                products.map((p) => (
-                  <TableRow
-                    key={p.id}
-                    className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
-                  >
-                    <TableCell className="py-5 px-6 md:px-8">
-                      <div className="flex items-center gap-4 text-left">
-                        <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
-                          <img
-                            src={getValidImageUrl(p.image_url)}
-                            crossOrigin="anonymous" // 🚀 FIX CORS
-                            onError={handleImageError}
-                            className="object-contain h-full w-full"
-                            alt="Produs"
-                          />
-                        </div>
-                        <div className="space-y-0.5 max-w-[200px] sm:max-w-[300px]">
-                          <p
-                            className="font-bold text-[var(--dark-amethyst)] text-sm truncate"
-                            title={p.name}
-                          >
-                            {p.name}
-                          </p>
-                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter truncate">
-                            {p.sku} • {p.brand_name || "Evem"}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                        {p.category_name ||
-                          (p.category ? p.category.name : "General")}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span
-                        className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(
-                          p.status,
-                        )}`}
-                      >
-                        {p.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center font-black text-xs text-[var(--dark-amethyst)]">
-                      {p.stock_quantity ?? p.stock ?? 0}
-                    </TableCell>
-                    <TableCell className="text-right px-6 md:px-8">
-                      <div className="flex items-center justify-end gap-4 md:gap-6">
-                        <div className="text-right">
-                          <p className="font-black text-[var(--dark-amethyst)] text-sm whitespace-nowrap">
-                            {p.price}{" "}
-                            <span className="text-[9px] opacity-40">RON</span>
-                          </p>
-                          {p.sale_price && (
-                            <p className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter whitespace-nowrap">
-                              Sale: {p.sale_price}
+                products.map((p) => {
+                  const currentStock = p.stock_quantity ?? p.stock ?? 0;
+                  return (
+                    <TableRow
+                      key={p.id}
+                      className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
+                    >
+                      <TableCell className="py-5 px-6 md:px-8">
+                        <div className="flex items-center gap-4 text-left">
+                          <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
+                            <img
+                              src={getValidImageUrl(p.image_url)}
+                              crossOrigin="anonymous"
+                              onError={handleImageError}
+                              className="object-contain h-full w-full"
+                              alt="Produs"
+                            />
+                          </div>
+                          <div className="space-y-0.5 max-w-[200px] sm:max-w-[300px]">
+                            <p
+                              className="font-bold text-black text-sm truncate"
+                              title={p.name}
+                            >
+                              {p.name}
                             </p>
-                          )}
+                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter truncate">
+                              {p.sku} • {p.brand_name || "Evem"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
-                          <button
-                            onClick={() => openEdit(p)}
-                            title="Editează Produsul"
-                            className="p-2 bg-zinc-50 rounded-md hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-
-                          {/* 🚀 ACTION: Trecere rapidă în Draft (în loc de Ștergere) */}
-                          <button
-                            onClick={() =>
-                              handleToggleStatus(p.sku, p.status || "ACTIVE")
-                            }
-                            title={
-                              p.status === "DRAFT"
-                                ? "Publică Produsul"
-                                : "Treci în Draft / Arhivează"
-                            }
-                            className="p-2 bg-zinc-50 rounded-md hover:bg-amber-500 hover:text-white transition-colors"
-                          >
-                            {p.status === "DRAFT" ? (
-                              <Eye size={14} />
-                            ) : (
-                              <EyeOff size={14} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                          {p.category_name ||
+                            (p.category ? p.category.name : "General")}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span
+                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status, currentStock)}`}
+                        >
+                          {currentStock === 0 ? "OUT OF STOCK" : p.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center font-black text-xs text-black">
+                        {currentStock}
+                      </TableCell>
+                      <TableCell className="text-right px-6 md:px-8">
+                        <div className="flex items-center justify-end gap-4 md:gap-6">
+                          <div className="text-right">
+                            <p className="font-black text-black text-sm whitespace-nowrap">
+                              {p.price}{" "}
+                              <span className="text-[9px] opacity-40">RON</span>
+                            </p>
+                            {p.sale_price && (
+                              <p className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter whitespace-nowrap">
+                                Sale: {p.sale_price}
+                              </p>
                             )}
-                          </button>
+                          </div>
+                          <div className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                            <button
+                              onClick={() => openEdit(p)}
+                              title="Editează Produsul"
+                              className="p-2 bg-zinc-50 rounded-md hover:bg-zinc-950 hover:text-white transition-colors"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleToggleStatus(p.sku, p.status || "ACTIVE")
+                              }
+                              title={
+                                p.status === "DRAFT"
+                                  ? "Publică Produsul"
+                                  : "Treci în Draft / Arhivează"
+                              }
+                              className="p-2 bg-zinc-50 rounded-md hover:bg-amber-500 hover:text-white transition-colors"
+                            >
+                              {p.status === "DRAFT" ? (
+                                <Eye size={14} />
+                              ) : (
+                                <EyeOff size={14} />
+                              )}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -735,11 +741,11 @@ const AdminProducts = () => {
         <DialogContent className="max-w-[1300px] w-[95vw] h-[95vh] p-0 rounded-[1.5rem] md:rounded-[2.5rem] border-none bg-[#FBFBFD] shadow-2xl flex flex-col overflow-hidden font-sans">
           <header className="px-6 md:px-10 py-6 md:py-8 flex justify-between items-center bg-white border-b shrink-0">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-[var(--dark-amethyst)] text-white hidden md:block">
+              <div className="p-3 rounded-2xl bg-zinc-950 text-white hidden md:block">
                 <Package size={24} />
               </div>
               <div>
-                <DialogTitle className="text-xl md:text-3xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] truncate max-w-[200px] sm:max-w-md">
+                <DialogTitle className="text-xl md:text-3xl font-black uppercase tracking-tighter text-black truncate max-w-[200px] sm:max-w-md">
                   {formData.sku
                     ? `Configurare: ${formData.sku}`
                     : "Adăugare Articol Nou"}
@@ -762,7 +768,7 @@ const AdminProducts = () => {
               {/* LEFT: MEDIA & VISUALS */}
               <div className="xl:col-span-4 space-y-8 md:space-y-10">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] ml-1 flex items-center gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black ml-1 flex items-center gap-2">
                     <ImageIcon size={14} /> Imagine Principală
                   </Label>
                   <div className="aspect-[3/4] bg-white rounded-[2rem] border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden shadow-sm">
@@ -770,7 +776,7 @@ const AdminProducts = () => {
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
-                          crossOrigin="anonymous" // 🚀 FIX CORS
+                          crossOrigin="anonymous"
                           onError={handleImageError}
                           className="h-full w-full object-contain p-4 md:p-8"
                           alt="Principal"
@@ -787,7 +793,7 @@ const AdminProducts = () => {
                         </div>
                       </>
                     ) : (
-                      <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-4 hover:text-[var(--royal-violet)] transition-colors w-full h-full justify-center">
+                      <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-4 hover:text-black transition-colors w-full h-full justify-center">
                         {uploading === "main" ? (
                           <Loader2 className="animate-spin" size={40} />
                         ) : (
@@ -807,7 +813,7 @@ const AdminProducts = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] ml-1 flex items-center gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black ml-1 flex items-center gap-2">
                     <Layers size={14} /> Galerie (Max 4)
                   </Label>
                   <div className="grid grid-cols-4 gap-2 md:gap-3">
@@ -822,7 +828,7 @@ const AdminProducts = () => {
                               src={getValidImageUrl(
                                 formData.additional_image_link[i],
                               )}
-                              crossOrigin="anonymous" // 🚀 FIX CORS
+                              crossOrigin="anonymous"
                               onError={handleImageError}
                               className="w-full h-full object-cover"
                               alt={`Secundar ${i}`}
@@ -842,7 +848,7 @@ const AdminProducts = () => {
                             </button>
                           </>
                         ) : (
-                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-colors">
+                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-50 hover:text-black transition-colors">
                             {uploading === `extra-${i}` ? (
                               <Loader2 className="animate-spin" size={16} />
                             ) : (
@@ -865,11 +871,11 @@ const AdminProducts = () => {
               <div className="xl:col-span-8 space-y-8 md:space-y-12">
                 <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-2">
-                    <Label className="text-[9px] md:text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest ml-2">
+                    <Label className="text-[9px] md:text-[10px] font-black text-black uppercase tracking-widest ml-2">
                       Nume Articol
                     </Label>
                     <input
-                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-3 text-2xl md:text-4xl font-bold outline-none focus:border-[var(--royal-violet)] transition-all placeholder:text-zinc-200"
+                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-3 text-2xl md:text-4xl font-bold outline-none focus:border-black transition-all placeholder:text-zinc-200"
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({
@@ -903,7 +909,7 @@ const AdminProducts = () => {
                         Categorie Master
                       </Label>
                       <select
-                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all appearance-none"
+                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-1 focus:ring-black transition-all appearance-none"
                         value={formData.category_id}
                         onChange={(e) =>
                           setFormData({
@@ -924,7 +930,7 @@ const AdminProducts = () => {
                 </div>
 
                 <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-950 flex items-center gap-2">
                     <DollarSign size={14} /> Financiare & Logistică
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -1044,11 +1050,11 @@ const AdminProducts = () => {
 
                 <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)] flex items-center gap-2">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-900 flex items-center gap-2">
                       <AlignLeft size={14} /> Descriere Produs
                     </Label>
                     <textarea
-                      className="w-full h-32 md:h-44 bg-zinc-50 rounded-2xl p-4 md:p-6 text-sm leading-relaxed border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none"
+                      className="w-full h-32 md:h-44 bg-zinc-50 rounded-2xl p-4 md:p-6 text-sm leading-relaxed border-none outline-none focus:ring-1 focus:ring-black transition-all resize-none"
                       value={formData.description}
                       onChange={(e) =>
                         setFormData({
@@ -1061,7 +1067,7 @@ const AdminProducts = () => {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-zinc-50">
                     <div className="space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-950 flex items-center gap-2">
                         <Globe size={14} /> Indexare & SEO
                       </h4>
                       <PremiumInput
@@ -1086,7 +1092,7 @@ const AdminProducts = () => {
                           Meta Description
                         </Label>
                         <textarea
-                          className="w-full h-24 bg-zinc-50 rounded-xl p-4 text-xs font-medium border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none"
+                          className="w-full h-24 bg-zinc-50 rounded-xl p-4 text-xs font-medium border-none outline-none focus:ring-1 focus:ring-black transition-all resize-none"
                           value={formData.meta_description}
                           onChange={(e) =>
                             setFormData({
@@ -1100,7 +1106,7 @@ const AdminProducts = () => {
 
                     <div className="space-y-6">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-950 flex items-center gap-2">
                           <Layers size={14} /> Atribute Tehnice
                         </h4>
                         <button
@@ -1117,7 +1123,7 @@ const AdminProducts = () => {
                                 },
                               });
                           }}
-                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-black hover:underline"
                         >
                           + Adaugă Parametru
                         </button>
@@ -1136,7 +1142,7 @@ const AdminProducts = () => {
                                 {k}
                               </span>
                               <input
-                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-[var(--dark-amethyst)]"
+                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-zinc-950"
                                 placeholder="Valoare..."
                                 value={v as string}
                                 onChange={(e) =>
@@ -1175,7 +1181,7 @@ const AdminProducts = () => {
 
           <DialogFooter className="px-6 md:px-10 py-6 md:py-8 bg-white border-t shrink-0 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 text-zinc-400">
-              <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
+              <ShieldCheck size={16} className="text-zinc-950" />
               <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-center md:text-left">
                 Propagare securizată în infrastructura EVEM
               </p>
@@ -1189,7 +1195,7 @@ const AdminProducts = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 md:flex-none bg-[var(--dark-amethyst)] text-white px-8 md:px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-[var(--royal-violet)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                className="flex-1 md:flex-none bg-zinc-950 text-white px-8 md:px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-zinc-800 active:scale-95 transition-all flex items-center justify-center gap-3"
               >
                 <Save size={16} />{" "}
                 {editingProduct ? "Salvează Modificările" : "Publică Produsul"}
@@ -1219,7 +1225,7 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
       {icon} {label}
     </Label>
     <input
-      className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
+      className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-black border-none outline-none focus:ring-1 focus:ring-black transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
       placeholder="..."
