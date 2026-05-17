@@ -8,7 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
-  Trash2,
+  Archive,
   Loader2,
   DollarSign,
   AlignLeft,
@@ -21,6 +21,10 @@ import {
   Maximize,
   Save,
   ShieldCheck,
+  Eye,
+  EyeOff,
+  ArrowUpDown,
+  Filter,
 } from "lucide-react";
 import {
   Table,
@@ -38,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
@@ -61,7 +65,6 @@ const PLACEHOLDER_IMG =
 
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
-
   let url = "";
 
   if (typeof imageSource === "string") {
@@ -114,11 +117,18 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
+  // Filtre și Sortare
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [categoryIdFilter, setCategoryIdFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState("updated_at");
+  const [sortOrder, setSortOrder] = useState("desc");
+
   const [uploading, setUploading] = useState<string | null>(null);
 
+  // Paginație
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -150,6 +160,7 @@ const AdminProducts = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  // Debounce căutare
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -169,16 +180,22 @@ const AdminProducts = () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         page_size: itemsPerPage.toString(),
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        status: statusFilter,
+        stock_status: stockFilter,
       });
 
       if (debouncedSearch) {
-        params.append("q", debouncedSearch);
+        params.append("search", debouncedSearch); // Noul format din backend accepta 'search'
+        params.append("q", debouncedSearch); // Fallback vechi
         params.append("is_admin_view", "true");
       }
-      if (statusFilter !== "ALL") params.append("status", statusFilter);
+
+      if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
       const [prodRes, catRes] = await Promise.all([
-        fetch(`${endpoint}?${params}`, { credentials: "include" }),
+        fetch(`${endpoint}?${params.toString()}`, { credentials: "include" }),
         fetch(`${API_BASE_URL}/api/v1/categories/`, { credentials: "include" }),
       ]);
 
@@ -198,11 +215,42 @@ const AdminProducts = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, currentPage, statusFilter, debouncedSearch]);
+  }, [
+    isAdmin,
+    currentPage,
+    statusFilter,
+    debouncedSearch,
+    sortBy,
+    sortOrder,
+    categoryIdFilter,
+    stockFilter,
+  ]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // --- ACȚIUNE RAPIDĂ: TRECERE ÎN DRAFT ---
+  const handleToggleStatus = async (sku: string, currentStatus: string) => {
+    const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/products/${sku}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        toast.success(`Produs marcat ca ${newStatus}`);
+        fetchData();
+      } else {
+        toast.error("Eroare la actualizarea statusului.");
+      }
+    } catch {
+      toast.error("Eroare de conexiune.");
+    }
+  };
 
   const openEdit = (p: any = null) => {
     if (p) {
@@ -285,7 +333,7 @@ const AdminProducts = () => {
       });
       const result = await res.json();
       const uploadedUrl = result.url || result.file_url || result.data?.url;
-      if (!uploadedUrl) throw new Error("Format răspuns invalid de la server");
+      if (!uploadedUrl) throw new Error("Format invalid de la server");
 
       if (index === "main") {
         setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
@@ -309,7 +357,6 @@ const AdminProducts = () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
 
-    // 🚀 FIX CRITIC: S-a eliminat apelul inexistent "bleach.clean" din codul de frontend
     const payload = {
       sku: formData.sku
         ? formData.sku.trim().toUpperCase()
@@ -352,7 +399,7 @@ const AdminProducts = () => {
       });
 
       if (res.ok) {
-        toast.success("Catalog actualizat!");
+        toast.success("Catalog actualizat cu succes!");
         fetchData();
         setIsModalOpen(false);
       } else {
@@ -410,9 +457,10 @@ const AdminProducts = () => {
         </div>
       </header>
 
-      {/* FILTER TABS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-50 pb-2 overflow-x-auto no-scrollbar">
-        <div className="flex gap-8">
+      {/* ADVANCED FILTER TABS & DROPDOWNS */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-50 pb-4">
+        {/* Main Status Tabs */}
+        <div className="flex gap-6 overflow-x-auto no-scrollbar">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
             <button
               key={f}
@@ -420,7 +468,7 @@ const AdminProducts = () => {
                 setStatusFilter(f);
                 setCurrentPage(1);
               }}
-              className={`pb-4 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
+              className={`pb-2 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
                 statusFilter === f
                   ? "text-[var(--royal-violet)]"
                   : "text-zinc-400 hover:text-zinc-600"
@@ -430,15 +478,74 @@ const AdminProducts = () => {
               {statusFilter === f && (
                 <motion.div
                   layoutId="statusTab"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--royal-violet)]"
+                  className="absolute -bottom-4 left-0 right-0 h-0.5 bg-[var(--royal-violet)]"
                 />
               )}
             </button>
           ))}
         </div>
-        <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest whitespace-nowrap">
-          {totalItems} Articole în total
+
+        {/* Secondary Filters: Category, Stock, Sort */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
+            <Filter size={12} className="text-zinc-400 mr-2" />
+            <select
+              value={categoryIdFilter}
+              onChange={(e) => {
+                setCategoryIdFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer appearance-none pr-4"
+            >
+              <option value="">Toate Categoriile</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
+            <Package size={12} className="text-zinc-400 mr-2" />
+            <select
+              value={stockFilter}
+              onChange={(e) => {
+                setStockFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer appearance-none pr-4"
+            >
+              <option value="ALL">Stoc: Toate</option>
+              <option value="LOW_STOCK">Stoc Critic (≤5)</option>
+              <option value="OUT_OF_STOCK">Fără Stoc</option>
+            </select>
+          </div>
+
+          <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
+            <ArrowUpDown size={12} className="text-zinc-400 mr-2" />
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [by, order] = e.target.value.split("-");
+                setSortBy(by);
+                setSortOrder(order);
+                setCurrentPage(1);
+              }}
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer appearance-none pr-4"
+            >
+              <option value="updated_at-desc">Cele mai noi</option>
+              <option value="price-asc">Preț: Crescător</option>
+              <option value="price-desc">Preț: Descrescător</option>
+              <option value="stock_quantity-asc">Stoc: Crescător</option>
+              <option value="category_name-asc">Categorie (A-Z)</option>
+            </select>
+          </div>
         </div>
+      </div>
+
+      <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-right">
+        {totalItems} Articole în total
       </div>
 
       {/* MAIN TABLE */}
@@ -449,6 +556,9 @@ const AdminProducts = () => {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="py-5 px-6 md:px-8 text-[9px] font-black uppercase tracking-widest text-zinc-500">
                   Produs
+                </TableHead>
+                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Categorie
                 </TableHead>
                 <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
                   Status
@@ -475,6 +585,9 @@ const AdminProducts = () => {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-4 w-24 mx-auto" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-6 w-20 mx-auto rounded-full" />
                     </TableCell>
                     <TableCell>
@@ -488,10 +601,10 @@ const AdminProducts = () => {
               ) : products.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="py-32 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
                   >
-                    Nu au fost găsite rezultate.
+                    Nu au fost găsite rezultate pentru filtrele selectate.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -505,7 +618,7 @@ const AdminProducts = () => {
                         <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
                           <img
                             src={getValidImageUrl(p.image_url)}
-                            crossOrigin="anonymous"
+                            crossOrigin="anonymous" // 🚀 FIX CORS
                             onError={handleImageError}
                             className="object-contain h-full w-full"
                             alt="Produs"
@@ -525,14 +638,22 @@ const AdminProducts = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
+                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                        {p.category_name ||
+                          (p.category ? p.category.name : "General")}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
                       <span
-                        className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status)}`}
+                        className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(
+                          p.status,
+                        )}`}
                       >
                         {p.status}
                       </span>
                     </TableCell>
                     <TableCell className="text-center font-black text-xs text-[var(--dark-amethyst)]">
-                      {p.stock_quantity ?? 0}
+                      {p.stock_quantity ?? p.stock ?? 0}
                     </TableCell>
                     <TableCell className="text-right px-6 md:px-8">
                       <div className="flex items-center justify-end gap-4 md:gap-6">
@@ -550,12 +671,29 @@ const AdminProducts = () => {
                         <div className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
                           <button
                             onClick={() => openEdit(p)}
+                            title="Editează Produsul"
                             className="p-2 bg-zinc-50 rounded-md hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
                           >
                             <Edit2 size={14} />
                           </button>
-                          <button className="p-2 bg-zinc-50 rounded-md hover:bg-rose-500 hover:text-white transition-colors">
-                            <Trash2 size={14} />
+
+                          {/* 🚀 ACTION: Trecere rapidă în Draft (în loc de Ștergere) */}
+                          <button
+                            onClick={() =>
+                              handleToggleStatus(p.sku, p.status || "ACTIVE")
+                            }
+                            title={
+                              p.status === "DRAFT"
+                                ? "Publică Produsul"
+                                : "Treci în Draft / Arhivează"
+                            }
+                            className="p-2 bg-zinc-50 rounded-md hover:bg-amber-500 hover:text-white transition-colors"
+                          >
+                            {p.status === "DRAFT" ? (
+                              <Eye size={14} />
+                            ) : (
+                              <EyeOff size={14} />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -631,7 +769,7 @@ const AdminProducts = () => {
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
-                          crossOrigin="anonymous"
+                          crossOrigin="anonymous" // 🚀 FIX CORS
                           onError={handleImageError}
                           className="h-full w-full object-contain p-4 md:p-8"
                           alt="Principal"
@@ -683,7 +821,7 @@ const AdminProducts = () => {
                               src={getValidImageUrl(
                                 formData.additional_image_link[i],
                               )}
-                              crossOrigin="anonymous"
+                              crossOrigin="anonymous" // 🚀 FIX CORS
                               onError={handleImageError}
                               className="w-full h-full object-cover"
                               alt={`Secundar ${i}`}
@@ -849,7 +987,7 @@ const AdminProducts = () => {
                         }
                       >
                         <option value="ACTIVE">Public</option>
-                        <option value="DRAFT">Schiță</option>
+                        <option value="DRAFT">Schiță (Draft)</option>
                         <option value="OUT_OF_STOCK">Fără Stoc</option>
                       </select>
                     </div>
@@ -978,7 +1116,7 @@ const AdminProducts = () => {
                                 },
                               });
                           }}
-                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-black hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
                         >
                           + Adaugă Parametru
                         </button>
