@@ -27,20 +27,19 @@ const HomeHero = () => {
   }, []);
 
   return (
-    /* 🚀 CORECȚIE CRITICĂ 1: Am mărit padding-ul superior pe mobil (pt-24 sm:pt-28) 
-      pentru a împinge containerul în jos și a preveni intrarea lui sub Navbar-ul fixed.
+    /* 🚀 REPARAT ATOMIC: Am schimbat pt-24 în pt-32 pe mobil și sm:pt-36 pentru a împinge 
+       secțiunea în jos, sub marginea fixă a Navbar-ului cu Ticker. Am pus pb-2 în loc de pb-6.
     */
-    <section className="w-full px-4 md:px-6 pt-24 sm:pt-28 md:pt-32 pb-0 md:pb-6 text-left">
-      {/* 🚀 CORECȚIE CRITICĂ 2: Am schimbat din 'flex-col' în 'flex-col-reverse'. 
-        Acum, pe mobil, imaginea/bannerul urcă automat prima, iar meniul de navigare coboară sub ea.
-      */}
-      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 md:gap-4 items-stretch lg:h-[480px]">
-        {/* SIDEBAR CATEGORII (COBOARĂ SUB BANNER PE MOBIL) */}
+    <section className="w-full px-4 md:px-6 pt-32 sm:pt-36 md:pt-28 pb-2 md:pb-6 text-left">
+      {/* 🚀 REPARAT ATOMIC: Am redus gap-ul de la gap-4 la gap-3 pe mobil pentru a apropia Sidebar-ul de Banner */}
+      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-3 md:gap-4 items-stretch lg:h-[480px]">
+        {/* SIDEBAR CATEGORII (SUB BANNER PE MOBIL) */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex flex-col h-[320px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
+            /* 🚀 REPARAT ATOMIC: Am scăzut înălțimea fixă de mobil la h-[280px] pentru a nu mai lăsa acel gol imens sub imagine */
+            className="flex flex-col h-[280px] lg:h-full rounded-[2rem] border border-zinc-100 bg-white/80 backdrop-blur-md shadow-sm overflow-hidden"
           >
             <div className="p-5 pb-3 shrink-0">
               <div className="flex items-center gap-2 mb-2">
@@ -55,7 +54,7 @@ const HomeHero = () => {
                     key="t1"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-lg font-black tracking-tighter text-left"
+                    className="text-sm font-black uppercase tracking-wider text-left"
                   >
                     Categorii
                   </motion.h3>
@@ -149,8 +148,8 @@ const HomeHero = () => {
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL (URCĂ PRIMUL PE MOBIL) */}
-        <div className="flex-1 min-h-[340px] lg:min-h-0">
+        {/* BANNER PRINCIPAL (PRIMUL PE MOBIL) */}
+        <div className="flex-1 min-h-[260px] lg:min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -162,16 +161,16 @@ const HomeHero = () => {
               className="absolute inset-0 w-full h-full object-cover opacity-80"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
-            <div className="relative h-full flex flex-col justify-center p-6 md:p-16 text-white items-start">
-              <h1 className="text-3xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-4 text-left">
+            <div className="relative h-full flex flex-col justify-center p-6 sm:p-10 md:p-16 text-white items-start">
+              <h1 className="text-2xl sm:text-4xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-4 text-left">
                 STILUL TĂU, <br />
-                <span className="font-light italic opacity-60 text-2xl md:text-5xl">
+                <span className="font-light italic opacity-60 text-xl sm:text-3xl md:text-5xl">
                   REDEFINIT.
                 </span>
               </h1>
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest w-fit shadow-xl"
+                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full text-[10px] font-black uppercase tracking-widest w-fit shadow-xl"
               >
                 <ShoppingBag size={14} /> Cumpără acum
               </Link>

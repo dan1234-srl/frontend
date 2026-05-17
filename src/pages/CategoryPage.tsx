@@ -6,7 +6,6 @@ import {
   LayoutGrid,
   Grid2X2,
   SlidersHorizontal,
-  X,
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
@@ -136,7 +135,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE (NATIVE SIDEBAR FLYOUT SYSTEM)
+// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE (FLYOUT SIDEBAR EMBEDDED SYSTEM)
 // ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
@@ -288,7 +287,6 @@ const CategoryPage = () => {
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
-        {/* TITLES EDITORIAL */}
         <div className="mb-10 md:mb-14">
           <div className="flex items-baseline gap-4 flex-wrap">
             <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
@@ -312,7 +310,7 @@ const CategoryPage = () => {
 
         <CategoryHeroCarousel banners={campaignBanners} />
 
-        {/* MOBILE CAROUSEL */}
+        {/* MOBILE CATEGORIES TREE */}
         <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
           <div className="flex gap-2">
             {categoriesTree.map((cat) => (
@@ -331,7 +329,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* 🚀 BARĂ DE ACȚIUNI: BUTONUL DE FILTRARE LANSEAZĂ REFACTURAT ACUM DIRECT UN SHEET RADIX CONTEXTUAL */}
+        {/* ACTIONS BAR BUTTON FILTER */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
           <Sheet>
             <SheetTrigger asChild>
@@ -348,19 +346,22 @@ const CategoryPage = () => {
               </button>
             </SheetTrigger>
 
-            {/* 🚀 SIDEBAR FLYOUT MINIMALIST DESIGN (FĂRĂ PARAMETRI ADIȚIONALI SAU FOOTERE INUTILE) */}
+            {/* 🚀 REPARAT ATOMIC: Am injectat clasele corecte de overlay globale Radix: 
+               - z-[99999] forțează trecerea containerului deasupra Navbar-ului fixed
+               - luxury-blur-overlay activează filtrul Gaußian blur profund pe toată pagina din spate
+            */}
             <SheetContent
               side="right"
-              className="w-[90%] sm:w-[450px] p-0 border-none bg-white z-[10001] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300"
+              className="w-[90%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
             >
               <ThemeMarker />
-              <SheetHeader className="p-8 border-b border-zinc-100 shrink-0 flex flex-row items-center justify-between">
+              <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
                 <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
                   Filtre Portofoliu
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar text-left">
+              <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar">
                 {filtersData ? (
                   <FilterSidebar filtersData={filtersData} />
                 ) : (
@@ -383,7 +384,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* LAYOUT GRID (FĂRĂ FILTRELE INLINE - GRILA RESPONSIVĂ SE EXTINDE PE TOT ECRANUL) */}
+        {/* PRODUCTS GRID */}
         <div className="flex gap-12 items-start">
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">
@@ -432,7 +433,6 @@ const CategoryPage = () => {
             </nav>
           </aside>
 
-          {/* PRODUCTS GRID */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
               <div className="w-full">
@@ -472,7 +472,6 @@ const CategoryPage = () => {
                   ))}
                 </div>
 
-                {/* LOAD MORE */}
                 {currentPage < totalPages && (
                   <div className="flex justify-center pt-12 border-t border-zinc-100">
                     <button
@@ -506,17 +505,27 @@ const CategoryPage = () => {
 
       <Footer />
 
+      {/* 🚀 CSS GLOBAL INJECTAT PENTRU EFECTUL DE BLUR GAUSSIAN COMPLET PESTE APPLICAȚIE DIN RADIX */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            html { scrollbar-gutter: stable !important; }
-            body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
-            .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-            .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
-            .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
-          `,
+          html { scrollbar-gutter: stable !important; }
+          body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+          .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+          .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
+          
+          /* Forțează overlay-ul nativ din Radix UI/Shadcn să blureze tot ecranul, inclusiv Header-ul */
+          [data-radix-focus-trap] ~ div[class*="bg-black/80"],
+          div[class*="fixed inset-0 bg-black"] {
+            z-index: 99990 !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            background-color: rgba(9, 9, 11, 0.4) !important;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+        `,
         }}
       />
     </div>
