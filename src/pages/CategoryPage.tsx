@@ -1,12 +1,26 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { Loader2, ChevronDown, LayoutGrid, Grid2X2 } from "lucide-react";
+import {
+  Loader2,
+  ChevronDown,
+  LayoutGrid,
+  Grid2X2,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
 import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { FilterSidebar } from "../components/shop/FilterSidebar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
@@ -122,7 +136,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE (INLINE SIDEBAR FILTER SYSTEM)
+// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE (NATIVE SIDEBAR FLYOUT SYSTEM)
 // ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
@@ -144,7 +158,6 @@ const CategoryPage = () => {
       .replace(/-/g, " ");
   };
 
-  // Fetch structură arborescentă categorii
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
@@ -152,7 +165,6 @@ const CategoryPage = () => {
       .catch(() => {});
   }, []);
 
-  // Fetch matrice atribute și branduri pentru sidebar
   useEffect(() => {
     if (!slug) return;
     setFiltersData(null);
@@ -162,7 +174,6 @@ const CategoryPage = () => {
       .catch(() => {});
   }, [slug]);
 
-  // Fetch campanii vizuale banner hero
   useEffect(() => {
     if (!slug) return;
     fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
@@ -277,7 +288,7 @@ const CategoryPage = () => {
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
-        {/* EDITORIAL HEADING TITLES */}
+        {/* TITLES EDITORIAL */}
         <div className="mb-10 md:mb-14">
           <div className="flex items-baseline gap-4 flex-wrap">
             <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
@@ -301,7 +312,7 @@ const CategoryPage = () => {
 
         <CategoryHeroCarousel banners={campaignBanners} />
 
-        {/* MOBILE HORIZONTAL SCROLL CATEGORIES */}
+        {/* MOBILE CAROUSEL */}
         <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
           <div className="flex gap-2">
             {categoriesTree.map((cat) => (
@@ -320,120 +331,138 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* CONTROLS ACTIONS BAR (ONLY SORT DROPDOWN LEFT) */}
-        <div className="flex items-center justify-between lg:justify-end py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 lg:hidden">
-            Filtre & Sortare Catalog
-          </div>
+        {/* 🚀 BARĂ DE ACȚIUNI: BUTONUL DE FILTRARE LANSEAZĂ REFACTURAT ACUM DIRECT UN SHEET RADIX CONTEXTUAL */}
+        <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
+                <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <SlidersHorizontal size={14} />
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black border border-white">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </div>
+                <span>Rafinează Portofoliul</span>
+              </button>
+            </SheetTrigger>
+
+            {/* 🚀 SIDEBAR FLYOUT MINIMALIST DESIGN (FĂRĂ PARAMETRI ADIȚIONALI SAU FOOTERE INUTILE) */}
+            <SheetContent
+              side="right"
+              className="w-[90%] sm:w-[450px] p-0 border-none bg-white z-[10001] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-300"
+            >
+              <ThemeMarker />
+              <SheetHeader className="p-8 border-b border-zinc-100 shrink-0 flex flex-row items-center justify-between">
+                <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
+                  Filtre Portofoliu
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar text-left">
+                {filtersData ? (
+                  <FilterSidebar filtersData={filtersData} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <Loader2
+                      className="animate-spin text-[var(--royal-violet)]"
+                      size={24}
+                    />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                      Se încarcă matricea...
+                    </span>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <div className="w-44 md:w-60">
             <SortDropdown />
           </div>
         </div>
 
-        {/* STRUCTURĂ GRILĂ MULTI-COLOANĂ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* ASIDE SIDEBAR: COMPONENTA DE FILTRARE ESTE IMPLEMENTATĂ DIRECT INLINE FIX IN PAGINA */}
-          <aside className="lg:col-span-3 xl:col-span-3 space-y-10 lg:sticky lg:top-52 max-h-[85vh] overflow-y-auto luxury-scrollbar pr-2">
-            {/* Navigare ierarhică ierarhie categorii (Afișată doar pe desktop) */}
-            <div className="space-y-4 hidden lg:block">
-              <div className="flex items-center gap-2 pl-2">
-                <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
-                  Navigare Structură
-                </span>
-              </div>
-              <nav className="flex flex-col gap-1.5">
-                {categoriesTree.map((cat) => {
-                  const isParentActive =
-                    slug === cat.slug ||
-                    cat.subcategories?.some((s: any) => s.slug === slug);
-                  return (
-                    <div key={cat.id} className="flex flex-col gap-1">
-                      <Link
-                        to={`/category/${cat.slug}`}
-                        className={`py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 ${
-                          isParentActive
-                            ? "bg-zinc-50 text-[var(--royal-violet)] shadow-sm"
-                            : "text-zinc-400 hover:text-black hover:bg-zinc-50/50"
-                        }`}
-                      >
-                        {cat.name}
-                      </Link>
-                      {isParentActive && cat.subcategories?.length > 0 && (
-                        <div className="flex flex-col gap-1 ml-5 border-l border-zinc-100 pl-4 py-1.5 space-y-1">
-                          {cat.subcategories.map((sub: any) => (
-                            <Link
-                              key={sub.id}
-                              to={`/category/${sub.slug}`}
-                              className={`text-[10px] font-bold uppercase tracking-tight transition-colors ${
-                                slug === sub.slug
-                                  ? "text-[var(--royal-violet)] font-black"
-                                  : "text-zinc-300 hover:text-zinc-700"
-                              }`}
-                            >
-                              {sub.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </nav>
+        {/* LAYOUT GRID (FĂRĂ FILTRELE INLINE - GRILA RESPONSIVĂ SE EXTINDE PE TOT ECRANUL) */}
+        <div className="flex gap-12 items-start">
+          <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
+            <div className="flex items-center gap-2 mb-6 pl-2">
+              <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
+                Navigare Structură
+              </span>
             </div>
-
-            {/* Container nativ FilterSidebar: Vizibil direct inline permanent */}
-            <div className="space-y-4 bg-zinc-50/30 border border-zinc-100 p-6 rounded-[2rem]">
-              <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] border-b border-zinc-100 pb-3 mb-2">
-                Filtre Portofoliu
-              </div>
-              {filtersData ? (
-                <FilterSidebar filtersData={filtersData} />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 gap-2">
-                  <Loader2
-                    className="animate-spin text-[var(--royal-violet)]"
-                    size={20}
-                  />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                    Se încarcă matricea...
-                  </span>
-                </div>
-              )}
-            </div>
+            <nav className="flex flex-col gap-1.5 max-h-[500px] overflow-y-auto luxury-scrollbar pr-3">
+              {categoriesTree.map((cat) => {
+                const isParentActive =
+                  slug === cat.slug ||
+                  cat.subcategories?.some((s: any) => s.slug === slug);
+                return (
+                  <div key={cat.id} className="flex flex-col gap-1">
+                    <Link
+                      to={`/category/${cat.slug}`}
+                      className={`py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 ${
+                        isParentActive
+                          ? "bg-zinc-50 text-[var(--royal-violet)] shadow-sm"
+                          : "text-zinc-400 hover:text-black hover:bg-zinc-50/50"
+                      }`}
+                    >
+                      {cat.name}
+                    </Link>
+                    {isParentActive && cat.subcategories?.length > 0 && (
+                      <div className="flex flex-col gap-1 ml-5 border-l border-zinc-100 pl-4 py-1.5 space-y-1">
+                        {cat.subcategories.map((sub: any) => (
+                          <Link
+                            key={sub.id}
+                            to={`/category/${sub.slug}`}
+                            className={`text-[10px] font-bold uppercase tracking-tight transition-colors ${
+                              slug === sub.slug
+                                ? "text-[var(--royal-violet)] font-black"
+                                : "text-zinc-300 hover:text-zinc-700"
+                            }`}
+                          >
+                            {sub.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
           </aside>
 
-          {/* MATRICE GRID PRODUSE (9 COLOANE PE DESKTOP) */}
-          <div className="lg:col-span-9 xl:col-span-9 min-w-0">
+          {/* PRODUCTS GRID */}
+          <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
               <div className="w-full">
-                <ProductGridSkeleton count={8} />
+                <ProductGridSkeleton count={10} />
               </div>
             ) : products.length === 0 ? (
-              <div className="text-center py-32 border border-zinc-100 rounded-[2rem] bg-zinc-50/30 flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
-                  <Grid2X2 size={16} className="text-zinc-300" />
+              <div className="text-center py-40 border border-zinc-100 rounded-[2rem] bg-zinc-50/30 flex flex-col items-center justify-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                  <SlidersHorizontal size={20} className="text-zinc-300" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
                     Niciun rezultat găsit
                   </p>
                   <p className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                    Nu există articole active mapate pe parametrii selectați.
+                    Încearcă să resetezi parametrii selectați.
                   </p>
                 </div>
                 {activeFiltersCount > 0 && (
                   <button
                     onClick={() => setSearchParams({})}
-                    className="mt-2 px-6 py-2.5 text-[9px] font-black uppercase tracking-widest border border-zinc-200 rounded-full hover:bg-zinc-950 hover:text-white hover:border-zinc-950 transition-all duration-300"
+                    className="mt-2 px-6 py-3 text-[9px] font-black uppercase tracking-widest border border-zinc-200 rounded-full hover:bg-zinc-950 hover:text-white hover:border-zinc-950 transition-all duration-300"
                   >
-                    Resetează Toate Filtrele
+                    Resetează filtrele
                   </button>
                 )}
               </div>
             ) : (
               <div className="flex flex-col gap-16">
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
                   {products.map((p, i) => (
                     <ProductCard
                       key={`${p.id}-${i}`}
@@ -443,7 +472,7 @@ const CategoryPage = () => {
                   ))}
                 </div>
 
-                {/* LOAD MORE SYSTEM */}
+                {/* LOAD MORE */}
                 {currentPage < totalPages && (
                   <div className="flex justify-center pt-12 border-t border-zinc-100">
                     <button
@@ -451,19 +480,19 @@ const CategoryPage = () => {
                       disabled={loadingMore}
                       className="flex flex-col items-center gap-3 group transition-transform active:scale-95"
                     >
-                      <div className="w-12 h-12 rounded-full border border-zinc-100 bg-white flex items-center justify-center group-hover:bg-zinc-950 group-hover:text-white group-hover:border-zinc-950 transition-all duration-300 shadow-sm">
+                      <div className="w-14 h-14 rounded-full border border-zinc-100 bg-white flex items-center justify-center group-hover:bg-zinc-950 group-hover:text-white group-hover:border-zinc-950 transition-all duration-300 shadow-sm">
                         {loadingMore ? (
-                          <Loader2 className="animate-spin" size={14} />
+                          <Loader2 className="animate-spin" size={16} />
                         ) : (
                           <ChevronDown
                             className="group-hover:translate-y-0.5 transition-transform"
-                            size={14}
+                            size={16}
                           />
                         )}
                       </div>
                       <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-black transition-colors">
                         {loadingMore
-                          ? "Se procesează..."
+                          ? "Se încarcă..."
                           : "Încarcă Mai Multe Articole"}
                       </span>
                     </button>
@@ -485,7 +514,7 @@ const CategoryPage = () => {
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-            .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius: 20px; }
+            .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
             .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
           `,
         }}

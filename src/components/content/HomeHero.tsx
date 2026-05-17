@@ -27,15 +27,15 @@ const HomeHero = () => {
   }, []);
 
   return (
-    /* 
-       CORECȚIE 1: pt-16 pe mobil (în loc de 20/24) și pb-0 pentru a lipi caruselul.
+    /* 🚀 CORECȚIE CRITICĂ 1: Am mărit padding-ul superior pe mobil (pt-24 sm:pt-28) 
+      pentru a împinge containerul în jos și a preveni intrarea lui sub Navbar-ul fixed.
     */
-    <section className="w-full px-4 md:px-6 pt-16 md:pt-24 pb-0 md:pb-6">
-      {/* 
-         CORECȚIE 2: gap-2 pe mobil (în loc de 4) pentru a apropia Sidebar-ul de Banner.
+    <section className="w-full px-4 md:px-6 pt-24 sm:pt-28 md:pt-32 pb-0 md:pb-6 text-left">
+      {/* 🚀 CORECȚIE CRITICĂ 2: Am schimbat din 'flex-col' în 'flex-col-reverse'. 
+        Acum, pe mobil, imaginea/bannerul urcă automat prima, iar meniul de navigare coboară sub ea.
       */}
-      <div className="mx-auto max-w-[1750px] flex flex-col lg:flex-row gap-2 md:gap-4 items-stretch lg:h-[480px]">
-        {/* SIDEBAR CATEGORII */}
+      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 md:gap-4 items-stretch lg:h-[480px]">
+        {/* SIDEBAR CATEGORII (COBOARĂ SUB BANNER PE MOBIL) */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -55,7 +55,7 @@ const HomeHero = () => {
                     key="t1"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-lg font-black tracking-tighter"
+                    className="text-lg font-black tracking-tighter text-left"
                   >
                     Categorii
                   </motion.h3>
@@ -149,12 +149,12 @@ const HomeHero = () => {
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL */}
-        <div className="flex-1">
+        {/* BANNER PRINCIPAL (URCĂ PRIMUL PE MOBIL) */}
+        <div className="flex-1 min-h-[340px] lg:min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative h-full w-full min-h-[280px] rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
+            className="relative h-full w-full rounded-[2rem] overflow-hidden group shadow-sm bg-zinc-900"
           >
             <img
               src={heroBanner}
@@ -162,8 +162,8 @@ const HomeHero = () => {
               className="absolute inset-0 w-full h-full object-cover opacity-80"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
-            <div className="relative h-full flex flex-col justify-center p-6 md:p-16 text-white">
-              <h1 className="text-3xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-4">
+            <div className="relative h-full flex flex-col justify-center p-6 md:p-16 text-white items-start">
+              <h1 className="text-3xl md:text-6xl font-black leading-[1.1] tracking-tighter mb-4 text-left">
                 STILUL TĂU, <br />
                 <span className="font-light italic opacity-60 text-2xl md:text-5xl">
                   REDEFINIT.
