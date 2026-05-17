@@ -27,13 +27,12 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER (REPARAT REACTIV & CORS)
+// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER
 // ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Determinare reactivă stabilă a tipului de ecran (Mobile vs Desktop)
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 640);
@@ -43,7 +42,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-play la interval de 6 secunde dacă există mai mult de o campanie activă
   useEffect(() => {
     if (!banners || banners.length <= 1) return;
     const timer = setInterval(() => {
@@ -57,7 +55,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const currentBanner = banners[current];
   if (!currentBanner) return null;
 
-  // 🚀 REPARAT ATOMIC: Schimbat din .image_mobile_url/.image_desktop_url în .image_mobile/.image_desktop conform bazei de date
   const resolvedImageUrl =
     isMobile && currentBanner.image_mobile
       ? currentBanner.image_mobile
@@ -90,11 +87,9 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
             <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
           )}
 
-          {/* Overlay cinematic asimetric pentru contrastul textului */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-10" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10" />
 
-          {/* Zonă conținut text */}
           <div className="absolute inset-y-0 left-0 p-8 sm:p-12 md:p-20 flex flex-col justify-center items-start text-left text-white max-w-md md:max-w-2xl z-20 space-y-4">
             <div className="flex items-center gap-3">
               <span className="h-[1px] w-8 bg-white/60 block" />
@@ -122,7 +117,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicatori puncte */}
       {banners.length > 1 && (
         <div className="absolute bottom-6 right-10 flex gap-2.5 z-30">
           {banners.map((_, i) => (
@@ -154,11 +148,8 @@ const CategoryPage = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = parseInt(searchParams.get("page") || "1");
-
-  /* ── State pentru stocarea listei de campanii promoționale ── */
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
 
-  /* ── Context filtre reparat atomic ── */
   const {
     filtersOpen,
     setFiltersOpen,
@@ -168,7 +159,6 @@ const CategoryPage = () => {
     unregisterResetHandler,
   } = useFilters();
 
-  /* ── Helper afișare nume fallback ── */
   const formatFallbackName = (str: string | undefined) => {
     if (!str) return "";
     return str
@@ -177,14 +167,12 @@ const CategoryPage = () => {
       .replace(/-/g, " ");
   };
 
-  /* ── Înregistrare handler reset pentru butonul din FilterDrawer ── */
   useEffect(() => {
     const resetHandler = () => setSearchParams({});
     registerResetHandler(resetHandler);
     return () => unregisterResetHandler();
   }, [registerResetHandler, unregisterResetHandler, setSearchParams]);
 
-  /* ── Fetch structură categorii tree ── */
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
@@ -192,7 +180,6 @@ const CategoryPage = () => {
       .catch(() => {});
   }, []);
 
-  /* ── Fetch filtre disponibile pentru categoria curentă ── */
   useEffect(() => {
     if (!slug) return;
     setFiltersData(null);
@@ -202,7 +189,6 @@ const CategoryPage = () => {
       .catch(() => {});
   }, [slug, setFiltersData]);
 
-  /* ── Fetch Bannere Promoționale (Sistem Unificat cu Fallback Global) ── */
   useEffect(() => {
     if (!slug) return;
     fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
@@ -219,7 +205,7 @@ const CategoryPage = () => {
       .catch(() => setCampaignBanners([]));
   }, [slug]);
 
-  /* ── Fetch produse reactiv ── */
+  /* ── Fetch produse reactiv reparat atomic pentru query-ul din Python ── */
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
       if (append) setLoadingMore(true);
@@ -229,10 +215,22 @@ const CategoryPage = () => {
         params.set("page", page.toString());
         params.set("category_slug", slug || "");
 
+        // 🚀 REPARAT ATOMIC: Transmitem exact formatul de sortare pe care noul backend îl validează prin whitelist
         const currentSort = searchParams.get("sort");
-        if (currentSort === "pret-crescator") params.set("sort", "price_asc");
-        if (currentSort === "pret-descrescator")
-          params.set("sort", "price_desc");
+        if (currentSort === "pret-crescator") {
+          params.set("sort_by", "price");
+          params.set("sort_order", "asc");
+        } else if (currentSort === "pret-descrescator") {
+          params.set("sort_by", "price");
+          params.set("sort_order", "desc");
+        } else if (currentSort === "cele-mai-noi") {
+          params.set("sort_by", "created_at");
+          params.set("sort_order", "desc");
+        } else {
+          // Default logică stabilită în noul sistem unificat de indexare
+          params.set("sort_by", "updated_at");
+          params.set("sort_order", "desc");
+        }
 
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
@@ -254,18 +252,22 @@ const CategoryPage = () => {
 
   useEffect(() => {
     fetchProducts(1, false);
-  }, [slug, searchParams]);
+  }, [slug, searchParams, fetchProducts]);
 
-  /* ── Număr filtre active (pentru badge pe buton) ── */
   const activeFiltersCount = (() => {
     let count = 0;
     searchParams.forEach((val, key) => {
-      if (!["page", "sort", "category_slug"].includes(key) && val) count++;
+      if (
+        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
+          key,
+        ) &&
+        val
+      )
+        count++;
     });
     return count;
   })();
 
-  /* ── Extragere Titlu Curat din Tabela de Categorii ── */
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) {
       return filtersData.category_name;
@@ -287,11 +289,9 @@ const CategoryPage = () => {
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      {/* SPACER PENTRU NAVBAR FIXED */}
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
       <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
-        {/* HERO HEADING */}
         <div className="mb-10 md:mb-14">
           <div className="flex items-baseline gap-4 flex-wrap">
             <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
@@ -313,7 +313,6 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* 🚀 CARUSEL DE CAMPANIE (DEDICAT SAU FALLBACK GLOBAL DIN NOUL ENDPOINT) */}
         <CategoryHeroCarousel banners={campaignBanners} />
 
         {/* MOBILE NAV */}
@@ -328,6 +327,7 @@ const CategoryPage = () => {
               side="left"
               className="w-[85%] max-w-[360px] p-0 border-none bg-white z-[10001] shadow-2xl flex flex-col h-full"
             >
+              <ThemeMarker />
               <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
                 <SheetTitle className="text-xl font-black uppercase tracking-tighter text-left text-[var(--dark-amethyst)]">
                   Categorii
@@ -388,7 +388,7 @@ const CategoryPage = () => {
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
           <button
             onClick={() => setFiltersOpen(true)}
-            className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
+            className="flex-center items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
           >
             <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
               <SlidersHorizontal size={14} />
@@ -446,7 +446,7 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* LAYOUT: SIDEBAR + GRID */}
+        {/* LAYOUT */}
         <div className="flex gap-12 items-start">
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">
@@ -585,5 +585,10 @@ const CategoryPage = () => {
     </div>
   );
 };
+
+// Componentă utilitară internă pentru auto-detecție (Previne eventualele warning-uri de compilare Vite)
+const ThemeMarker = () => (
+  <div className="hidden bg-[var(--royal-violet)] bg-[var(--dark-amethyst)]" />
+);
 
 export default CategoryPage;
