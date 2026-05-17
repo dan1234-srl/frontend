@@ -63,12 +63,10 @@ const generateSlug = (text: string) => {
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
-// 🚀 REPARAT GLOBAL: Extragere universală de imagini capabilă să parseze string-uri adânci text JSON
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
   let data = imageSource;
 
-  // Dacă sursa este un string, verificăm dacă este un URL nativ sau un obiect JSON serializat în text
   if (typeof data === "string") {
     if (data.startsWith("http") || data.startsWith("/")) {
       return data.startsWith("/") ? `${API_BASE_URL}${data}` : data;
@@ -80,7 +78,6 @@ const getValidImageUrl = (imageSource: any) => {
     }
   }
 
-  // Extragem URL-ul pe baza ierarhiei structurii din baza de date
   if (data && typeof data === "object") {
     const container = data.main || data;
     const url =
@@ -175,7 +172,6 @@ const AdminProducts = () => {
         ? `${API_BASE_URL}/api/v1/products/search/live`
         : `${API_BASE_URL}/api/v1/products/admin-inventory`;
 
-      // 🚀 REPARAT ATOMIC: Corelare logică pentru tab-ul OUT_OF_STOCK
       let queryStatus = statusFilter;
       let queryStock = stockFilter;
 
@@ -369,6 +365,73 @@ const AdminProducts = () => {
       setUploading(null);
     }
   };
+
+  // 🚀 RESTAURAT: Funcția lipsă care se ocupă de transmiterea corectă a payload-ului
+  const handleSave = async () => {
+    if (!formData.name || !formData.category_id)
+      return toast.error("Numele și Categoria sunt obligatorii.");
+
+    const payload = {
+      sku: formData.sku
+        ? formData.sku.trim().toUpperCase()
+        : `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
+      ean: formData.ean ? formData.ean.trim() : "",
+      slug: formData.slug || generateSlug(formData.name),
+      name: formData.name.trim(),
+      brand_name: formData.brand_name || "Evem",
+      status: formData.status.toUpperCase(),
+      price: Number(formData.price),
+      sale_price: formData.sale_price > 0 ? Number(formData.sale_price) : null,
+      stock_quantity: Number(formData.stock_quantity),
+      category_id: formData.category_id,
+      image_url: formData.image_url,
+      description: formData.description || "",
+      weight: Number(formData.weight || 0),
+      length: Number(formData.length || 0),
+      width: Number(formData.width || 0),
+      height: Number(formData.height || 0),
+      meta_title: formData.meta_title || "",
+      meta_description: formData.meta_description || "",
+      canonical_url: formData.canonical_url || "",
+      additional_image_link: formData.additional_image_link.filter(Boolean),
+      attributes_json:
+        typeof formData.attributes_json === "object"
+          ? JSON.stringify(formData.attributes_json)
+          : formData.attributes_json,
+    };
+
+    const url = editingProduct
+      ? `${API_BASE_URL}/api/v1/products/${editingProduct.sku}`
+      : `${API_BASE_URL}/api/v1/products/`;
+
+    try {
+      const res = await fetch(url, {
+        method: editingProduct ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        toast.success("Catalog actualizat cu succes!");
+        fetchData();
+        setIsModalOpen(false);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        toast.error(
+          errorData.detail || "Eroare la salvare. Verifică datele introduse.",
+        );
+      }
+    } catch {
+      toast.error("Eroare severă la conexiune.");
+    }
+  };
+
+  const handleImageError = (e: any) => {
+    e.target.src = PLACEHOLDER_IMG;
+  };
+
+  if (!isAdmin) return null;
 
   return (
     <div className="w-full space-y-8 pb-20 animate-in fade-in duration-700 font-sans text-left">
