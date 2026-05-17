@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
@@ -63,7 +63,6 @@ const generateSlug = (text: string) => {
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
-// 🚀 PARSER UNIVERSAL DE IMAGINI (Rezolvă erorile de randare din tabel)
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
   let data = imageSource;
@@ -98,12 +97,12 @@ const getValidImageUrl = (imageSource: any) => {
 
 const getStatusBadge = (status: string, stock: number) => {
   if (stock === 0)
-    return "bg-rose-50 border-rose-100 text-rose-600 shadow-[0_2px_10px_rgba(244,63,94,0.06)]";
+    return "bg-rose-50 border-rose-100 text-rose-600 shadow-[0_2px_10px_rgba(244,63,94,0.04)]";
   const s = status?.toLowerCase() || "";
   if (s === "active")
-    return "bg-emerald-50 border-emerald-100 text-emerald-600 shadow-[0_2px_10px_rgba(16,185,129,0.06)]";
+    return "bg-[var(--royal-violet)]/5 border-[var(--royal-violet)]/10 text-[var(--royal-violet)] shadow-[0_2px_10px_rgba(139,92,246,0.04)]";
   if (s === "draft")
-    return "bg-amber-50 border-amber-100 text-amber-600 shadow-[0_2px_10px_rgba(245,158,11,0.06)]";
+    return "bg-amber-50 border-amber-100 text-amber-600 shadow-[0_2px_10px_rgba(245,158,11,0.04)]";
   return "bg-zinc-50 border-zinc-200 text-zinc-500";
 };
 
@@ -116,7 +115,7 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  // Stări Control Filtre / Sortare
+  // Filtre și Sortare
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -348,7 +347,7 @@ const AdminProducts = () => {
       });
       const result = await res.json();
       const uploadedUrl = result.url || result.file_url || result.data?.url;
-      if (!uploadedUrl) throw new Error("Upload invalurat");
+      if (!uploadedUrl) throw new Error("Upload invalid");
 
       if (index === "main") {
         setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
@@ -368,7 +367,6 @@ const AdminProducts = () => {
     }
   };
 
-  // 🚀 RESTAURAT COMPLET: Logica handleSave pentru backend unificat
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
@@ -415,12 +413,12 @@ const AdminProducts = () => {
       });
 
       if (res.ok) {
-        toast.success("Structură salvată! Meilisearch se reindexează...");
+        toast.success("Catalog sincronizat cu succes!");
         fetchData();
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
-        toast.error(errorData.detail || "Eroare la scriere în Postgres.");
+        toast.error(errorData.detail || "Eroare la scriere în baza de date.");
       }
     } catch {
       toast.error("Pierdere conexiune gateway API.");
@@ -434,29 +432,29 @@ const AdminProducts = () => {
   if (!isAdmin) return null;
 
   return (
-    <div className="w-full space-y-6 px-2 sm:px-4 md:px-8 pb-20 animate-in fade-in duration-500 font-sans text-left selection:bg-zinc-900 selection:text-white">
-      {/* EDITORIAL CONTROL HEADER */}
+    <div className="w-full space-y-6 px-2 sm:px-4 md:px-8 pb-20 animate-in fade-in duration-500 font-sans text-left selection:bg-[var(--royal-violet)] selection:text-white">
+      {/* BRAND CONTROLS HEADER */}
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 border-b border-zinc-100 pb-8 pt-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="w-6 h-[2px] bg-zinc-900" />
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500">
+            <span className="w-6 h-[2px] bg-[var(--royal-violet)]" />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)]">
               System Operations
             </span>
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-zinc-950 leading-none">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] leading-none">
             Catalog Portofoliu
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <div className="relative flex-1 sm:w-80 group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 transition-colors"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
               size={15}
             />
             <input
-              className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all text-xs font-bold shadow-inner placeholder:text-zinc-300 placeholder:font-medium"
+              className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:bg-white focus:border-[var(--royal-violet)] outline-none transition-all text-sm font-bold shadow-inner placeholder:text-zinc-300"
               placeholder="Filtrare live prin Meilisearch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -464,16 +462,15 @@ const AdminProducts = () => {
           </div>
           <button
             onClick={() => openEdit()}
-            className="bg-zinc-950 text-white px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl"
+            className="bg-[var(--royal-violet)] text-white px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--dark-amethyst)] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl border border-[var(--royal-violet)]"
           >
             <Plus size={14} strokeWidth={2.5} /> Adaugă Articol
           </button>
         </div>
       </header>
 
-      {/* FILTER CONTROLS BAR (RESPONSIVE RESPONSIVE GRID) */}
+      {/* CONTROLS BAR */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100">
-        {/* Tab-uri Status principale */}
         <div className="flex gap-4 sm:gap-6 border-b xl:border-none pb-2 xl:pb-0 overflow-x-auto no-scrollbar">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
             <button
@@ -484,7 +481,7 @@ const AdminProducts = () => {
               }}
               className={`pb-2 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
                 statusFilter === f
-                  ? "text-zinc-950 font-black scale-105"
+                  ? "text-[var(--royal-violet)] font-black scale-105"
                   : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
@@ -492,24 +489,23 @@ const AdminProducts = () => {
               {statusFilter === f && (
                 <motion.div
                   layoutId="statusTab"
-                  className="absolute -bottom-[11px] xl:-bottom-4 left-0 right-0 h-0.5 bg-zinc-950"
+                  className="absolute -bottom-[11px] xl:-bottom-4 left-0 right-0 h-0.5 bg-[var(--royal-violet)]"
                 />
               )}
             </button>
           ))}
         </div>
 
-        {/* Dropdown-uri secundare logistice */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto">
-          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm group">
-            <Filter size={12} className="text-zinc-400 mr-2" />
+          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm">
+            <Filter size={12} className="text-[var(--royal-violet)] mr-2" />
             <select
               value={categoryIdFilter}
               onChange={(e) => {
                 setCategoryIdFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-zinc-800 outline-none cursor-pointer w-full appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer w-full appearance-none pr-4"
             >
               <option value="">Structură Categorii</option>
               {categories.map((c) => (
@@ -520,15 +516,15 @@ const AdminProducts = () => {
             </select>
           </div>
 
-          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm group">
-            <Package size={12} className="text-zinc-400 mr-2" />
+          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm">
+            <Package size={12} className="text-[var(--royal-violet)] mr-2" />
             <select
               value={stockFilter}
               onChange={(e) => {
                 setStockFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-zinc-800 outline-none cursor-pointer w-full appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer w-full appearance-none pr-4"
             >
               <option value="ALL">Parametru Stoc</option>
               <option value="LOW_STOCK">Stoc Critic (≤5)</option>
@@ -536,8 +532,11 @@ const AdminProducts = () => {
             </select>
           </div>
 
-          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm group">
-            <ArrowUpDown size={12} className="text-zinc-400 mr-2" />
+          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm">
+            <ArrowUpDown
+              size={12}
+              className="text-[var(--royal-violet)] mr-2"
+            />
             <select
               value={`${sortBy}-${sortOrder}`}
               onChange={(e) => {
@@ -546,7 +545,7 @@ const AdminProducts = () => {
                 setSortOrder(order);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-zinc-800 outline-none cursor-pointer w-full appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer w-full appearance-none pr-4"
             >
               <option value="updated_at-desc">Cronologic: Recente</option>
               <option value="price-asc">Preț: Crescător</option>
@@ -559,12 +558,12 @@ const AdminProducts = () => {
       </div>
 
       <div className="text-[9px] font-black uppercase text-zinc-400 tracking-widest text-right px-1">
-        {totalItems} articDocumente indexate
+        {totalItems} articole indexate
       </div>
 
-      {/* DYNAMIC GRID - CARDS PE MOBILE, LUXURY TABLE PE DESKTOP */}
+      {/* LAYOUT GRID RESPONSIV */}
       <div className="bg-white rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
-        {/* CARD VIEW - DOAR PE MOBILE (< 768px) */}
+        {/* CARD VIEW (MOBILE) */}
         <div className="block md:hidden p-4 space-y-4">
           {loading ? (
             [...Array(3)].map((_, i) => (
@@ -591,7 +590,7 @@ const AdminProducts = () => {
               return (
                 <div
                   key={p.id}
-                  className="p-4 border border-zinc-100 rounded-2xl space-y-4 bg-zinc-50/20 hover:border-zinc-300 transition-all"
+                  className="p-4 border border-zinc-100 rounded-2xl space-y-4 bg-zinc-50/20 hover:border-[var(--royal-violet)]/30 transition-all"
                 >
                   <div className="flex gap-4 items-start">
                     <div className="w-14 h-16 bg-white rounded-lg border border-zinc-100 p-1 shrink-0">
@@ -604,13 +603,13 @@ const AdminProducts = () => {
                       />
                     </div>
                     <div className="space-y-1 min-w-0 flex-1">
-                      <h4 className="font-bold text-zinc-900 text-sm truncate">
+                      <h4 className="font-bold text-[var(--dark-amethyst)] text-sm truncate">
                         {p.name}
                       </h4>
                       <p className="text-[9px] font-black text-zinc-400 tracking-wider uppercase truncate">
                         {p.sku} • {p.brand_name || "Evem"}
                       </p>
-                      <div className="text-[9px] font-bold text-zinc-500 bg-zinc-100 inline-block px-2 py-0.5 rounded">
+                      <div className="text-[9px] font-bold text-[var(--royal-violet)] bg-[var(--royal-violet)]/5 inline-block px-2 py-0.5 rounded">
                         {p.category_name || "General"}
                       </div>
                     </div>
@@ -622,11 +621,11 @@ const AdminProducts = () => {
                       >
                         {currentStock === 0 ? "OUT OF STOCK" : p.status}
                       </span>
-                      <span className="text-[10px] font-bold text-zinc-500 ml-2">
+                      <span className="text-[10px] font-bold text-zinc-400 ml-2">
                         Stoc: {currentStock}
                       </span>
                     </div>
-                    <p className="font-black text-zinc-950 text-sm">
+                    <p className="font-black text-[var(--dark-amethyst)] text-sm">
                       {p.price}{" "}
                       <span className="text-[9px] opacity-40">RON</span>
                     </p>
@@ -634,7 +633,7 @@ const AdminProducts = () => {
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => openEdit(p)}
-                      className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-900 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-2.5 bg-zinc-50 hover:bg-[var(--royal-violet)] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-zinc-100 flex items-center justify-center gap-2"
                     >
                       <Edit2 size={12} /> Editează
                     </button>
@@ -642,7 +641,7 @@ const AdminProducts = () => {
                       onClick={() =>
                         handleToggleStatus(p.sku, p.status || "ACTIVE")
                       }
-                      className="px-4 py-2.5 bg-zinc-100 hover:bg-amber-500 hover:text-white rounded-xl transition-all flex items-center justify-center"
+                      className="px-4 py-2.5 bg-zinc-50 hover:bg-amber-500 hover:text-white border border-zinc-100 rounded-xl transition-all flex items-center justify-center"
                     >
                       {p.status === "DRAFT" ? (
                         <Eye size={14} />
@@ -657,7 +656,7 @@ const AdminProducts = () => {
           )}
         </div>
 
-        {/* LUXURY TABLE - AFISAT DOAR DE LA MD UP (≥ 768px) */}
+        {/* LUXURY TABLE (DESKTOP) */}
         <div className="hidden md:block overflow-x-auto luxury-scrollbar">
           <Table className="min-w-[900px]">
             <TableHeader className="bg-zinc-50/50">
@@ -721,7 +720,7 @@ const AdminProducts = () => {
                   return (
                     <TableRow
                       key={p.id}
-                      className="group hover:bg-zinc-50/30 transition-colors border-b border-zinc-50 last:border-none"
+                      className="group hover:bg-[var(--royal-violet)]/[0.01] transition-colors border-b border-zinc-50 last:border-none"
                     >
                       <TableCell className="py-4 px-8">
                         <div className="flex items-center gap-4 text-left">
@@ -736,7 +735,7 @@ const AdminProducts = () => {
                           </div>
                           <div className="space-y-0.5 min-w-0">
                             <p
-                              className="font-bold text-zinc-950 text-sm truncate max-w-xs xl:max-w-md"
+                              className="font-bold text-[var(--dark-amethyst)] text-sm truncate max-w-xs xl:max-w-md"
                               title={p.name}
                             >
                               {p.name}
@@ -748,7 +747,7 @@ const AdminProducts = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-50 border border-zinc-100 px-3 py-1.5 rounded-lg">
+                        <span className="text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest bg-[var(--royal-violet)]/[0.03] border border-[var(--royal-violet)]/10 px-3 py-1.5 rounded-lg">
                           {p.category_name ||
                             (p.category ? p.category.name : "General")}
                         </span>
@@ -760,13 +759,13 @@ const AdminProducts = () => {
                           {currentStock === 0 ? "OUT OF STOCK" : p.status}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center font-black text-xs text-zinc-900">
+                      <TableCell className="text-center font-black text-xs text-[var(--dark-amethyst)]">
                         {currentStock}
                       </TableCell>
                       <TableCell className="text-right pr-8">
                         <div className="flex items-center justify-end gap-6">
                           <div className="text-right shrink-0">
-                            <p className="font-black text-zinc-950 text-sm whitespace-nowrap">
+                            <p className="font-black text-[var(--dark-amethyst)] text-sm whitespace-nowrap">
                               {p.price}{" "}
                               <span className="text-[9px] opacity-40">RON</span>
                             </p>
@@ -780,7 +779,7 @@ const AdminProducts = () => {
                             <button
                               onClick={() => openEdit(p)}
                               title="Editează structura"
-                              className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-zinc-950 hover:text-white transition-colors"
+                              className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
                             >
                               <Edit2 size={13} />
                             </button>
@@ -812,7 +811,7 @@ const AdminProducts = () => {
           </Table>
         </div>
 
-        {/* PAGINATION SYSTEM */}
+        {/* PAGINATION */}
         {!loading && totalPages > 1 && (
           <div className="p-6 bg-zinc-50/50 border-t border-zinc-100 flex justify-center items-center gap-4 shrink-0">
             <button
@@ -822,7 +821,7 @@ const AdminProducts = () => {
             >
               <ChevronLeft size={15} />
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900 bg-white border border-zinc-200 px-4 py-2 rounded-xl shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] bg-white border border-zinc-200 px-4 py-2 rounded-xl shadow-sm">
               {currentPage} / {totalPages}
             </span>
             <button
@@ -841,11 +840,11 @@ const AdminProducts = () => {
         <DialogContent className="max-w-[1350px] w-full h-full sm:h-[94vh] sm:w-[96vw] p-0 rounded-none sm:rounded-[2.5rem] border-none bg-[#F8F9FA] shadow-2xl flex flex-col overflow-hidden">
           <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-zinc-950 text-white hidden sm:block">
+              <div className="p-3 rounded-2xl bg-[var(--royal-violet)] text-white hidden sm:block">
                 <Package size={22} />
               </div>
               <div>
-                <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-950 truncate max-w-xs sm:max-w-md">
+                <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
                   {formData.sku
                     ? `Editare Resursă: ${formData.sku}`
                     : "Fișă Articol Nou"}
@@ -865,10 +864,10 @@ const AdminProducts = () => {
 
           <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* MEDIA WORKSPACE (4 COLS) */}
+              {/* MEDIA WORKSPACE */}
               <div className="lg:col-span-4 space-y-6 md:sticky md:top-0">
                 <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <ImageIcon size={12} /> Thumbnail Principal
                   </Label>
                   <div className="aspect-[3/4] bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden transition-all hover:bg-zinc-100/50">
@@ -896,7 +895,7 @@ const AdminProducts = () => {
                       <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-3 w-full h-full justify-center">
                         {uploading === "main" ? (
                           <Loader2
-                            className="animate-spin text-zinc-900"
+                            className="animate-spin text-[var(--royal-violet)]"
                             size={32}
                           />
                         ) : (
@@ -916,7 +915,7 @@ const AdminProducts = () => {
                 </div>
 
                 <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <Layers size={12} /> Sub-Imagini Galerie
                   </Label>
                   <div className="grid grid-cols-4 gap-2">
@@ -951,7 +950,7 @@ const AdminProducts = () => {
                             </button>
                           </>
                         ) : (
-                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-100 hover:text-zinc-900 transition-colors">
+                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-100 hover:text-[var(--royal-violet)] transition-colors">
                             {uploading === `extra-${i}` ? (
                               <Loader2 className="animate-spin" size={14} />
                             ) : (
@@ -970,7 +969,7 @@ const AdminProducts = () => {
                 </div>
               </div>
 
-              {/* ARHITECTURĂ INFORMAȚIONALĂ (8 COLS) */}
+              {/* ARHITECTURĂ INFORMAȚIONALĂ */}
               <div className="lg:col-span-8 space-y-6">
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
                   <div className="space-y-1">
@@ -978,7 +977,7 @@ const AdminProducts = () => {
                       Identificator Comercial Nativ
                     </Label>
                     <input
-                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-2 text-2xl md:text-3xl font-black outline-none focus:border-zinc-900 transition-all placeholder:text-zinc-200 tracking-tight"
+                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-2 text-2xl md:text-3xl font-black outline-none focus:border-[var(--royal-violet)] transition-all text-[var(--dark-amethyst)] placeholder:text-zinc-200 tracking-tight"
                       value={formData.name}
                       placeholder="Introduceți titlul complet al produsului..."
                       onChange={(e) =>
@@ -1013,7 +1012,7 @@ const AdminProducts = () => {
                         Structură Segment
                       </Label>
                       <select
-                        className="w-full bg-zinc-50 rounded-xl px-3 py-3.5 text-xs font-bold border-none outline-none focus:ring-1 focus:ring-zinc-900 appearance-none shadow-inner cursor-pointer"
+                        className="w-full bg-zinc-50 rounded-xl px-3 py-3.5 text-xs font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] text-[var(--dark-amethyst)] appearance-none shadow-inner cursor-pointer"
                         value={formData.category_id}
                         onChange={(e) =>
                           setFormData({
@@ -1033,9 +1032,9 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* LOGISTICĂ & MANAGEMENT DE PREȚ */}
+                {/* LOGISTICĂ & PREȚ */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <DollarSign size={13} /> Financiare & Matrice Logistică
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1154,15 +1153,15 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* EDITORIAL MATRIX & SEO METADATA */}
+                {/* EDITORIAL MATRIX & SEO */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                       <AlignLeft size={13} /> Documentație Editorială
                       (Descriere)
                     </Label>
                     <textarea
-                      className="w-full h-32 bg-zinc-50 rounded-2xl p-4 text-xs font-medium leading-relaxed border-none outline-none focus:ring-1 focus:ring-zinc-950 transition-all resize-none shadow-inner"
+                      className="w-full h-32 bg-zinc-50 rounded-2xl p-4 text-xs font-medium leading-relaxed border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none shadow-inner"
                       value={formData.description}
                       placeholder="Specificații, detalii de fabrică..."
                       onChange={(e) =>
@@ -1201,7 +1200,7 @@ const AdminProducts = () => {
                           Meta Description
                         </Label>
                         <textarea
-                          className="w-full h-20 bg-zinc-50 rounded-xl p-3 text-[11px] font-medium border-none outline-none focus:ring-1 focus:ring-zinc-950 transition-all resize-none shadow-inner"
+                          className="w-full h-20 bg-zinc-50 rounded-xl p-3 text-[11px] font-medium border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none shadow-inner"
                           value={formData.meta_description}
                           onChange={(e) =>
                             setFormData({
@@ -1232,7 +1231,7 @@ const AdminProducts = () => {
                                 },
                               });
                           }}
-                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-950 hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
                         >
                           + Adaugă Parametru
                         </button>
@@ -1290,9 +1289,9 @@ const AdminProducts = () => {
 
           <DialogFooter className="px-6 md:px-10 py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5 text-zinc-400">
-              <ShieldCheck size={16} className="text-zinc-950" />
+              <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
               <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
-                Sincronizare infrastructură EVEM API Gate
+                Sincronizare infrastructura EVEM API Gate
               </p>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
@@ -1304,7 +1303,7 @@ const AdminProducts = () => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 sm:flex-none bg-zinc-950 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-zinc-800 active:scale-98 transition-all flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none bg-[var(--royal-violet)] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-[var(--dark-amethyst)] active:scale-98 transition-all flex items-center justify-center gap-2"
               >
                 <Save size={14} /> {editingProduct ? "Salvează" : "Publică"}
               </button>
@@ -1313,7 +1312,6 @@ const AdminProducts = () => {
         </DialogContent>
       </Dialog>
 
-      {/* LUXURY DESIGNS INJECTED SCROLLBAR */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -1334,7 +1332,7 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
       {icon} {label}
     </Label>
     <input
-      className="w-full bg-zinc-50 rounded-xl px-3 py-3 text-xs font-bold text-zinc-900 border-none outline-none focus:ring-1 focus:ring-zinc-950 transition-all shadow-inner placeholder:text-zinc-300"
+      className="w-full bg-zinc-50 rounded-xl px-3 py-3 text-xs font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
       placeholder="..."
