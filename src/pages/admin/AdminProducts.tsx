@@ -63,43 +63,39 @@ const generateSlug = (text: string) => {
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
-// 🚀 REPARAT: Extragere universală de imagini pentru absolut orice structură de DB hibridă
+// 🚀 REPARAT GLOBAL: Extragere universală de imagini capabilă să parseze string-uri adânci text JSON
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
-  let url = "";
+  let data = imageSource;
 
-  if (typeof imageSource === "string") {
-    if (imageSource.startsWith("http") || imageSource.startsWith("/")) {
-      url = imageSource;
-    } else {
-      try {
-        const parsed = JSON.parse(imageSource);
-        url =
-          parsed?.main?.medium ||
-          parsed?.main?.small ||
-          parsed?.main?.url ||
-          parsed?.url ||
-          parsed?.medium ||
-          (Array.isArray(parsed) ? parsed[0] : imageSource);
-      } catch {
-        url = imageSource;
-      }
+  // Dacă sursa este un string, verificăm dacă este un URL nativ sau un obiect JSON serializat în text
+  if (typeof data === "string") {
+    if (data.startsWith("http") || data.startsWith("/")) {
+      return data.startsWith("/") ? `${API_BASE_URL}${data}` : data;
     }
-  } else if (typeof imageSource === "object") {
-    url =
-      imageSource?.main?.medium ||
-      imageSource?.main?.small ||
-      imageSource?.main?.url ||
-      imageSource?.url ||
-      imageSource?.medium ||
-      (Array.isArray(imageSource) ? imageSource[0] : PLACEHOLDER_IMG);
+    try {
+      data = JSON.parse(data);
+    } catch {
+      return data || PLACEHOLDER_IMG;
+    }
   }
 
-  if (url && typeof url === "string" && url.startsWith("/")) {
-    url = `${API_BASE_URL}${url}`;
+  // Extragem URL-ul pe baza ierarhiei structurii din baza de date
+  if (data && typeof data === "object") {
+    const container = data.main || data;
+    const url =
+      container.medium ||
+      container.large ||
+      container.small ||
+      container.url ||
+      (Array.isArray(data) ? data[0] : null);
+
+    if (url && typeof url === "string") {
+      return url.startsWith("/") ? `${API_BASE_URL}${url}` : url;
+    }
   }
 
-  return url || PLACEHOLDER_IMG;
+  return PLACEHOLDER_IMG;
 };
 
 const getStatusBadge = (status: string, stock: number) => {
@@ -179,7 +175,7 @@ const AdminProducts = () => {
         ? `${API_BASE_URL}/api/v1/products/search/live`
         : `${API_BASE_URL}/api/v1/products/admin-inventory`;
 
-      // 🚀 REPARAT ATOMIC: Transmitem starea stocului corelată cu tab-ul de sus selectat
+      // 🚀 REPARAT ATOMIC: Corelare logică pentru tab-ul OUT_OF_STOCK
       let queryStatus = statusFilter;
       let queryStock = stockFilter;
 
@@ -265,14 +261,23 @@ const AdminProducts = () => {
   const openEdit = (p: any = null) => {
     if (p) {
       setEditingProduct(p);
-      let galleryImages: string[] = [];
 
+      let parsedImageUrl = p.image_url;
+      if (typeof p.image_url === "string") {
+        try {
+          parsedImageUrl = JSON.parse(p.image_url);
+        } catch {
+          parsedImageUrl = p.image_url;
+        }
+      }
+
+      let galleryImages: string[] = [];
       if (
-        p.image_url &&
-        typeof p.image_url === "object" &&
-        Array.isArray(p.image_url.gallery)
+        parsedImageUrl &&
+        typeof parsedImageUrl === "object" &&
+        Array.isArray(parsedImageUrl.gallery)
       ) {
-        galleryImages = p.image_url.gallery.map((img: any) =>
+        galleryImages = parsedImageUrl.gallery.map((img: any) =>
           typeof img === "string" ? img : img.medium || img.large || img.url,
         );
       } else if (p.additional_image_link) {
@@ -288,11 +293,13 @@ const AdminProducts = () => {
       }
 
       let mainImg = "";
-      if (p.image_url && typeof p.image_url === "object" && p.image_url.main) {
+      if (parsedImageUrl && typeof parsedImageUrl === "object") {
+        const mainContainer = parsedImageUrl.main || parsedImageUrl;
         mainImg =
-          p.image_url.main.medium ||
-          p.image_url.main.large ||
-          p.image_url.main.url;
+          mainContainer.medium ||
+          mainContainer.large ||
+          mainContainer.url ||
+          "";
       } else {
         mainImg = p.image_url || "";
       }
@@ -362,72 +369,6 @@ const AdminProducts = () => {
       setUploading(null);
     }
   };
-
-  const handleSave = async () => {
-    if (!formData.name || !formData.category_id)
-      return toast.error("Numele și Categoria sunt obligatorii.");
-
-    const payload = {
-      sku: formData.sku
-        ? formData.sku.trim().toUpperCase()
-        : `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
-      ean: formData.ean ? formData.ean.trim() : "",
-      slug: formData.slug || generateSlug(formData.name),
-      name: formData.name.trim(),
-      brand_name: formData.brand_name || "Evem",
-      status: formData.status.toUpperCase(),
-      price: Number(formData.price),
-      sale_price: formData.sale_price > 0 ? Number(formData.sale_price) : null,
-      stock_quantity: Number(formData.stock_quantity),
-      category_id: formData.category_id,
-      image_url: formData.image_url,
-      description: formData.description || "",
-      weight: Number(formData.weight || 0),
-      length: Number(formData.length || 0),
-      width: Number(formData.width || 0),
-      height: Number(formData.height || 0),
-      meta_title: formData.meta_title || "",
-      meta_description: formData.meta_description || "",
-      canonical_url: formData.canonical_url || "",
-      additional_image_link: formData.additional_image_link.filter(Boolean),
-      attributes_json:
-        typeof formData.attributes_json === "object"
-          ? JSON.stringify(formData.attributes_json)
-          : formData.attributes_json,
-    };
-
-    const url = editingProduct
-      ? `${API_BASE_URL}/api/v1/products/${editingProduct.sku}`
-      : `${API_BASE_URL}/api/v1/products/`;
-
-    try {
-      const res = await fetch(url, {
-        method: editingProduct ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        toast.success("Catalog actualizat cu succes!");
-        fetchData();
-        setIsModalOpen(false);
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        toast.error(
-          errorData.detail || "Eroare la salvare. Verifică datele introduse.",
-        );
-      }
-    } catch {
-      toast.error("Eroare severă la conexiune.");
-    }
-  };
-
-  const handleImageError = (e: any) => {
-    e.target.src = PLACEHOLDER_IMG;
-  };
-
-  if (!isAdmin) return null;
 
   return (
     <div className="w-full space-y-8 pb-20 animate-in fade-in duration-700 font-sans text-left">
@@ -655,7 +596,10 @@ const AdminProducts = () => {
                       </TableCell>
                       <TableCell className="text-center">
                         <span
-                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status, currentStock)}`}
+                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(
+                            p.status,
+                            currentStock,
+                          )}`}
                         >
                           {currentStock === 0 ? "OUT OF STOCK" : p.status}
                         </span>
