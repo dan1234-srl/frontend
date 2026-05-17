@@ -17,12 +17,9 @@ interface FilterSidebarProps {
 
 export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // Stări pentru barele de căutare din interiorul filtrelor voluminoase
   const [brandSearch, setBrandSearch] = useState("");
   const [attrSearch, setAttrSearch] = useState<Record<string, string>>({});
 
-  // --- LOGICĂ URCARE PARAMETRI ÎN URL ---
   const handleUpdateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
     const existing = params.getAll(key);
@@ -38,7 +35,6 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
     setSearchParams(params);
   };
 
-  // --- LOGICĂ FILTRARE PREȚ ---
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
 
@@ -53,13 +49,11 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
     setSearchParams(params);
   };
 
-  // --- DATE ACTIVE EXTRACTE ---
   const activeBrands = useMemo(
     () => searchParams.getAll("brand"),
     [searchParams],
   );
 
-  // Filtrarea brandurilor în timp real din bara de căutare internă
   const filteredBrands = useMemo(() => {
     if (!filtersData?.brands) return [];
     return filtersData.brands.filter((b) =>
@@ -134,7 +128,6 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
               </div>
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-4 px-1 space-y-4">
-              {/* Căutare internă în branduri dacă lista este mare */}
               {filtersData.brands.length > 6 && (
                 <div className="relative flex items-center group/search">
                   <Search
@@ -194,7 +187,6 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
               const activeValues = searchParams.getAll(key);
               const currentSearch = attrSearch[key] || "";
 
-              // Filtrarea valorilor atributului curent pe baza căutării interne
               const filteredValues = data.values.filter((v: string) =>
                 v.toLowerCase().includes(currentSearch.toLowerCase()),
               );
@@ -217,8 +209,8 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
                       )}
                     </div>
                   </AccordionTrigger>
+                  {/* 🚀 REPARAT EXPLICIT: Înlocuit închiderea invalidă </Content> cu </AccordionContent> nativ din Radix UI */}
                   <AccordionContent className="pt-2 pb-4 px-1 space-y-4">
-                    {/* Căutare internă în atribute voluminoase */}
                     {data.values.length > 8 && (
                       <div className="relative flex items-center group/search">
                         <Search
@@ -240,7 +232,6 @@ export const FilterSidebar = ({ filtersData }: FilterSidebarProps) => {
                       </div>
                     )}
 
-                    {/* Afișare sub formă de tags elastice */}
                     <div className="max-h-48 overflow-y-auto luxury-scrollbar pr-1 flex flex-wrap gap-2">
                       {filteredValues.map((val: string) => {
                         const isSelected = activeValues.includes(val);

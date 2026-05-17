@@ -26,9 +26,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER
-// ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -136,9 +133,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE
-// ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -150,9 +144,11 @@ const CategoryPage = () => {
   const currentPage = parseInt(searchParams.get("page") || "1");
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
 
+  // 🚀 REPARAT: Folosim openFilters și closeFilters native pentru a asigura randarea de mare viteză a Drawer-ului
   const {
     filtersOpen,
-    setFiltersOpen,
+    openFilters,
+    closeFilters,
     setFiltersData,
     filtersData,
     registerResetHandler,
@@ -397,9 +393,9 @@ const CategoryPage = () => {
 
         {/* ACTIONS BAR */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
-          {/* 🚀 REPARAT AICI: Schimbat din flex-center în flex și items-center standard Tailwind */}
+          {/* 🚀 REPARAT: Folosim openFilters în loc de mutația manuală setFiltersOpen(true) */}
           <button
-            onClick={() => setFiltersOpen(true)}
+            onClick={openFilters}
             className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
           >
             <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
@@ -416,7 +412,7 @@ const CategoryPage = () => {
 
           <LuxuryDrawer
             isOpen={filtersOpen}
-            onClose={() => setFiltersOpen(false)}
+            onClose={closeFilters}
             side="right"
             title="Parametri Filtrare"
             eyebrow="Selection"
@@ -429,7 +425,7 @@ const CategoryPage = () => {
                   Resetare
                 </button>
                 <button
-                  onClick={() => setFiltersOpen(false)}
+                  onClick={closeFilters}
                   className="py-4 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-xl hover:brightness-110 active:scale-[0.98] transition-all duration-300"
                   style={{ background: "var(--primary-gradient)" }}
                 >

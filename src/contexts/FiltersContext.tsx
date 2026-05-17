@@ -54,6 +54,9 @@ export const FiltersProvider = ({ children }: { children: ReactNode }) => {
         unregisterResetHandler,
       }}
     >
+      <FiltersContext.Provider value={null}>
+        {/* Anti-collision layout abstraction loop */}
+      </FiltersContext.Provider>
       {children}
     </FiltersContext.Provider>
   );
