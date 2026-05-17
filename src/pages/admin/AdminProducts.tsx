@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
@@ -63,6 +63,7 @@ const generateSlug = (text: string) => {
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
+// 🚀 PARSER UNIVERSAL DE IMAGINI (Rezolvă erorile de randare din tabel)
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
   let data = imageSource;
@@ -96,15 +97,17 @@ const getValidImageUrl = (imageSource: any) => {
 };
 
 const getStatusBadge = (status: string, stock: number) => {
-  if (stock === 0) return "bg-rose-50 text-rose-600 border-rose-100";
+  if (stock === 0)
+    return "bg-rose-50 border-rose-100 text-rose-600 shadow-[0_2px_10px_rgba(244,63,94,0.06)]";
   const s = status?.toLowerCase() || "";
   if (s === "active")
-    return "bg-emerald-50 text-emerald-600 border-emerald-100";
-  if (s === "draft") return "bg-amber-50 text-amber-600 border-amber-100";
-  return "bg-zinc-100 text-zinc-500 border-zinc-200";
+    return "bg-emerald-50 border-emerald-100 text-emerald-600 shadow-[0_2px_10px_rgba(16,185,129,0.06)]";
+  if (s === "draft")
+    return "bg-amber-50 border-amber-100 text-amber-600 shadow-[0_2px_10px_rgba(245,158,11,0.06)]";
+  return "bg-zinc-50 border-zinc-200 text-zinc-500";
 };
 
-// --- COMPONENT ---
+// --- COMPONENT PRINCIPAL ---
 const AdminProducts = () => {
   const { isAdmin } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
@@ -113,7 +116,7 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  // Filtre și Sortare
+  // Stări Control Filtre / Sortare
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -121,7 +124,6 @@ const AdminProducts = () => {
   const [stockFilter, setStockFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("updated_at");
   const [sortOrder, setSortOrder] = useState("desc");
-
   const [uploading, setUploading] = useState<string | null>(null);
 
   // Paginație
@@ -213,7 +215,7 @@ const AdminProducts = () => {
         ? catData
         : catData.items || [];
       setCategories(fetchedCategories);
-    } catch (error) {
+    } catch {
       toast.error("Eroare server la încărcarea datelor.");
     } finally {
       setLoading(false);
@@ -244,13 +246,13 @@ const AdminProducts = () => {
       });
 
       if (res.ok) {
-        toast.success(`Produs marcat ca ${newStatus}`);
+        toast.success(`Catalog sincronizat! Status nou: ${newStatus}`);
         fetchData();
       } else {
         toast.error("Eroare la actualizarea statusului.");
       }
     } catch {
-      toast.error("Eroare de conexiune.");
+      toast.error("Eroare de conexiune la server.");
     }
   };
 
@@ -346,7 +348,7 @@ const AdminProducts = () => {
       });
       const result = await res.json();
       const uploadedUrl = result.url || result.file_url || result.data?.url;
-      if (!uploadedUrl) throw new Error("Format invalid de la server");
+      if (!uploadedUrl) throw new Error("Upload invalurat");
 
       if (index === "main") {
         setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
@@ -358,15 +360,15 @@ const AdminProducts = () => {
           additional_image_link: nl.filter(Boolean),
         }));
       }
-      toast.success("Imagine încărcată cu succes.");
+      toast.success("Resursă vizuală procesată pe AWS S3.");
     } catch {
-      toast.error("Eroare la încărcarea imaginii.");
+      toast.error("Eroare la încărcarea imaginii securizate.");
     } finally {
       setUploading(null);
     }
   };
 
-  // 🚀 RESTAURAT: Funcția lipsă care se ocupă de transmiterea corectă a payload-ului
+  // 🚀 RESTAURAT COMPLET: Logica handleSave pentru backend unificat
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
@@ -413,17 +415,15 @@ const AdminProducts = () => {
       });
 
       if (res.ok) {
-        toast.success("Catalog actualizat cu succes!");
+        toast.success("Structură salvată! Meilisearch se reindexează...");
         fetchData();
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
-        toast.error(
-          errorData.detail || "Eroare la salvare. Verifică datele introduse.",
-        );
+        toast.error(errorData.detail || "Eroare la scriere în Postgres.");
       }
     } catch {
-      toast.error("Eroare severă la conexiune.");
+      toast.error("Pierdere conexiune gateway API.");
     }
   };
 
@@ -434,46 +434,47 @@ const AdminProducts = () => {
   if (!isAdmin) return null;
 
   return (
-    <div className="w-full space-y-8 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER SECTION */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 border-b border-zinc-100 pb-10">
+    <div className="w-full space-y-6 px-2 sm:px-4 md:px-8 pb-20 animate-in fade-in duration-500 font-sans text-left selection:bg-zinc-900 selection:text-white">
+      {/* EDITORIAL CONTROL HEADER */}
+      <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 border-b border-zinc-100 pb-8 pt-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="w-8 h-[2px] bg-black" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-black">
-              Inventory Management
+            <span className="w-6 h-[2px] bg-zinc-900" />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-500">
+              System Operations
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-black">
-            Catalog Produse
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tight text-zinc-950 leading-none">
+            Catalog Portofoliu
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-          <div className="relative group flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 sm:w-80 group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-black"
-              size={16}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-zinc-900 transition-colors"
+              size={15}
             />
             <input
-              className="w-full sm:w-[300px] pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:border-black outline-none transition-all text-sm font-bold shadow-inner"
-              placeholder="Caută SKU sau Nume..."
+              className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-100 rounded-xl focus:bg-white focus:border-zinc-900 outline-none transition-all text-xs font-bold shadow-inner placeholder:text-zinc-300 placeholder:font-medium"
+              placeholder="Filtrare live prin Meilisearch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <button
             onClick={() => openEdit()}
-            className="bg-black text-white px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 shadow-lg whitespace-nowrap"
+            className="bg-zinc-950 text-white px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl"
           >
-            <Plus size={16} /> Adaugă Produs
+            <Plus size={14} strokeWidth={2.5} /> Adaugă Articol
           </button>
         </div>
       </header>
 
-      {/* ADVANCED FILTER TABS & DROPDOWNS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-50 pb-4">
-        <div className="flex gap-6 overflow-x-auto no-scrollbar">
+      {/* FILTER CONTROLS BAR (RESPONSIVE RESPONSIVE GRID) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100">
+        {/* Tab-uri Status principale */}
+        <div className="flex gap-4 sm:gap-6 border-b xl:border-none pb-2 xl:pb-0 overflow-x-auto no-scrollbar">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
             <button
               key={f}
@@ -483,7 +484,7 @@ const AdminProducts = () => {
               }}
               className={`pb-2 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
                 statusFilter === f
-                  ? "text-black font-black"
+                  ? "text-zinc-950 font-black scale-105"
                   : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
@@ -491,15 +492,16 @@ const AdminProducts = () => {
               {statusFilter === f && (
                 <motion.div
                   layoutId="statusTab"
-                  className="absolute -bottom-4 left-0 right-0 h-0.5 bg-black"
+                  className="absolute -bottom-[11px] xl:-bottom-4 left-0 right-0 h-0.5 bg-zinc-950"
                 />
               )}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
+        {/* Dropdown-uri secundare logistice */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto">
+          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm group">
             <Filter size={12} className="text-zinc-400 mr-2" />
             <select
               value={categoryIdFilter}
@@ -507,9 +509,9 @@ const AdminProducts = () => {
                 setCategoryIdFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-black outline-none cursor-pointer appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-zinc-800 outline-none cursor-pointer w-full appearance-none pr-4"
             >
-              <option value="">Toate Categoriile</option>
+              <option value="">Structură Categorii</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -518,7 +520,7 @@ const AdminProducts = () => {
             </select>
           </div>
 
-          <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
+          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm group">
             <Package size={12} className="text-zinc-400 mr-2" />
             <select
               value={stockFilter}
@@ -526,15 +528,15 @@ const AdminProducts = () => {
                 setStockFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-black outline-none cursor-pointer appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-zinc-800 outline-none cursor-pointer w-full appearance-none pr-4"
             >
-              <option value="ALL">Stoc: Toate</option>
+              <option value="ALL">Parametru Stoc</option>
               <option value="LOW_STOCK">Stoc Critic (≤5)</option>
-              <option value="OUT_OF_STOCK">Fără Stoc</option>
+              <option value="OUT_OF_STOCK">Epuizat (0)</option>
             </select>
           </div>
 
-          <div className="relative flex items-center bg-zinc-50 rounded-lg border border-zinc-100 px-3 py-2">
+          <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm group">
             <ArrowUpDown size={12} className="text-zinc-400 mr-2" />
             <select
               value={`${sortBy}-${sortOrder}`}
@@ -544,54 +546,148 @@ const AdminProducts = () => {
                 setSortOrder(order);
                 setCurrentPage(1);
               }}
-              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-black outline-none cursor-pointer appearance-none pr-4"
+              className="bg-transparent text-[9px] font-black uppercase tracking-widest text-zinc-800 outline-none cursor-pointer w-full appearance-none pr-4"
             >
-              <option value="updated_at-desc">Cele mai noi</option>
+              <option value="updated_at-desc">Cronologic: Recente</option>
               <option value="price-asc">Preț: Crescător</option>
               <option value="price-desc">Preț: Descrescător</option>
-              <option value="stock_quantity-asc">Stoc: Crescător</option>
-              <option value="category_name-asc">Categorie (A-Z)</option>
+              <option value="stock_quantity-asc">Stoc: Deficitar</option>
+              <option value="category_name-asc">Aranjare Categorie</option>
             </select>
           </div>
         </div>
       </div>
 
-      <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-right">
-        {totalItems} Articole în total
+      <div className="text-[9px] font-black uppercase text-zinc-400 tracking-widest text-right px-1">
+        {totalItems} articDocumente indexate
       </div>
 
-      {/* MAIN TABLE */}
+      {/* DYNAMIC GRID - CARDS PE MOBILE, LUXURY TABLE PE DESKTOP */}
       <div className="bg-white rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto luxury-scrollbar">
-          <Table className="min-w-[800px]">
+        {/* CARD VIEW - DOAR PE MOBILE (< 768px) */}
+        <div className="block md:hidden p-4 space-y-4">
+          {loading ? (
+            [...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="p-4 border border-zinc-100 rounded-2xl space-y-3"
+              >
+                <div className="flex gap-3">
+                  <Skeleton className="h-16 w-12 rounded-xl" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : products.length === 0 ? (
+            <div className="py-12 text-center text-zinc-400 text-xs font-bold uppercase tracking-wider">
+              Fără rezultate
+            </div>
+          ) : (
+            products.map((p) => {
+              const currentStock = p.stock_quantity ?? p.stock ?? 0;
+              return (
+                <div
+                  key={p.id}
+                  className="p-4 border border-zinc-100 rounded-2xl space-y-4 bg-zinc-50/20 hover:border-zinc-300 transition-all"
+                >
+                  <div className="flex gap-4 items-start">
+                    <div className="w-14 h-16 bg-white rounded-lg border border-zinc-100 p-1 shrink-0">
+                      <img
+                        src={getValidImageUrl(p.image_url)}
+                        crossOrigin="anonymous"
+                        onError={handleImageError}
+                        className="w-full h-full object-contain"
+                        alt="Asset"
+                      />
+                    </div>
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <h4 className="font-bold text-zinc-900 text-sm truncate">
+                        {p.name}
+                      </h4>
+                      <p className="text-[9px] font-black text-zinc-400 tracking-wider uppercase truncate">
+                        {p.sku} • {p.brand_name || "Evem"}
+                      </p>
+                      <div className="text-[9px] font-bold text-zinc-500 bg-zinc-100 inline-block px-2 py-0.5 rounded">
+                        {p.category_name || "General"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-zinc-100/70">
+                    <div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-wider border ${getStatusBadge(p.status, currentStock)}`}
+                      >
+                        {currentStock === 0 ? "OUT OF STOCK" : p.status}
+                      </span>
+                      <span className="text-[10px] font-bold text-zinc-500 ml-2">
+                        Stoc: {currentStock}
+                      </span>
+                    </div>
+                    <p className="font-black text-zinc-950 text-sm">
+                      {p.price}{" "}
+                      <span className="text-[9px] opacity-40">RON</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => openEdit(p)}
+                      className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-900 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                    >
+                      <Edit2 size={12} /> Editează
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleToggleStatus(p.sku, p.status || "ACTIVE")
+                      }
+                      className="px-4 py-2.5 bg-zinc-100 hover:bg-amber-500 hover:text-white rounded-xl transition-all flex items-center justify-center"
+                    >
+                      {p.status === "DRAFT" ? (
+                        <Eye size={14} />
+                      ) : (
+                        <EyeOff size={14} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* LUXURY TABLE - AFISAT DOAR DE LA MD UP (≥ 768px) */}
+        <div className="hidden md:block overflow-x-auto luxury-scrollbar">
+          <Table className="min-w-[900px]">
             <TableHeader className="bg-zinc-50/50">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="py-5 px-6 md:px-8 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+              <TableRow className="hover:bg-transparent border-b border-zinc-100">
+                <TableHead className="py-5 px-8 text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Produs
                 </TableHead>
-                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Categorie
                 </TableHead>
-                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Status
                 </TableHead>
-                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                <TableHead className="text-center text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Stoc
                 </TableHead>
-                <TableHead className="text-right px-6 md:px-8 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                <TableHead className="text-right pr-8 text-[9px] font-black uppercase tracking-widest text-zinc-400">
                   Preț / Acțiuni
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                [...Array(6)].map((_, i) => (
+                [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell className="px-6 md:px-8 py-5">
+                    <TableCell className="px-8 py-5">
                       <div className="flex items-center gap-4">
                         <Skeleton className="h-16 w-12 rounded-lg" />
                         <div className="space-y-2">
-                          <Skeleton className="h-4 w-32 md:w-40" />
+                          <Skeleton className="h-4 w-40" />
                           <Skeleton className="h-3 w-20" />
                         </div>
                       </div>
@@ -605,7 +701,7 @@ const AdminProducts = () => {
                     <TableCell>
                       <Skeleton className="h-5 w-8 mx-auto" />
                     </TableCell>
-                    <TableCell className="px-6 md:px-8">
+                    <TableCell className="pr-8">
                       <Skeleton className="h-6 w-24 ml-auto" />
                     </TableCell>
                   </TableRow>
@@ -614,9 +710,9 @@ const AdminProducts = () => {
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    className="py-32 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
+                    className="py-24 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
                   >
-                    Nu au fost găsite rezultate pentru filtrele selectate.
+                    Niciun articol mapat pe aceste criterii.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -625,11 +721,11 @@ const AdminProducts = () => {
                   return (
                     <TableRow
                       key={p.id}
-                      className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
+                      className="group hover:bg-zinc-50/30 transition-colors border-b border-zinc-50 last:border-none"
                     >
-                      <TableCell className="py-5 px-6 md:px-8">
+                      <TableCell className="py-4 px-8">
                         <div className="flex items-center gap-4 text-left">
-                          <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
+                          <div className="w-12 h-16 bg-white rounded-xl border border-zinc-100 overflow-hidden p-1 shrink-0 shadow-sm transition-transform group-hover:scale-105">
                             <img
                               src={getValidImageUrl(p.image_url)}
                               crossOrigin="anonymous"
@@ -638,58 +734,55 @@ const AdminProducts = () => {
                               alt="Produs"
                             />
                           </div>
-                          <div className="space-y-0.5 max-w-[200px] sm:max-w-[300px]">
+                          <div className="space-y-0.5 min-w-0">
                             <p
-                              className="font-bold text-black text-sm truncate"
+                              className="font-bold text-zinc-950 text-sm truncate max-w-xs xl:max-w-md"
                               title={p.name}
                             >
                               {p.name}
                             </p>
-                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-tighter truncate">
+                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                               {p.sku} • {p.brand_name || "Evem"}
                             </p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-50 border border-zinc-100 px-3 py-1.5 rounded-lg">
                           {p.category_name ||
                             (p.category ? p.category.name : "General")}
                         </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <span
-                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(
-                            p.status,
-                            currentStock,
-                          )}`}
+                          className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status, currentStock)}`}
                         >
                           {currentStock === 0 ? "OUT OF STOCK" : p.status}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center font-black text-xs text-black">
+                      <TableCell className="text-center font-black text-xs text-zinc-900">
                         {currentStock}
                       </TableCell>
-                      <TableCell className="text-right px-6 md:px-8">
-                        <div className="flex items-center justify-end gap-4 md:gap-6">
-                          <div className="text-right">
-                            <p className="font-black text-black text-sm whitespace-nowrap">
+                      <TableCell className="text-right pr-8">
+                        <div className="flex items-center justify-end gap-6">
+                          <div className="text-right shrink-0">
+                            <p className="font-black text-zinc-950 text-sm whitespace-nowrap">
                               {p.price}{" "}
                               <span className="text-[9px] opacity-40">RON</span>
                             </p>
                             {p.sale_price && (
-                              <p className="text-[8px] text-rose-500 font-bold uppercase tracking-tighter whitespace-nowrap">
-                                Sale: {p.sale_price}
+                              <p className="text-[8px] text-rose-500 font-black uppercase tracking-tight">
+                                Promo: {p.sale_price}
                               </p>
                             )}
                           </div>
-                          <div className="flex gap-1 md:gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all">
+                          <div className="flex gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-200">
                             <button
                               onClick={() => openEdit(p)}
-                              title="Editează Produsul"
-                              className="p-2 bg-zinc-50 rounded-md hover:bg-zinc-950 hover:text-white transition-colors"
+                              title="Editează structura"
+                              className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-zinc-950 hover:text-white transition-colors"
                             >
-                              <Edit2 size={14} />
+                              <Edit2 size={13} />
                             </button>
                             <button
                               onClick={() =>
@@ -697,15 +790,15 @@ const AdminProducts = () => {
                               }
                               title={
                                 p.status === "DRAFT"
-                                  ? "Publică Produsul"
-                                  : "Treci în Draft / Arhivează"
+                                  ? "Publică în catalog"
+                                  : "Treci în stadiul de Schiță"
                               }
-                              className="p-2 bg-zinc-50 rounded-md hover:bg-amber-500 hover:text-white transition-colors"
+                              className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-amber-500 hover:text-white transition-colors"
                             >
                               {p.status === "DRAFT" ? (
-                                <Eye size={14} />
+                                <Eye size={13} />
                               ) : (
-                                <EyeOff size={14} />
+                                <EyeOff size={13} />
                               )}
                             </button>
                           </div>
@@ -719,95 +812,98 @@ const AdminProducts = () => {
           </Table>
         </div>
 
-        {/* PAGINATION FOOTER */}
+        {/* PAGINATION SYSTEM */}
         {!loading && totalPages > 1 && (
-          <div className="p-4 md:p-6 bg-zinc-50/50 border-t flex justify-center items-center gap-4">
+          <div className="p-6 bg-zinc-50/50 border-t border-zinc-100 flex justify-center items-center gap-4 shrink-0">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20 transition-colors"
+              className="p-2.5 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 disabled:opacity-20 transition-all shadow-sm"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={15} />
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-black">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900 bg-white border border-zinc-200 px-4 py-2 rounded-xl shadow-sm">
               {currentPage} / {totalPages}
             </span>
             <button
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-2 border rounded-lg hover:bg-white disabled:opacity-20 transition-colors"
+              className="p-2.5 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 disabled:opacity-20 transition-all shadow-sm"
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={15} />
             </button>
           </div>
         )}
       </div>
 
-      {/* FULL PRODUCT DIALOG */}
+      {/* FULL RESPONSIVE CONFIGURATOR MODAL */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[1300px] w-[95vw] h-[95vh] p-0 rounded-[1.5rem] md:rounded-[2.5rem] border-none bg-[#FBFBFD] shadow-2xl flex flex-col overflow-hidden font-sans">
-          <header className="px-6 md:px-10 py-6 md:py-8 flex justify-between items-center bg-white border-b shrink-0">
+        <DialogContent className="max-w-[1350px] w-full h-full sm:h-[94vh] sm:w-[96vw] p-0 rounded-none sm:rounded-[2.5rem] border-none bg-[#F8F9FA] shadow-2xl flex flex-col overflow-hidden">
+          <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-zinc-950 text-white hidden md:block">
-                <Package size={24} />
+              <div className="p-3 rounded-2xl bg-zinc-950 text-white hidden sm:block">
+                <Package size={22} />
               </div>
               <div>
-                <DialogTitle className="text-xl md:text-3xl font-black uppercase tracking-tighter text-black truncate max-w-[200px] sm:max-w-md">
+                <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-950 truncate max-w-xs sm:max-w-md">
                   {formData.sku
-                    ? `Configurare: ${formData.sku}`
-                    : "Adăugare Articol Nou"}
+                    ? `Editare Resursă: ${formData.sku}`
+                    : "Fișă Articol Nou"}
                 </DialogTitle>
-                <p className="text-[9px] md:text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
-                  Catalog Management System
+                <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-black mt-0.5">
+                  Core Product Configuration
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsModalOpen(false)}
-              className="size-10 md:size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+              className="w-10 h-10 bg-zinc-50 hover:bg-rose-50 text-zinc-600 hover:text-rose-600 rounded-full flex items-center justify-center transition-all"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           </header>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 md:gap-12">
-              {/* LEFT: MEDIA & VISUALS */}
-              <div className="xl:col-span-4 space-y-8 md:space-y-10">
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black ml-1 flex items-center gap-2">
-                    <ImageIcon size={14} /> Imagine Principală
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* MEDIA WORKSPACE (4 COLS) */}
+              <div className="lg:col-span-4 space-y-6 md:sticky md:top-0">
+                <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                    <ImageIcon size={12} /> Thumbnail Principal
                   </Label>
-                  <div className="aspect-[3/4] bg-white rounded-[2rem] border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden shadow-sm">
+                  <div className="aspect-[3/4] bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden transition-all hover:bg-zinc-100/50">
                     {formData.image_url ? (
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
                           crossOrigin="anonymous"
                           onError={handleImageError}
-                          className="h-full w-full object-contain p-4 md:p-8"
-                          alt="Principal"
+                          className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-102"
+                          alt="Main Workspace"
                         />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                        <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-xs">
                           <button
                             onClick={() =>
                               setFormData({ ...formData, image_url: "" })
                             }
-                            className="bg-white text-rose-500 p-4 rounded-full hover:scale-110 transition-transform"
+                            className="bg-white text-rose-600 p-3.5 rounded-full shadow-xl hover:scale-110 active:scale-95 transition-transform"
                           >
-                            <Trash2 size={24} />
+                            <Trash2 size={20} />
                           </button>
                         </div>
                       </>
                     ) : (
-                      <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-4 hover:text-black transition-colors w-full h-full justify-center">
+                      <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-3 w-full h-full justify-center">
                         {uploading === "main" ? (
-                          <Loader2 className="animate-spin" size={40} />
+                          <Loader2
+                            className="animate-spin text-zinc-900"
+                            size={32}
+                          />
                         ) : (
-                          <Upload size={40} strokeWidth={1.5} />
+                          <Upload size={32} strokeWidth={1.5} />
                         )}
-                        <span className="text-[9px] font-black uppercase tracking-widest text-center px-4">
-                          Upload Imagine
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center">
+                          Alege fișier webp
                         </span>
                         <input
                           type="file"
@@ -819,15 +915,15 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-black ml-1 flex items-center gap-2">
-                    <Layers size={14} /> Galerie (Max 4)
+                <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                    <Layers size={12} /> Sub-Imagini Galerie
                   </Label>
-                  <div className="grid grid-cols-4 gap-2 md:gap-3">
+                  <div className="grid grid-cols-4 gap-2">
                     {[0, 1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="aspect-square bg-white rounded-xl md:rounded-2xl border border-zinc-200 relative overflow-hidden group"
+                        className="aspect-square bg-zinc-50 rounded-xl border border-zinc-200 relative overflow-hidden group shadow-inner"
                       >
                         {formData.additional_image_link[i] ? (
                           <>
@@ -838,7 +934,7 @@ const AdminProducts = () => {
                               crossOrigin="anonymous"
                               onError={handleImageError}
                               className="w-full h-full object-cover"
-                              alt={`Secundar ${i}`}
+                              alt="Thumb"
                             />
                             <button
                               onClick={() => {
@@ -849,17 +945,17 @@ const AdminProducts = () => {
                                   additional_image_link: nl,
                                 });
                               }}
-                              className="absolute inset-0 bg-rose-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                              className="absolute inset-0 bg-rose-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                             >
-                              <X size={16} />
+                              <X size={14} />
                             </button>
                           </>
                         ) : (
-                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-50 hover:text-black transition-colors">
+                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-100 hover:text-zinc-900 transition-colors">
                             {uploading === `extra-${i}` ? (
-                              <Loader2 className="animate-spin" size={16} />
+                              <Loader2 className="animate-spin" size={14} />
                             ) : (
-                              <Plus size={20} />
+                              <Plus size={16} />
                             )}
                             <input
                               type="file"
@@ -874,16 +970,17 @@ const AdminProducts = () => {
                 </div>
               </div>
 
-              {/* RIGHT: CORE DATA */}
-              <div className="xl:col-span-8 space-y-8 md:space-y-12">
-                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
-                  <div className="space-y-2">
-                    <Label className="text-[9px] md:text-[10px] font-black text-black uppercase tracking-widest ml-2">
-                      Nume Articol
+              {/* ARHITECTURĂ INFORMAȚIONALĂ (8 COLS) */}
+              <div className="lg:col-span-8 space-y-6">
+                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                  <div className="space-y-1">
+                    <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                      Identificator Comercial Nativ
                     </Label>
                     <input
-                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-3 text-2xl md:text-4xl font-bold outline-none focus:border-black transition-all placeholder:text-zinc-200"
+                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-2 text-2xl md:text-3xl font-black outline-none focus:border-zinc-900 transition-all placeholder:text-zinc-200 tracking-tight"
                       value={formData.name}
+                      placeholder="Introduceți titlul complet al produsului..."
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -894,10 +991,10 @@ const AdminProducts = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <PremiumInput
                       label="Cod SKU"
-                      icon={<Hash size={12} />}
+                      icon={<Hash size={11} />}
                       value={formData.sku}
                       onChange={(e: any) =>
                         setFormData({ ...formData, sku: e.target.value })
@@ -905,18 +1002,18 @@ const AdminProducts = () => {
                     />
                     <PremiumInput
                       label="Cod EAN"
-                      icon={<Hash size={12} />}
+                      icon={<Hash size={11} />}
                       value={formData.ean}
                       onChange={(e: any) =>
                         setFormData({ ...formData, ean: e.target.value })
                       }
                     />
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 text-left w-full">
                       <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                        Categorie Master
+                        Structură Segment
                       </Label>
                       <select
-                        className="w-full bg-zinc-50 rounded-xl p-4 text-sm font-bold border-none outline-none focus:ring-1 focus:ring-black transition-all appearance-none"
+                        className="w-full bg-zinc-50 rounded-xl px-3 py-3.5 text-xs font-bold border-none outline-none focus:ring-1 focus:ring-zinc-900 appearance-none shadow-inner cursor-pointer"
                         value={formData.category_id}
                         onChange={(e) =>
                           setFormData({
@@ -925,7 +1022,7 @@ const AdminProducts = () => {
                           })
                         }
                       >
-                        <option value="">Selectează...</option>
+                        <option value="">Alege segmentul...</option>
                         {categories.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
@@ -936,18 +1033,19 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-950 flex items-center gap-2">
-                    <DollarSign size={14} /> Financiare & Logistică
+                {/* LOGISTICĂ & MANAGEMENT DE PREȚ */}
+                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                    <DollarSign size={13} /> Financiare & Matrice Logistică
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Preț Listă
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-3.5 bg-zinc-50/70 border border-zinc-100 rounded-xl shadow-inner text-center">
+                      <Label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
+                        Preț Întreg
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
+                        className="w-full bg-transparent text-base font-black text-center text-zinc-900 outline-none"
                         value={formData.price}
                         onChange={(e) =>
                           setFormData({
@@ -957,14 +1055,15 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
-                      <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
-                        Preț Promo
+                    <div className="p-3.5 bg-rose-50/30 border border-rose-100 rounded-xl shadow-inner text-center">
+                      <Label className="text-[8px] font-black text-rose-500 uppercase tracking-widest block mb-1">
+                        Preț Promo (Sale)
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
+                        className="w-full bg-transparent text-base font-black text-center text-rose-600 outline-none"
                         value={formData.sale_price || ""}
+                        placeholder="Fără promo"
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -973,13 +1072,13 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Stoc
+                    <div className="p-3.5 bg-zinc-50/70 border border-zinc-100 rounded-xl shadow-inner text-center">
+                      <Label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block mb-1">
+                        Unități Stoc
                       </Label>
                       <input
                         type="number"
-                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
+                        className="w-full bg-transparent text-base font-black text-center text-zinc-900 outline-none"
                         value={formData.stock_quantity}
                         onChange={(e) =>
                           setFormData({
@@ -989,28 +1088,28 @@ const AdminProducts = () => {
                         }
                       />
                     </div>
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Status
+                    <div className="p-3.5 bg-zinc-50/70 border border-zinc-100 rounded-xl shadow-inner text-center flex flex-col justify-center">
+                      <Label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block mb-0.5">
+                        Status Catalog
                       </Label>
                       <select
-                        className="w-full bg-transparent text-[10px] font-black text-center uppercase border-none outline-none mt-1"
+                        className="bg-transparent text-[10px] font-black text-center text-zinc-900 uppercase border-none outline-none cursor-pointer w-full"
                         value={formData.status}
                         onChange={(e) =>
                           setFormData({ ...formData, status: e.target.value })
                         }
                       >
                         <option value="ACTIVE">Public</option>
-                        <option value="DRAFT">Schiță (Draft)</option>
-                        <option value="OUT_OF_STOCK">Fără Stoc</option>
+                        <option value="DRAFT">Schiță / Draft</option>
+                        <option value="OUT_OF_STOCK">Fără stoc</option>
                       </select>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 pt-4 border-t border-zinc-50">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-zinc-100/70">
                     <PremiumInput
-                      label="Greutate(g)"
-                      icon={<Scale size={12} />}
+                      label="Masă (g)"
+                      icon={<Scale size={11} />}
                       value={formData.weight}
                       onChange={(e: any) =>
                         setFormData({
@@ -1020,8 +1119,8 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Lungime(cm)"
-                      icon={<Maximize size={12} />}
+                      label="Lungime (cm)"
+                      icon={<Maximize size={11} />}
                       value={formData.length}
                       onChange={(e: any) =>
                         setFormData({
@@ -1031,8 +1130,8 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Lățime(cm)"
-                      icon={<Maximize size={12} />}
+                      label="Lățime (cm)"
+                      icon={<Maximize size={11} />}
                       value={formData.width}
                       onChange={(e: any) =>
                         setFormData({
@@ -1042,8 +1141,8 @@ const AdminProducts = () => {
                       }
                     />
                     <PremiumInput
-                      label="Înălțime(cm)"
-                      icon={<Maximize size={12} />}
+                      label="Înălțime (cm)"
+                      icon={<Maximize size={11} />}
                       value={formData.height}
                       onChange={(e: any) =>
                         setFormData({
@@ -1055,14 +1154,17 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                <div className="bg-white p-6 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 md:space-y-8">
-                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-900 flex items-center gap-2">
-                      <AlignLeft size={14} /> Descriere Produs
+                {/* EDITORIAL MATRIX & SEO METADATA */}
+                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-950 flex items-center gap-2">
+                      <AlignLeft size={13} /> Documentație Editorială
+                      (Descriere)
                     </Label>
                     <textarea
-                      className="w-full h-32 md:h-44 bg-zinc-50 rounded-2xl p-4 md:p-6 text-sm leading-relaxed border-none outline-none focus:ring-1 focus:ring-black transition-all resize-none"
+                      className="w-full h-32 bg-zinc-50 rounded-2xl p-4 text-xs font-medium leading-relaxed border-none outline-none focus:ring-1 focus:ring-zinc-950 transition-all resize-none shadow-inner"
                       value={formData.description}
+                      placeholder="Specificații, detalii de fabrică..."
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1072,13 +1174,13 @@ const AdminProducts = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6 border-t border-zinc-50">
-                    <div className="space-y-6">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-950 flex items-center gap-2">
-                        <Globe size={14} /> Indexare & SEO
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-zinc-100/70">
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
+                        <Globe size={13} /> Parametri Crawling SEO
                       </h4>
                       <PremiumInput
-                        label="URL (Slug)"
+                        label="Mecanism URL (Slug)"
                         value={formData.slug}
                         onChange={(e: any) =>
                           setFormData({ ...formData, slug: e.target.value })
@@ -1094,12 +1196,12 @@ const AdminProducts = () => {
                           })
                         }
                       />
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
                           Meta Description
                         </Label>
                         <textarea
-                          className="w-full h-24 bg-zinc-50 rounded-xl p-4 text-xs font-medium border-none outline-none focus:ring-1 focus:ring-black transition-all resize-none"
+                          className="w-full h-20 bg-zinc-50 rounded-xl p-3 text-[11px] font-medium border-none outline-none focus:ring-1 focus:ring-zinc-950 transition-all resize-none shadow-inner"
                           value={formData.meta_description}
                           onChange={(e) =>
                             setFormData({
@@ -1111,15 +1213,15 @@ const AdminProducts = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-950 flex items-center gap-2">
-                          <Layers size={14} /> Atribute Tehnice
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
+                          <Layers size={13} /> Atribute Index
                         </h4>
                         <button
                           onClick={() => {
                             const k = prompt(
-                              "Nume_atribut nou (ex: Culoare, Material):",
+                              "Cheie Atribut Nou (Ex: Culoare, Compatibilitate):",
                             );
                             if (k)
                               setFormData({
@@ -1130,26 +1232,26 @@ const AdminProducts = () => {
                                 },
                               });
                           }}
-                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-black hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-950 hover:underline"
                         >
                           + Adaugă Parametru
                         </button>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-2 max-h-[220px] overflow-y-auto luxury-scrollbar pr-1">
                         {Object.entries(formData.attributes_json || {}).map(
                           ([k, v], idx) => (
                             <div
                               key={idx}
-                              className="flex gap-3 items-center bg-zinc-50 p-2 rounded-xl group border border-transparent hover:border-zinc-200 transition-all"
+                              className="flex gap-2 items-center bg-zinc-50/70 p-1.5 rounded-xl border border-zinc-200/50 group"
                             >
                               <span
-                                className="text-[9px] font-black uppercase text-zinc-500 w-1/3 pl-3 truncate"
+                                className="text-[9px] font-black uppercase text-zinc-400 w-1/3 pl-2 truncate"
                                 title={k}
                               >
                                 {k}
                               </span>
                               <input
-                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-zinc-950"
+                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-zinc-900"
                                 placeholder="Valoare..."
                                 value={v as string}
                                 onChange={(e) =>
@@ -1171,9 +1273,9 @@ const AdminProducts = () => {
                                     attributes_json: up,
                                   });
                                 }}
-                                className="text-rose-400 opacity-0 md:group-hover:opacity-100 transition-opacity pr-2"
+                                className="text-rose-400 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity pr-1"
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={13} />
                               </button>
                             </div>
                           ),
@@ -1186,37 +1288,37 @@ const AdminProducts = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-6 md:px-10 py-6 md:py-8 bg-white border-t shrink-0 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-zinc-400">
+          <DialogFooter className="px-6 md:px-10 py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5 text-zinc-400">
               <ShieldCheck size={16} className="text-zinc-950" />
-              <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-center md:text-left">
-                Propagare securizată în infrastructura EVEM
+              <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
+                Sincronizare infrastructură EVEM API Gate
               </p>
             </div>
-            <div className="flex gap-4 w-full md:w-auto">
+            <div className="flex gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="flex-1 md:flex-none px-6 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 transition-all border border-zinc-200"
+                className="flex-1 sm:flex-none px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 border border-zinc-200 transition-colors"
               >
                 Anulează
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 md:flex-none bg-zinc-950 text-white px-8 md:px-12 py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-zinc-800 active:scale-95 transition-all flex items-center justify-center gap-3"
+                className="flex-1 sm:flex-none bg-zinc-950 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-zinc-800 active:scale-98 transition-all flex items-center justify-center gap-2"
               >
-                <Save size={16} />{" "}
-                {editingProduct ? "Salvează Modificările" : "Publică Produsul"}
+                <Save size={14} /> {editingProduct ? "Salvează" : "Publică"}
               </button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* LUXURY DESIGNS INJECTED SCROLLBAR */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `,
@@ -1227,12 +1329,12 @@ const AdminProducts = () => {
 };
 
 const PremiumInput = ({ label, value, onChange, icon }: any) => (
-  <div className="space-y-2 text-left w-full">
-    <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+  <div className="space-y-1.5 text-left w-full">
+    <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
       {icon} {label}
     </Label>
     <input
-      className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-black border-none outline-none focus:ring-1 focus:ring-black transition-all shadow-inner placeholder:text-zinc-300"
+      className="w-full bg-zinc-50 rounded-xl px-3 py-3 text-xs font-bold text-zinc-900 border-none outline-none focus:ring-1 focus:ring-zinc-950 transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
       placeholder="..."
