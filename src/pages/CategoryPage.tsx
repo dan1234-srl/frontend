@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
-import { SortDropdown } from "../components/shop/SortDropdown"; // 🚀 REPARAT: Calea de import corectă pentru a trece build-ul
+import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import {
@@ -27,21 +27,44 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER (CONVERTIT CHIRURGICAL)
+// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER (REPARAT REACTIV & CORS)
 // ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // 🚀 FIX CRITIC: Determinare reactivă stabilă a tipului de ecran (Mobile vs Desktop)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    // Rulăm o dată la încărcarea paginii
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Auto-play la interval de 6 secunde dacă există mai mult de o campanie activă
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (!banners || banners.length <= 1) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [banners.length]);
+  }, [banners?.length]);
 
   if (!banners || banners.length === 0) return null;
+
+  const currentBanner = banners[current];
+  if (!currentBanner) return null;
+
+  // Selectăm URL-ul imaginii pe baza stării reactive monitorizate de hook
+  const resolvedImageUrl =
+    isMobile && currentBanner.image_mobile_url
+      ? currentBanner.image_mobile_url
+      : currentBanner.image_desktop_url;
 
   return (
     <div className="relative w-full aspect-[21/9] sm:aspect-[21/7] md:aspect-[32/10] rounded-[2.5rem] overflow-hidden mb-16 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-zinc-100 group bg-zinc-950 select-none">
@@ -54,18 +77,21 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 w-full h-full flex items-center"
         >
-          {/* 🚀 LOGICĂ INTEGRATĂ RESPONSIVE: Incarcă varianta desktop pe ecrane mari și varianta mobile pe ecrane < 640px */}
-          <img
-            src={
-              window.innerWidth < 640 && banners[current].image_mobile_url
-                ? banners[current].image_mobile_url
-                : banners[current].image_desktop_url
-            }
-            alt={banners[current].title}
-            className="w-full h-full object-cover object-center scale-100 group-hover:scale-[1.015] transition-transform duration-[4s] ease-out"
-            loading="eager"
-            fetchpriority="high"
-          />
+          {resolvedImageUrl ? (
+            <img
+              src={resolvedImageUrl}
+              alt={currentBanner.title || "Campanie"}
+              crossOrigin="anonymous" // 🚀 FIX CORS: Permite browserului să încarce imaginea chiar dacă regulile S3 sunt stricte
+              className="w-full h-full object-cover object-center scale-100 group-hover:scale-[1.015] transition-transform duration-[4s] ease-out"
+              loading="eager"
+              fetchPriority="high"
+              onError={(e: any) => {
+                e.target.style.display = "none"; // Ascunde elementul dacă URL-ul returnează 403/404 ca să nu strice interfața
+              }}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-zinc-900 animate-pulse" />
+          )}
 
           {/* Overlay cinematic asimetric pentru protecția și contrastul textului */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-10" />
@@ -81,18 +107,18 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
             </div>
 
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
-              {banners[current].title}
+              {currentBanner.title}
             </h2>
 
-            {banners[current].subtitle && (
+            {currentBanner.subtitle && (
               <p className="text-[10px] md:text-xs font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
-                {banners[current].subtitle}
+                {currentBanner.subtitle}
               </p>
             )}
 
             <div className="pt-2">
               <button className="px-8 py-4 bg-white text-zinc-950 text-[10px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-2xl active:scale-95 duration-300">
-                {banners[current].button_text || "DESCOPERĂ COLECȚIA"}
+                {currentBanner.button_text || "DESCOPERĂ COLECȚIA"}
               </button>
             </div>
           </div>
@@ -119,6 +145,9 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE
+// ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -187,7 +216,7 @@ const CategoryPage = () => {
         } else if (Array.isArray(data)) {
           setCampaignBanners(data);
         } else {
-          setCampaignBanners([data]); // 🚀 CORECTAT: Obiectul unic se stochează nativ în array pentru siguranța loop-ului
+          setCampaignBanners([data]);
         }
       })
       .catch(() => setCampaignBanners([]));
@@ -328,7 +357,7 @@ const CategoryPage = () => {
                           className={`block pl-4 text-[10px] font-bold uppercase transition-colors ${
                             slug === sub.slug
                               ? "text-[var(--royal-violet)] font-black"
-                              : "text-zinc-300 hover:text-french-blue"
+                              : "text-zinc-300 hover:text-zinc-700"
                           }`}
                         >
                           {sub.name}
@@ -522,8 +551,8 @@ const CategoryPage = () => {
                           <Loader2 className="animate-spin" size={16} />
                         ) : (
                           <ChevronDown
-                            size={16}
                             className="group-hover:translate-y-0.5 transition-transform"
+                            size={16}
                           />
                         )}
                       </div>
