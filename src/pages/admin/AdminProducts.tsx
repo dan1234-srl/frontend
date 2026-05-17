@@ -309,11 +309,10 @@ const AdminProducts = () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
 
-    // 🚀 O(1) PAYLOAD SANITIZATION: Trimitem doar atributele curate pe care backend-ul le acceptă
-    // Elimină complet erorile de tip "multiple values pentru lowest_price_30d"
+    // 🚀 FIX CRITIC: S-a eliminat apelul inexistent "bleach.clean" din codul de frontend
     const payload = {
       sku: formData.sku
-        ? bleach.clean(formData.sku.trim().upper())
+        ? formData.sku.trim().toUpperCase()
         : `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
       ean: formData.ean ? formData.ean.trim() : "",
       slug: formData.slug || generateSlug(formData.name),
@@ -334,7 +333,6 @@ const AdminProducts = () => {
       meta_description: formData.meta_description || "",
       canonical_url: formData.canonical_url || "",
       additional_image_link: formData.additional_image_link.filter(Boolean),
-      // 🚀 FIX: Serializăm în string atributele pentru a mapa corect tipul JSON din SQLAlchemy
       attributes_json:
         typeof formData.attributes_json === "object"
           ? JSON.stringify(formData.attributes_json)
@@ -507,7 +505,7 @@ const AdminProducts = () => {
                         <div className="w-12 h-16 bg-white rounded-lg border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1">
                           <img
                             src={getValidImageUrl(p.image_url)}
-                            crossOrigin="anonymous" // 🚀 DEBLOCARE CORS DIRECTĂ ÎN BROWSER PENTRU TABEL
+                            crossOrigin="anonymous"
                             onError={handleImageError}
                             className="object-contain h-full w-full"
                             alt="Produs"
@@ -633,7 +631,7 @@ const AdminProducts = () => {
                       <>
                         <img
                           src={getValidImageUrl(formData.image_url)}
-                          crossOrigin="anonymous" // 🚀 DEBLOCARE CORS IMAGINE PRINCIPALA MODAL
+                          crossOrigin="anonymous"
                           onError={handleImageError}
                           className="h-full w-full object-contain p-4 md:p-8"
                           alt="Principal"
@@ -685,7 +683,7 @@ const AdminProducts = () => {
                               src={getValidImageUrl(
                                 formData.additional_image_link[i],
                               )}
-                              crossOrigin="anonymous" // 🚀 DEBLOCARE CORS IMAGINI EXTRA GALERIE
+                              crossOrigin="anonymous"
                               onError={handleImageError}
                               className="w-full h-full object-cover"
                               alt={`Secundar ${i}`}
@@ -969,7 +967,7 @@ const AdminProducts = () => {
                         <button
                           onClick={() => {
                             const k = prompt(
-                              "Nume atribut nou (ex: Culoare, Material):",
+                              "Nume_atribut nou (ex: Culoare, Material):",
                             );
                             if (k)
                               setFormData({
@@ -980,7 +978,7 @@ const AdminProducts = () => {
                                 },
                               });
                           }}
-                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
+                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-black hover:underline"
                         >
                           + Adaugă Parametru
                         </button>
@@ -1085,6 +1083,7 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
       className="w-full bg-zinc-50 rounded-xl p-3.5 md:p-4 text-xs md:text-sm font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
       value={value}
       onChange={onChange}
+      placeholder="..."
     />
   </div>
 );
