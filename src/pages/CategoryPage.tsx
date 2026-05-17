@@ -1,15 +1,32 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { Loader2, ChevronDown, LayoutGrid, Grid2X2 } from "lucide-react";
+import {
+  Loader2,
+  ChevronDown,
+  LayoutGrid,
+  Grid2X2,
+  SlidersHorizontal,
+} from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
+import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
-import FilterSortBar from "@/components/shop/FilterSortBar";
+import { FilterSidebar } from "../components/shop/FilterSidebar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER
+// ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -28,7 +45,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 6000);
-    return () => setInterval(timer);
+    return () => clearInterval(timer);
   }, [banners?.length]);
 
   if (!banners || banners.length === 0) return null;
@@ -117,6 +134,9 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE
+// ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -193,7 +213,6 @@ const CategoryPage = () => {
           }
         });
 
-        // 🚀 ASIGURAT: Măsură asimetrică de fallback direct din frontend spre backend-ul Python
         const currentSort = searchParams.get("sort");
         if (currentSort === "pret-crescator" || currentSort === "price_asc") {
           params.set("sort", "pret-crescator");
@@ -227,6 +246,20 @@ const CategoryPage = () => {
   useEffect(() => {
     fetchProducts(1, false);
   }, [slug, searchParams, fetchProducts]);
+
+  const activeFiltersCount = (() => {
+    let count = 0;
+    searchParams.forEach((val, key) => {
+      if (
+        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
+          key,
+        ) &&
+        val
+      )
+        count++;
+    });
+    return count;
+  })();
 
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) {
@@ -286,14 +319,58 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* 🚀 CONECTAT: Pasăm stările sigure către noul FilterSortBar unificat */}
-        <FilterSortBar
-          filtersOpen={filtersOpen}
-          setFiltersOpen={setFiltersOpen}
-          itemCount={products.length}
-        />
+        {/* ACTIONS BAR FILTER & SORT UNIFIED */}
+        <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
+                <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <SlidersHorizontal size={14} />
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black border border-white">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </div>
+                <span>Rafinează Portofoliul</span>
+              </button>
+            </SheetTrigger>
 
-        {/* LAYOUT PRODUCTS */}
+            <SheetContent
+              side="right"
+              className="w-[90%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
+            >
+              <ThemeMarker />
+              <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
+                <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
+                  Filtre Portofoliu
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar">
+                {filtersData ? (
+                  <FilterSidebar filtersData={filtersData} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <Loader2
+                      className="animate-spin text-[var(--royal-violet)]"
+                      size={24}
+                    />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                      Se încarcă matricea...
+                    </span>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <div className="w-44 md:w-60">
+            <SortDropdown />
+          </div>
+        </div>
+
+        {/* PRODUCTS GRID SYSTEM */}
         <div className="flex gap-12 items-start">
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">
@@ -400,6 +477,29 @@ const CategoryPage = () => {
       </main>
 
       <Footer />
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          html { scrollbar-gutter: stable !important; }
+          body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+          .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+          .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
+          
+          [data-radix-focus-trap] ~ div[class*="bg-black/"],
+          div[class*="fixed inset-0 bg-black"],
+          div[data-state="open"][class*="fixed inset-0"] {
+            z-index: 99990 !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            background-color: rgba(9, 9, 11, 0.4) !important;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+        `,
+        }}
+      />
     </div>
   );
 };
