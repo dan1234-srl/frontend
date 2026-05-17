@@ -205,7 +205,6 @@ const CategoryPage = () => {
       .catch(() => setCampaignBanners([]));
   }, [slug]);
 
-  /* ── Fetch produse reactiv reparat atomic pentru query-ul din Python ── */
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
       if (append) setLoadingMore(true);
@@ -215,14 +214,20 @@ const CategoryPage = () => {
         params.set("page", page.toString());
         params.set("category_slug", slug || "");
 
-        // Adăugăm toate filtrele active (atribute, branduri, interval preț) din URL în request
         searchParams.forEach((value, key) => {
-          if (!["page", "category_slug", "sort", "sort_by", "sort_order"].includes(key)) {
+          if (
+            ![
+              "page",
+              "category_slug",
+              "sort",
+              "sort_by",
+              "sort_order",
+            ].includes(key)
+          ) {
             params.append(key, value);
           }
         });
 
-        // 🚀 REPARAT ATOMIC: Transmitem exact formatul curat pe care noul backend îl validează în system_params
         const currentSort = searchParams.get("sort");
         if (currentSort === "pret-crescator") {
           params.set("sort_by", "price");
@@ -247,7 +252,7 @@ const CategoryPage = () => {
         );
         setTotalPages(data.pages || 1);
       } catch {
-        # fail silently
+        // fail silently
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -263,7 +268,13 @@ const CategoryPage = () => {
   const activeFiltersCount = (() => {
     let count = 0;
     searchParams.forEach((val, key) => {
-      if (!["page", "sort", "category_slug", "sort_by", "sort_order"].includes(key) && val) count++;
+      if (
+        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
+          key,
+        ) &&
+        val
+      )
+        count++;
     });
     return count;
   })();
@@ -386,9 +397,10 @@ const CategoryPage = () => {
 
         {/* ACTIONS BAR */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
+          {/* 🚀 REPARAT AICI: Schimbat din flex-center în flex și items-center standard Tailwind */}
           <button
             onClick={() => setFiltersOpen(true)}
-            className="flex-center items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
+            className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
           >
             <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
               <SlidersHorizontal size={14} />
