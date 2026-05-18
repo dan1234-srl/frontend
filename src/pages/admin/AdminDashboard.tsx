@@ -15,13 +15,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT: Folosim Toast-ul tău Shadcn în loc de sonner
+import { useToast } from "@/hooks/use-toast"; // 🚀 Conectat curat la hook-ul tău nativ
 
 const AdminDashboard = () => {
   const [statsData, setStatsData] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast(); // 🚀 REPARAT: Inițializăm generatorul de toast-uri cu fundal solid
+  const { toast } = useToast();
 
   const [isSyncingFilters, setIsSyncingFilters] = useState(false);
   const [isRecoveringOrders, setIsRecoveringOrders] = useState(false);
@@ -39,11 +39,29 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      // 🚀 REPARAT ATOMIC: Forțăm starea goală pe comenzi în timpul încărcării pentru a preveni randarea elementelor detașate
+      setRecentOrders([]);
+
+      /* 🚀 REPARAT ATOMIC (Anti-Anonimi): Am injectat headers de dezactivare a cache-ului 
+         și proprietatea 'no-store'. Acest lucru oprește browserul din a mai citi stările 
+         vechi sau parțiale din memorie la click-ul pe Reactualizează, eliminând nevoia de Ctrl+F5!
+      */
+      const fetchOptions = {
+        method: "GET",
+        credentials: "include" as const,
+        cache: "no-store" as RequestCache,
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      };
+
       const [statsRes, ordersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/v1/admin/stats`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/api/v1/admin/stats`, fetchOptions),
         fetch(
           `${API_BASE_URL}/api/v1/orders/admin/all?page=${currentPage}&limit=${itemsPerPage}`,
-          { credentials: "include" },
+          fetchOptions,
         ),
       ]);
 
@@ -59,7 +77,7 @@ const AdminDashboard = () => {
       toast({
         variant: "destructive",
         title: "Sincronizare eșuată",
-        description: "Datele nu au putut fi preluate din Redis.",
+        description: "Datele tranzacționale nu au putut fi preluate.",
       });
     } finally {
       setLoading(false);
@@ -80,26 +98,23 @@ const AdminDashboard = () => {
       const res = await actionFn();
       if (res.ok) {
         toast({
-          title: "Acțiune executată",
+          title: "Succes",
           description: successMsg,
         });
-        /* 🚀 REPARAT ATOMIC: Am mărit delay-ul la 800ms pentru a oferi bazei de date 
-           timp să finalizeze procesarea batch-ului înainte ca tabelul să ceară date noi.
-           Acest lucru elimină complet apariția datelor anonime pe ecran!
-        */
-        setTimeout(() => fetchDashboardData(), 800);
+        // Delay optimizat la 1.2s în timpul reindexărilor pentru a lăsa Postgres să termine scrierea batch-urilor
+        setTimeout(() => fetchDashboardData(), 1200);
       } else {
         toast({
           variant: "destructive",
-          title: "Acțiune respinsă",
-          description: "Serverul a refuzat procesarea cererii.",
+          title: "Eroare",
+          description: "Acțiunea a fost respinsă de server.",
         });
       }
     } catch (e) {
       toast({
         variant: "destructive",
         title: "Eroare rețea",
-        description: "Verifică conexiunea cu instanța Railway.",
+        description: "Instanța Railway nu a putut fi contactată.",
       });
     } finally {
       loadingState(false);
@@ -115,35 +130,40 @@ const AdminDashboard = () => {
           : "0 RON",
         trend: "LIVE",
         icon: <TrendingUp size={18} />,
-        gradient: "linear-gradient(135deg, var(--dark-amethyst) 0%, var(--indigo-ink) 100%)",
+        gradient:
+          "linear-gradient(135deg, var(--dark-amethyst) 0%, var(--indigo-ink) 100%)",
       },
       {
         label: "Comenzi Noi",
         value: statsData?.new_orders || "0",
         trend: "TODAY",
         icon: <ShoppingBag size={18} />,
-        gradient: "linear-gradient(135deg, var(--dark-amethyst-2) 0%, var(--royal-violet) 100%)",
+        gradient:
+          "linear-gradient(135deg, var(--dark-amethyst-2) 0%, var(--royal-violet) 100%)",
       },
       {
         label: "Utilizatori",
         value: statsData?.new_users || "0",
         trend: "GROWTH",
         icon: <UserPlus size={18} />,
-        gradient: "linear-gradient(135deg, var(--indigo-ink) 0%, var(--royal-violet) 100%)",
+        gradient:
+          "linear-gradient(135deg, var(--indigo-ink) 0%, var(--royal-violet) 100%)",
       },
       {
         label: "Catalog",
         value: statsData?.active_products || "0",
         trend: "ACTIVE",
         icon: <Activity size={18} />,
-        gradient: "linear-gradient(135deg, var(--royal-violet) 0%, var(--lavender-purple) 100%)",
+        gradient:
+          "linear-gradient(135deg, var(--royal-violet) 0%, var(--lavender-purple) 100%)",
       },
       {
         label: "Stoc Critic",
         value: statsData?.low_stock || "0",
         trend: "ALERT",
         icon: <AlertTriangle size={18} />,
-        gradient: statsData?.low_stock > 0
+        gradient:
+          statsData?.low_stock > 0
             ? "linear-gradient(135deg, #7f1d1d 0%, var(--dark-amethyst) 100%)"
             : "linear-gradient(135deg, var(--dark-amethyst) 0%, #3f3f46 100%)",
       },
@@ -153,7 +173,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="w-full space-y-10 md:space-y-16 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER & ACTIONS BAR */}
+      {/* HEADER ACTIONS */}
       <section className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -185,7 +205,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsReindexing,
-                "Căutarea magazinului este reindexată asincron.",
+                "Catalogul se reindexează securizat în fundal.",
               )
             }
             isLoading={isReindexing}
@@ -202,7 +222,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsMasterActivating,
-                "Sistemul a fost activat la nivel global.",
+                "Activarea globală a catalogului a fost finalizată.",
               )
             }
             isLoading={isMasterActivating}
@@ -219,7 +239,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsSyncingFilters,
-                "Sincronizarea filtrelor a fost delegată worker-ului.",
+                "Sincronizarea structurii de filtre a fost pornită.",
               )
             }
             isLoading={isSyncingFilters}
@@ -236,7 +256,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsRecoveringOrders,
-                "Procesul de reconciliere Stripe a început.",
+                "Reconcilierea cu Stripe rulează asincron.",
               )
             }
             isLoading={isRecoveringOrders}
@@ -245,7 +265,7 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* STATS CARDS GRID */}
+      {/* CARDS STATS */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {displayStats.map((stat, i) => (
           <motion.div
@@ -279,7 +299,7 @@ const AdminDashboard = () => {
         ))}
       </section>
 
-      {/* TRANSACTIONS ACTIVITY TABLE */}
+      {/* RECENT TRANSACTIONS TABLE */}
       <section className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden">
         <div className="p-8 md:p-12 border-b border-zinc-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-zinc-50/30">
           <div className="space-y-1 text-left">
@@ -320,13 +340,13 @@ const AdminDashboard = () => {
             </thead>
             <tbody className="divide-y divide-zinc-50">
               <AnimatePresence mode="popLayout">
-                {/* 🚀 REPARAT ATOMIC: Dacă se încarcă sau este în tranzacție, blocăm randarea textului vechi 
-                   pentru a ascunde complet apariția temporară a stării anonime!
-                */}
-                loading ? (
+                {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-20 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
-                      Sincronizare securizată flux...
+                    <td
+                      colSpan={6}
+                      className="py-24 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest animate-pulse"
+                    >
+                      Sincronizare securizată flux date...
                     </td>
                   </tr>
                 ) : recentOrders.length > 0 ? (
@@ -389,11 +409,14 @@ const AdminDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-20 text-center text-zinc-300 text-[10px] font-black uppercase tracking-widest">
-                      Nicio activitate înregistrată în catalog
+                    <td
+                      colSpan={6}
+                      className="py-20 text-center text-zinc-300 text-[10px] font-black uppercase tracking-widest"
+                    >
+                      Nicio activitate înregistrată în flux
                     </td>
                   </tr>
-                )
+                )}
               </AnimatePresence>
             </tbody>
           </table>
