@@ -130,3 +130,7 @@ html {
   background-color: var(--royal-violet);
   color: white;
 }
+
+[data-radix-toast-viewport] {
+  z-index: 99999 !important;
+}
