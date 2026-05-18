@@ -13,13 +13,20 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
-  // 🚀 SOLUȚIE: Păstrăm valoarea căutării local pentru a controla perfect layout-ul public
+  // Păstrăm valoarea căutării local pentru a controla perfect layout-ul în timp real
   const [searchQuery, setSearchQuery] = useState("");
 
+  // 🚀 REPARAT: Inițializarea securizată și maparea corectă a clientului MeiliSearch
   const client = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
-    const key = import.meta.env.MEILI_SEARCH_KEY;
-    if (!url || !url.startsWith("http")) return null;
+    const key = import.meta.env.VITE_MEILI_SEARCH_KEY; // Corectat: adăugat prefixul VITE_ obligatoriu
+
+    if (!url || !url.startsWith("http") || !key) {
+      console.warn(
+        "MeiliSearch: URL-ul sau cheia publică lipsesc din configurație.",
+      );
+      return null;
+    }
 
     const meiliInstance = instantMeiliSearch(url, key, {
       placeholderSearch: true,
@@ -106,13 +113,13 @@ const SearchModal = ({
                 <Configure hitsPerPage={12} />
 
                 <div className="mb-12">
-                  {/* 🚀 REPARAT: Folosim onChange capturat direct din componenta SearchBox prin intermediul queryHook sau funcție controlată */}
+                  {/* Sincronizare directă prin queryHook pentru a capta instant valoarea în starea locală */}
                   <SearchBox
                     autoFocus
                     placeholder="Caută în catalogul de produse..."
                     queryHook={(query, search) => {
-                      setSearchQuery(query); // Sincronizăm instant starea locală React
-                      search(query); // Trimitem query-ul către motorul MeiliSearch
+                      setSearchQuery(query);
+                      search(query);
                     }}
                     classNames={{
                       root: "w-full",
@@ -139,7 +146,6 @@ const SearchModal = ({
 
                 {/* Zona de afișare rezultate */}
                 <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-                  {/* 🚀 REPARAT: Condiționare directă și curată folosind starea locală React */}
                   {!searchQuery.trim() ? (
                     <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
                       Introdu un cuvânt cheie pentru a porni căutarea...
@@ -155,9 +161,9 @@ const SearchModal = ({
                 </div>
               </InstantSearch>
             ) : (
-              <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-300">
-                Sincronizare cu baza de date eșuată... Verifică variabilele
-                `.env`
+              <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-300 text-center px-4">
+                Sincronizare cu baza de date eșuată... Verifică variabilele de
+                mediu în Vercel
               </div>
             )}
           </div>
