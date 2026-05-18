@@ -9,11 +9,10 @@ import {
   AlertTriangle,
   UserPlus,
   TrendingUp,
+  Search,
   Database,
-  Trash2,
   ShieldCheck,
   Zap,
-  Search,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -23,7 +22,6 @@ const AdminDashboard = () => {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Stări pentru butoanele de acțiune
   const [isSyncingFilters, setIsSyncingFilters] = useState(false);
   const [isRecoveringOrders, setIsRecoveringOrders] = useState(false);
   const [isMasterActivating, setIsMasterActivating] = useState(false);
@@ -77,7 +75,7 @@ const AdminDashboard = () => {
       const res = await actionFn();
       if (res.ok) {
         toast.success(successMsg);
-        fetchDashboardData();
+        setTimeout(() => fetchDashboardData(), 300);
       } else {
         toast.error("Acțiunea a fost respinsă de server.");
       }
@@ -97,7 +95,6 @@ const AdminDashboard = () => {
           : "0 RON",
         trend: "LIVE",
         icon: <TrendingUp size={18} />,
-        // Folosim variabilele CSS în loc de clase Tailwind
         gradient:
           "linear-gradient(135deg, var(--dark-amethyst) 0%, var(--indigo-ink) 100%)",
       },
@@ -162,18 +159,19 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 w-full xl:w-auto">
+          {/* 🚀 ALINIAT: Rută corectă administrativă protejată prin Distributed Lock */}
           <ActionButton
             icon={<Search size={14} />}
             label="Reindex Search"
             onClick={() =>
               handleAction(
                 () =>
-                  fetch(
-                    `${API_BASE_URL}/api/v1/products/admin/reindex-search`,
-                    { method: "POST", credentials: "include" },
-                  ),
+                  fetch(`${API_BASE_URL}/api/v1/admin/search/reindex`, {
+                    method: "POST",
+                    credentials: "include",
+                  }),
                 setIsReindexing,
-                "Căutare reindexată",
+                "Reindexare search pornită în fundal.",
               )
             }
             isLoading={isReindexing}
@@ -190,24 +188,25 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsMasterActivating,
-                "Site activat complet",
+                "Site activat complet.",
               )
             }
             isLoading={isMasterActivating}
             color="var(--royal-violet)"
           />
+          {/* 🚀 ALINIAT: Rută corectă administrativă */}
           <ActionButton
             icon={<Database size={14} />}
             label="Sync Filtre"
             onClick={() =>
               handleAction(
                 () =>
-                  fetch(
-                    `${API_BASE_URL}/api/v1/products/admin/refresh-all-filters`,
-                    { method: "POST", credentials: "include" },
-                  ),
+                  fetch(`${API_BASE_URL}/api/v1/admin/refresh-all-filters`, {
+                    method: "POST",
+                    credentials: "include",
+                  }),
                 setIsSyncingFilters,
-                "Filtre sincronizate",
+                "Sincronizare filtre pornită.",
               )
             }
             isLoading={isSyncingFilters}
@@ -224,7 +223,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsRecoveringOrders,
-                "Reconciliere pornită",
+                "Reconciliere pornită.",
               )
             }
             isLoading={isRecoveringOrders}
