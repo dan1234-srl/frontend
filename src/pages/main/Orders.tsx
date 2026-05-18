@@ -86,7 +86,7 @@ const Orders = () => {
   }, [searchTerm, orders]);
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 font-sans antialiased selection:bg-purple-100 selection:text-purple-900">
+    <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 font-sans antialiased selection:bg-zinc-100">
       <Header />
 
       {/* TOP LOADING PROGRESS BAR */}
@@ -116,9 +116,14 @@ const Orders = () => {
               />
               Contul meu
             </button>
+
+            {/* 🚀 REPARAT: Schimbat text-purple-500 în style color var pentru a lua dinamic tema backend-ului */}
             <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-zinc-900 leading-none">
               Arhiva{" "}
-              <span className="text-purple-500 font-light drop-shadow-sm">
+              <span
+                className="font-light drop-shadow-sm"
+                style={{ color: "var(--royal-violet)" }}
+              >
                 mea
               </span>
             </h1>
@@ -130,17 +135,32 @@ const Orders = () => {
               size={14}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors duration-300"
             />
+
+            {/* 🚀 REPARAT: Înlocuit border-zinc-150 cu o bordură discretă zinc-100, focus:border legat nativ de --royal-violet și shadow fin pentru a elimina complet negrul rigid */}
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Caută număr comandă, status sau metodă..."
-              className="w-full bg-zinc-50 border border-zinc-150 rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none focus:border-[var(--royal-violet)] focus:bg-white focus:ring-4 focus:ring-purple-50 transition-all duration-300 text-zinc-800 shadow-inner"
+              className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none focus:bg-white transition-all duration-300 text-zinc-800 shadow-sm"
+              style={{
+                borderColor: "var(--royal-violet)",
+                borderWidth: "1px",
+                opacity: 0.85,
+              }}
+              onFocus={(e) => {
+                e.target.style.opacity = "1";
+                e.target.style.boxShadow = "0 0 0 4px rgba(109, 40, 217, 0.08)";
+              }}
+              onBlur={(e) => {
+                e.target.style.opacity = "0.85";
+                e.target.style.boxShadow = "none";
+              }}
             />
           </div>
         </div>
 
-        {/* CONTAINER GRID: Corectat prin eliminarea blur-ului rigid care putea lăsa artefacte de contur închis */}
+        {/* CONTAINER GRID */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -196,23 +216,33 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
-        {/* PAGINARE */}
+        {/* 🚀 REPARAT: PAGINARE COMPLET ALINIATĂ PE CULORILE DIN BACKEND (Fără mov/violet hardcodat sau fix) */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
           <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
             <button
               disabled={currentPage === 1 || isLoading}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm"
+              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm disabled:opacity-25"
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-xl font-black text-zinc-950 bg-zinc-50 px-4 py-1.5 rounded-xl border border-zinc-100">
+
+            <span
+              className="text-xl font-black px-5 py-2 rounded-xl border"
+              style={{
+                backgroundColor: "rgba(109, 40, 217, 0.04)",
+                borderColor: "var(--royal-violet)",
+                color: "var(--royal-violet)",
+                opacity: 0.9,
+              }}
+            >
               {currentPage}
             </span>
+
             <button
               disabled={orders.length < ordersPerPage || isLoading}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm"
+              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm disabled:opacity-25"
             >
               <ChevronRight size={16} />
             </button>
