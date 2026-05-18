@@ -1,9 +1,29 @@
-import { useMemo } from "react";
-import { InstantSearch, SearchBox, Hits, Configure } from "react-instantsearch";
+import { useMemo, useState } from "react";
+import {
+  InstantSearch,
+  SearchBox,
+  Hits,
+  Configure,
+  useSearchBox,
+} from "react-instantsearch";
 import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, ArrowRight } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+// 🚀 Componentă helper pentru a ascunde layout-ul de Hits dacă nu s-a tastat nimic
+// Previne un layout gol sau ciudat la deschiderea modalului
+const EmptyQueryBoundary = ({ children }: { children: React.ReactNode }) => {
+  const { query } = useSearchBox();
+  if (!query.trim()) {
+    return (
+      <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
+        Introdu un cuvânt cheie pentru a porni căutarea...
+      </div>
+    );
+  }
+  return <>{children}</>;
+};
 
 const SearchModal = ({
   isOpen,
@@ -14,11 +34,20 @@ const SearchModal = ({
 }) => {
   const navigate = useNavigate();
 
+  // 🚀 REPARAT: Inițializarea corectă a clientului MeiliSearch
   const client = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
     const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
     if (!url || !url.startsWith("http")) return null;
-    return instantMeiliSearch(url, key).searchClient;
+
+    // instantMeiliSearch returnează direct searchClient-ul în majoritatea versiunilor recente.
+    // Adăugăm placeholderSearch: true pentru a permite rezultate instant.
+    const meiliInstance = instantMeiliSearch(url, key, {
+      placeholderSearch: true,
+      primaryKey: "id",
+    });
+
+    return meiliInstance.searchClient || meiliInstance;
   }, []);
 
   const Hit = ({ hit }: any) => (
@@ -29,13 +58,14 @@ const SearchModal = ({
         navigate(`/product/${hit.slug}`);
         onClose();
       }}
-      className="group flex flex-col gap-3 p-2 hover:bg-zinc-50/50 transition-all rounded-xl text-left"
+      className="group flex flex-col gap-3 p-2 hover:bg-zinc-50/50 transition-all rounded-xl text-left w-full"
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-100 rounded-lg relative">
         <img
-          src={hit.image_url}
+          src={hit.image_url || hit.image} // Fallback în caz că structura din index diferă
           alt={hit.name}
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+          loading="lazy"
         />
         {hit.sale_price && (
           <div className="absolute top-2 left-2 bg-black text-white text-[7px] font-black px-2 py-1 uppercase tracking-[0.2em]">
@@ -45,7 +75,7 @@ const SearchModal = ({
       </div>
       <div className="space-y-1 px-1">
         <p className="text-[8px] uppercase tracking-[0.3em] text-zinc-400 font-bold">
-          {hit.brand || "Evem Collection"}
+          {hit.brand || "Colecție Nouă"}
         </p>
         <h4 className="text-[11px] font-semibold uppercase tracking-tight text-zinc-800 leading-tight line-clamp-2">
           {hit.name}
@@ -67,11 +97,11 @@ const SearchModal = ({
           className="fixed inset-0 z-[1000] bg-white flex flex-col"
         >
           {/* HEADER BAR */}
-          <div className="flex items-center justify-between px-6 lg:px-16 py-8">
+          <div className="flex items-center justify-between px-6 lg:px-16 py-8 border-b border-zinc-50">
             <div className="flex items-center gap-3">
               <Sparkles size={12} className="text-zinc-400" />
               <span className="text-[9px] font-black uppercase tracking-[0.5em] text-zinc-400">
-                Luxury Concierge Search
+                Sistem Inteligent de Căutare
               </span>
             </div>
             <button onClick={onClose} className="group flex items-center gap-4">
@@ -90,45 +120,49 @@ const SearchModal = ({
               <InstantSearch indexName="products" searchClient={client}>
                 <Configure hitsPerPage={12} />
 
-                <div className="mb-20">
+                <div className="mb-12">
                   <SearchBox
                     autoFocus
-                    placeholder="Caută în universul EVEM..."
+                    placeholder="Caută în catalogul de produse..."
                     classNames={{
                       root: "w-full",
                       input:
-                        "w-full bg-transparent border-b border-zinc-200 py-6 text-3xl lg:text-7xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-100",
+                        "w-full bg-transparent border-b border-zinc-200 py-6 text-2xl lg:text-5xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-200",
                       submit: "hidden",
                       reset: "hidden",
                     }}
                   />
-                  <div className="mt-8 flex flex-wrap gap-8 text-[10px] font-black text-zinc-300 uppercase tracking-widest">
-                    <span className="text-zinc-500">Colecții:</span>
-                    {["Diamante", "Aur 18K", "Brățări", "Noutăți"].map(
-                      (tag) => (
-                        <button
-                          key={tag}
-                          className="text-black hover:opacity-50 transition-opacity"
-                        >
-                          {tag}
-                        </button>
-                      ),
-                    )}
+                  {/* Tag-uri Generice (Modifică valorile în funcție de categoriile tale din magazin) */}
+                  <div className="mt-6 flex flex-wrap gap-6 text-[10px] font-black text-zinc-300 uppercase tracking-widest">
+                    <span className="text-zinc-500">Sugestii:</span>
+                    {["Noutăți", "Cele mai vândute", "Oferte"].map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className="text-black hover:opacity-50 transition-opacity"
+                      >
+                        {tag}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
+                {/* Zona de afișare rezultate */}
                 <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-                  <Hits
-                    hitComponent={Hit}
-                    classNames={{
-                      list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6",
-                    }}
-                  />
+                  <EmptyQueryBoundary>
+                    <Hits
+                      hitComponent={Hit}
+                      classNames={{
+                        list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6",
+                      }}
+                    />
+                  </EmptyQueryBoundary>
                 </div>
               </InstantSearch>
             ) : (
-              <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-200">
-                Sistemul de securitate se încarcă...
+              <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-300">
+                Sincronizare cu baza de date eșuată... Verifică variabilele
+                `.env`
               </div>
             )}
           </div>
