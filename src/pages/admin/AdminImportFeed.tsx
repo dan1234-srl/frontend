@@ -5,18 +5,12 @@ import {
   Search,
   Loader2,
   Unlock,
-  CheckCircle2,
-  AlertCircle,
   DownloadCloud,
   Database,
   Settings2,
   ChevronLeft,
-  Plus,
-  X,
   FileText,
-  ToggleLeft,
   Sliders,
-  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,7 +24,7 @@ const WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace(
   "ws://",
 );
 
-// Sincronizat perfect cu cerințele backend-ului (Categorie a devenit obligatorie!)
+// Sincronizat perfect cu headerele din CSV-ul tău și cerințele din backend
 const MAPPING_FIELDS = [
   { label: "SKU / Cod Unic Intern *", key: "cod_produs", required: true },
   { label: "Nume Produs *", key: "titlu", required: true },
@@ -60,7 +54,7 @@ const AdminImportFeed = () => {
   const [isInspecting, setIsInspecting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 🚀 EXTENSIA DE STARE: Structura completă aliniată cu JSONB avansat din DB
+  // 🚀 REPARAT ATOMIC: Structură simplă, curată și compatibilă 100% cu schema FeedCreate
   const [formData, setFormData] = useState({
     name: "",
     feed_type: "CSV",
@@ -72,7 +66,6 @@ const AdminImportFeed = () => {
     advanced_config: {
       min_stock: 0,
       require_img: false,
-      markup_rules: [] as { max_price: number; add: number }[],
     },
     mapping_config: {} as Record<string, string>,
   });
@@ -192,7 +185,7 @@ const AdminImportFeed = () => {
     try {
       const res = await apiFetch(`/feeds/${id}/sync`, { method: "POST" });
       if (res.ok) {
-        toast.info("Procesul de import asincron a fost inițiat...");
+        toast.info("Procesul de import a fost inițiat...");
       } else {
         const errorData = await res.json();
         toast.error(errorData.detail || "Eroare la pornirea sincronizării.");
@@ -246,44 +239,7 @@ const AdminImportFeed = () => {
     }
   };
 
-  // Metodă de adăugare regulă asimetrică de preț
-  const addMarkupRule = () => {
-    setFormData({
-      ...formData,
-      advanced_config: {
-        ...formData.advanced_config,
-        markup_rules: [
-          ...formData.advanced_config.markup_rules,
-          { max_price: 0, add: 0 },
-        ],
-      },
-    });
-  };
-
-  const removeMarkupRule = (index: number) => {
-    const rules = [...formData.advanced_config.markup_rules];
-    rules.splice(index, 1);
-    setFormData({
-      ...formData,
-      advanced_config: { ...formData.advanced_config, markup_rules: rules },
-    });
-  };
-
-  const updateMarkupRule = (
-    index: number,
-    key: "max_price" | "add",
-    value: number,
-  ) => {
-    const rules = [...formData.advanced_config.markup_rules];
-    rules[index][key] = value;
-    setFormData({
-      ...formData,
-      advanced_config: { ...formData.advanced_config, markup_rules: rules },
-    });
-  };
-
   const handleSave = async () => {
-    // Validare obligatorie locală pe structura de mapare înainte de a lovi API-ul
     const missing = MAPPING_FIELDS.filter(
       (f) => f.required && !formData.mapping_config[f.key],
     );
@@ -348,7 +304,7 @@ const AdminImportFeed = () => {
 
   return (
     <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER CONTROLS */}
+      {/* HEADER */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -361,7 +317,7 @@ const AdminImportFeed = () => {
               style={{ color: "var(--royal-violet)" }}
             >
               <div
-                className={`size-2 rounded-full ${globalLock.is_locked ? "bg-amber-500 animate-ping" : "bg-emerald-500"}`}
+                className={`size-2 rounded-full ${globalLock.is_locked ? "bg-amber-500 animate-ping" : "bg-emerald-50"}`}
               />
               {globalLock.is_locked
                 ? "Sincronizare activă Celery"
@@ -407,7 +363,7 @@ const AdminImportFeed = () => {
                 <thead className="bg-zinc-50/50 border-b border-zinc-100 text-[10px] font-black uppercase tracking-widest text-zinc-400">
                   <tr>
                     <th className="p-8 px-10">Sursă Date / Structură</th>
-                    <th className="p-8 text-center">Status Procesare</th>
+                    <th className="p-8 text-center">Status Sincronizare</th>
                     <th className="p-8 px-10 text-right">Acțiuni Management</th>
                   </tr>
                 </thead>
@@ -462,7 +418,6 @@ const AdminImportFeed = () => {
                               </div>
                             </div>
 
-                            {/* 🚀 RENDER ATOMIC RAPORT: Terminal de diagnostic pentru erori/duplicate inline */}
                             <AnimatePresence>
                               {isLogOpen && feed.error_log && (
                                 <motion.div
@@ -619,7 +574,6 @@ const AdminImportFeed = () => {
                           setFormData({
                             ...formData,
                             feed_type: e.target.value,
-                            detectedColumns: [] as any,
                           })
                         }
                       >
@@ -648,7 +602,7 @@ const AdminImportFeed = () => {
                   </div>
                 </div>
 
-                {/* 🚀 BLOC 2: SETĂRI EXCLUSIVE PARSER (Apar doar dacă tipul e CSV) */}
+                {/* BLOC 2: SETĂRI EXCLUSIVE PARSER CSV */}
                 {formData.feed_type === "CSV" && (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
@@ -697,7 +651,7 @@ const AdminImportFeed = () => {
                   </motion.div>
                 )}
 
-                {/* BLOC 3: ENDPOINT URL & DETECȚIE */}
+                {/* BLOC 3: ENDPOINT URL & INSPECTARE */}
                 <div className="space-y-3 pt-6 border-t border-zinc-100">
                   <Label
                     className="text-[10px] font-black uppercase tracking-widest"
@@ -715,6 +669,7 @@ const AdminImportFeed = () => {
                       placeholder="https://server-furnizor.com/export/catalog.csv"
                     />
                     <button
+                      type="button"
                       onClick={handleInspect}
                       disabled={isInspecting || !formData.url}
                       className="text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 shadow-xl active:scale-95 disabled:opacity-50 transition-all"
@@ -781,7 +736,7 @@ const AdminImportFeed = () => {
                   </motion.div>
                 )}
 
-                {/* 🚀 BLOC 5: SETĂRI REGULI AVANSATE (JSONB ADANCED_CONFIG) */}
+                {/* BLOC 5: FILTRE DE PROTECȚIE CATALOG */}
                 <div className="pt-10 border-t border-zinc-100 space-y-8">
                   <h3 className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)] flex items-center gap-2">
                     <Sliders size={14} /> Filtre de Siguranță & Protecție
@@ -801,7 +756,7 @@ const AdminImportFeed = () => {
                             ...formData,
                             advanced_config: {
                               ...formData.advanced_config,
-                              min_stock: int(e.target.value) || 0,
+                              min_stock: parseInt(e.target.value, 10) || 0,
                             },
                           })
                         }
@@ -846,93 +801,7 @@ const AdminImportFeed = () => {
                   </div>
                 </div>
 
-                {/* 🚀 BLOC 6: MOTORUL DE ADAOSURI ASIMETRICE PE PRAGURI DE PREȚ */}
-                <div className="pt-10 border-t border-zinc-100 space-y-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
-                        Reguli de Adaos Comercial Dinamic
-                      </h3>
-                      <p className="text-[11px] text-zinc-400 font-medium mt-1">
-                        Configurația dinamică pe praguri suprascrie adaosul fix
-                        global și se aplică direct peste prețul cu TVA inclus.
-                      </p>
-                    </div>
-                    <button
-                      onClick={addMarkupRule}
-                      className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-md"
-                    >
-                      <Plus size={14} /> Adaugă Prag
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {formData.advanced_config.markup_rules.length > 0 ? (
-                      formData.advanced_config.markup_rules.map((rule, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-4 bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100 max-w-2xl"
-                        >
-                          <span className="text-[10px] font-black font-mono text-zinc-300 uppercase">
-                            Prag #{idx + 1}
-                          </span>
-                          <div className="flex-1 grid grid-cols-2 gap-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-zinc-400 uppercase">
-                                Până la:
-                              </span>
-                              <input
-                                type="number"
-                                value={rule.max_price || ""}
-                                onChange={(e) =>
-                                  updateMarkupRule(
-                                    idx,
-                                    "max_price",
-                                    float(e.target.value),
-                                  )
-                                }
-                                className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-[var(--dark-amethyst)] text-center"
-                                placeholder="ex: 100 RON"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-zinc-400 uppercase">
-                                Adaos:
-                              </span>
-                              <input
-                                type="number"
-                                value={rule.add || ""}
-                                onChange={(e) =>
-                                  updateMarkupRule(
-                                    idx,
-                                    "add",
-                                    float(e.target.value),
-                                  )
-                                }
-                                className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-bold text-emerald-600 text-center"
-                                placeholder="ex: 35 %"
-                              />
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => removeMarkupRule(idx)}
-                            className="text-rose-500 hover:bg-rose-50 p-2 rounded-xl transition-all"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-[11px] font-bold text-zinc-400 italic p-4 border border-dashed border-zinc-200 rounded-2xl max-w-2xl text-center">
-                        Nu ai adăugat reguli asimetrice. Sistemul va folosi ca
-                        fallback automat structura din variabilele globale de
-                        mediu din Railway.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* BOTTOM SAVE CONTROLS BLOCK */}
+                {/* BOTTOM CONTROLS */}
                 <div className="p-10 md:px-16 bg-zinc-50 border-t border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-8 rounded-b-[2.5rem] -mx-10 md:-mx-16 -mb-10 md:-mb-16">
                   <div className="w-full md:w-auto space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
@@ -946,13 +815,14 @@ const AdminImportFeed = () => {
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          markup_percentage: Number(e.target.value),
+                          markup_percentage: parseFloat(e.target.value) || 0,
                         })
                       }
                       className="w-32 bg-white border border-zinc-200 rounded-xl px-6 py-3 text-2xl font-black text-[var(--dark-amethyst)] outline-none text-center shadow-sm"
                     />
                   </div>
                   <button
+                    type="button"
                     onClick={handleSave}
                     disabled={isSubmitting || detectedColumns.length === 0}
                     className="w-full md:w-auto text-white px-16 py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
