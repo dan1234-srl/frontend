@@ -2,7 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { MeiliSearch } from "meilisearch";
+// 🚀 SOLUȚIE: Importăm tot modulul ca obiect pentru a evita problemele de ESM/CommonJS ale Rollup
+import * as MeiliSearchModule from "meilisearch";
 
 const SearchModal = ({
   isOpen,
@@ -16,7 +17,7 @@ const SearchModal = ({
   const [hits, setHits] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
-  // 🚀 1. Inițializăm clientul oficial nativ MeiliSearch
+  // 🚀 REPARAT: Instanțierea compatibilă build-time folosind modulul importat complet
   const meiliClient = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
     const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
@@ -28,10 +29,22 @@ const SearchModal = ({
       return null;
     }
 
-    return new MeiliSearch({ host: url, apiKey: key });
+    // Extragem clasa din modul, indiferent de cum a fost exportată (default sau named)
+    const ClientClass =
+      (MeiliSearchModule as any).MeiliSearch ||
+      (MeiliSearchModule as any).default;
+
+    if (!ClientClass) {
+      console.error(
+        "MeiliSearch: Nu s-a putut găsi clasa de inițializare în modul.",
+      );
+      return null;
+    }
+
+    return new ClientClass({ host: url, apiKey: key });
   }, []);
 
-  // 🚀 2. Efect pentru căutare în timp real cu Debounce (300ms) pentru a nu sufoca serverul
+  // Efect pentru căutare în timp real cu Debounce (300ms)
   useEffect(() => {
     if (!meiliClient || !isOpen) return;
 
@@ -39,10 +52,8 @@ const SearchModal = ({
 
     const delayDebounceFn = setTimeout(async () => {
       try {
-        // Interogăm indexul 'products' direct și curat
         const response = await meiliClient.index("products").search(query, {
           limit: 18,
-          // placeholderSearch: true este activ implicit în clientul nativ
         });
 
         setHits(response.hits || []);
@@ -51,19 +62,17 @@ const SearchModal = ({
       } finally {
         setSearching(false);
       }
-    }, 300); // 300ms debounce pentru o experiență de tastare premium
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [query, meiliClient, isOpen]);
 
-  // Resetează căutarea când modalul se închide
   const handleClose = () => {
     setQuery("");
     onClose();
   };
 
   const HitCard = ({ hit }: { hit: any }) => {
-    // 🚀 REPARAT: Parsarea structurii imbricate din string-ul `image_url`
     const parsedImage = useMemo(() => {
       if (!hit.image_url) return hit.image || "";
 
@@ -164,7 +173,6 @@ const SearchModal = ({
             {meiliClient ? (
               <div className="flex flex-col h-full overflow-hidden">
                 <div className="mb-12 relative">
-                  {/* Input 100% nativ, stabil și super rapid */}
                   <input
                     autoFocus
                     type="text"
@@ -219,8 +227,7 @@ const SearchModal = ({
               </div>
             ) : (
               <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-300 text-center px-4">
-                Sincronizare cu baza de date eșuată... Verifică variabilele de
-                mediu în Vercel
+                Sincronizare cu baza de date eșuată... Verifică configurația
               </div>
             )}
           </div>
