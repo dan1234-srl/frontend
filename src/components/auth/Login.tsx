@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"; // Adăugat useRef
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   X,
@@ -31,7 +31,6 @@ const Login = ({
   const [tempToken, setTempToken] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Folosim un Ref pentru a urmări dacă componenta este încă montată
   const isMounted = useRef(true);
   const { signIn, verify2FA, syncWishlist } = useAuth();
 
@@ -50,7 +49,7 @@ const Login = ({
     }
 
     return () => {
-      isMounted.current = false; // Marcăm componenta ca unmounted
+      isMounted.current = false;
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
@@ -75,14 +74,13 @@ const Login = ({
     try {
       const result = await signIn(email.trim(), password);
 
-      // Verificăm dacă componenta mai există înainte de a schimba state-ul
       if (!isMounted.current) return;
 
       if (result.requires2FA) {
         setTempToken(result.tempToken || "");
         setView("2fa");
         toast.success("Introdu codul de verificare.");
-        setLoading(false); // Oprim loading-ul aici pentru că rămânem în view
+        setLoading(false);
         return;
       }
 
@@ -92,11 +90,8 @@ const Login = ({
         return;
       }
 
-      // Dacă am ajuns aici, login-ul e reușit.
-      // Sincronizăm wishlist-ul și închidem IMEDIAT modalul
       await syncWishlist();
-
-      toast.success("Bine ați revenit");
+      toast.success("Bine ați revenit!");
       onClose();
     } catch (error) {
       console.error(error);
@@ -115,7 +110,7 @@ const Login = ({
     setLoading(true);
 
     try {
-      const result = await verify2FA(otpCode, tempToken); // Atenție: ordinea argumentelor trebuie să fie cea din AuthContext
+      const result = await verify2FA(otpCode, tempToken);
 
       if (!isMounted.current) return;
 
@@ -126,7 +121,7 @@ const Login = ({
       }
 
       await syncWishlist();
-      toast.success("Autentificare reușită");
+      toast.success("Autentificare reușită!");
       onClose();
     } catch (error) {
       console.error(error);
@@ -141,19 +136,21 @@ const Login = ({
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end">
+          {/* Overlay fundal */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/10 backdrop-blur-[12px]"
+            className="absolute inset-0 bg-black/20 backdrop-blur-[8px]"
           />
 
+          {/* Corpul Sertarului (Drawer Container) */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 220 }}
+            transition={{ type: "spring", damping: 32, stiffness: 250 }}
             className="relative z-[701] flex h-full w-full sm:max-w-[480px] flex-col overflow-hidden bg-white shadow-[0_10px_60px_rgba(0,0,0,0.08)]"
           >
             <button
@@ -164,13 +161,15 @@ const Login = ({
             </button>
 
             <div className="flex flex-1 flex-col justify-center px-8 sm:px-16">
-              <AnimatePresence mode="wait">
+              {/* Schimbare instanță internă cu izolare completă la layout shift */}
+              <AnimatePresence mode="wait" initial={false}>
                 {view === "login" ? (
                   <motion.div
                     key="login-form"
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: 15 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
+                    exit={{ opacity: 0, x: -15 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="w-full"
                   >
                     <header className="mb-12 space-y-4 text-left">
@@ -248,6 +247,7 @@ const Login = ({
                         Nu sunteți membru?
                       </p>
                       <button
+                        type="button"
                         onClick={onSwitchToRegister}
                         className="mt-2 border-b border-[var(--dark-amethyst)]/20 text-sm font-black italic text-[var(--dark-amethyst)] hover:border-[var(--dark-amethyst)]"
                       >
@@ -258,12 +258,14 @@ const Login = ({
                 ) : (
                   <motion.div
                     key="2fa-form"
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: 15 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
+                    exit={{ opacity: 0, x: -15 }}
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="w-full"
                   >
                     <button
+                      type="button"
                       onClick={() => setView("login")}
                       className="mb-10 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-[var(--dark-amethyst)]"
                     >

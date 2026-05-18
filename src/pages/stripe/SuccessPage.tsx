@@ -1,21 +1,16 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  Check,
-  ArrowRight,
-  ShoppingBag,
-  Mail,
-  MapPin,
-  Sparkles,
-} from "lucide-react";
+import { Check, ArrowRight, ShoppingBag, Mail, Sparkles } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext"; // 🚀 Importat pentru verificarea stării de logare
 import Footer from "@/components/footer/Footer";
 import Navbar from "@/components/header/Navbar";
 
 const SuccessPage = () => {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
+  const { user } = useAuth(); // 🚀 Extras starea utilizatorului (ajustează proprietatea dacă în contextul tău se numește `user`, `currentUser` sau `isAuthenticated`)
   const navigate = useNavigate();
   const orderId = searchParams.get("order_id") || "N/A";
   const isSuccess = searchParams.get("success") === "true";
@@ -30,11 +25,19 @@ const SuccessPage = () => {
 
   if (!isSuccess) return null;
 
+  // Calculăm ID-ul afișat în siguranță
+  const displayOrderId =
+    orderId !== "N/A"
+      ? orderId.length > 8
+        ? orderId.slice(-8).toUpperCase()
+        : orderId.toUpperCase()
+      : "N/A";
+
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[var(--deep-twilight)] font-sans flex flex-col">
       <Navbar />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 relative overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 pt-32 md:pt-40 pb-24 relative overflow-hidden">
         {/* Background Decor de lux */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden z-0">
           <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[var(--french-blue)] opacity-[0.03] blur-[120px] rounded-full" />
@@ -47,7 +50,7 @@ const SuccessPage = () => {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 max-w-2xl w-full border border-zinc-100 p-10 md:p-20 bg-white/80 backdrop-blur-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.04)] rounded-[3rem] text-center"
         >
-          {/* Badge succes cu tematica Navbar */}
+          {/* Badge succes */}
           <div className="flex justify-center mb-12">
             <div className="relative">
               <motion.div
@@ -81,7 +84,7 @@ const SuccessPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none"
+              className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none text-[var(--deep-twilight)]"
             >
               Comandă{" "}
               <span className="text-[var(--french-blue)]">Confirmată</span>
@@ -108,7 +111,7 @@ const SuccessPage = () => {
                   Număr Comandă
                 </p>
                 <p className="text-sm font-black text-[var(--deep-twilight)]">
-                  #{orderId.slice(-8).toUpperCase()}
+                  #{displayOrderId}
                 </p>
               </div>
             </div>
@@ -129,9 +132,11 @@ const SuccessPage = () => {
           </div>
 
           <div className="space-y-8">
+            {/* 🚀 MODIFICAT: Text generic premium, aplicabil oricărui tip de produs */}
             <p className="text-sm text-zinc-500 leading-relaxed max-w-sm mx-auto font-medium italic">
-              "Fiecare bijuterie Evem este o poveste. Vom începe pregătirea
-              coletului dumneavoastră cu cea mai mare atenție la detalii."
+              "Detaliile fac diferența. Vom începe pregătirea și verificarea
+              coletului dumneavoastră cu cea mai mare atenție, asigurându-ne că
+              totul este impecabil."
             </p>
 
             <div className="flex flex-col gap-4 pt-4">
@@ -149,23 +154,27 @@ const SuccessPage = () => {
                     className="group-hover:translate-x-2 transition-transform duration-500"
                   />
                 </span>
-                <motion.div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               </motion.button>
 
-              <Link
-                to="/account/orders"
-                className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[var(--french-blue)] transition-colors py-2"
-              >
-                Urmărește statusul comenzii
-              </Link>
+              {/* 🚀 MODIFICAT: Se randează link-ul doar dacă proprietatea `user` există în context */}
+              {user && (
+                <Link
+                  to="/account/orders"
+                  className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[var(--french-blue)] transition-colors py-2"
+                >
+                  Urmărește statusul comenzii
+                </Link>
+              )}
             </div>
           </div>
 
           {/* Footer Card */}
           <div className="mt-16 flex items-center justify-center gap-2 text-zinc-300">
             <div className="h-px w-8 bg-zinc-100" />
+            {/* 🚀 MODIFICAT: Schimbat din "Evem Jewelry Ecosystem" în denumire generală de platformă */}
             <p className="text-[9px] uppercase tracking-[0.4em] font-bold">
-              Evem Jewelry Ecosystem
+              Evem Digital Platform
             </p>
             <div className="h-px w-8 bg-zinc-100" />
           </div>
