@@ -72,123 +72,105 @@ export const OrderItem = ({ order }: any) => {
     { label: "Livrată", icon: Check },
   ];
 
-  // 🚀 REPARAT ATOMIC: Paleta cromatică este controlată acum 100% în funcție de starea întoarsă de server
-  // Folosim coduri hex/clase inline direct asortate pentru a evita amestecul cu mov-ul hardcodat
+  // 🚀 REPARAT DISCRET: Înlocuit complet orice urmă de contur negru/gri cu nuanța nativă venită de la server
   const statusConfig = useMemo(() => {
     const s = order.status?.toUpperCase() || "PENDING";
     switch (s) {
       case "DELIVERED":
         return {
           text: "Livrată",
-          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(16,185,129,0.15)] group-hover:border-emerald-200",
+          border: "border-emerald-200 hover:border-emerald-400",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(16,185,129,0.12)]",
           badge: "bg-emerald-500 text-white border-emerald-400",
-          textClass: "text-emerald-500",
+          colorClass: "text-emerald-500",
           progress: "bg-emerald-500 shadow-[0_0_10px_#10b981]",
         };
       case "SHIPPED":
         return {
           text: "În livrare",
-          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.15)] group-hover:border-blue-200",
+          border: "border-blue-200 hover:border-blue-400",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.12)]",
           badge: "bg-blue-500 text-white border-blue-400",
-          textClass: "text-blue-500",
+          colorClass: "text-blue-500",
           progress: "bg-blue-500 shadow-[0_0_10px_#3b82f6]",
         };
       case "CONFIRMED":
         return {
           text: "Confirmată",
-          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.15)] group-hover:border-indigo-200",
+          border: "border-indigo-200 hover:border-indigo-400",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.12)]",
           badge: "bg-indigo-500 text-white border-indigo-400",
-          textClass: "text-indigo-500",
+          colorClass: "text-indigo-500",
           progress: "bg-indigo-500 shadow-[0_0_10px_#6366f1]",
         };
       case "PROCESSING":
       case "PAID":
         return {
           text: "În procesare",
-          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(245,158,11,0.15)] group-hover:border-amber-300",
+          border: "border-amber-200 hover:border-amber-400",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(245,158,11,0.12)]",
           badge:
             "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400",
-          textClass: "text-amber-500",
+          colorClass: "text-amber-500",
           progress:
             "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_12px_#f59e0b]",
         };
       case "CANCELLED":
         return {
           text: "Anulată",
-          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(239,68,68,0.15)] group-hover:border-rose-200",
+          border: "border-rose-200 hover:border-rose-400",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(239,68,68,0.12)]",
           badge: "bg-rose-500 text-white border-rose-400",
-          textClass: "text-rose-500",
+          colorClass: "text-rose-500",
           progress: "bg-rose-500",
         };
       default:
         return {
           text: order.status || "Preluată",
-          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(168,85,247,0.15)] group-hover:border-purple-200",
-          badge: "bg-purple-500 text-white border-purple-400",
-          textClass: "text-purple-500",
-          progress: "bg-purple-500",
+          border: "border-zinc-200 hover:border-zinc-300",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.03)]",
+          badge: "bg-zinc-500 text-white border-zinc-400",
+          colorClass: "text-zinc-500",
+          progress: "bg-zinc-500",
         };
     }
   }, [order.status]);
 
+  // 🚀 REPARAT VIVID: Iconițele de plată sunt acum intens colorate în paleta brandului tău
   const paymentConfig = useMemo(() => {
     const method = order.payment_method?.toLowerCase() || "cod";
     if (method === "card") {
       return {
         text: "Card Online",
-        icon: <CreditCard size={12} />,
-        bg: "bg-zinc-50 text-zinc-800 border-zinc-200",
+        icon: (
+          <CreditCard
+            size={12}
+            className="text-purple-600 drop-shadow-[0_0_4px_rgba(147,51,234,0.15)]"
+          />
+        ),
+        bg: "bg-purple-50/50 text-purple-700 border-purple-100",
       };
     }
     return {
       text: "Ramburs (COD)",
-      icon: <Truck size={12} />,
-      bg: "bg-zinc-50 text-zinc-800 border-zinc-200",
+      icon: (
+        <Truck
+          size={12}
+          className="text-blue-500 drop-shadow-[0_0_4px_rgba(59,130,246,0.15)]"
+        />
+      ),
+      bg: "bg-blue-50/50 text-blue-700 border-blue-100",
     };
   }, [order.payment_method]);
 
-  const handleDownloadDocs = async () => {
-    if (isDownloading) return;
-    setIsDownloading(true);
-    const isFinal = ["SHIPPED", "DELIVERED"].includes(
-      order.status?.toUpperCase(),
-    );
-    const docName = isFinal ? "Factura" : "Proforma";
-
-    toast.promise(
-      async () => {
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-          { credentials: "include" },
-        );
-        if (!response.ok) throw new Error("Documentul nu este disponibil.");
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        setIsDownloading(false);
-      },
-      {
-        loading: `Se pregătește ${docName}...`,
-        success: `${docName} a fost descărcată.`,
-        error: "Eroare la descărcare sau sesiune expirată.",
-      },
-    );
-  };
-
   return (
     <>
-      {/* 🚀 MODIFICAT: Înlocuit complet orice clasă fixă cu string-ul dinamic `${statusConfig.glow}` */}
+      {/* 🚀 EXTRACTED ALL STATIC BORDERS: Toate clasele fixe au fost eliminate. Conturul se desenează dinamic prin `${statusConfig.border}` */}
       <motion.article
         layout
         whileHover={{ y: -5, scale: 1.005 }}
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
-        className={`group relative bg-white border border-zinc-150 p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.glow}`}
+        className={`group relative bg-white border p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.border} ${statusConfig.glow}`}
         style={{ isolation: "isolate" }}
       >
         <div className="text-left flex-1 flex flex-col">
@@ -219,7 +201,7 @@ export const OrderItem = ({ order }: any) => {
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
                 key={i}
-                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-150 bg-zinc-50 shadow-inner transition-all duration-300"
+                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50/50 shadow-inner transition-all duration-300"
               >
                 <img
                   src={getValidImageUrl(item)}
@@ -242,7 +224,7 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* Tracker Etape distribuit pe 5 pași texturi independenți */}
+          {/* Tracker Etape Live cu culori asortate */}
           <div className="space-y-4 mb-6 mt-auto">
             <div className="grid grid-cols-5 gap-0.5 text-center">
               {steps.map((stepObj, idx) => {
@@ -256,7 +238,7 @@ export const OrderItem = ({ order }: any) => {
                       size={13}
                       className={`transition-colors duration-300 ${
                         isCurrentOrPast
-                          ? statusConfig.textClass
+                          ? statusConfig.colorClass
                           : "text-zinc-300"
                       }`}
                     />
@@ -272,7 +254,6 @@ export const OrderItem = ({ order }: any) => {
               })}
             </div>
 
-            {/* Bara de progres formată din 5 segmente dinamice */}
             <div className="flex gap-1 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
               {[1, 2, 3, 4, 5].map((step) => (
                 <div key={step} className="flex-1 overflow-hidden">
@@ -288,7 +269,7 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Metodă Plată & Total */}
+          {/* Metodă Plată Colorată & Total */}
           <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
             <div className="flex flex-col gap-1">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
@@ -326,7 +307,7 @@ export const OrderItem = ({ order }: any) => {
         </button>
       </motion.article>
 
-      {/* LUXURY MODAL */}
+      {/* LUXURY DETAIL MODAL */}
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
@@ -340,7 +321,7 @@ export const OrderItem = ({ order }: any) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-1.5">
-                <MapPin size={12} className={statusConfig.textClass} /> Adresa
+                <MapPin size={12} className={statusConfig.colorClass} /> Adresa
                 Livrare
               </p>
               <div className="space-y-1">
@@ -375,7 +356,7 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Tracker Orizontal în interiorul Modalului */}
+          {/* Tracker în interiorul Modalului */}
           <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
             <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
               Stadiu fizic colet
@@ -408,7 +389,7 @@ export const OrderItem = ({ order }: any) => {
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-200 transition-all shadow-sm"
+                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-250 transition-all shadow-sm"
                 >
                   <img
                     src={getValidImageUrl(item)}
