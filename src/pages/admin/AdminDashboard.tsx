@@ -15,12 +15,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { useToast } from "@/hooks/use-toast"; // 🚀 Conectat curat la hook-ul tău nativ
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const [statsData, setStatsData] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   const [isSyncingFilters, setIsSyncingFilters] = useState(false);
@@ -36,16 +37,14 @@ const AdminDashboard = () => {
     import.meta.env.VITE_API_URL ||
     "https://linea-backend-production.up.railway.app";
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      // 🚀 REPARAT ATOMIC: Forțăm starea goală pe comenzi în timpul încărcării pentru a preveni randarea elementelor detașate
-      setRecentOrders([]);
+  // Determinăm dacă componenta se află în orice stare de loading secundar
+  const isGlobalLoading = loading || isRefreshing;
 
-      /* 🚀 REPARAT ATOMIC (Anti-Anonimi): Am injectat headers de dezactivare a cache-ului 
-         și proprietatea 'no-store'. Acest lucru oprește browserul din a mai citi stările 
-         vechi sau parțiale din memorie la click-ul pe Reactualizează, eliminând nevoia de Ctrl+F5!
-      */
+  const fetchDashboardData = async (isManualRefresh = false) => {
+    try {
+      if (isManualRefresh) setIsRefreshing(true);
+      else setLoading(true);
+
       const fetchOptions = {
         method: "GET",
         credentials: "include" as const,
@@ -73,14 +72,22 @@ const AdminDashboard = () => {
       setStatsData(stats);
       setRecentOrders(ordersData.items || []);
       setTotalPages(ordersData.pages || 1);
+
+      if (isManualRefresh) {
+        toast({
+          title: "Sincronizare completă",
+          description: "Toate statisticile și comenzile au fost actualizate.",
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Sincronizare eșuată",
-        description: "Datele tranzacționale nu au putut fi preluate.",
+        title: "Eroare reîmprospătare",
+        description: "Baza de date este momentan ocupată în fundal.",
       });
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -101,20 +108,19 @@ const AdminDashboard = () => {
           title: "Succes",
           description: successMsg,
         });
-        // Delay optimizat la 1.2s în timpul reindexărilor pentru a lăsa Postgres să termine scrierea batch-urilor
         setTimeout(() => fetchDashboardData(), 1200);
       } else {
         toast({
           variant: "destructive",
           title: "Eroare",
-          description: "Acțiunea a fost respinsă de server.",
+          description: "Acțiunea administrativă a fost respinsă.",
         });
       }
     } catch (e) {
       toast({
         variant: "destructive",
         title: "Eroare rețea",
-        description: "Instanța Railway nu a putut fi contactată.",
+        description: "Nu s-a putut stabili conexiunea cu worker-ul.",
       });
     } finally {
       loadingState(false);
@@ -173,7 +179,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="w-full space-y-10 md:space-y-16 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER ACTIONS */}
+      {/* HEADER ACTIONS BAR */}
       <section className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -222,7 +228,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsMasterActivating,
-                "Activarea globală a catalogului a fost finalizată.",
+                "Sistemul a fost activat la nivel global.",
               )
             }
             isLoading={isMasterActivating}
@@ -265,7 +271,7 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* CARDS STATS */}
+      {/* CARDS GRID SYSTEM */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {displayStats.map((stat, i) => (
           <motion.div
@@ -299,8 +305,24 @@ const AdminDashboard = () => {
         ))}
       </section>
 
-      {/* RECENT TRANSACTIONS TABLE */}
-      <section className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden">
+      {/* RECENT ACTIVITY TABLE */}
+      <section className="relative bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden">
+        {/* TOP LOADING BAR (Premium alternative to massive layout shifts) */}
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-zinc-100 overflow-hidden z-20">
+          {isGlobalLoading && (
+            <motion.div
+              className="h-full bg-[var(--royal-violet)]"
+              initial={{ left: "-100%", width: "100%", position: "absolute" }}
+              animate={{ left: "100%" }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.5,
+                ease: "easeInOut",
+              }}
+            />
+          )}
+        </div>
+
         <div className="p-8 md:p-12 border-b border-zinc-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-zinc-50/30">
           <div className="space-y-1 text-left">
             <h3 className="text-[12px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)]">
@@ -311,13 +333,14 @@ const AdminDashboard = () => {
             </p>
           </div>
           <button
-            onClick={fetchDashboardData}
-            className="group flex items-center gap-3 bg-white px-6 py-3 rounded-2xl border border-zinc-200 text-[10px] font-black uppercase tracking-widest transition-all hover:border-[var(--royal-violet)] hover:text-[var(--royal-violet)]"
+            onClick={() => fetchDashboardData(true)}
+            disabled={isGlobalLoading}
+            className="group flex items-center gap-3 bg-white px-6 py-3 rounded-2xl border border-zinc-200 text-[10px] font-black uppercase tracking-widest transition-all hover:border-[var(--royal-violet)] hover:text-[var(--royal-violet)] disabled:opacity-50"
           >
             <RefreshCw
               size={14}
               className={
-                loading
+                isGlobalLoading
                   ? "animate-spin text-[var(--royal-violet)]"
                   : "group-hover:rotate-180 transition-transform duration-500"
               }
@@ -326,36 +349,27 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto no-scrollbar">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead>
-              <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 border-b border-zinc-50">
-                <th className="px-12 py-6">ID Comandă</th>
-                <th className="px-12 py-6">Client</th>
-                <th className="px-12 py-6">Dată</th>
-                <th className="px-12 py-6 text-center">Status</th>
-                <th className="px-12 py-6 text-right">Valoare</th>
-                <th className="px-12 py-6 text-right">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-50">
-              <AnimatePresence mode="popLayout">
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-24 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest animate-pulse"
-                    >
-                      Sincronizare securizată flux date...
-                    </td>
-                  </tr>
-                ) : recentOrders.length > 0 ? (
+        <div className="overflow-x-auto no-scrollbar relative">
+          {/* Un container animat fin care scade opacitatea datelor vechi în timpul reîmprospătării */}
+          <div
+            className={`transition-opacity duration-300 ${isGlobalLoading ? "opacity-40 pointer-events-none" : "opacity-100"}`}
+          >
+            <table className="w-full text-left border-collapse min-w-[900px] table-layout-fixed">
+              <thead>
+                <tr className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 border-b border-zinc-50">
+                  <th className="px-12 py-6 w-[15%]">ID Comandă</th>
+                  <th className="px-12 py-6 w-[25%]">Client</th>
+                  <th className="px-12 py-6 w-[15%]">Dată</th>
+                  <th className="px-12 py-6 w-[15%] text-center">Status</th>
+                  <th className="px-12 py-6 w-[15%] text-right">Valoare</th>
+                  <th className="px-12 py-6 w-[15%] text-right">Acțiuni</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-50">
+                {recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
-                    <motion.tr
+                    <tr
                       key={order?.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
                       className="group hover:bg-zinc-50/50 transition-colors"
                     >
                       <td className="px-12 py-7">
@@ -370,7 +384,7 @@ const AdminDashboard = () => {
                           <span className="text-sm font-bold text-[var(--dark-amethyst)]">
                             {order?.customer_name || "Client Anonim"}
                           </span>
-                          <span className="text-[10px] text-zinc-400 lowercase">
+                          <span className="text-[10px] text-zinc-400 lowercase whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
                             {order?.email || "fara@email.com"}
                           </span>
                         </div>
@@ -405,9 +419,9 @@ const AdminDashboard = () => {
                           </button>
                         </div>
                       </td>
-                    </motion.tr>
+                    </tr>
                   ))
-                ) : (
+                ) : !isGlobalLoading && recentOrders.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}
@@ -416,10 +430,17 @@ const AdminDashboard = () => {
                       Nicio activitate înregistrată în flux
                     </td>
                   </tr>
-                )}
-              </AnimatePresence>
-            </tbody>
-          </table>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+
+          {/* SKELETON STATE: Afișat DOAR la prima încărcare (când nu avem absolut nicio comandă în array) */}
+          {isGlobalLoading && recentOrders.length === 0 && (
+            <div className="w-full py-24 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+              Sincronizare securizată flux date...
+            </div>
+          )}
         </div>
 
         <div className="p-8 border-t border-zinc-50 flex items-center justify-between bg-zinc-50/20">
@@ -430,14 +451,14 @@ const AdminDashboard = () => {
           </p>
           <div className="flex gap-4">
             <button
-              disabled={currentPage === 1 || loading}
+              disabled={currentPage === 1 || isGlobalLoading}
               onClick={() => setCurrentPage((p) => p - 1)}
               className="p-4 bg-white border border-zinc-200 rounded-2xl disabled:opacity-30 shadow-sm hover:border-[var(--royal-violet)] transition-all"
             >
               <ChevronLeft size={18} />
             </button>
             <button
-              disabled={currentPage === totalPages || loading}
+              disabled={currentPage === totalPages || isGlobalLoading}
               onClick={() => setCurrentPage((p) => p + 1)}
               className="p-4 bg-white border border-zinc-200 rounded-2xl disabled:opacity-30 shadow-sm hover:border-[var(--royal-violet)] transition-all"
             >
