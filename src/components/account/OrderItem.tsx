@@ -11,7 +11,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 
@@ -23,9 +23,10 @@ export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // 🚀 REPARAT: Folosim un placeholder generic, magazinul nefiind unul de bijuterii
   const getValidImageUrl = (item: any) => {
     const source = item.product_image || item.product?.image_url;
-    if (!source) return "/placeholder-jewelry.jpg";
+    if (!source) return "/placeholder-product.jpg";
     if (typeof source === "string" && source.startsWith("http")) return source;
     try {
       const parsed = typeof source === "string" ? JSON.parse(source) : source;
@@ -33,10 +34,10 @@ export const OrderItem = ({ order }: any) => {
         parsed?.main?.medium ||
         parsed?.url ||
         parsed?.medium ||
-        "/placeholder-jewelry.jpg"
+        "/placeholder-product.jpg"
       );
     } catch {
-      return "/placeholder-jewelry.jpg";
+      return "/placeholder-product.jpg";
     }
   };
 
@@ -62,6 +63,14 @@ export const OrderItem = ({ order }: any) => {
     return 1;
   })();
 
+  // 🚀 REPARAT: Formatare estetică premium pentru metoda de plată în interiorul modalului
+  const displayPaymentMethod = useMemo(() => {
+    const method = order.payment_method?.toLowerCase();
+    if (method === "card") return "💳 Card Online";
+    if (method === "cod") return "🚚 Ramburs (COD)";
+    return order.payment_method || "Nespecificată";
+  }, [order.payment_method]);
+
   const handleDownloadDocs = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
@@ -75,7 +84,7 @@ export const OrderItem = ({ order }: any) => {
         const response = await fetch(
           `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
           {
-            credentials: "include", // REZOLVĂ EROAREA 401
+            credentials: "include",
           },
         );
         if (!response.ok) throw new Error("Documentul nu este disponibil.");
@@ -105,7 +114,7 @@ export const OrderItem = ({ order }: any) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="group relative bg-white border border-zinc-100 p-7 rounded-[2.5rem] transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] flex flex-col justify-between"
-        style={{ isolation: "isolate" }} // PERMITE BULINEI SĂ IASĂ ÎN EXTERIOR
+        style={{ isolation: "isolate" }}
       >
         {/* Status Indicator (Bulina) */}
         <div className="absolute -top-1 -left-1 z-50">
@@ -139,7 +148,7 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </header>
 
-          {/* Grila Produse (Fixată pentru a nu se mai suprapune) */}
+          {/* Grila Produse */}
           <div className="grid grid-cols-4 gap-2 mb-10">
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
@@ -207,9 +216,8 @@ export const OrderItem = ({ order }: any) => {
         title="Arhiva Comandă"
         description={order.order_number}
       >
-        {/* MODAL FIX: Fundal alb solid, fără transparență, text la stânga */}
         <div
-          className="space-y-10 py-4 bg-white text-left w-full"
+          className="space-y-10 py-4 bg-white text-left w-full font-sans"
           style={{ backgroundColor: "#ffffff", opacity: 1 }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -240,9 +248,7 @@ export const OrderItem = ({ order }: any) => {
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
                   Metodă Plată
                 </span>
-                <span className="font-bold uppercase">
-                  {order.payment_method}
-                </span>
+                <span className="font-bold">{displayPaymentMethod}</span>
               </div>
             </div>
           </div>
