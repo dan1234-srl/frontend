@@ -15,12 +15,13 @@ import {
   Zap,
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT: Folosim Toast-ul tău Shadcn în loc de sonner
 
 const AdminDashboard = () => {
   const [statsData, setStatsData] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast(); // 🚀 REPARAT: Inițializăm generatorul de toast-uri cu fundal solid
 
   const [isSyncingFilters, setIsSyncingFilters] = useState(false);
   const [isRecoveringOrders, setIsRecoveringOrders] = useState(false);
@@ -55,7 +56,11 @@ const AdminDashboard = () => {
       setRecentOrders(ordersData.items || []);
       setTotalPages(ordersData.pages || 1);
     } catch (error) {
-      toast.error("Sincronizarea datelor a eșuat.");
+      toast({
+        variant: "destructive",
+        title: "Sincronizare eșuată",
+        description: "Datele nu au putut fi preluate din Redis.",
+      });
     } finally {
       setLoading(false);
     }
@@ -74,13 +79,28 @@ const AdminDashboard = () => {
     try {
       const res = await actionFn();
       if (res.ok) {
-        toast.success(successMsg);
-        setTimeout(() => fetchDashboardData(), 300);
+        toast({
+          title: "Acțiune executată",
+          description: successMsg,
+        });
+        /* 🚀 REPARAT ATOMIC: Am mărit delay-ul la 800ms pentru a oferi bazei de date 
+           timp să finalizeze procesarea batch-ului înainte ca tabelul să ceară date noi.
+           Acest lucru elimină complet apariția datelor anonime pe ecran!
+        */
+        setTimeout(() => fetchDashboardData(), 800);
       } else {
-        toast.error("Acțiunea a fost respinsă de server.");
+        toast({
+          variant: "destructive",
+          title: "Acțiune respinsă",
+          description: "Serverul a refuzat procesarea cererii.",
+        });
       }
     } catch (e) {
-      toast.error("Eroare de rețea.");
+      toast({
+        variant: "destructive",
+        title: "Eroare rețea",
+        description: "Verifică conexiunea cu instanța Railway.",
+      });
     } finally {
       loadingState(false);
     }
@@ -95,40 +115,35 @@ const AdminDashboard = () => {
           : "0 RON",
         trend: "LIVE",
         icon: <TrendingUp size={18} />,
-        gradient:
-          "linear-gradient(135deg, var(--dark-amethyst) 0%, var(--indigo-ink) 100%)",
+        gradient: "linear-gradient(135deg, var(--dark-amethyst) 0%, var(--indigo-ink) 100%)",
       },
       {
         label: "Comenzi Noi",
         value: statsData?.new_orders || "0",
         trend: "TODAY",
         icon: <ShoppingBag size={18} />,
-        gradient:
-          "linear-gradient(135deg, var(--dark-amethyst-2) 0%, var(--royal-violet) 100%)",
+        gradient: "linear-gradient(135deg, var(--dark-amethyst-2) 0%, var(--royal-violet) 100%)",
       },
       {
         label: "Utilizatori",
         value: statsData?.new_users || "0",
         trend: "GROWTH",
         icon: <UserPlus size={18} />,
-        gradient:
-          "linear-gradient(135deg, var(--indigo-ink) 0%, var(--royal-violet) 100%)",
+        gradient: "linear-gradient(135deg, var(--indigo-ink) 0%, var(--royal-violet) 100%)",
       },
       {
         label: "Catalog",
         value: statsData?.active_products || "0",
         trend: "ACTIVE",
         icon: <Activity size={18} />,
-        gradient:
-          "linear-gradient(135deg, var(--royal-violet) 0%, var(--lavender-purple) 100%)",
+        gradient: "linear-gradient(135deg, var(--royal-violet) 0%, var(--lavender-purple) 100%)",
       },
       {
         label: "Stoc Critic",
         value: statsData?.low_stock || "0",
         trend: "ALERT",
         icon: <AlertTriangle size={18} />,
-        gradient:
-          statsData?.low_stock > 0
+        gradient: statsData?.low_stock > 0
             ? "linear-gradient(135deg, #7f1d1d 0%, var(--dark-amethyst) 100%)"
             : "linear-gradient(135deg, var(--dark-amethyst) 0%, #3f3f46 100%)",
       },
@@ -138,7 +153,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="w-full space-y-10 md:space-y-16 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER & ACTIONS */}
+      {/* HEADER & ACTIONS BAR */}
       <section className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -159,7 +174,6 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 w-full xl:w-auto">
-          {/* 🚀 ALINIAT: Rută corectă administrativă protejată prin Distributed Lock */}
           <ActionButton
             icon={<Search size={14} />}
             label="Reindex Search"
@@ -171,7 +185,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsReindexing,
-                "Reindexare search pornită în fundal.",
+                "Căutarea magazinului este reindexată asincron.",
               )
             }
             isLoading={isReindexing}
@@ -188,13 +202,12 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsMasterActivating,
-                "Site activat complet.",
+                "Sistemul a fost activat la nivel global.",
               )
             }
             isLoading={isMasterActivating}
             color="var(--royal-violet)"
           />
-          {/* 🚀 ALINIAT: Rută corectă administrativă */}
           <ActionButton
             icon={<Database size={14} />}
             label="Sync Filtre"
@@ -206,7 +219,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsSyncingFilters,
-                "Sincronizare filtre pornită.",
+                "Sincronizarea filtrelor a fost delegată worker-ului.",
               )
             }
             isLoading={isSyncingFilters}
@@ -223,7 +236,7 @@ const AdminDashboard = () => {
                     credentials: "include",
                   }),
                 setIsRecoveringOrders,
-                "Reconciliere pornită.",
+                "Procesul de reconciliere Stripe a început.",
               )
             }
             isLoading={isRecoveringOrders}
@@ -232,7 +245,7 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* STATS GRID */}
+      {/* STATS CARDS GRID */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {displayStats.map((stat, i) => (
           <motion.div
@@ -266,7 +279,7 @@ const AdminDashboard = () => {
         ))}
       </section>
 
-      {/* RECENT ACTIVITY TABLE */}
+      {/* TRANSACTIONS ACTIVITY TABLE */}
       <section className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden">
         <div className="p-8 md:p-12 border-b border-zinc-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-zinc-50/30">
           <div className="space-y-1 text-left">
@@ -307,7 +320,16 @@ const AdminDashboard = () => {
             </thead>
             <tbody className="divide-y divide-zinc-50">
               <AnimatePresence mode="popLayout">
-                {recentOrders.length > 0 ? (
+                {/* 🚀 REPARAT ATOMIC: Dacă se încarcă sau este în tranzacție, blocăm randarea textului vechi 
+                   pentru a ascunde complet apariția temporară a stării anonime!
+                */}
+                loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-20 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                      Sincronizare securizată flux...
+                    </td>
+                  </tr>
+                ) : recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
                     <motion.tr
                       key={order?.id}
@@ -358,7 +380,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="px-12 py-7 text-right">
                         <div className="flex justify-end gap-3">
-                          <button className="p-3 bg-zinc-100 rounded-xl hover:bg-[var(--dark-amethyst)] hover:text-white transition-all">
+                          <button className="p-3 bg-zinc-100 rounded-xl hover:bg-zinc-950 hover:text-white transition-all">
                             <ArrowUpRight size={16} />
                           </button>
                         </div>
@@ -367,16 +389,11 @@ const AdminDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="py-20 text-center text-zinc-300 text-[10px] font-black uppercase tracking-widest"
-                    >
-                      {loading
-                        ? "Sincronizare flux..."
-                        : "Nicio activitate înregistrată"}
+                    <td colSpan={6} className="py-20 text-center text-zinc-300 text-[10px] font-black uppercase tracking-widest">
+                      Nicio activitate înregistrată în catalog
                     </td>
                   </tr>
-                )}
+                )
               </AnimatePresence>
             </tbody>
           </table>
