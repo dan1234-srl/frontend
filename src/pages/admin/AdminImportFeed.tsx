@@ -25,7 +25,7 @@ const WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace(
   "ws://",
 );
 
-// 🚀 AICI SUNT INCLUSE TOATE CÂMPURILE DIN BAZA DE DATE, EXCEPTÂND 'pret_pj'
+// 🚀 TOATE CELE 11 CÂMPURI STRUCTURATE EXACT DUPĂ ORDINEA DIN INTERFAȚA TA GRAFICĂ
 const MAPPING_FIELDS = [
   { label: "SKU / Cod Unic Intern *", key: "cod_produs", required: true },
   { label: "Nume Produs *", key: "titlu", required: true },
@@ -641,6 +641,7 @@ const AdminImportFeed = () => {
                   </div>
                 </div>
 
+                {/* 🚀 TOATE CELE 11 DROP-DOWN-URI DE SCHEMA SE RANDEAZĂ ACUM CORECT ÎN GRID */}
                 {detectedColumns.length > 0 && (
                   <div className="pt-10 border-t border-zinc-100 space-y-8">
                     <h3 className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
