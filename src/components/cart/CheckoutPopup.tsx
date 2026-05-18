@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast"; // 🚀 SOLUȚIE: Înlocuit sonner cu hook-ul tău premium solid
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -99,6 +99,7 @@ const CheckoutPopup = ({
   discount: initialDiscount = null,
 }: any) => {
   const { user } = useAuth();
+  const { toast } = useToast(); // 🚀 Inițializarea hook-ului shadcn/ui
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("card");
@@ -189,7 +190,14 @@ const CheckoutPopup = ({
   };
 
   const handleCompleteOrder = async () => {
-    if (!validate()) return toast.error("Verifică datele de livrare");
+    if (!validate()) {
+      toast({
+        variant: "destructive",
+        title: "Date livrare incomplete",
+        description: "Verifică datele introduse în formular.",
+      });
+      return;
+    }
     setLoading(true);
 
     try {
@@ -214,14 +222,24 @@ const CheckoutPopup = ({
         save_address: shouldSaveAddress && addressMode === "new",
       };
 
+      // 🚀 SOLUȚIE: Extragem token-ul de autorizare pentru a asocia comanda cu user_id
+      const token =
+        localStorage.getItem("token") || localStorage.getItem("access_token");
+
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(
         `${API_BASE_URL}/api/v1/orders/create-checkout-session`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Idempotency-Key": idempotencyKey,
-          },
+          headers: headers,
           credentials: "include",
           body: JSON.stringify(payload),
         },
@@ -240,7 +258,11 @@ const CheckoutPopup = ({
         window.location.href = data.url;
       }
     } catch (err: any) {
-      toast.error(err.message);
+      toast({
+        variant: "destructive",
+        title: "Eroare comandă",
+        description: err.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -263,7 +285,7 @@ const CheckoutPopup = ({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 32, stiffness: 250 }}
-            className="relative z-[801] w-full max-w-[1250px] h-[100dvh] lg:h-full bg-white flex flex-col lg:flex-row shadow-2xl overflow-hidden"
+            className="relative z-[801] w-full max-w-[1250px] h-[100dvh] lg:h-full bg-white shadow-2xl overflow-hidden"
           >
             {/* --- SECTIUNEA STANGA: FORMULARE --- */}
             <div className="flex-1 overflow-y-auto px-6 py-8 lg:px-16 lg:py-12 custom-scrollbar text-left bg-white order-2 lg:order-1">
@@ -313,6 +335,7 @@ const CheckoutPopup = ({
                           {user.addresses.map((addr: any) => (
                             <button
                               key={addr.id}
+                              type="button"
                               onClick={() => handleSelectAddress(addr)}
                               className={`p-4 text-left border-2 rounded-2xl transition-all relative ${
                                 selectedAddressId === addr.id &&
@@ -337,6 +360,7 @@ const CheckoutPopup = ({
                             </button>
                           ))}
                           <button
+                            type="button"
                             onClick={() => {
                               setAddressMode("new");
                               setSelectedAddressId(null);
@@ -447,7 +471,13 @@ const CheckoutPopup = ({
 
                     <Button
                       onClick={() =>
-                        validate() ? setStep(2) : toast.error("Verifică datele")
+                        validate()
+                          ? setStep(2)
+                          : toast({
+                              variant: "destructive",
+                              title: "Eroare validare",
+                              description: "Verifică datele din formular.",
+                            })
                       }
                       className="w-full h-16 text-white rounded-2xl font-black uppercase text-[11px] tracking-[0.4em] shadow-xl transition-all hover:scale-[1.01]"
                       style={{ background: "var(--primary-gradient)" }}
@@ -485,6 +515,7 @@ const CheckoutPopup = ({
                         ].map((m) => (
                           <button
                             key={m.id}
+                            type="button"
                             onClick={() => setPaymentMethod(m.id)}
                             className={`flex items-center justify-between p-6 border-2 rounded-2xl transition-all ${paymentMethod === m.id ? "border-[var(--royal-violet)] bg-[var(--light-cyan)]" : "border-zinc-100 bg-zinc-50/50"}`}
                           >
@@ -538,6 +569,7 @@ const CheckoutPopup = ({
                         )}
                       </Button>
                       <button
+                        type="button"
                         onClick={() => setStep(1)}
                         className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[var(--royal-violet)] flex items-center justify-center gap-2 w-full"
                       >
@@ -561,8 +593,9 @@ const CheckoutPopup = ({
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="hidden lg:flex size-10 rounded-full bg-white border border-zinc-100 items-center justify-center text-zinc-400 hover:text-black transition-all"
+                  className="hidden lg:flex size-10 rounded-full bg-white border border-zinc-100 items-center justify-center text-zinc-400 hover:text-black transition-all shadow-sm"
                 >
                   <X size={20} />
                 </button>

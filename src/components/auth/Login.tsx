@@ -9,7 +9,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast"; // 🚀 SOLUȚIE: Înlocuit sonner cu hook-ul tău premium solid
 
 interface AuthDrawerProps {
   isOpen: boolean;
@@ -33,6 +33,7 @@ const Login = ({
 
   const isMounted = useRef(true);
   const { signIn, verify2FA, syncWishlist } = useAuth();
+  const { toast } = useToast(); // 🚀 Inițializarea hook-ului shadcn/ui
 
   useEffect(() => {
     isMounted.current = true;
@@ -65,7 +66,11 @@ const Login = ({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      toast.error("Completează toate câmpurile.");
+      toast({
+        variant: "destructive",
+        title: "Câmpuri incomplete",
+        description: "Completează toate câmpurile.",
+      });
       return;
     }
 
@@ -79,23 +84,39 @@ const Login = ({
       if (result.requires2FA) {
         setTempToken(result.tempToken || "");
         setView("2fa");
-        toast.success("Introdu codul de verificare.");
+        toast({
+          title: "Securitate 2FA",
+          description: "Introdu codul de verificare din aplicație.",
+        });
         setLoading(false);
         return;
       }
 
       if (result.error) {
-        toast.error("Date de acces incorecte.");
+        toast({
+          variant: "destructive",
+          title: "Autentificare eșuată",
+          description: "Date de acces incorecte.",
+        });
         setLoading(false);
         return;
       }
 
       await syncWishlist();
-      toast.success("Bine ați revenit!");
+      toast({
+        title: "Succes",
+        description: "Bine ați revenit!",
+      });
       onClose();
     } catch (error) {
       console.error(error);
-      if (isMounted.current) toast.error("Eroare de conexiune.");
+      if (isMounted.current) {
+        toast({
+          variant: "destructive",
+          title: "Eroare rețea",
+          description: "Nu s-a putut stabili conexiunea cu serverul.",
+        });
+      }
       if (isMounted.current) setLoading(false);
     }
   };
@@ -103,7 +124,11 @@ const Login = ({
   const handleVerify2FA = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otpCode.trim()) {
-      toast.error("Introdu codul 2FA.");
+      toast({
+        variant: "destructive",
+        title: "Câmp incomplet",
+        description: "Introdu codul 2FA.",
+      });
       return;
     }
 
@@ -115,18 +140,29 @@ const Login = ({
       if (!isMounted.current) return;
 
       if (result?.error) {
-        toast.error("Cod invalid.");
+        toast({
+          variant: "destructive",
+          title: "Cod incorect",
+          description: "Codul 2FA introdus este invalid.",
+        });
         setLoading(false);
         return;
       }
 
       await syncWishlist();
-      toast.success("Autentificare reușită!");
+      toast({
+        title: "Succes",
+        description: "Autentificare reușită!",
+      });
       onClose();
     } catch (error) {
       console.error(error);
       if (isMounted.current) {
-        toast.error("Eroare de verificare.");
+        toast({
+          variant: "destructive",
+          title: "Eroare verificare",
+          description: "A apărut o problemă la procesarea codului.",
+        });
         setLoading(false);
       }
     }
@@ -161,7 +197,6 @@ const Login = ({
             </button>
 
             <div className="flex flex-1 flex-col justify-center px-8 sm:px-16">
-              {/* Schimbare instanță internă cu izolare completă la layout shift */}
               <AnimatePresence mode="wait" initial={false}>
                 {view === "login" ? (
                   <motion.div
@@ -174,7 +209,7 @@ const Login = ({
                   >
                     <header className="mb-12 space-y-4 text-left">
                       <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400">
-                        Membru Linea
+                        Membru Evem
                       </span>
                       <h2 className="heading-serif text-5xl italic leading-tight text-[var(--dark-amethyst)]">
                         Autentificare
