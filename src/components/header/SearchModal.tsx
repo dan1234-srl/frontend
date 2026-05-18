@@ -1,29 +1,9 @@
 import { useMemo, useState } from "react";
-import {
-  InstantSearch,
-  SearchBox,
-  Hits,
-  Configure,
-  useSearchBox,
-} from "react-instantsearch";
+import { InstantSearch, SearchBox, Hits, Configure } from "react-instantsearch";
 import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// 🚀 Componentă helper pentru a ascunde layout-ul de Hits dacă nu s-a tastat nimic
-// Previne un layout gol sau ciudat la deschiderea modalului
-const EmptyQueryBoundary = ({ children }: { children: React.ReactNode }) => {
-  const { query } = useSearchBox();
-  if (!query.trim()) {
-    return (
-      <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
-        Introdu un cuvânt cheie pentru a porni căutarea...
-      </div>
-    );
-  }
-  return <>{children}</>;
-};
 
 const SearchModal = ({
   isOpen,
@@ -33,15 +13,14 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
+  // 🚀 SOLUȚIE: Păstrăm valoarea căutării local pentru a controla perfect layout-ul public
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // 🚀 REPARAT: Inițializarea corectă a clientului MeiliSearch
   const client = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
     const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
     if (!url || !url.startsWith("http")) return null;
 
-    // instantMeiliSearch returnează direct searchClient-ul în majoritatea versiunilor recente.
-    // Adăugăm placeholderSearch: true pentru a permite rezultate instant.
     const meiliInstance = instantMeiliSearch(url, key, {
       placeholderSearch: true,
       primaryKey: "id",
@@ -62,7 +41,7 @@ const SearchModal = ({
     >
       <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-100 rounded-lg relative">
         <img
-          src={hit.image_url || hit.image} // Fallback în caz că structura din index diferă
+          src={hit.image_url || hit.image}
           alt={hit.name}
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
           loading="lazy"
@@ -104,7 +83,13 @@ const SearchModal = ({
                 Sistem Inteligent de Căutare
               </span>
             </div>
-            <button onClick={onClose} className="group flex items-center gap-4">
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                onClose();
+              }}
+              className="group flex items-center gap-4"
+            >
               <span className="text-[10px] font-black uppercase tracking-widest group-hover:mr-2 transition-all">
                 Închide
               </span>
@@ -121,9 +106,14 @@ const SearchModal = ({
                 <Configure hitsPerPage={12} />
 
                 <div className="mb-12">
+                  {/* 🚀 REPARAT: Folosim onChange capturat direct din componenta SearchBox prin intermediul queryHook sau funcție controlată */}
                   <SearchBox
                     autoFocus
                     placeholder="Caută în catalogul de produse..."
+                    queryHook={(query, search) => {
+                      setSearchQuery(query); // Sincronizăm instant starea locală React
+                      search(query); // Trimitem query-ul către motorul MeiliSearch
+                    }}
                     classNames={{
                       root: "w-full",
                       input:
@@ -132,7 +122,7 @@ const SearchModal = ({
                       reset: "hidden",
                     }}
                   />
-                  {/* Tag-uri Generice (Modifică valorile în funcție de categoriile tale din magazin) */}
+
                   <div className="mt-6 flex flex-wrap gap-6 text-[10px] font-black text-zinc-300 uppercase tracking-widest">
                     <span className="text-zinc-500">Sugestii:</span>
                     {["Noutăți", "Cele mai vândute", "Oferte"].map((tag) => (
@@ -149,14 +139,19 @@ const SearchModal = ({
 
                 {/* Zona de afișare rezultate */}
                 <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-                  <EmptyQueryBoundary>
+                  {/* 🚀 REPARAT: Condiționare directă și curată folosind starea locală React */}
+                  {!searchQuery.trim() ? (
+                    <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
+                      Introdu un cuvânt cheie pentru a porni căutarea...
+                    </div>
+                  ) : (
                     <Hits
                       hitComponent={Hit}
                       classNames={{
                         list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6",
                       }}
                     />
-                  </EmptyQueryBoundary>
+                  )}
                 </div>
               </InstantSearch>
             ) : (
