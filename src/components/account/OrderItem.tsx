@@ -112,18 +112,21 @@ export const OrderItem = ({ order }: any) => {
           colorClass: "text-indigo-500",
           progress: "bg-indigo-500 shadow-[0_0_10px_#6366f1]",
         };
+
+      // 🚀 REPARAT: Schimbat din portocaliu (amber/orange) în albastrul nativ pe care îl ai pe backend pentru procesare
       case "PROCESSING":
       case "PAID":
         return {
           text: "În procesare",
-          border: "border-amber-200 hover:border-amber-400",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(245,158,11,0.12)]",
+          border: "border-blue-200 hover:border-blue-400",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.12)]",
           badge:
-            "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400",
-          colorClass: "text-amber-500",
+            "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-400 shadow-md shadow-blue-100",
+          colorClass: "text-blue-500",
           progress:
-            "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_12px_#f59e0b]",
+            "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_12px_#3b82f6]",
         };
+
       case "CANCELLED":
         return {
           text: "Anulată",
