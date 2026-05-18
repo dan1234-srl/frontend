@@ -25,6 +25,7 @@ const WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace(
   "ws://",
 );
 
+// 🚀 AICI SUNT INCLUSE TOATE CÂMPURILE DIN BAZA DE DATE, EXCEPTÂND 'pret_pj'
 const MAPPING_FIELDS = [
   { label: "SKU / Cod Unic Intern *", key: "cod_produs", required: true },
   { label: "Nume Produs *", key: "titlu", required: true },
@@ -38,6 +39,9 @@ const MAPPING_FIELDS = [
     required: false,
   },
   { label: "Descriere Produs HTML", key: "descriere", required: false },
+  { label: "Cod de Bare EAN", key: "ean", required: false },
+  { label: "Brand / Producător", key: "brand", required: false },
+  { label: "Atribute / Specificații", key: "atributeprodus", required: false },
 ];
 
 type ProgressMap = Record<string, { current: number; total: number }>;
@@ -774,7 +778,6 @@ const AdminImportFeed = () => {
             </div>
           </motion.div>
         )}
-        {/* 🚀 REPARAT ATOMIC: Tag-ul AnimatePresence a fost închis corect în interiorul arborelui JSX */}
       </AnimatePresence>
     </div>
   );
