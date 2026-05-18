@@ -5,8 +5,10 @@ import {
   Receipt,
   CreditCard,
   Sparkles,
-  Calendar,
-  Layers,
+  ClipboardList,
+  CheckCircle,
+  Package,
+  Check,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
@@ -52,7 +54,6 @@ export const OrderItem = ({ order }: any) => {
     }
   };
 
-  // 🚀 REPARATĂ ALINIEREA STATUSURILOR: Corelat direct cu string-urile reale intrate din DB
   const currentStepIndex = (() => {
     const s = order.status?.toUpperCase() || "";
     if (s === "DELIVERED") return 4;
@@ -61,35 +62,48 @@ export const OrderItem = ({ order }: any) => {
     return 1;
   })();
 
+  const steps = [
+    { label: "Preluată", icon: ClipboardList },
+    { label: "Confirmată", icon: CheckCircle },
+    { label: "Expediată", icon: Package },
+    { label: "Livrată", icon: Check },
+  ];
+
   const statusConfig = useMemo(() => {
     const s = order.status?.toUpperCase() || "PENDING";
     switch (s) {
       case "DELIVERED":
         return {
           text: "Livrat",
-          bg: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+          bg: "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-100",
+          progress: "bg-emerald-500 shadow-[0_0_10px_#10b981]",
         };
       case "SHIPPED":
         return {
           text: "Pe drum",
-          bg: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+          bg: "bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-100",
+          progress: "bg-blue-500 shadow-[0_0_10px_#3b82f6]",
         };
       case "PROCESSING":
-      case "PAID":
       case "CONFIRMED":
+      case "PAID":
         return {
           text: "În procesare",
-          bg: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+          bg: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-md shadow-amber-100",
+          progress:
+            "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_12px_#f59e0b]",
         };
       case "CANCELLED":
         return {
           text: "Anulată",
-          bg: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+          bg: "bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-100",
+          progress: "bg-rose-500",
         };
       default:
         return {
           text: order.status || "Preluată",
-          bg: "bg-zinc-50 text-zinc-600 border-zinc-200",
+          bg: "bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-100",
+          progress: "bg-purple-500",
         };
     }
   }, [order.status]);
@@ -100,13 +114,13 @@ export const OrderItem = ({ order }: any) => {
       return {
         text: "Card Online",
         icon: <CreditCard size={12} className="text-purple-600" />,
-        bg: "bg-purple-50/80 border-purple-100/50",
+        bg: "bg-purple-50 text-purple-700 border-purple-100",
       };
     }
     return {
       text: "Ramburs (COD)",
-      icon: <Truck size={12} className="text-zinc-600" />,
-      bg: "bg-zinc-50 border-zinc-200/60",
+      icon: <Truck size={12} className="text-blue-600" />,
+      bg: "bg-blue-50 text-blue-700 border-blue-100",
     };
   }, [order.payment_method]);
 
@@ -146,126 +160,149 @@ export const OrderItem = ({ order }: any) => {
 
   return (
     <>
-      {/* 🚀 MODIFICAT COMPLET: Layout orizontal asimetric, fundal fin semi-transparent, fără margini negre */}
       <motion.article
         layout
-        whileHover={{
-          y: -3,
-          boxShadow: "0 30px 60px -15px rgba(147,51,234,0.06)",
-        }}
-        className="w-full bg-white/80 border border-zinc-100 p-5 md:p-6 rounded-[2rem] transition-all duration-300 flex flex-col md:flex-row gap-6 justify-between items-stretch relative overflow-hidden backdrop-blur-sm group"
+        whileHover={{ y: -5, scale: 1.01 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="group relative bg-white border border-zinc-150 p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] hover:border-purple-200 hover:shadow-[0_40px_80px_-15px_rgba(109,40,217,0.08)] duration-300"
+        style={{ isolation: "isolate" }}
       >
-        {/* Glow dinamic de fundal pe culorile site-ului */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-purple-500/5 to-transparent rounded-full blur-2xl pointer-events-none -z-10 transition-opacity group-hover:opacity-150" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-purple-50/0 via-amber-50/0 to-blue-50/0 group-hover:from-purple-50/10 group-hover:via-amber-50/5 group-hover:to-blue-50/10 rounded-[2.5rem] transition-all duration-500 pointer-events-none -z-10" />
 
-        {/* SECȚIUNEA STÂNGA: Previzualizare Imagini & Detalii de bază */}
-        <div className="flex flex-1 gap-5 items-center min-w-0">
-          {/* Stack Orizontal compact de imagini */}
-          <div className="flex items-center -space-x-4 shrink-0 relative pr-2">
-            {order.items?.slice(0, 2).map((item: any, i: number) => (
+        <div className="text-left flex-1 flex flex-col">
+          <header className="flex justify-between items-center mb-6">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={10} className="text-amber-500 animate-pulse" />
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-300">
+                  REF: {order.order_number?.split("-").pop()}
+                </p>
+              </div>
+              <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)] font-bold tracking-tight">
+                {new Date(order.created_at).toLocaleDateString("ro-RO", {
+                  day: "numeric",
+                  month: "long",
+                })}
+              </h3>
+            </div>
+            <span
+              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm ${statusConfig.bg}`}
+            >
+              {statusConfig.text}
+            </span>
+          </header>
+
+          {/* 🚀 REPARAT: Zonele cu imagini folosesc acum proporții dreptunghiulare orizontale tip Landscape (aspect-[4/3]) */}
+          <div className="grid grid-cols-3 gap-2 mb-8">
+            {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
                 key={i}
-                className="w-20 h-24 rounded-2xl overflow-hidden border-2 border-white bg-zinc-50 shadow-md relative transition-transform group-hover:translate-x-1 duration-300"
-                style={{ zIndex: 10 - i }}
+                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-150 bg-zinc-50 shadow-inner group-hover:border-purple-100 transition-all duration-300"
               >
                 <img
                   src={getValidImageUrl(item)}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   alt=""
                 />
                 {item.quantity > 1 && (
-                  <span className="absolute bottom-1 right-1 bg-zinc-950 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">
+                  <span className="absolute bottom-1 right-1 bg-zinc-950 text-white text-[8px] font-black h-4 px-1.5 rounded-md flex items-center justify-center">
                     x{item.quantity}
                   </span>
                 )}
               </div>
             ))}
-            {order.items?.length > 2 && (
-              <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center text-[10px] font-black border-2 border-white shadow-md relative z-30 transform translate-x-2">
-                +{order.items.length - 2}
+            {order.items?.length > 3 && (
+              <div className="aspect-[4/3] rounded-xl bg-zinc-950 flex flex-col items-center justify-center text-white shadow-sm border border-zinc-800">
+                <span className="text-[10px] font-black">
+                  +{order.items.length - 3}
+                </span>
               </div>
             )}
           </div>
 
-          {/* Date descriptive textuale în stânga */}
-          <div className="space-y-1.5 text-left flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider bg-zinc-100 px-2 py-0.5 rounded-md">
-                REF: {order.order_number?.split("-").pop()}
-              </span>
-              <span
-                className={`text-[8px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${statusConfig.bg}`}
-              >
-                {statusConfig.text}
-              </span>
-            </div>
+          {/* Micro Tracker Etape Live */}
+          <div className="space-y-4 mb-6 mt-auto">
+            <div className="grid grid-cols-4 gap-1 text-center">
+              {steps.map((stepObj, idx) => {
+                const stepNum = idx + 1;
+                const isCurrentOrPast = stepNum <= currentStepIndex;
+                const StepIcon = stepObj.icon;
 
-            <h3 className="text-xl font-bold text-zinc-900 truncate tracking-tight">
-              Comandă din{" "}
-              {new Date(order.created_at).toLocaleDateString("ro-RO", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1">
+                    <StepIcon
+                      size={13}
+                      className={`transition-colors duration-300 ${
+                        isCurrentOrPast
+                          ? order.status?.toUpperCase() === "CANCELLED"
+                            ? "text-rose-500"
+                            : "text-[var(--royal-violet)]"
+                          : "text-zinc-300"
+                      }`}
+                    />
+                    <span
+                      className={`text-[8px] font-black uppercase tracking-tighter block transition-colors ${
+                        isCurrentOrPast ? "text-zinc-800" : "text-zinc-300"
+                      }`}
+                    >
+                      {stepObj.label}
+                    </span>
+                  </div>
+                );
               })}
-            </h3>
+            </div>
 
-            <div className="flex flex-wrap gap-4 text-[10px] font-bold text-zinc-400 uppercase tracking-wide pt-1">
-              <span
-                className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${paymentConfig.bg}`}
+            <div className="flex gap-1.5 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
+              {[1, 2, 3, 4].map((step) => (
+                <div key={step} className="flex-1 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: step <= currentStepIndex ? "100%" : "0%",
+                    }}
+                    className={`h-full ${statusConfig.progress} transition-all duration-1000`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Metodă Plată & Total de plată */}
+          <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
+                Metodă Plată
+              </span>
+              <div
+                className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border shadow-sm ${paymentConfig.bg}`}
               >
-                {paymentConfig.icon} {paymentConfig.text}
+                {paymentConfig.icon}
+                <span>{paymentConfig.text}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300 block">
+                Total Final
               </span>
-              <span className="flex items-center gap-1 text-zinc-500 py-0.5">
-                <Layers size={11} />{" "}
-                {order.items?.reduce(
-                  (acc: number, item: any) => acc + item.quantity,
-                  0,
-                )}{" "}
-                produse
-              </span>
+              <p className="font-black text-2xl text-zinc-950 mt-0.5 tracking-tight">
+                {order.total_amount?.toLocaleString()}{" "}
+                <span className="text-[10px] font-bold text-zinc-400">RON</span>
+              </p>
             </div>
           </div>
         </div>
 
-        {/* SECȚIUNEA DREAPTĂ: Timeline Micro, Total & Buton Acțiune */}
-        <div className="w-full md:w-72 flex md:flex-col justify-between items-center md:items-end gap-4 md:border-l md:border-zinc-100/80 md:pl-6 pt-4 md:pt-0 border-t border-zinc-50 md:border-t-0">
-          <div className="text-left md:text-right space-y-1">
-            <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300 block">
-              Total achitat
-            </span>
-            <p className="font-black text-2xl text-[var(--dark-amethyst)] tracking-tight leading-none">
-              {order.total_amount?.toLocaleString()}{" "}
-              <span className="text-xs font-sans font-bold text-zinc-400">
-                RON
-              </span>
-            </p>
-          </div>
-
-          {/* Micro Mini-Tracker de pași integrat pe orizontală */}
-          <div className="hidden md:flex gap-1 w-full h-[3px] bg-zinc-100 rounded-full overflow-hidden my-1">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex-1 overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-500 ${
-                    step <= currentStepIndex
-                      ? order.status?.toUpperCase() === "CANCELLED"
-                        ? "bg-rose-400"
-                        : "bg-[var(--royal-violet)]"
-                      : "bg-transparent"
-                  }`}
-                />
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setShowFullDetails(true)}
-            className="h-12 px-6 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.99] shadow-md shadow-purple-900/5 whitespace-nowrap"
-            style={{ background: "var(--primary-gradient)" }}
-          >
-            Detalii <ArrowUpRight size={13} />
-          </button>
-        </div>
+        <button
+          onClick={() => setShowFullDetails(true)}
+          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-900/5 group-hover:shadow-purple-900/10 hover:brightness-110 active:scale-[0.99]"
+          style={{ background: "var(--primary-gradient)" }}
+        >
+          Gestionare Comandă{" "}
+          <ArrowUpRight
+            size={14}
+            className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+          />
+        </button>
       </motion.article>
 
       {/* LUXURY DETAIL MODAL */}
@@ -309,38 +346,11 @@ export const OrderItem = ({ order }: any) => {
                   Metodă Plată
                 </span>
                 <span
-                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${paymentConfig.bg}`}
+                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border shadow-sm ${paymentConfig.bg}`}
                 >
                   {paymentConfig.icon} {paymentConfig.text}
                 </span>
               </div>
-            </div>
-          </div>
-
-          {/* Progresul Vizual al etapelor explicite pe 4 faze */}
-          <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
-            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-              Stadiu fizic colet
-            </p>
-            <div className="grid grid-cols-4 gap-1 text-center">
-              {["Preluată", "Confirmată", "Expediată", "Livrată"].map(
-                (lbl, idx) => {
-                  const stepNum = idx + 1;
-                  const active = stepNum <= currentStepIndex;
-                  return (
-                    <div key={idx} className="space-y-1">
-                      <div
-                        className={`mx-auto size-2 rounded-full ${active ? (order.status?.toUpperCase() === "CANCELLED" ? "bg-rose-500" : "bg-[var(--royal-violet)]") : "bg-zinc-200"}`}
-                      />
-                      <span
-                        className={`text-[9px] font-black uppercase tracking-tighter block ${active ? "text-zinc-800" : "text-zinc-300"}`}
-                      >
-                        {lbl}
-                      </span>
-                    </div>
-                  );
-                },
-              )}
             </div>
           </div>
 

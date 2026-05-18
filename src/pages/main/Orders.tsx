@@ -25,7 +25,7 @@ const Orders = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const ordersPerPage = 6; // Ajustat pentru carduri asimetrice late
+  const ordersPerPage = 6;
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -102,9 +102,9 @@ const Orders = () => {
         )}
       </div>
 
-      <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto w-full">
+      <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
         {/* HEADER CONTROLS */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16 text-left">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16 text-left">
           <div className="space-y-4">
             <button
               onClick={() => navigate("/account")}
@@ -125,7 +125,7 @@ const Orders = () => {
           </div>
 
           {/* SEARCH BAR */}
-          <div className="relative w-full md:w-96 group">
+          <div className="relative w-full lg:w-96 group">
             <Search
               size={14}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors duration-300"
@@ -148,7 +148,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* CONTAINER GRID VERTICAL PE O COLOANĂ LATĂ */}
+        {/* RE-AȘEZARE COMPACTĂ GRID: 2-3 elemente elegante pe rând */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -157,22 +157,22 @@ const Orders = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="space-y-4"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
               >
                 {[...Array(3)].map((_, i) => (
                   <Skeleton
                     key={i}
-                    className="h-36 w-full rounded-[2rem] bg-zinc-100"
+                    className="h-80 w-full rounded-[2.5rem] bg-zinc-100"
                   />
                 ))}
               </motion.div>
             ) : filteredOrders.length > 0 ? (
               <motion.div
-                key="orders-list-active"
+                key="orders-grid-active"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`flex flex-col gap-5 transition-all duration-500 ${
+                className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 transition-all duration-500 ${
                   isLoading
                     ? "opacity-55 blur-[2px] pointer-events-none"
                     : "opacity-100 blur-0"
