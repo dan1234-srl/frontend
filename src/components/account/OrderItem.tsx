@@ -55,17 +55,15 @@ export const OrderItem = ({ order }: any) => {
     }
   };
 
-  // 🚀 REPARAT ATOMIC: Logica celor 5 pași aliniați perfect cu statusurile din DB
   const currentStepIndex = (() => {
     const s = order.status?.toUpperCase() || "";
     if (s === "DELIVERED") return 5;
     if (s === "SHIPPED") return 4;
     if (s === "CONFIRMED") return 3;
     if (["PROCESSING", "PAID"].includes(s)) return 2;
-    return 1; // PENDING sau oricare alt status inițial
+    return 1;
   })();
 
-  // 🚀 REPARAT: Vectorul celor 5 pași ceruți de tine
   const steps = [
     { label: "Preluată", icon: ClipboardList },
     { label: "În procesare", icon: Clock },
@@ -74,45 +72,60 @@ export const OrderItem = ({ order }: any) => {
     { label: "Livrată", icon: Check },
   ];
 
+  // 🚀 REPARAT ATOMIC: Paleta cromatică este controlată acum 100% în funcție de starea întoarsă de server
+  // Folosim coduri hex/clase inline direct asortate pentru a evita amestecul cu mov-ul hardcodat
   const statusConfig = useMemo(() => {
     const s = order.status?.toUpperCase() || "PENDING";
     switch (s) {
       case "DELIVERED":
         return {
           text: "Livrată",
-          bg: "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-100",
+          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(16,185,129,0.15)] group-hover:border-emerald-200",
+          badge: "bg-emerald-500 text-white border-emerald-400",
+          textClass: "text-emerald-500",
           progress: "bg-emerald-500 shadow-[0_0_10px_#10b981]",
         };
       case "SHIPPED":
         return {
           text: "În livrare",
-          bg: "bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-100",
+          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.15)] group-hover:border-blue-200",
+          badge: "bg-blue-500 text-white border-blue-400",
+          textClass: "text-blue-500",
           progress: "bg-blue-500 shadow-[0_0_10px_#3b82f6]",
         };
       case "CONFIRMED":
         return {
           text: "Confirmată",
-          bg: "bg-indigo-500 text-white border-indigo-400 shadow-md shadow-indigo-100",
+          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.15)] group-hover:border-indigo-200",
+          badge: "bg-indigo-500 text-white border-indigo-400",
+          textClass: "text-indigo-500",
           progress: "bg-indigo-500 shadow-[0_0_10px_#6366f1]",
         };
       case "PROCESSING":
       case "PAID":
         return {
           text: "În procesare",
-          bg: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-md shadow-amber-100",
+          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(245,158,11,0.15)] group-hover:border-amber-300",
+          badge:
+            "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400",
+          textClass: "text-amber-500",
           progress:
             "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_12px_#f59e0b]",
         };
       case "CANCELLED":
         return {
           text: "Anulată",
-          bg: "bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-100",
+          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(239,68,68,0.15)] group-hover:border-rose-200",
+          badge: "bg-rose-500 text-white border-rose-400",
+          textClass: "text-rose-500",
           progress: "bg-rose-500",
         };
       default:
         return {
           text: order.status || "Preluată",
-          bg: "bg-purple-50 text-purple-700 border-purple-100",
+          glow: "group-hover:shadow-[0_30px_60px_-15px_rgba(168,85,247,0.15)] group-hover:border-purple-200",
+          badge: "bg-purple-500 text-white border-purple-400",
+          textClass: "text-purple-500",
           progress: "bg-purple-500",
         };
     }
@@ -123,14 +136,14 @@ export const OrderItem = ({ order }: any) => {
     if (method === "card") {
       return {
         text: "Card Online",
-        icon: <CreditCard size={12} className="text-purple-600" />,
-        bg: "bg-purple-50 text-purple-700 border-purple-100",
+        icon: <CreditCard size={12} />,
+        bg: "bg-zinc-50 text-zinc-800 border-zinc-200",
       };
     }
     return {
       text: "Ramburs (COD)",
-      icon: <Truck size={12} className="text-blue-600" />,
-      bg: "bg-blue-50 text-blue-700 border-blue-100",
+      icon: <Truck size={12} />,
+      bg: "bg-zinc-50 text-zinc-800 border-zinc-200",
     };
   }, [order.payment_method]);
 
@@ -170,15 +183,14 @@ export const OrderItem = ({ order }: any) => {
 
   return (
     <>
+      {/* 🚀 MODIFICAT: Înlocuit complet orice clasă fixă cu string-ul dinamic `${statusConfig.glow}` */}
       <motion.article
         layout
-        whileHover={{ y: -5, scale: 1.01 }}
+        whileHover={{ y: -5, scale: 1.005 }}
         transition={{ type: "spring", stiffness: 350, damping: 25 }}
-        className="group relative bg-white border border-zinc-150 p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] hover:border-purple-200 hover:shadow-[0_40px_80px_-15px_rgba(109,40,217,0.08)] duration-300"
+        className={`group relative bg-white border border-zinc-150 p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.glow}`}
         style={{ isolation: "isolate" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-tr from-purple-50/0 via-amber-50/0 to-blue-50/0 group-hover:from-purple-50/10 group-hover:via-amber-50/5 group-hover:to-blue-50/10 rounded-[2.5rem] transition-all duration-500 pointer-events-none -z-10" />
-
         <div className="text-left flex-1 flex flex-col">
           <header className="flex justify-between items-center mb-6">
             <div className="space-y-0.5">
@@ -196,7 +208,7 @@ export const OrderItem = ({ order }: any) => {
               </h3>
             </div>
             <span
-              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm ${statusConfig.bg}`}
+              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm ${statusConfig.badge}`}
             >
               {statusConfig.text}
             </span>
@@ -207,7 +219,7 @@ export const OrderItem = ({ order }: any) => {
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
                 key={i}
-                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-150 bg-zinc-50 shadow-inner group-hover:border-purple-100 transition-all duration-300"
+                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-150 bg-zinc-50 shadow-inner transition-all duration-300"
               >
                 <img
                   src={getValidImageUrl(item)}
@@ -230,7 +242,7 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* 🚀 REPARAT: Tracker Etape distribuit perfect pe 5 pași textuali independenți */}
+          {/* Tracker Etape distribuit pe 5 pași texturi independenți */}
           <div className="space-y-4 mb-6 mt-auto">
             <div className="grid grid-cols-5 gap-0.5 text-center">
               {steps.map((stepObj, idx) => {
@@ -241,12 +253,10 @@ export const OrderItem = ({ order }: any) => {
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1">
                     <StepIcon
-                      size={12}
+                      size={13}
                       className={`transition-colors duration-300 ${
                         isCurrentOrPast
-                          ? order.status?.toUpperCase() === "CANCELLED"
-                            ? "text-rose-500"
-                            : "text-[var(--royal-violet)]"
+                          ? statusConfig.textClass
                           : "text-zinc-300"
                       }`}
                     />
@@ -262,7 +272,7 @@ export const OrderItem = ({ order }: any) => {
               })}
             </div>
 
-            {/* 🚀 REPARAT: Bara de progres împărțită acum în 5 segmente asortate */}
+            {/* Bara de progres formată din 5 segmente dinamice */}
             <div className="flex gap-1 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
               {[1, 2, 3, 4, 5].map((step) => (
                 <div key={step} className="flex-1 overflow-hidden">
@@ -316,7 +326,7 @@ export const OrderItem = ({ order }: any) => {
         </button>
       </motion.article>
 
-      {/* LUXURY MODAL CORECTAT PE PAȘII NOI */}
+      {/* LUXURY MODAL */}
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
@@ -328,10 +338,10 @@ export const OrderItem = ({ order }: any) => {
           style={{ backgroundColor: "#ffffff", opacity: 1 }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-8 bg-gradient-to-br from-zinc-50 to-purple-50/20 rounded-[2rem] border border-zinc-100">
+            <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-1.5">
-                <MapPin size={12} className="text-[var(--royal-violet)]" />{" "}
-                Adresa Livrare
+                <MapPin size={12} className={statusConfig.textClass} /> Adresa
+                Livrare
               </p>
               <div className="space-y-1">
                 <p className="font-black text-base text-zinc-900">
@@ -343,7 +353,7 @@ export const OrderItem = ({ order }: any) => {
               </div>
             </div>
 
-            <div className="p-8 bg-gradient-to-br from-zinc-50 to-blue-50/10 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
+            <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
                   Data înregistrării
@@ -357,7 +367,7 @@ export const OrderItem = ({ order }: any) => {
                   Metodă Plată
                 </span>
                 <span
-                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border shadow-sm ${paymentConfig.bg}`}
+                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${paymentConfig.bg}`}
                 >
                   {paymentConfig.icon} {paymentConfig.text}
                 </span>
@@ -365,7 +375,7 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Tracker Orizontal cu 5 etape în interiorul Modalului */}
+          {/* Tracker Orizontal în interiorul Modalului */}
           <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
             <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
               Stadiu fizic colet
@@ -377,7 +387,7 @@ export const OrderItem = ({ order }: any) => {
                 return (
                   <div key={idx} className="space-y-1">
                     <div
-                      className={`mx-auto size-2 rounded-full ${active ? (order.status?.toUpperCase() === "CANCELLED" ? "bg-rose-500" : "bg-[var(--royal-violet)]") : "bg-zinc-200"}`}
+                      className={`mx-auto size-2 rounded-full ${active ? statusConfig.progress.split(" ")[0] : "bg-zinc-200"}`}
                     />
                     <span
                       className={`text-[9px] font-black uppercase tracking-tighter block ${active ? "text-zinc-800" : "text-zinc-300"}`}
@@ -398,7 +408,7 @@ export const OrderItem = ({ order }: any) => {
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-purple-100 transition-all shadow-sm"
+                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-200 transition-all shadow-sm"
                 >
                   <img
                     src={getValidImageUrl(item)}
