@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT ATOMIC: Importăm hook-ul nativ Shadcn UI în loc de sonner
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 
 const API_BASE_URL =
@@ -23,6 +23,7 @@ const API_BASE_URL =
 export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast(); // 🚀 REPARAT ATOMIC: Inițializăm generatorul de ferestre toast native
 
   const getValidImageUrl = (item: any) => {
     const source = item.product_image || item.product?.image_url;
@@ -44,7 +45,6 @@ export const OrderItem = ({ order }: any) => {
       rawUrl = source?.main?.medium || source?.url || source?.medium || "";
     }
 
-    // 🚀 FIX CORS OPTIMIZED: Trecem imaginea obligatoriu prin proxy-ul weserv pentru a garanta headerele Cross-Origin
     return rawUrl
       ? `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=300&fit=cover&output=webp`
       : "/placeholder-product.jpg";
@@ -64,12 +64,15 @@ export const OrderItem = ({ order }: any) => {
     }
   };
 
+  const normalizedStatus = useMemo(() => {
+    return order.status?.trim().toUpperCase() || "PENDING";
+  }, [order.status]);
+
   const currentStepIndex = (() => {
-    const s = order.status?.toUpperCase() || "";
-    if (s === "DELIVERED") return 5;
-    if (s === "SHIPPED") return 4;
-    if (s === "CONFIRMED") return 3;
-    if (["PROCESSING", "PAID"].includes(s)) return 2;
+    if (normalizedStatus === "DELIVERED") return 5;
+    if (normalizedStatus === "SHIPPED") return 4;
+    if (normalizedStatus === "CONFIRMED") return 3;
+    if (["PROCESSING", "PAID"].includes(normalizedStatus)) return 2;
     return 1;
   })();
 
@@ -81,14 +84,12 @@ export const OrderItem = ({ order }: any) => {
     { label: "Livrată", icon: Check },
   ];
 
-  // 🚀 COMPLET DINAMIC DIN BACKEND: Eliminat orice nuanță statică, culorile mapate direct pe statusul real
   const statusConfig = useMemo(() => {
-    const s = order.status?.toUpperCase() || "PENDING";
-    switch (s) {
+    switch (normalizedStatus) {
       case "DELIVERED":
         return {
           text: "Livrată",
-          border: "border-emerald-200 hover:border-emerald-400",
+          border: "border-emerald-100 hover:border-emerald-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(16,185,129,0.12)]",
           badge: "bg-emerald-500 text-white border-emerald-400",
           colorClass: "text-emerald-500",
@@ -97,7 +98,7 @@ export const OrderItem = ({ order }: any) => {
       case "SHIPPED":
         return {
           text: "În livrare",
-          border: "border-blue-200 hover:border-blue-400",
+          border: "border-blue-100 hover:border-blue-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.12)]",
           badge: "bg-blue-500 text-white border-blue-400",
           colorClass: "text-blue-500",
@@ -106,19 +107,17 @@ export const OrderItem = ({ order }: any) => {
       case "CONFIRMED":
         return {
           text: "Confirmată",
-          border: "border-indigo-200 hover:border-indigo-400",
+          border: "border-indigo-100 hover:border-indigo-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.12)]",
           badge: "bg-indigo-500 text-white border-indigo-400",
           colorClass: "text-indigo-500",
           progress: "bg-indigo-500 shadow-[0_0_10px_#6366f1]",
         };
-
-      // 🚀 REPARAT: Schimbat din portocaliu (amber/orange) în albastrul nativ pe care îl ai pe backend pentru procesare
       case "PROCESSING":
       case "PAID":
         return {
           text: "În procesare",
-          border: "border-blue-200 hover:border-blue-400",
+          border: "border-blue-100 hover:border-blue-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.12)]",
           badge:
             "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-blue-400 shadow-md shadow-blue-100",
@@ -126,11 +125,10 @@ export const OrderItem = ({ order }: any) => {
           progress:
             "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_12px_#3b82f6]",
         };
-
       case "CANCELLED":
         return {
           text: "Anulată",
-          border: "border-rose-200 hover:border-rose-400",
+          border: "border-rose-100 hover:border-rose-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(239,68,68,0.12)]",
           badge: "bg-rose-500 text-white border-rose-400",
           colorClass: "text-rose-500",
@@ -139,82 +137,86 @@ export const OrderItem = ({ order }: any) => {
       default:
         return {
           text: order.status || "Preluată",
-          border: "border-zinc-200 hover:border-zinc-300",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.03)]",
+          border: "border-zinc-100 hover:border-zinc-300 bg-white",
+          glow: "hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.02)]",
           badge: "bg-zinc-500 text-white border-zinc-400",
           colorClass: "text-zinc-500",
           progress: "bg-zinc-500",
         };
     }
-  }, [order.status]);
+  }, [normalizedStatus, order.status]);
 
   const paymentConfig = useMemo(() => {
     const method = order.payment_method?.toLowerCase() || "cod";
     if (method === "card") {
       return {
         text: "Card Online",
-        icon: (
-          <CreditCard
-            size={12}
-            className="text-purple-600 drop-shadow-[0_0_4px_rgba(147,51,234,0.15)]"
-          />
-        ),
-        bg: "bg-purple-50/50 text-purple-700 border-purple-100",
+        icon: <CreditCard size={12} className="text-blue-500" />,
+        bg: "bg-blue-50/40 text-blue-700 border-blue-100/60",
       };
     }
     return {
       text: "Ramburs (COD)",
-      icon: (
-        <Truck
-          size={12}
-          className="text-blue-500 drop-shadow-[0_0_4px_rgba(59,130,246,0.15)]"
-        />
-      ),
-      bg: "bg-blue-50/50 text-blue-700 border-blue-100",
+      icon: <Truck size={12} className="text-zinc-500" />,
+      bg: "bg-zinc-50 text-zinc-700 border-zinc-150",
     };
   }, [order.payment_method]);
 
+  // 🚀 REPARAT ATOMIC: Transformat din structura asincronă sonner.promise în apeluri consecutive sub useToast() native
   const handleDownloadDocs = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
-    const isFinal = ["SHIPPED", "DELIVERED"].includes(
-      order.status?.toUpperCase(),
-    );
+    const isFinal = ["SHIPPED", "DELIVERED"].includes(normalizedStatus);
     const docName = isFinal ? "Factura" : "Proforma";
 
-    toast.promise(
-      async () => {
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-          { credentials: "include" },
-        );
-        if (!response.ok) throw new Error("Documentul nu este disponibil.");
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        setIsDownloading(false);
-      },
-      {
-        loading: `Se pregătește ${docName}...`,
-        success: `${docName} a fost descărcată.`,
-        error: "Eroare la descărcare sau sesiune expirată.",
-      },
-    );
+    toast({
+      title: `Se pregătește ${docName}`,
+      description: "Generarea fișierului securizat a început...",
+    });
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
+        {
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) throw new Error();
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Descărcare reușită",
+        description: `${docName} pentru comanda ${order.order_number} a fost salvată.`,
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Eroare descărcare",
+        description:
+          "Documentul nu este disponibil momentan sau sesiunea a expirat.",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
     <>
       <motion.article
         layout
-        whileHover={{ y: -5, scale: 1.005 }}
-        transition={{ type: "spring", stiffness: 350, damping: 25 }}
-        className={`group relative bg-white border p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.border} ${statusConfig.glow}`}
+        whileHover={{ y: -4, scale: 1.002 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        className={`group relative border p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.border} ${statusConfig.glow}`}
         style={{ isolation: "isolate" }}
       >
         <div className="text-left flex-1 flex flex-col">
@@ -226,7 +228,7 @@ export const OrderItem = ({ order }: any) => {
                   REF: {order.order_number?.split("-").pop()}
                 </p>
               </div>
-              <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)] font-bold tracking-tight">
+              <h3 className="heading-serif text-2xl italic text-zinc-900 font-bold tracking-tight">
                 {new Date(order.created_at).toLocaleDateString("ro-RO", {
                   day: "numeric",
                   month: "long",
@@ -240,16 +242,15 @@ export const OrderItem = ({ order }: any) => {
             </span>
           </header>
 
-          {/* Grila Imagini Colet Landscape */}
           <div className="grid grid-cols-3 gap-2 mb-8">
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
                 key={i}
-                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50/50 shadow-inner transition-all duration-300"
+                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50/50 shadow-inner"
               >
                 <img
                   src={getValidImageUrl(item)}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                   alt=""
                 />
                 {item.quantity > 1 && (
@@ -260,7 +261,7 @@ export const OrderItem = ({ order }: any) => {
               </div>
             ))}
             {order.items?.length > 3 && (
-              <div className="aspect-[4/3] rounded-xl bg-zinc-950 flex flex-col items-center justify-center text-white shadow-sm border border-zinc-800">
+              <div className="aspect-[4/3] rounded-xl bg-zinc-950 flex flex-col items-center justify-center text-white border border-zinc-800">
                 <span className="text-[10px] font-black">
                   +{order.items.length - 3}
                 </span>
@@ -268,7 +269,6 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* Tracker Etape Live */}
           <div className="space-y-4 mb-6 mt-auto">
             <div className="grid grid-cols-5 gap-0.5 text-center">
               {steps.map((stepObj, idx) => {
@@ -313,7 +313,6 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Metodă Plată & Total */}
           <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
             <div className="flex flex-col gap-1">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
@@ -340,7 +339,7 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-900/5 group-hover:shadow-purple-900/10 hover:brightness-110 active:scale-[0.99]"
+          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-950/5 hover:brightness-110 active:scale-[0.99]"
           style={{ background: "var(--primary-gradient)" }}
         >
           Gestionare Comandă{" "}
@@ -351,17 +350,13 @@ export const OrderItem = ({ order }: any) => {
         </button>
       </motion.article>
 
-      {/* LUXURY MODAL */}
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
         title="Arhiva Comandă"
         description={order.order_number}
       >
-        <div
-          className="space-y-10 py-4 bg-white text-left w-full font-sans"
-          style={{ backgroundColor: "#ffffff", opacity: 1 }}
-        >
+        <div className="space-y-10 py-4 bg-white text-left w-full font-sans">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-1.5">
@@ -400,7 +395,6 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Tracker Orizontal în interiorul Modalului */}
           <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
             <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
               Stadiu fizic colet
@@ -465,10 +459,10 @@ export const OrderItem = ({ order }: any) => {
             <button
               onClick={handleDownloadDocs}
               disabled={isDownloading}
-              className="w-full sm:w-auto h-14 px-8 rounded-xl border-2 border-zinc-950 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-950 hover:text-white transition-all disabled:opacity-50 font-sans"
+              className="w-full sm:w-auto h-14 px-8 rounded-xl border-2 border-zinc-950 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-950 hover:text-white transition-all disabled:opacity-50"
             >
               <Receipt size={14} />
-              {["SHIPPED", "DELIVERED"].includes(order.status?.toUpperCase())
+              {["SHIPPED", "DELIVERED"].includes(normalizedStatus)
                 ? "Descarcă Factura"
                 : "Proforma Digitală"}
             </button>
@@ -478,9 +472,7 @@ export const OrderItem = ({ order }: any) => {
               </p>
               <p className="heading-serif text-4xl font-bold text-zinc-950 leading-none">
                 {order.total_amount?.toLocaleString()}{" "}
-                <span className="text-sm font-sans font-black text-zinc-400">
-                  RON
-                </span>
+                <span className="text-sm font-black text-zinc-400">RON</span>
               </p>
             </div>
           </div>
