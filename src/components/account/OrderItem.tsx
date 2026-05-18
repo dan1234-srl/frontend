@@ -1,12 +1,4 @@
-import {
-  Truck,
-  MapPin,
-  ArrowUpRight,
-  Receipt,
-  CreditCard,
-  Calendar,
-  Package,
-} from "lucide-react";
+import { Truck, MapPin, ArrowUpRight, Receipt, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -59,8 +51,8 @@ export const OrderItem = ({ order }: any) => {
     return 1;
   })();
 
-  // 🚀 REPARAT ATOMIC: Logica unică de parsare și design pentru Badge-ul de Status Modern
-  const statusStyles = useMemo(() => {
+  // 🚀 REPARAT DINAMIC: Culori și stări venite complet automat din starea bazei de date
+  const statusConfig = useMemo(() => {
     const s = order.status?.toUpperCase() || "PENDING";
     switch (s) {
       case "DELIVERED":
@@ -78,12 +70,12 @@ export const OrderItem = ({ order }: any) => {
       case "PAID":
         return {
           text: "În procesare",
-          bg: "bg-amber-50 text-amber-700 border-amber-100",
+          bg: "bg-amber-50 text-amber-700 border-amber-150/40",
         };
       case "CANCELLED":
         return {
           text: "Anulată",
-          bg: "bg-zinc-100 text-zinc-600 border-zinc-200",
+          bg: "bg-zinc-50 text-zinc-500 border-zinc-200",
         };
       default:
         return {
@@ -93,18 +85,18 @@ export const OrderItem = ({ order }: any) => {
     }
   }, [order.status]);
 
-  // 🚀 REPARAT ATOMIC: Mapare estetică premium pentru metoda de plată
-  const paymentDetails = useMemo(() => {
+  // 🚀 REPARAT DINAMIC: Reintroducere iconițe native + text pe tematica automată
+  const paymentConfig = useMemo(() => {
     const method = order.payment_method?.toLowerCase() || "cod";
     if (method === "card") {
       return {
         text: "Card Online",
-        icon: <CreditCard size={12} className="inline mr-1" />,
+        icon: <CreditCard size={13} className="text-zinc-700" />,
       };
     }
     return {
       text: "Ramburs (COD)",
-      icon: <Truck size={12} className="inline mr-1" />,
+      icon: <Truck size={13} className="text-zinc-700" />,
     };
   }, [order.payment_method]);
 
@@ -120,7 +112,9 @@ export const OrderItem = ({ order }: any) => {
       async () => {
         const response = await fetch(
           `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-          { credentials: "include" },
+          {
+            credentials: "include",
+          },
         );
         if (!response.ok) throw new Error("Documentul nu este disponibil.");
         const blob = await response.blob();
@@ -148,12 +142,16 @@ export const OrderItem = ({ order }: any) => {
         layout
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="group relative bg-white border border-zinc-150/60 p-6 md:p-8 rounded-[2.5rem] transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] hover:border-zinc-200 flex flex-col justify-between h-full min-h-[420px]"
+        className="group relative bg-white border border-zinc-150 p-6 md:p-8 rounded-[2rem] transition-all duration-500 hover:shadow-[0_35px_70px_-15px_rgba(0,0,0,0.05)] flex flex-col justify-between h-full min-h-[440px]"
+        style={{ isolation: "isolate" }}
       >
+        {/* Mic indicator discret pe tematica automată în colț */}
+        <div className="absolute top-4 left-4 h-1.5 w-1.5 rounded-full bg-[var(--royal-violet)] opacity-40 group-hover:opacity-100 transition-opacity" />
+
         <div className="text-left flex-1 flex flex-col">
-          <header className="flex justify-between items-start mb-6">
-            <div className="space-y-1">
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-300">
+          <header className="flex justify-between items-start mb-6 pl-2">
+            <div className="space-y-0.5">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-300">
                 REF: {order.order_number?.split("-").pop()}
               </p>
               <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)] font-medium">
@@ -163,36 +161,34 @@ export const OrderItem = ({ order }: any) => {
                 })}
               </h3>
             </div>
-
-            {/* 🚀 MODIFICAT: Înlocuit bulina pulsing cu un Status Badge curat, modern, minimalist */}
             <span
-              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${statusStyles.bg}`}
+              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border ${statusConfig.bg}`}
             >
-              {statusStyles.text}
+              {statusConfig.text}
             </span>
           </header>
 
-          {/* Grila Produse */}
-          <div className="grid grid-cols-4 gap-2 mb-8">
+          {/* Grila Imagini Colet */}
+          <div className="grid grid-cols-4 gap-2 mb-8 px-1">
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
                 key={i}
-                className="relative aspect-square rounded-xl overflow-hidden border border-zinc-50 bg-zinc-50 shadow-inner"
+                className="relative aspect-square rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-sm"
               >
                 <img
                   src={getValidImageUrl(item)}
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                   alt=""
                 />
                 {item.quantity > 1 && (
-                  <span className="absolute bottom-1 right-1 bg-zinc-950/90 text-white text-[8px] font-black h-4 w-4 rounded-md flex items-center justify-center">
+                  <span className="absolute bottom-1 right-1 bg-zinc-900/90 text-white text-[8px] font-black h-4 w-4 rounded-md flex items-center justify-center">
                     {item.quantity}
                   </span>
                 )}
               </div>
             ))}
             {order.items?.length > 3 && (
-              <div className="aspect-square rounded-xl bg-zinc-900 flex flex-col items-center justify-center text-white">
+              <div className="aspect-square rounded-xl bg-zinc-900 flex flex-col items-center justify-center text-white shadow-sm">
                 <span className="text-[10px] font-black">
                   +{order.items.length - 3}
                 </span>
@@ -200,9 +196,9 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* Timeline Progres subțire elegant */}
-          <div className="space-y-3 mb-6 mt-auto">
-            <div className="flex gap-1 h-[3px]">
+          {/* Linie Progres subțire modernă */}
+          <div className="space-y-4 mb-6 mt-auto px-1">
+            <div className="flex gap-1 h-[2.5px]">
               {[1, 2, 3, 4].map((step) => (
                 <div
                   key={step}
@@ -220,25 +216,24 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Secțiunea de jos cu Metoda de Plată și Totalul */}
-          <div className="pt-4 border-t border-zinc-50 flex items-center justify-between mb-6">
-            <div className="flex flex-col">
+          {/* Informații Metodă Plată & Total */}
+          <div className="pt-4 border-t border-zinc-50 flex items-center justify-between mb-4 px-1">
+            <div className="flex flex-col gap-0.5">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
                 Metodă Plată
               </span>
-              <span className="text-[10px] font-bold text-zinc-600 mt-0.5 flex items-center gap-1">
-                {paymentDetails.text}
-              </span>
+              <div className="text-[10px] font-bold text-zinc-600 flex items-center gap-1.5 mt-0.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
+                {paymentConfig.icon}
+                <span>{paymentConfig.text}</span>
+              </div>
             </div>
             <div className="text-right">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300 block">
                 Total
               </span>
-              <p className="font-black text-lg text-[var(--dark-amethyst)] mt-0.5">
+              <p className="font-black text-xl text-[var(--dark-amethyst)] mt-0.5 tracking-tight">
                 {order.total_amount?.toLocaleString()}{" "}
-                <span className="text-[10px] font-medium text-zinc-400">
-                  RON
-                </span>
+                <span className="text-[10px] font-bold text-zinc-400">RON</span>
               </p>
             </div>
           </div>
@@ -246,13 +241,13 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all hover:bg-zinc-900 active:scale-[0.99] shadow-sm"
+          className="w-full h-14 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all hover:bg-zinc-900 active:scale-[0.99] shadow-sm mt-2"
         >
           Gestionare Comandă <ArrowUpRight size={14} />
         </button>
       </motion.article>
 
-      {/* LUXURY MODAL DETAILS */}
+      {/* LUXURY MODAL CORECTAT */}
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
@@ -291,8 +286,8 @@ export const OrderItem = ({ order }: any) => {
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
                   Metodă Plată
                 </span>
-                <span className="font-bold text-zinc-800 flex items-center gap-1">
-                  {paymentDetails.text}
+                <span className="font-bold text-zinc-800 flex items-center gap-1.5">
+                  {paymentConfig.icon} {paymentConfig.text}
                 </span>
               </div>
             </div>
@@ -315,7 +310,9 @@ export const OrderItem = ({ order }: any) => {
                   />
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-zinc-900 truncate">
-                      {item.product_name || "Articol Evem"}
+                      {item.product_name ||
+                        item.product_name_at_purchase ||
+                        "Articol Evem"}
                     </h4>
                     <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
                       Bucăți: {item.quantity}
