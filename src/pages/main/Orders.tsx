@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
-import { OrderItem } from "@/components/account/OrderItem"; // 🚀 COREKTAT IMPORTUL: Acum citește corect exportul nominal extins
+import { OrderItem } from "@/components/account/OrderItem"; // 🚀 SOLUȚIE: Corectat importul nominal fără auto-import recursiv greșit
 import {
   Search,
   ChevronLeft,
@@ -103,7 +103,7 @@ const Orders = () => {
       </div>
 
       <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
-        {/* CONTROL DE BACK HEADER */}
+        {/* HEADER CONTROLS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16 text-left">
           <div className="space-y-4">
             <button
@@ -140,7 +140,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* CONTAINER GRID */}
+        {/* CONTAINER GRID: 2-3 Dreptunghiuri Landscape Late per Rând */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -198,7 +198,7 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
-        {/* CONTROLLER PAGINARE */}
+        {/* PAGINARE */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
           <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
             <button
