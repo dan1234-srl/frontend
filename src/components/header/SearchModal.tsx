@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
-import { InstantSearch, Hits, Configure } from "react-instantsearch";
-import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import MeiliSearch from "meilisearch"; // Folosim direct clientul nativ pentru control absolut
 
 const SearchModal = ({
   isOpen,
@@ -13,13 +12,12 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [hits, setHits] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
 
-  // 🚀 SOLUȚIE: Folosim searchState pentru a controla direct și reactiv starea InstantSearch
-  const [searchState, setSearchState] = useState({
-    query: "",
-  });
-
-  const client = useMemo(() => {
+  // 🚀 1. Inițializăm clientul oficial nativ MeiliSearch
+  const meiliClient = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
     const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
 
@@ -30,16 +28,42 @@ const SearchModal = ({
       return null;
     }
 
-    const meiliInstance = instantMeiliSearch(url, key, {
-      placeholderSearch: true,
-      primaryKey: "id",
-    });
-
-    return meiliInstance.searchClient || meiliInstance;
+    return new MeiliSearch({ host: url, apiKey: key });
   }, []);
 
-  const Hit = ({ hit }: any) => {
-    // Parsarea string-ului JSON structurat din image_url
+  // 🚀 2. Efect pentru căutare în timp real cu Debounce (300ms) pentru a nu sufoca serverul
+  useEffect(() => {
+    if (!meiliClient || !isOpen) return;
+
+    setSearching(true);
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        // Interogăm indexul 'products' direct și curat
+        const response = await meiliClient.index("products").search(query, {
+          limit: 18,
+          // placeholderSearch: true este activ implicit în clientul nativ
+        });
+
+        setHits(response.hits || []);
+      } catch (error) {
+        console.error("Eroare la căutare MeiliSearch:", error);
+      } finally {
+        setSearching(false);
+      }
+    }, 300); // 300ms debounce pentru o experiență de tastare premium
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [query, meiliClient, isOpen]);
+
+  // Resetează căutarea când modalul se închide
+  const handleClose = () => {
+    setQuery("");
+    onClose();
+  };
+
+  const HitCard = ({ hit }: { hit: any }) => {
+    // 🚀 REPARAT: Parsarea structurii imbricate din string-ul `image_url`
     const parsedImage = useMemo(() => {
       if (!hit.image_url) return hit.image || "";
 
@@ -69,7 +93,7 @@ const SearchModal = ({
         animate={{ opacity: 1, y: 0 }}
         onClick={() => {
           navigate(`/product/${hit.slug}`);
-          onClose();
+          handleClose();
         }}
         className="group flex flex-col gap-3 p-2 hover:bg-zinc-50/50 transition-all rounded-xl text-left w-full"
       >
@@ -123,10 +147,7 @@ const SearchModal = ({
               </span>
             </div>
             <button
-              onClick={() => {
-                setSearchState({ query: "" });
-                onClose();
-              }}
+              onClick={handleClose}
               className="group flex items-center gap-4"
             >
               <span className="text-[10px] font-black uppercase tracking-widest group-hover:mr-2 transition-all">
@@ -140,32 +161,22 @@ const SearchModal = ({
 
           {/* SEARCH BOX AREA */}
           <div className="flex-1 overflow-hidden flex flex-col max-w-6xl mx-auto w-full px-6 pt-10">
-            {client ? (
-              /* 🚀 REPARAT: Legăm starea nativă a InstantSearch de state-ul React controlled */
-              <InstantSearch
-                indexName="products"
-                searchClient={client}
-                searchState={searchState}
-                onSearchStateChange={(nextSearchState) =>
-                  setSearchState(nextSearchState)
-                }
-              >
-                <Configure hitsPerPage={18} />
-
-                <div className="relative mb-12">
-                  {/* 🚀 REPARAT: Input controlat 100% nativ. Forțează MeiliSearch să își facă re-fetch instant la fiecare tastă */}
+            {meiliClient ? (
+              <div className="flex flex-col h-full overflow-hidden">
+                <div className="mb-12 relative">
+                  {/* Input 100% nativ, stabil și super rapid */}
                   <input
                     autoFocus
                     type="text"
-                    value={searchState.query}
-                    onChange={(e) => setSearchState({ query: e.target.value })}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
                     placeholder="Caută în catalogul de produse..."
-                    className="w-full bg-transparent border-b border-zinc-200 py-6 text-2xl lg:text-5xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-200 text-black"
+                    className="w-full bg-transparent border-b border-zinc-200 py-6 text-2xl lg:text-5xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-200 text-black pr-10"
                   />
 
-                  {searchState.query && (
+                  {query && (
                     <button
-                      onClick={() => setSearchState({ query: "" })}
+                      onClick={() => setQuery("")}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black p-2"
                     >
                       <X size={20} />
@@ -178,7 +189,7 @@ const SearchModal = ({
                       <button
                         key={tag}
                         type="button"
-                        onClick={() => setSearchState({ query: tag })}
+                        onClick={() => setQuery(tag)}
                         className="text-black hover:opacity-50 transition-opacity"
                       >
                         {tag}
@@ -187,16 +198,25 @@ const SearchModal = ({
                   </div>
                 </div>
 
-                {/* Zona de afișare rezultate cu scroll asigurat */}
-                <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-                  <Hits
-                    hitComponent={Hit}
-                    classNames={{
-                      list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6",
-                    }}
-                  />
+                {/* Zona de afișare rezultate */}
+                <div className="flex-1 overflow-y-auto pb-20 no-scrollbar relative">
+                  {searching && hits.length === 0 ? (
+                    <div className="h-40 flex items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em] animate-pulse">
+                      Se caută rezultate...
+                    </div>
+                  ) : hits.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                      {hits.map((hit) => (
+                        <HitCard key={hit.id} hit={hit} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
+                      Nu s-au găsit produse pentru "{query}"
+                    </div>
+                  )}
                 </div>
-              </InstantSearch>
+              </div>
             ) : (
               <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-300 text-center px-4">
                 Sincronizare cu baza de date eșuată... Verifică variabilele de
