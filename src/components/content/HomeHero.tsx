@@ -160,12 +160,7 @@ const HomeHero = () => {
                   REDEFINIT.
                 </span>
               </h1>
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full text-[10px] font-black uppercase tracking-widest w-fit shadow-xl"
-              >
-                <ShoppingBag size={14} /> Cumpără acum
-              </Link>
+              <ShoppingBag size={14} /> Cumpără acum
             </div>
           </motion.div>
         </div>
