@@ -137,13 +137,6 @@ const HomeHero = () => {
                 </AnimatePresence>
               )}
             </div>
-
-            <Link
-              to="/shop"
-              className="p-4 bg-zinc-50/50 text-[9px] font-black uppercase tracking-[0.2em] flex items-center justify-between text-zinc-400 border-t border-zinc-100 shrink-0"
-            >
-              Catalog Complet <ChevronRight size={12} />
-            </Link>
           </motion.div>
         </aside>
 
