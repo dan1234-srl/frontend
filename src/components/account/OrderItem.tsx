@@ -1,447 +1,224 @@
+import { useState, useEffect, useMemo } from "react";
+import Header from "@/components/header/Header";
+import Footer from "@/components/footer/Footer";
+import { OrderItem } from "@/components/account/OrderItem";
 import {
-  Truck,
-  MapPin,
-  ArrowUpRight,
-  Receipt,
-  CreditCard,
-  Sparkles,
-  ClipboardList,
-  Clock,
-  CheckCircle,
-  Package,
-  Check,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingBag,
+  ArrowLeft,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
-import { LuxuryModal } from "@/components/ui/luxury-modal";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
-export const OrderItem = ({ order }: any) => {
-  const [showFullDetails, setShowFullDetails] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+const Orders = () => {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const ordersPerPage = 6;
 
-  const getValidImageUrl = (item: any) => {
-    const source = item.product_image || item.product?.image_url;
-    if (!source) return "/placeholder-product.jpg";
-    if (typeof source === "string" && source.startsWith("http")) return source;
+  const fetchOrders = async () => {
+    setIsLoading(true);
     try {
-      const parsed = typeof source === "string" ? JSON.parse(source) : source;
-      return (
-        parsed?.main?.medium ||
-        parsed?.url ||
-        parsed?.medium ||
-        "/placeholder-product.jpg"
+      const skip = (currentPage - 1) * ordersPerPage;
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/orders/me?skip=${skip}&limit=${ordersPerPage}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        },
       );
-    } catch {
-      return "/placeholder-product.jpg";
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } else if (response.status === 401) {
+        toast({
+          variant: "destructive",
+          title: "Sesiune expirată",
+          description:
+            "Vă rugăm să vă reautentificați pentru a vedea istoricul.",
+        });
+        navigate("/login");
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Eroare sincronizare",
+        description: "Nu s-au putut prelua datele din baza de date.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getSafeAddress = () => {
-    try {
-      if (!order.shipping_address) return "Adresă nespecificată";
-      const a =
-        typeof order.shipping_address === "string"
-          ? JSON.parse(order.shipping_address)
-          : order.shipping_address;
-      if (typeof a !== "object") return String(order.shipping_address);
-      return `${a.street || ""}, ${a.city || ""}, ${a.county || ""}`;
-    } catch {
-      return String(order.shipping_address);
-    }
-  };
+  useEffect(() => {
+    fetchOrders();
+  }, [currentPage]);
 
-  const currentStepIndex = (() => {
-    const s = order.status?.toUpperCase() || "";
-    if (s === "DELIVERED") return 5;
-    if (s === "SHIPPED") return 4;
-    if (s === "CONFIRMED") return 3;
-    if (["PROCESSING", "PAID"].includes(s)) return 2;
-    return 1;
-  })();
+  const filteredOrders = useMemo(() => {
+    return orders.filter((o) => {
+      const matchQuery = searchTerm.toLowerCase();
+      const orderNumber = o.order_number?.toLowerCase() || "";
+      const status = o.status?.toLowerCase() || "";
+      const method = o.payment_method?.toLowerCase() || "";
 
-  const steps = [
-    { label: "Preluată", icon: ClipboardList },
-    { label: "În procesare", icon: Clock },
-    { label: "Confirmată", icon: CheckCircle },
-    { label: "În livrare", icon: Package },
-    { label: "Livrată", icon: Check },
-  ];
-
-  // 🚀 REPARAT DISCRET: Înlocuit complet orice urmă de contur negru/gri cu nuanța nativă venită de la server
-  const statusConfig = useMemo(() => {
-    const s = order.status?.toUpperCase() || "PENDING";
-    switch (s) {
-      case "DELIVERED":
-        return {
-          text: "Livrată",
-          border: "border-emerald-200 hover:border-emerald-400",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(16,185,129,0.12)]",
-          badge: "bg-emerald-500 text-white border-emerald-400",
-          colorClass: "text-emerald-500",
-          progress: "bg-emerald-500 shadow-[0_0_10px_#10b981]",
-        };
-      case "SHIPPED":
-        return {
-          text: "În livrare",
-          border: "border-blue-200 hover:border-blue-400",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.12)]",
-          badge: "bg-blue-500 text-white border-blue-400",
-          colorClass: "text-blue-500",
-          progress: "bg-blue-500 shadow-[0_0_10px_#3b82f6]",
-        };
-      case "CONFIRMED":
-        return {
-          text: "Confirmată",
-          border: "border-indigo-200 hover:border-indigo-400",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(99,102,241,0.12)]",
-          badge: "bg-indigo-500 text-white border-indigo-400",
-          colorClass: "text-indigo-500",
-          progress: "bg-indigo-500 shadow-[0_0_10px_#6366f1]",
-        };
-      case "PROCESSING":
-      case "PAID":
-        return {
-          text: "În procesare",
-          border: "border-amber-200 hover:border-amber-400",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(245,158,11,0.12)]",
-          badge:
-            "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400",
-          colorClass: "text-amber-500",
-          progress:
-            "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_12px_#f59e0b]",
-        };
-      case "CANCELLED":
-        return {
-          text: "Anulată",
-          border: "border-rose-200 hover:border-rose-400",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(239,68,68,0.12)]",
-          badge: "bg-rose-500 text-white border-rose-400",
-          colorClass: "text-rose-500",
-          progress: "bg-rose-500",
-        };
-      default:
-        return {
-          text: order.status || "Preluată",
-          border: "border-zinc-200 hover:border-zinc-300",
-          glow: "hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.03)]",
-          badge: "bg-zinc-500 text-white border-zinc-400",
-          colorClass: "text-zinc-500",
-          progress: "bg-zinc-500",
-        };
-    }
-  }, [order.status]);
-
-  // 🚀 REPARAT VIVID: Iconițele de plată sunt acum intens colorate în paleta brandului tău
-  const paymentConfig = useMemo(() => {
-    const method = order.payment_method?.toLowerCase() || "cod";
-    if (method === "card") {
-      return {
-        text: "Card Online",
-        icon: (
-          <CreditCard
-            size={12}
-            className="text-purple-600 drop-shadow-[0_0_4px_rgba(147,51,234,0.15)]"
-          />
-        ),
-        bg: "bg-purple-50/50 text-purple-700 border-purple-100",
-      };
-    }
-    return {
-      text: "Ramburs (COD)",
-      icon: (
-        <Truck
-          size={12}
-          className="text-blue-500 drop-shadow-[0_0_4px_rgba(59,130,246,0.15)]"
-        />
-      ),
-      bg: "bg-blue-50/50 text-blue-700 border-blue-100",
-    };
-  }, [order.payment_method]);
+      return (
+        orderNumber.includes(matchQuery) ||
+        status.includes(matchQuery) ||
+        (method === "card"
+          ? "card online credit stripe"
+          : "ramburs cod livrare"
+        ).includes(matchQuery)
+      );
+    });
+  }, [searchTerm, orders]);
 
   return (
-    <>
-      {/* 🚀 EXTRACTED ALL STATIC BORDERS: Toate clasele fixe au fost eliminate. Conturul se desenează dinamic prin `${statusConfig.border}` */}
-      <motion.article
-        layout
-        whileHover={{ y: -5, scale: 1.005 }}
-        transition={{ type: "spring", stiffness: 350, damping: 25 }}
-        className={`group relative bg-white border p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.border} ${statusConfig.glow}`}
-        style={{ isolation: "isolate" }}
-      >
-        <div className="text-left flex-1 flex flex-col">
-          <header className="flex justify-between items-center mb-6">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5">
-                <Sparkles size={10} className="text-amber-500 animate-pulse" />
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-300">
-                  REF: {order.order_number?.split("-").pop()}
-                </p>
-              </div>
-              <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)] font-bold tracking-tight">
-                {new Date(order.created_at).toLocaleDateString("ro-RO", {
-                  day: "numeric",
-                  month: "long",
-                })}
-              </h3>
-            </div>
-            <span
-              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm ${statusConfig.badge}`}
-            >
-              {statusConfig.text}
-            </span>
-          </header>
+    <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 font-sans antialiased selection:bg-purple-100 selection:text-purple-900">
+      <Header />
 
-          {/* Grila Imagini Colet Landscape */}
-          <div className="grid grid-cols-3 gap-2 mb-8">
-            {order.items?.slice(0, 3).map((item: any, i: number) => (
-              <div
-                key={i}
-                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50/50 shadow-inner transition-all duration-300"
-              >
-                <img
-                  src={getValidImageUrl(item)}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  alt=""
-                />
-                {item.quantity > 1 && (
-                  <span className="absolute bottom-1 right-1 bg-zinc-950 text-white text-[8px] font-black h-4 px-1.5 rounded-md flex items-center justify-center">
-                    x{item.quantity}
-                  </span>
-                )}
-              </div>
-            ))}
-            {order.items?.length > 3 && (
-              <div className="aspect-[4/3] rounded-xl bg-zinc-950 flex flex-col items-center justify-center text-white shadow-sm border border-zinc-800">
-                <span className="text-[10px] font-black">
-                  +{order.items.length - 3}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Tracker Etape Live cu culori asortate */}
-          <div className="space-y-4 mb-6 mt-auto">
-            <div className="grid grid-cols-5 gap-0.5 text-center">
-              {steps.map((stepObj, idx) => {
-                const stepNum = idx + 1;
-                const isCurrentOrPast = stepNum <= currentStepIndex;
-                const StepIcon = stepObj.icon;
-
-                return (
-                  <div key={idx} className="flex flex-col items-center gap-1">
-                    <StepIcon
-                      size={13}
-                      className={`transition-colors duration-300 ${
-                        isCurrentOrPast
-                          ? statusConfig.colorClass
-                          : "text-zinc-300"
-                      }`}
-                    />
-                    <span
-                      className={`text-[8px] font-black uppercase tracking-tighter block transition-colors ${
-                        isCurrentOrPast ? "text-zinc-800" : "text-zinc-300"
-                      }`}
-                    >
-                      {stepObj.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex gap-1 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
-              {[1, 2, 3, 4, 5].map((step) => (
-                <div key={step} className="flex-1 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: step <= currentStepIndex ? "100%" : "0%",
-                    }}
-                    className={`h-full ${statusConfig.progress} transition-all duration-1000`}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Metodă Plată Colorată & Total */}
-          <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
-                Metodă Plată
-              </span>
-              <div
-                className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border shadow-sm ${paymentConfig.bg}`}
-              >
-                {paymentConfig.icon}
-                <span>{paymentConfig.text}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300 block">
-                Total Final
-              </span>
-              <p className="font-black text-2xl text-zinc-950 mt-0.5 tracking-tight">
-                {order.total_amount?.toLocaleString()}{" "}
-                <span className="text-[10px] font-bold text-zinc-400">RON</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-900/5 group-hover:shadow-purple-900/10 hover:brightness-110 active:scale-[0.99]"
-          style={{ background: "var(--primary-gradient)" }}
-        >
-          Gestionare Comandă{" "}
-          <ArrowUpRight
-            size={14}
-            className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+      <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-100/50 z-[1100] overflow-hidden">
+        {isLoading && (
+          <motion.div
+            className="h-full"
+            style={{ background: "var(--primary-gradient)" }}
+            initial={{ left: "-100%", width: "100%", position: "absolute" }}
+            animate={{ left: "100%" }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
           />
-        </button>
-      </motion.article>
+        )}
+      </div>
 
-      {/* LUXURY DETAIL MODAL */}
-      <LuxuryModal
-        open={showFullDetails}
-        onClose={() => setShowFullDetails(false)}
-        title="Arhiva Comandă"
-        description={order.order_number}
-      >
-        <div
-          className="space-y-10 py-4 bg-white text-left w-full font-sans"
-          style={{ backgroundColor: "#ffffff", opacity: 1 }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-1.5">
-                <MapPin size={12} className={statusConfig.colorClass} /> Adresa
-                Livrare
-              </p>
-              <div className="space-y-1">
-                <p className="font-black text-base text-zinc-900">
-                  {order.customer_name}
-                </p>
-                <p className="text-xs text-zinc-500 font-medium leading-relaxed italic">
-                  {getSafeAddress()}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
-                  Data înregistrării
-                </span>
-                <span className="font-bold text-zinc-800">
-                  {new Date(order.created_at).toLocaleDateString("ro-RO")}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
-                  Metodă Plată
-                </span>
-                <span
-                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${paymentConfig.bg}`}
-                >
-                  {paymentConfig.icon} {paymentConfig.text}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Tracker în interiorul Modalului */}
-          <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
-            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-              Stadiu fizic colet
-            </p>
-            <div className="grid grid-cols-5 gap-1 text-center">
-              {steps.map((stepObj, idx) => {
-                const stepNum = idx + 1;
-                const active = stepNum <= currentStepIndex;
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div
-                      className={`mx-auto size-2 rounded-full ${active ? statusConfig.progress.split(" ")[0] : "bg-zinc-200"}`}
-                    />
-                    <span
-                      className={`text-[9px] font-black uppercase tracking-tighter block ${active ? "text-zinc-800" : "text-zinc-300"}`}
-                    >
-                      {stepObj.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <p className="text-[9px] font-black uppercase text-zinc-400 ml-1 tracking-widest">
-              Conținut Colet
-            </p>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-              {order.items?.map((item: any, i: number) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-250 transition-all shadow-sm"
-                >
-                  <img
-                    src={getValidImageUrl(item)}
-                    className="size-14 rounded-xl object-cover shadow-sm shrink-0"
-                    alt=""
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-zinc-900 truncate">
-                      {item.product_name ||
-                        item.product_name_at_purchase ||
-                        "Articol Evem"}
-                    </h4>
-                    <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
-                      Bucăți: {item.quantity}
-                    </p>
-                  </div>
-                  <p className="font-black text-sm text-zinc-900">
-                    {(
-                      item.price_at_purchase || item.unit_price_at_purchase
-                    )?.toLocaleString()}{" "}
-                    RON
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-8 bg-white">
+      <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16 text-left">
+          <div className="space-y-4">
             <button
-              onClick={handleDownloadDocs}
-              disabled={isDownloading}
-              className="w-full sm:w-auto h-14 px-8 rounded-xl border-2 border-zinc-950 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-950 hover:text-white transition-all disabled:opacity-50 font-sans"
+              onClick={() => navigate("/account")}
+              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-[var(--royal-violet)] transition-all group"
             >
-              <Receipt size={14} />
-              {["SHIPPED", "DELIVERED"].includes(order.status?.toUpperCase())
-                ? "Descarcă Factura"
-                : "Proforma Digitală"}
+              <ArrowLeft
+                size={12}
+                className="group-hover:-translate-x-1 transition-transform duration-300"
+              />
+              Contul meu
             </button>
-            <div className="text-center sm:text-right">
-              <p className="text-[10px] font-black uppercase text-zinc-300 tracking-widest mb-0.5">
-                Total Achitat
-              </p>
-              <p className="heading-serif text-4xl font-bold text-zinc-950 leading-none">
-                {order.total_amount?.toLocaleString()}{" "}
-                <span className="text-sm font-sans font-black text-zinc-400">
-                  RON
-                </span>
-              </p>
-            </div>
+            <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-zinc-900 leading-none">
+              Arhiva{" "}
+              <span className="text-purple-500 font-light drop-shadow-sm">
+                mea
+              </span>
+            </h1>
+          </div>
+
+          <div className="relative w-full lg:w-96 group">
+            <Search
+              size={14}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors duration-300"
+            />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Caută număr comandă, status sau metodă..."
+              className="w-full bg-zinc-50 border border-zinc-150 rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none focus:border-[var(--royal-violet)] focus:bg-white focus:ring-4 focus:ring-purple-50 transition-all duration-300 text-zinc-800 shadow-inner"
+            />
           </div>
         </div>
-      </LuxuryModal>
-    </>
+
+        <div className="relative min-h-[400px]">
+          <AnimatePresence mode="wait">
+            {isLoading && orders.length === 0 ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+              >
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton
+                    key={i}
+                    className="h-80 w-full rounded-[2.5rem] bg-zinc-100"
+                  />
+                ))}
+              </motion.div>
+            ) : filteredOrders.length > 0 ? (
+              <motion.div
+                key="orders-grid-active"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 transition-all duration-500 ${
+                  isLoading
+                    ? "opacity-55 blur-[2px] pointer-events-none"
+                    : "opacity-100 blur-0"
+                }`}
+              >
+                {filteredOrders.map((order) => (
+                  <OrderItem key={order.id} order={order} />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="empty-state"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-32 text-center rounded-[3rem] border border-dashed border-purple-200 bg-purple-50/5 flex flex-col items-center justify-center px-4"
+              >
+                <div className="p-4 bg-white rounded-2xl shadow-md border border-purple-50 mb-6 text-purple-400">
+                  <ShoppingBag size={32} strokeWidth={1.5} />
+                </div>
+                <h3 className="heading-serif text-3xl italic text-zinc-800 mb-1">
+                  Arhiva este goală
+                </h3>
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest max-w-xs mt-1">
+                  {searchTerm
+                    ? `Niciun rezultat potrivit pentru "${searchTerm}"`
+                    : "Nu aveți nicio comandă înregistrată în cont."}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {(orders.length >= ordersPerPage || currentPage > 1) && (
+          <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
+            <button
+              disabled={currentPage === 1 || isLoading}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xl font-black text-zinc-950 bg-purple-50/60 px-4 py-1.5 rounded-xl border border-purple-100/40">
+              {currentPage}
+            </span>
+            <button
+              disabled={orders.length < ordersPerPage || isLoading}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+      </main>
+      <Footer />
+    </div>
   );
 };
+
+export default Orders;

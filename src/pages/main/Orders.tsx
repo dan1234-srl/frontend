@@ -89,7 +89,6 @@ const Orders = () => {
     <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 font-sans antialiased selection:bg-purple-100 selection:text-purple-900">
       <Header />
 
-      {/* TOP NEON LOADING BAR */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-100/50 z-[1100] overflow-hidden">
         {isLoading && (
           <motion.div
@@ -103,7 +102,6 @@ const Orders = () => {
       </div>
 
       <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
-        {/* HEADER CONTROLS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16 text-left">
           <div className="space-y-4">
             <button
@@ -124,7 +122,6 @@ const Orders = () => {
             </h1>
           </div>
 
-          {/* SEARCH BAR */}
           <div className="relative w-full lg:w-96 group">
             <Search
               size={14}
@@ -137,18 +134,9 @@ const Orders = () => {
               placeholder="Caută număr comandă, status sau metodă..."
               className="w-full bg-zinc-50 border border-zinc-150 rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none focus:border-[var(--royal-violet)] focus:bg-white focus:ring-4 focus:ring-purple-50 transition-all duration-300 text-zinc-800 shadow-inner"
             />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-zinc-400 hover:text-purple-600 tracking-wider"
-              >
-                Golește
-              </button>
-            )}
           </div>
         </div>
 
-        {/* RE-AȘEZARE COMPACTĂ GRID: 2-3 elemente elegante pe rând */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -206,7 +194,6 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
-        {/* PAGINATION */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
           <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
             <button
@@ -221,7 +208,7 @@ const Orders = () => {
             </span>
             <button
               disabled={orders.length < ordersPerPage || isLoading}
-              onClick={() => setCurrentPage((p) => p + 1)}
+              onClick={() => setCurrentPage((p) => p - 1)}
               className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm"
             >
               <ChevronRight size={16} />
