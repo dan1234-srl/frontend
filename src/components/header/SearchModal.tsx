@@ -1,9 +1,7 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-// 🚀 SOLUȚIE: Importăm tot modulul ca obiect pentru a evita problemele de ESM/CommonJS ale Rollup
-import * as MeiliSearchModule from "meilisearch";
 
 const SearchModal = ({
   isOpen,
@@ -17,55 +15,50 @@ const SearchModal = ({
   const [hits, setHits] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
 
-  // 🚀 REPARAT: Instanțierea compatibilă build-time folosind modulul importat complet
-  const meiliClient = useMemo(() => {
-    const url = import.meta.env.VITE_MEILI_URL;
-    const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
+  // Preluăm variabilele de mediu
+  const meiliUrl = import.meta.env.VITE_MEILI_URL;
+  const meiliKey = import.meta.env.VITE_MEILI_SEARCH_KEY;
 
-    if (!url || !url.startsWith("http") || !key) {
-      console.warn(
-        "MeiliSearch: URL-ul sau cheia publică lipsesc din configurație.",
-      );
-      return null;
-    }
+  // Verificăm validitatea configurației pentru a randa interfața
+  const isConfigValid = useMemo(() => {
+    return !!(meiliUrl && meiliUrl.startsWith("http") && meiliKey);
+  }, [meiliUrl, meiliKey]);
 
-    // Extragem clasa din modul, indiferent de cum a fost exportată (default sau named)
-    const ClientClass =
-      (MeiliSearchModule as any).MeiliSearch ||
-      (MeiliSearchModule as any).default;
-
-    if (!ClientClass) {
-      console.error(
-        "MeiliSearch: Nu s-a putut găsi clasa de inițializare în modul.",
-      );
-      return null;
-    }
-
-    return new ClientClass({ host: url, apiKey: key });
-  }, []);
-
-  // Efect pentru căutare în timp real cu Debounce (300ms)
+  // Executăm căutarea direct prin fetch nativ cu Debounce
   useEffect(() => {
-    if (!meiliClient || !isOpen) return;
+    if (!isConfigValid || !isOpen) return;
 
     setSearching(true);
 
     const delayDebounceFn = setTimeout(async () => {
       try {
-        const response = await meiliClient.index("products").search(query, {
-          limit: 18,
+        const response = await fetch(`${meiliUrl}/indexes/products/search`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${meiliKey}`, // 🚀 Trimite token-ul securizat ca Bearer
+          },
+          body: JSON.stringify({
+            q: query,
+            limit: 18,
+          }),
         });
 
-        setHits(response.hits || []);
+        if (!response.ok) {
+          throw new Error(`MeiliSearch server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setHits(data.hits || []);
       } catch (error) {
-        console.error("Eroare la căutare MeiliSearch:", error);
+        console.error("Eroare la request-ul nativ MeiliSearch:", error);
       } finally {
         setSearching(false);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query, meiliClient, isOpen]);
+  }, [query, meiliUrl, meiliKey, isConfigValid, isOpen]);
 
   const handleClose = () => {
     setQuery("");
@@ -170,7 +163,7 @@ const SearchModal = ({
 
           {/* SEARCH BOX AREA */}
           <div className="flex-1 overflow-hidden flex flex-col max-w-6xl mx-auto w-full px-6 pt-10">
-            {meiliClient ? (
+            {isConfigValid ? (
               <div className="flex flex-col h-full overflow-hidden">
                 <div className="mb-12 relative">
                   <input
@@ -220,7 +213,9 @@ const SearchModal = ({
                     </div>
                   ) : (
                     <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
-                      Nu s-au găsit produse pentru "{query}"
+                      {query
+                        ? `Nu s-au găsit produse pentru "${query}"`
+                        : "Introdu un cuvânt cheie..."}
                     </div>
                   )}
                 </div>
@@ -228,6 +223,7 @@ const SearchModal = ({
             ) : (
               <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-zinc-300 text-center px-4">
                 Sincronizare cu baza de date eșuată... Verifică configurația
+                cheilor în Vercel
               </div>
             )}
           </div>
