@@ -1,4 +1,15 @@
-import { Truck, MapPin, ArrowUpRight, Receipt, CreditCard } from "lucide-react";
+import {
+  Truck,
+  MapPin,
+  ArrowUpRight,
+  Receipt,
+  CreditCard,
+  Sparkles,
+  ClipboardList,
+  CheckCircle,
+  Package,
+  Check,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -43,6 +54,7 @@ export const OrderItem = ({ order }: any) => {
     }
   };
 
+  // 🚀 FAZELE REALE DE PROCESARE (Mapare index dinamic pe 4 pași)
   const currentStepIndex = (() => {
     const s = order.status?.toUpperCase() || "";
     if (s === "DELIVERED") return 4;
@@ -51,52 +63,66 @@ export const OrderItem = ({ order }: any) => {
     return 1;
   })();
 
-  // 🚀 REPARAT DINAMIC: Culori și stări venite complet automat din starea bazei de date
+  // Definim etapele textuale + iconițe asortate pentru micro-tracker
+  const steps = [
+    { label: "Preluată", icon: ClipboardList },
+    { label: "Confirmată", icon: CheckCircle },
+    { label: "Expediată", icon: Package },
+    { label: "Livrată", icon: Check },
+  ];
+
   const statusConfig = useMemo(() => {
     const s = order.status?.toUpperCase() || "PENDING";
     switch (s) {
       case "DELIVERED":
         return {
           text: "Livrat",
-          bg: "bg-emerald-50 text-emerald-700 border-emerald-100",
+          bg: "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-100",
+          progress: "bg-emerald-500 shadow-[0_0_10px_#10b981]",
         };
       case "SHIPPED":
         return {
           text: "Pe drum",
-          bg: "bg-blue-50 text-blue-700 border-blue-100",
+          bg: "bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-100",
+          progress: "bg-blue-500 shadow-[0_0_10px_#3b82f6]",
         };
       case "PROCESSING":
       case "CONFIRMED":
       case "PAID":
         return {
           text: "În procesare",
-          bg: "bg-amber-50 text-amber-700 border-amber-150/40",
+          bg: "bg-gradient-to-r from-amber-500 to-orange-500 text-white border-amber-400 shadow-md shadow-amber-100",
+          progress:
+            "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_12px_#f59e0b]",
         };
       case "CANCELLED":
         return {
           text: "Anulată",
-          bg: "bg-zinc-50 text-zinc-500 border-zinc-200",
+          bg: "bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-100",
+          progress: "bg-rose-500",
         };
       default:
         return {
           text: order.status || "Preluată",
-          bg: "bg-purple-50 text-purple-700 border-purple-100",
+          bg: "bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-100",
+          progress: "bg-purple-500",
         };
     }
   }, [order.status]);
 
-  // 🚀 REPARAT DINAMIC: Reintroducere iconițe native + text pe tematica automată
   const paymentConfig = useMemo(() => {
     const method = order.payment_method?.toLowerCase() || "cod";
     if (method === "card") {
       return {
         text: "Card Online",
-        icon: <CreditCard size={13} className="text-zinc-700" />,
+        icon: <CreditCard size={13} className="text-purple-600" />,
+        bg: "bg-purple-50 text-purple-700 border-purple-100",
       };
     }
     return {
       text: "Ramburs (COD)",
-      icon: <Truck size={13} className="text-zinc-700" />,
+      icon: <Truck size={13} className="text-blue-600" />,
+      bg: "bg-blue-50 text-blue-700 border-blue-100",
     };
   }, [order.payment_method]);
 
@@ -112,9 +138,7 @@ export const OrderItem = ({ order }: any) => {
       async () => {
         const response = await fetch(
           `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-          {
-            credentials: "include",
-          },
+          { credentials: "include" },
         );
         if (!response.ok) throw new Error("Documentul nu este disponibil.");
         const blob = await response.blob();
@@ -140,21 +164,23 @@ export const OrderItem = ({ order }: any) => {
     <>
       <motion.article
         layout
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="group relative bg-white border border-zinc-150 p-6 md:p-8 rounded-[2rem] transition-all duration-500 hover:shadow-[0_35px_70px_-15px_rgba(0,0,0,0.05)] flex flex-col justify-between h-full min-h-[440px]"
+        whileHover={{ y: -6, scale: 1.01 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="group relative bg-white border border-zinc-150 p-6 md:p-8 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] hover:border-purple-200 hover:shadow-[0_40px_80px_-15px_rgba(109,40,217,0.08)] duration-300"
         style={{ isolation: "isolate" }}
       >
-        {/* Mic indicator discret pe tematica automată în colț */}
-        <div className="absolute top-4 left-4 h-1.5 w-1.5 rounded-full bg-[var(--royal-violet)] opacity-40 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-purple-50/0 via-amber-50/0 to-blue-50/0 group-hover:from-purple-50/10 group-hover:via-amber-50/5 group-hover:to-blue-50/10 rounded-[2.5rem] transition-all duration-500 pointer-events-none -z-10" />
 
         <div className="text-left flex-1 flex flex-col">
-          <header className="flex justify-between items-start mb-6 pl-2">
+          <header className="flex justify-between items-center mb-6">
             <div className="space-y-0.5">
-              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-300">
-                REF: {order.order_number?.split("-").pop()}
-              </p>
-              <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)] font-medium">
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={10} className="text-amber-500 animate-pulse" />
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-300">
+                  REF: {order.order_number?.split("-").pop()}
+                </p>
+              </div>
+              <h3 className="heading-serif text-2xl italic text-[var(--dark-amethyst)] font-bold tracking-tight">
                 {new Date(order.created_at).toLocaleDateString("ro-RO", {
                   day: "numeric",
                   month: "long",
@@ -162,33 +188,33 @@ export const OrderItem = ({ order }: any) => {
               </h3>
             </div>
             <span
-              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border ${statusConfig.bg}`}
+              className={`text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm ${statusConfig.bg}`}
             >
               {statusConfig.text}
             </span>
           </header>
 
           {/* Grila Imagini Colet */}
-          <div className="grid grid-cols-4 gap-2 mb-8 px-1">
+          <div className="grid grid-cols-4 gap-2 mb-8">
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
                 key={i}
-                className="relative aspect-square rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-sm"
+                className="relative aspect-square rounded-2xl overflow-hidden border border-zinc-100 bg-zinc-50 shadow-inner group-hover:border-purple-100 transition-all duration-300"
               >
                 <img
                   src={getValidImageUrl(item)}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   alt=""
                 />
                 {item.quantity > 1 && (
-                  <span className="absolute bottom-1 right-1 bg-zinc-900/90 text-white text-[8px] font-black h-4 w-4 rounded-md flex items-center justify-center">
+                  <span className="absolute bottom-1 right-1 bg-zinc-950 text-white text-[8px] font-black h-4 w-4 rounded-md flex items-center justify-center">
                     {item.quantity}
                   </span>
                 )}
               </div>
             ))}
             {order.items?.length > 3 && (
-              <div className="aspect-square rounded-xl bg-zinc-900 flex flex-col items-center justify-center text-white shadow-sm">
+              <div className="aspect-square rounded-2xl bg-zinc-950 flex flex-col items-center justify-center text-white shadow-sm border border-zinc-800">
                 <span className="text-[10px] font-black">
                   +{order.items.length - 3}
                 </span>
@@ -196,20 +222,47 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* Linie Progres subțire modernă */}
-          <div className="space-y-4 mb-6 mt-auto px-1">
-            <div className="flex gap-1 h-[2.5px]">
+          {/* 🚀 REPARAT: TRACKER ETAPE LIVE CU TEXT ȘI ICONIȚE DISCRETE COLORATE */}
+          <div className="space-y-4 mb-6 mt-auto">
+            <div className="grid grid-cols-4 gap-1 text-center">
+              {steps.map((stepObj, idx) => {
+                const stepNum = idx + 1;
+                const isCurrentOrPast = stepNum <= currentStepIndex;
+                const StepIcon = stepObj.icon;
+
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1">
+                    <StepIcon
+                      size={13}
+                      className={`transition-colors duration-300 ${
+                        isCurrentOrPast
+                          ? order.status?.toUpperCase() === "CANCELLED"
+                            ? "text-rose-500"
+                            : "text-[var(--royal-violet)]"
+                          : "text-zinc-300"
+                      }`}
+                    />
+                    <span
+                      className={`text-[8px] font-black uppercase tracking-tighter block transition-colors ${
+                        isCurrentOrPast ? "text-zinc-800" : "text-zinc-300"
+                      }`}
+                    >
+                      {stepObj.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-1.5 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
               {[1, 2, 3, 4].map((step) => (
-                <div
-                  key={step}
-                  className="flex-1 rounded-full bg-zinc-100 overflow-hidden"
-                >
+                <div key={step} className="flex-1 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{
                       width: step <= currentStepIndex ? "100%" : "0%",
                     }}
-                    className="h-full bg-zinc-900 transition-all duration-1000"
+                    className={`h-full ${statusConfig.progress} transition-all duration-1000`}
                   />
                 </div>
               ))}
@@ -217,21 +270,23 @@ export const OrderItem = ({ order }: any) => {
           </div>
 
           {/* Informații Metodă Plată & Total */}
-          <div className="pt-4 border-t border-zinc-50 flex items-center justify-between mb-4 px-1">
-            <div className="flex flex-col gap-0.5">
+          <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-1">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
                 Metodă Plată
               </span>
-              <div className="text-[10px] font-bold text-zinc-600 flex items-center gap-1.5 mt-0.5 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100">
+              <div
+                className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border shadow-sm ${paymentConfig.bg}`}
+              >
                 {paymentConfig.icon}
                 <span>{paymentConfig.text}</span>
               </div>
             </div>
             <div className="text-right">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300 block">
-                Total
+                Total Final
               </span>
-              <p className="font-black text-xl text-[var(--dark-amethyst)] mt-0.5 tracking-tight">
+              <p className="font-black text-2xl text-zinc-950 mt-0.5 tracking-tight">
                 {order.total_amount?.toLocaleString()}{" "}
                 <span className="text-[10px] font-bold text-zinc-400">RON</span>
               </p>
@@ -241,9 +296,14 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-xl bg-zinc-950 text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all hover:bg-zinc-900 active:scale-[0.99] shadow-sm mt-2"
+          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-900/5 group-hover:shadow-purple-900/10 hover:brightness-110 active:scale-[0.99]"
+          style={{ background: "var(--primary-gradient)" }}
         >
-          Gestionare Comandă <ArrowUpRight size={14} />
+          Gestionare Comandă{" "}
+          <ArrowUpRight
+            size={14}
+            className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+          />
         </button>
       </motion.article>
 
@@ -259,9 +319,10 @@ export const OrderItem = ({ order }: any) => {
           style={{ backgroundColor: "#ffffff", opacity: 1 }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-8 bg-zinc-50/70 rounded-[2rem] border border-zinc-100">
+            <div className="p-8 bg-gradient-to-br from-zinc-50 to-purple-50/20 rounded-[2rem] border border-zinc-100">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-1.5">
-                <MapPin size={12} className="text-zinc-800" /> Adresa Livrare
+                <MapPin size={12} className="text-[var(--royal-violet)]" />{" "}
+                Adresa Livrare
               </p>
               <div className="space-y-1">
                 <p className="font-black text-base text-zinc-900">
@@ -273,7 +334,7 @@ export const OrderItem = ({ order }: any) => {
               </div>
             </div>
 
-            <div className="p-8 bg-zinc-50/70 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
+            <div className="p-8 bg-gradient-to-br from-zinc-50 to-blue-50/10 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
                   Data înregistrării
@@ -286,7 +347,9 @@ export const OrderItem = ({ order }: any) => {
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
                   Metodă Plată
                 </span>
-                <span className="font-bold text-zinc-800 flex items-center gap-1.5">
+                <span
+                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border shadow-sm ${paymentConfig.bg}`}
+                >
                   {paymentConfig.icon} {paymentConfig.text}
                 </span>
               </div>
@@ -301,7 +364,7 @@ export const OrderItem = ({ order }: any) => {
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-200 transition-all"
+                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-purple-100 transition-all shadow-sm"
                 >
                   <img
                     src={getValidImageUrl(item)}
@@ -333,7 +396,7 @@ export const OrderItem = ({ order }: any) => {
             <button
               onClick={handleDownloadDocs}
               disabled={isDownloading}
-              className="w-full sm:w-auto h-14 px-8 rounded-xl border-2 border-zinc-900 text-zinc-900 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-900 hover:text-white transition-all disabled:opacity-50"
+              className="w-full sm:w-auto h-14 px-8 rounded-xl border-2 border-zinc-950 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-950 hover:text-white transition-all disabled:opacity-50 font-sans"
             >
               <Receipt size={14} />
               {["SHIPPED", "DELIVERED"].includes(order.status?.toUpperCase())
@@ -344,7 +407,7 @@ export const OrderItem = ({ order }: any) => {
               <p className="text-[10px] font-black uppercase text-zinc-300 tracking-widest mb-0.5">
                 Total Achitat
               </p>
-              <p className="heading-serif text-4xl font-bold text-zinc-900 leading-none">
+              <p className="heading-serif text-4xl font-bold text-zinc-950 leading-none">
                 {order.total_amount?.toLocaleString()}{" "}
                 <span className="text-sm font-sans font-black text-zinc-400">
                   RON
