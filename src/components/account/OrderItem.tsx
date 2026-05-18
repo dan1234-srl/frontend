@@ -6,6 +6,7 @@ import {
   CreditCard,
   Sparkles,
   ClipboardList,
+  Clock,
   CheckCircle,
   Package,
   Check,
@@ -54,18 +55,22 @@ export const OrderItem = ({ order }: any) => {
     }
   };
 
+  // 🚀 REPARAT ATOMIC: Logica celor 5 pași aliniați perfect cu statusurile din DB
   const currentStepIndex = (() => {
     const s = order.status?.toUpperCase() || "";
-    if (s === "DELIVERED") return 4;
-    if (s === "SHIPPED") return 3;
-    if (["PROCESSING", "PAID", "CONFIRMED"].includes(s)) return 2;
-    return 1;
+    if (s === "DELIVERED") return 5;
+    if (s === "SHIPPED") return 4;
+    if (s === "CONFIRMED") return 3;
+    if (["PROCESSING", "PAID"].includes(s)) return 2;
+    return 1; // PENDING sau oricare alt status inițial
   })();
 
+  // 🚀 REPARAT: Vectorul celor 5 pași ceruți de tine
   const steps = [
     { label: "Preluată", icon: ClipboardList },
+    { label: "În procesare", icon: Clock },
     { label: "Confirmată", icon: CheckCircle },
-    { label: "Expediată", icon: Package },
+    { label: "În livrare", icon: Package },
     { label: "Livrată", icon: Check },
   ];
 
@@ -74,18 +79,23 @@ export const OrderItem = ({ order }: any) => {
     switch (s) {
       case "DELIVERED":
         return {
-          text: "Livrat",
+          text: "Livrată",
           bg: "bg-emerald-500 text-white border-emerald-400 shadow-md shadow-emerald-100",
           progress: "bg-emerald-500 shadow-[0_0_10px_#10b981]",
         };
       case "SHIPPED":
         return {
-          text: "Pe drum",
+          text: "În livrare",
           bg: "bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-100",
           progress: "bg-blue-500 shadow-[0_0_10px_#3b82f6]",
         };
-      case "PROCESSING":
       case "CONFIRMED":
+        return {
+          text: "Confirmată",
+          bg: "bg-indigo-500 text-white border-indigo-400 shadow-md shadow-indigo-100",
+          progress: "bg-indigo-500 shadow-[0_0_10px_#6366f1]",
+        };
+      case "PROCESSING":
       case "PAID":
         return {
           text: "În procesare",
@@ -102,7 +112,7 @@ export const OrderItem = ({ order }: any) => {
       default:
         return {
           text: order.status || "Preluată",
-          bg: "bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-100",
+          bg: "bg-purple-50 text-purple-700 border-purple-100",
           progress: "bg-purple-500",
         };
     }
@@ -192,7 +202,7 @@ export const OrderItem = ({ order }: any) => {
             </span>
           </header>
 
-          {/* 🚀 REPARAT: Zonele cu imagini folosesc acum proporții dreptunghiulare orizontale tip Landscape (aspect-[4/3]) */}
+          {/* Grila Imagini Colet Landscape */}
           <div className="grid grid-cols-3 gap-2 mb-8">
             {order.items?.slice(0, 3).map((item: any, i: number) => (
               <div
@@ -220,9 +230,9 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* Micro Tracker Etape Live */}
+          {/* 🚀 REPARAT: Tracker Etape distribuit perfect pe 5 pași textuali independenți */}
           <div className="space-y-4 mb-6 mt-auto">
-            <div className="grid grid-cols-4 gap-1 text-center">
+            <div className="grid grid-cols-5 gap-0.5 text-center">
               {steps.map((stepObj, idx) => {
                 const stepNum = idx + 1;
                 const isCurrentOrPast = stepNum <= currentStepIndex;
@@ -231,7 +241,7 @@ export const OrderItem = ({ order }: any) => {
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1">
                     <StepIcon
-                      size={13}
+                      size={12}
                       className={`transition-colors duration-300 ${
                         isCurrentOrPast
                           ? order.status?.toUpperCase() === "CANCELLED"
@@ -252,8 +262,9 @@ export const OrderItem = ({ order }: any) => {
               })}
             </div>
 
-            <div className="flex gap-1.5 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
-              {[1, 2, 3, 4].map((step) => (
+            {/* 🚀 REPARAT: Bara de progres împărțită acum în 5 segmente asortate */}
+            <div className="flex gap-1 h-[4px] bg-zinc-100 rounded-full overflow-hidden">
+              {[1, 2, 3, 4, 5].map((step) => (
                 <div key={step} className="flex-1 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
@@ -267,7 +278,7 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Metodă Plată & Total de plată */}
+          {/* Metodă Plată & Total */}
           <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
             <div className="flex flex-col gap-1">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
@@ -305,7 +316,7 @@ export const OrderItem = ({ order }: any) => {
         </button>
       </motion.article>
 
-      {/* LUXURY DETAIL MODAL */}
+      {/* LUXURY MODAL CORECTAT PE PAȘII NOI */}
       <LuxuryModal
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
@@ -351,6 +362,31 @@ export const OrderItem = ({ order }: any) => {
                   {paymentConfig.icon} {paymentConfig.text}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Tracker Orizontal cu 5 etape în interiorul Modalului */}
+          <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
+            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+              Stadiu fizic colet
+            </p>
+            <div className="grid grid-cols-5 gap-1 text-center">
+              {steps.map((stepObj, idx) => {
+                const stepNum = idx + 1;
+                const active = stepNum <= currentStepIndex;
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div
+                      className={`mx-auto size-2 rounded-full ${active ? (order.status?.toUpperCase() === "CANCELLED" ? "bg-rose-500" : "bg-[var(--royal-violet)]") : "bg-zinc-200"}`}
+                    />
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-tighter block ${active ? "text-zinc-800" : "text-zinc-300"}`}
+                    >
+                      {stepObj.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
