@@ -18,7 +18,7 @@ const SearchModal = ({
 
   const client = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
-    const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
+    const key = import.meta.env.MEILI_SEARCH_KEY;
     if (!url || !url.startsWith("http")) return null;
 
     const meiliInstance = instantMeiliSearch(url, key, {
