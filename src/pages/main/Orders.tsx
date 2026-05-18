@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
-import { OrderItem } from "@/components/account/OrderItem"; // 🚀 SOLUȚIE: Corectat importul nominal fără auto-import recursiv greșit
+import { OrderItem } from "@/components/account/OrderItem";
 import {
   Search,
   ChevronLeft,
@@ -140,7 +140,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* CONTAINER GRID: 2-3 Dreptunghiuri Landscape Late per Rând */}
+        {/* CONTAINER GRID: Corectat prin eliminarea blur-ului rigid care putea lăsa artefacte de contur închis */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -154,7 +154,7 @@ const Orders = () => {
                 {[...Array(3)].map((_, i) => (
                   <Skeleton
                     key={i}
-                    className="h-80 w-full rounded-[2.5rem] bg-zinc-100"
+                    className="h-80 w-full rounded-[2.5rem] bg-zinc-50"
                   />
                 ))}
               </motion.div>
@@ -164,10 +164,8 @@ const Orders = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 transition-all duration-500 ${
-                  isLoading
-                    ? "opacity-55 blur-[2px] pointer-events-none"
-                    : "opacity-100 blur-0"
+                className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 transition-all duration-300 ${
+                  isLoading ? "opacity-60 pointer-events-none" : "opacity-100"
                 }`}
               >
                 {filteredOrders.map((order) => (
@@ -180,9 +178,9 @@ const Orders = () => {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="py-32 text-center rounded-[3rem] border border-dashed border-purple-200 bg-purple-50/5 flex flex-col items-center justify-center px-4"
+                className="py-32 text-center rounded-[3rem] border border-dashed border-zinc-200 bg-zinc-50/10 flex flex-col items-center justify-center px-4"
               >
-                <div className="p-4 bg-white rounded-2xl shadow-md border border-purple-50 mb-6 text-purple-400">
+                <div className="p-4 bg-white rounded-2xl shadow-sm border border-zinc-100 mb-6 text-zinc-400">
                   <ShoppingBag size={32} strokeWidth={1.5} />
                 </div>
                 <h3 className="heading-serif text-3xl italic text-zinc-800 mb-1">
@@ -208,7 +206,7 @@ const Orders = () => {
             >
               <ChevronLeft size={16} />
             </button>
-            <span className="text-xl font-black text-zinc-950 bg-purple-50/60 px-4 py-1.5 rounded-xl border border-purple-100/40">
+            <span className="text-xl font-black text-zinc-950 bg-zinc-50 px-4 py-1.5 rounded-xl border border-zinc-100">
               {currentPage}
             </span>
             <button
