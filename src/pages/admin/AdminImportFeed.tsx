@@ -25,7 +25,6 @@ const WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace(
   "ws://",
 );
 
-// 🚀 TOATE CELE 11 CÂMPURI STRUCTURATE EXACT DUPĂ ORDINEA DIN INTERFAȚA TA GRAFICĂ
 const MAPPING_FIELDS = [
   { label: "SKU / Cod Unic Intern *", key: "cod_produs", required: true },
   { label: "Nume Produs *", key: "titlu", required: true },
@@ -311,7 +310,6 @@ const AdminImportFeed = () => {
 
   return (
     <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER CONTROLS */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
@@ -424,7 +422,6 @@ const AdminImportFeed = () => {
                                 </div>
                               </div>
                             </div>
-
                             <AnimatePresence>
                               {isLogOpen && feed.error_log && (
                                 <motion.div
@@ -527,7 +524,6 @@ const AdminImportFeed = () => {
             >
               <ChevronLeft size={14} /> Înapoi la listă
             </button>
-
             <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 overflow-hidden">
               <div className="p-10 md:p-16 space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -641,7 +637,6 @@ const AdminImportFeed = () => {
                   </div>
                 </div>
 
-                {/* 🚀 TOATE CELE 11 DROP-DOWN-URI DE SCHEMA SE RANDEAZĂ ACUM CORECT ÎN GRID */}
                 {detectedColumns.length > 0 && (
                   <div className="pt-10 border-t border-zinc-100 space-y-8">
                     <h3 className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
