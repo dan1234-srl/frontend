@@ -26,14 +26,18 @@ const HomeHero = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // 🚀 Funcție premium pentru Smooth Scroll direct către produse în loc de redirecționare rute
+  const handleScrollToProducts = () => {
+    const productsSection = document.getElementById("products-grid"); // Asigură-te că adaugi id="products-grid" pe secțiunea ta de produse din pagină
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <section className="w-full px-4 md:px-6 pt-0 pb-0 md:pb-6 text-left">
-      {/* 🚀 CORECȚIE CRITICĂ: Am schimbat 'items-stretch' în 'items-start lg:items-stretch'.
-         Acest lucru oprește calculul eronat de înălțime pe mobil, strânge tot spațiul alb 
-         și lipește meniul de categorii direct sub imaginea de banner!
-      */}
       <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px]">
-        {/* SIDEBAR CATEGORII (LIPIT SUB IMAGINE PE MOBIL) */}
+        {/* SIDEBAR CATEGORII */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0 mt-2 lg:mt-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -140,7 +144,7 @@ const HomeHero = () => {
           </motion.div>
         </aside>
 
-        {/* BANNER PRINCIPAL (URCĂ DEASUPRA ACUM CU ÎNĂLȚIME CORECTĂ PE MOBIL) */}
+        {/* BANNER PRINCIPAL */}
         <div className="w-full flex-1 min-h-[180px] sm:min-h-[260px] lg:min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
@@ -160,7 +164,14 @@ const HomeHero = () => {
                   REDEFINIT.
                 </span>
               </h1>
-              <ShoppingBag size={14} /> Cumpără acum
+
+              {/* 🚀 REPARAT: Schimbat din Link în Button cu handler controlat pentru smooth scroll */}
+              <button
+                onClick={handleScrollToProducts}
+                className="inline-flex items-center gap-3 bg-white text-zinc-900 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full text-[10px] font-black uppercase tracking-widest w-fit shadow-xl hover:bg-zinc-50 transition-colors duration-300"
+              >
+                <ShoppingBag size={14} /> Descoperă catalogul
+              </button>
             </div>
           </motion.div>
         </div>
