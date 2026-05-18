@@ -13,13 +13,11 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
-  // Păstrăm valoarea căutării local pentru a controla perfect layout-ul în timp real
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 🚀 REPARAT: Inițializarea securizată și maparea corectă a clientului MeiliSearch
   const client = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
-    const key = import.meta.env.VITE_MEILI_SEARCH_KEY; // Corectat: adăugat prefixul VITE_ obligatoriu
+    const key = import.meta.env.VITE_MEILI_SEARCH_KEY;
 
     if (!url || !url.startsWith("http") || !key) {
       console.warn(
@@ -29,49 +27,83 @@ const SearchModal = ({
     }
 
     const meiliInstance = instantMeiliSearch(url, key, {
-      placeholderSearch: true,
+      placeholderSearch: true, // Permite MeiliSearch să întoarcă primele produse când query-ul e gol
       primaryKey: "id",
     });
 
     return meiliInstance.searchClient || meiliInstance;
   }, []);
 
-  const Hit = ({ hit }: any) => (
-    <motion.button
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      onClick={() => {
-        navigate(`/product/${hit.slug}`);
-        onClose();
-      }}
-      className="group flex flex-col gap-3 p-2 hover:bg-zinc-50/50 transition-all rounded-xl text-left w-full"
-    >
-      <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-100 rounded-lg relative">
-        <img
-          src={hit.image_url || hit.image}
-          alt={hit.name}
-          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-          loading="lazy"
-        />
-        {hit.sale_price && (
-          <div className="absolute top-2 left-2 bg-black text-white text-[7px] font-black px-2 py-1 uppercase tracking-[0.2em]">
-            Ofertă
-          </div>
-        )}
-      </div>
-      <div className="space-y-1 px-1">
-        <p className="text-[8px] uppercase tracking-[0.3em] text-zinc-400 font-bold">
-          {hit.brand || "Colecție Nouă"}
-        </p>
-        <h4 className="text-[11px] font-semibold uppercase tracking-tight text-zinc-800 leading-tight line-clamp-2">
-          {hit.name}
-        </h4>
-        <p className="text-[12px] font-black text-black">
-          {hit.price?.toLocaleString()} RON
-        </p>
-      </div>
-    </motion.button>
-  );
+  // Componenta responsabilă de extragerea și afișarea corectă a imaginii parsite
+  const Hit = ({ hit }: any) => {
+    // 🚀 REPARAT: Parsarea structurii imbricate din string-ul `image_url`
+    const parsedImage = useMemo(() => {
+      if (!hit.image_url) return hit.image || "";
+
+      // Dacă este deja un string curat (ca la produsul cu ID-ul "e05a8034...")
+      if (
+        typeof hit.image_url === "string" &&
+        hit.image_url.startsWith("http")
+      ) {
+        return hit.image_url;
+      }
+
+      try {
+        // Dacă este un obiect JSON stringified (ca la produsele "Flippy")
+        const parsed = JSON.parse(hit.image_url);
+        return (
+          parsed?.main?.medium ||
+          parsed?.main?.large ||
+          parsed?.main?.small ||
+          ""
+        );
+      } catch (e) {
+        return hit.image || "";
+      }
+    }, [hit.image_url, hit.image]);
+
+    return (
+      <motion.button
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        onClick={() => {
+          navigate(`/product/${hit.slug}`);
+          onClose();
+        }}
+        className="group flex flex-col gap-3 p-2 hover:bg-zinc-50/50 transition-all rounded-xl text-left w-full"
+      >
+        <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-100 rounded-lg relative border border-zinc-100/50">
+          <img
+            src={parsedImage}
+            alt={hit.name}
+            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+            loading="lazy"
+            onError={(e) => {
+              // Fallback în caz că url-ul imaginii este corupt sau dă 404
+              (e.target as HTMLImageElement).src =
+                "https://placehold.co/600x800?text=Fără+Imagine";
+            }}
+          />
+          {hit.sale_price < hit.original_price && (
+            <div className="absolute top-2 left-2 bg-black text-white text-[7px] font-black px-2 py-1 uppercase tracking-[0.2em]">
+              Ofertă
+            </div>
+          )}
+        </div>
+        <div className="space-y-1 px-1">
+          <p className="text-[8px] uppercase tracking-[0.3em] text-zinc-400 font-bold">
+            {hit.brand || "Colecție Nouă"}
+          </p>
+          <h4 className="text-[11px] font-semibold uppercase tracking-tight text-zinc-800 leading-tight line-clamp-2">
+            {hit.name}
+          </h4>
+          <p className="text-[12px] font-black text-black">
+            {hit.price ? `${Number(hit.price).toLocaleString()} RON` : "---"}
+          </p>
+        </div>
+      </motion.button>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -110,10 +142,9 @@ const SearchModal = ({
           <div className="flex-1 overflow-hidden flex flex-col max-w-6xl mx-auto w-full px-6 pt-10">
             {client ? (
               <InstantSearch indexName="products" searchClient={client}>
-                <Configure hitsPerPage={12} />
+                <Configure hitsPerPage={18} />
 
                 <div className="mb-12">
-                  {/* Sincronizare directă prin queryHook pentru a capta instant valoarea în starea locală */}
                   <SearchBox
                     autoFocus
                     placeholder="Caută în catalogul de produse..."
@@ -146,18 +177,15 @@ const SearchModal = ({
 
                 {/* Zona de afișare rezultate */}
                 <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-                  {!searchQuery.trim() ? (
-                    <div className="h-40 flex flex-col items-center justify-center text-zinc-300 text-[10px] uppercase tracking-[0.3em]">
-                      Introdu un cuvânt cheie pentru a porni căutarea...
-                    </div>
-                  ) : (
-                    <Hits
-                      hitComponent={Hit}
-                      classNames={{
-                        list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6",
-                      }}
-                    />
-                  )}
+                  {/* 🚀 REPARAT: Am scos condiția gol/plin. Acum <Hits /> rulează direct,
+                      afișând produsele implicite când inputul este gol și filtrându-le când scrii.
+                  */}
+                  <Hits
+                    hitComponent={Hit}
+                    classNames={{
+                      list: "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6",
+                    }}
+                  />
                 </div>
               </InstantSearch>
             ) : (
