@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Header from "@/components/header/Header";
 import Footer from "@/components/footer/Footer";
-import { OrderItem } from "@/components/account/OrderItem";
+import { OrderItem } from "@/components/account/OrderItem"; // 🚀 COREKTAT IMPORTUL: Acum citește corect exportul nominal extins
 import {
   Search,
   ChevronLeft,
@@ -89,6 +89,7 @@ const Orders = () => {
     <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 font-sans antialiased selection:bg-purple-100 selection:text-purple-900">
       <Header />
 
+      {/* TOP LOADING PROGRESS BAR */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-100/50 z-[1100] overflow-hidden">
         {isLoading && (
           <motion.div
@@ -102,6 +103,7 @@ const Orders = () => {
       </div>
 
       <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
+        {/* CONTROL DE BACK HEADER */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16 text-left">
           <div className="space-y-4">
             <button
@@ -122,6 +124,7 @@ const Orders = () => {
             </h1>
           </div>
 
+          {/* SEARCH BAR COMPACTĂ */}
           <div className="relative w-full lg:w-96 group">
             <Search
               size={14}
@@ -137,6 +140,7 @@ const Orders = () => {
           </div>
         </div>
 
+        {/* CONTAINER GRID */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -194,6 +198,7 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
+        {/* CONTROLLER PAGINARE */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
           <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
             <button
@@ -208,7 +213,7 @@ const Orders = () => {
             </span>
             <button
               disabled={orders.length < ordersPerPage || isLoading}
-              onClick={() => setCurrentPage((p) => p - 1)}
+              onClick={() => setCurrentPage((p) => p + 1)}
               className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm"
             >
               <ChevronRight size={16} />
