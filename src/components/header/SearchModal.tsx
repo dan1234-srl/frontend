@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { InstantSearch, SearchBox, Hits, Configure } from "react-instantsearch";
+import { InstantSearch, Hits, Configure } from "react-instantsearch";
 import { instantMeiliSearch } from "@meilisearch/instant-meilisearch";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
@@ -13,7 +13,11 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+
+  // 🚀 SOLUȚIE: Folosim searchState pentru a controla direct și reactiv starea InstantSearch
+  const [searchState, setSearchState] = useState({
+    query: "",
+  });
 
   const client = useMemo(() => {
     const url = import.meta.env.VITE_MEILI_URL;
@@ -27,20 +31,18 @@ const SearchModal = ({
     }
 
     const meiliInstance = instantMeiliSearch(url, key, {
-      placeholderSearch: true, // Permite MeiliSearch să întoarcă primele produse când query-ul e gol
+      placeholderSearch: true,
       primaryKey: "id",
     });
 
     return meiliInstance.searchClient || meiliInstance;
   }, []);
 
-  // Componenta responsabilă de extragerea și afișarea corectă a imaginii parsite
   const Hit = ({ hit }: any) => {
-    // 🚀 REPARAT: Parsarea structurii imbricate din string-ul `image_url`
+    // Parsarea string-ului JSON structurat din image_url
     const parsedImage = useMemo(() => {
       if (!hit.image_url) return hit.image || "";
 
-      // Dacă este deja un string curat (ca la produsul cu ID-ul "e05a8034...")
       if (
         typeof hit.image_url === "string" &&
         hit.image_url.startsWith("http")
@@ -49,7 +51,6 @@ const SearchModal = ({
       }
 
       try {
-        // Dacă este un obiect JSON stringified (ca la produsele "Flippy")
         const parsed = JSON.parse(hit.image_url);
         return (
           parsed?.main?.medium ||
@@ -79,9 +80,8 @@ const SearchModal = ({
             className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
             loading="lazy"
             onError={(e) => {
-              // Fallback în caz că url-ul imaginii este corupt sau dă 404
               (e.target as HTMLImageElement).src =
-                "https://placehold.co/600x800?text=Fără+Imagine";
+                "https://placehold.co/600x800?text=Fara+Imagine";
             }}
           />
           {hit.sale_price < hit.original_price && (
@@ -124,7 +124,7 @@ const SearchModal = ({
             </div>
             <button
               onClick={() => {
-                setSearchQuery("");
+                setSearchState({ query: "" });
                 onClose();
               }}
               className="group flex items-center gap-4"
@@ -141,25 +141,36 @@ const SearchModal = ({
           {/* SEARCH BOX AREA */}
           <div className="flex-1 overflow-hidden flex flex-col max-w-6xl mx-auto w-full px-6 pt-10">
             {client ? (
-              <InstantSearch indexName="products" searchClient={client}>
+              /* 🚀 REPARAT: Legăm starea nativă a InstantSearch de state-ul React controlled */
+              <InstantSearch
+                indexName="products"
+                searchClient={client}
+                searchState={searchState}
+                onSearchStateChange={(nextSearchState) =>
+                  setSearchState(nextSearchState)
+                }
+              >
                 <Configure hitsPerPage={18} />
 
-                <div className="mb-12">
-                  <SearchBox
+                <div className="relative mb-12">
+                  {/* 🚀 REPARAT: Input controlat 100% nativ. Forțează MeiliSearch să își facă re-fetch instant la fiecare tastă */}
+                  <input
                     autoFocus
+                    type="text"
+                    value={searchState.query}
+                    onChange={(e) => setSearchState({ query: e.target.value })}
                     placeholder="Caută în catalogul de produse..."
-                    queryHook={(query, search) => {
-                      setSearchQuery(query);
-                      search(query);
-                    }}
-                    classNames={{
-                      root: "w-full",
-                      input:
-                        "w-full bg-transparent border-b border-zinc-200 py-6 text-2xl lg:text-5xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-200",
-                      submit: "hidden",
-                      reset: "hidden",
-                    }}
+                    className="w-full bg-transparent border-b border-zinc-200 py-6 text-2xl lg:text-5xl font-serif italic outline-none focus:border-black transition-all placeholder:text-zinc-200 text-black"
                   />
+
+                  {searchState.query && (
+                    <button
+                      onClick={() => setSearchState({ query: "" })}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-black p-2"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
 
                   <div className="mt-6 flex flex-wrap gap-6 text-[10px] font-black text-zinc-300 uppercase tracking-widest">
                     <span className="text-zinc-500">Sugestii:</span>
@@ -167,6 +178,7 @@ const SearchModal = ({
                       <button
                         key={tag}
                         type="button"
+                        onClick={() => setSearchState({ query: tag })}
                         className="text-black hover:opacity-50 transition-opacity"
                       >
                         {tag}
@@ -175,11 +187,8 @@ const SearchModal = ({
                   </div>
                 </div>
 
-                {/* Zona de afișare rezultate */}
+                {/* Zona de afișare rezultate cu scroll asigurat */}
                 <div className="flex-1 overflow-y-auto pb-20 no-scrollbar">
-                  {/* 🚀 REPARAT: Am scos condiția gol/plin. Acum <Hits /> rulează direct,
-                      afișând produsele implicite când inputul este gol și filtrându-le când scrii.
-                  */}
                   <Hits
                     hitComponent={Hit}
                     classNames={{
