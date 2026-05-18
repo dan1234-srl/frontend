@@ -1,8 +1,8 @@
 import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/contexts/AuthContext"; // Importă contextul de auth
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { useMemo, useState, useEffect } from "react"; // Adăugate hooks pentru stare
+import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT ATOMIC: Importăm hook-ul nativ Shadcn în loc de sonner
+import { useMemo, useState, useEffect } from "react";
 import {
   ShoppingBag,
   Heart,
@@ -20,8 +20,9 @@ interface ProductInfoProps {
 
 const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
-  const { user } = useAuth(); // Extrage utilizatorul curent
+  const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
+  const { toast } = useToast(); // 🚀 REPARAT ATOMIC: Inițializăm generatorul de ferestre toast
 
   // --- LOGICĂ VERIFICARE FAVORIT ---
   useEffect(() => {
@@ -78,22 +79,29 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             : savedIds.filter((id: string) => id !== product.id);
           localStorage.setItem("user_wishlist_ids", JSON.stringify(newIds));
 
-          toast.success(
-            active ? "Adăugat la favorite" : "Eliminat de la favorite",
-          );
+          toast({
+            title: active ? "Adăugat la favorite" : "Eliminat de la favorite",
+            description: product.name,
+          });
         }
       } catch (err) {
-        toast.error("Eroare la sincronizarea listei");
+        toast({
+          variant: "destructive",
+          title: "Eroare asimetrică",
+          description: "Nu s-a putut salva elementul.",
+        });
       }
     } else {
-      // Logica pentru Guest (Vizitator)
       const local = JSON.parse(localStorage.getItem("guest_wishlist") || "[]");
       const exists = local.some((item: any) => item.id === product.id);
       let updated;
 
       if (exists) {
         updated = local.filter((item: any) => item.id !== product.id);
-        toast.info("Eliminat din favorite");
+        toast({
+          title: "Eliminat din favorite",
+          description: product.name,
+        });
       } else {
         updated = [
           ...local,
@@ -105,7 +113,10 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             slug: product.slug,
           },
         ];
-        toast.success("Salvat în wishlist");
+        toast({
+          title: "Salvat în wishlist",
+          description: product.name,
+        });
       }
       localStorage.setItem("guest_wishlist", JSON.stringify(updated));
       setIsFavorite(!exists);
@@ -120,12 +131,18 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const handleAddToCart = () => {
     if (!product) return;
     if (isOutOfStock) {
-      toast.error("Produsul nu mai este în stoc.");
+      toast({
+        variant: "destructive",
+        title: "Stoc epuizat",
+        description: "Produsul nu mai este disponibil.",
+      });
       return;
     }
     if (isLimitReached) {
-      toast.error("Stoc insuficient", {
-        description: `Ai deja toate cele ${product.stock_quantity} unități disponibile în coș.`,
+      toast({
+        variant: "destructive",
+        title: "Stoc insuficient",
+        description: `Ai deja toate cele ${product.stock_quantity} unități adăugate.`,
       });
       return;
     }
@@ -141,9 +158,10 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       brand_name: product.brand_name || "",
     });
 
-    toast.success("Adăugat în coș", {
+    // 🚀 REPARAT ATOMIC: Trimitere fluidă sub structura unificată a temei tale
+    toast({
+      title: "Adăugat în coș",
       description: product.name,
-      icon: <ShoppingBag size={14} />,
     });
   };
 
@@ -276,7 +294,6 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             </div>
           </button>
 
-          {/* 🚀 BUTONUL DE WISHLIST ACTUALIZAT */}
           <Button
             variant="outline"
             onClick={handleWishlistToggle}
