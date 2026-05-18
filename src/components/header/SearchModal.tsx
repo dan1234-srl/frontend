@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import MeiliSearch from "meilisearch"; // Folosim direct clientul nativ pentru control absolut
+import { MeiliSearch } from "meilisearch";
 
 const SearchModal = ({
   isOpen,
