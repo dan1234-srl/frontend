@@ -32,8 +32,6 @@ const Orders = () => {
     try {
       const skip = (currentPage - 1) * ordersPerPage;
 
-      // 🚀 CURĂȚAT: Nu mai injectăm Header-ul Bearer din localStorage.
-      // Browserul va trimite automat Cookie-ul tău securizat datorită credentials: "include".
       const response = await fetch(
         `${API_BASE_URL}/api/v1/orders/me?skip=${skip}&limit=${ordersPerPage}`,
         {
@@ -41,7 +39,7 @@ const Orders = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include", // 👈 Aceasta este linia responsabilă de Cookie-urile tale
+          credentials: "include",
         },
       );
 
@@ -119,7 +117,7 @@ const Orders = () => {
             </h1>
           </div>
 
-          {/* SEARCH BAR MINIMALIST COMPACT */}
+          {/* SEARCH BAR */}
           <div className="relative w-full lg:w-96 group">
             <Search
               size={14}
@@ -129,7 +127,7 @@ const Orders = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Caută număr comandă sau status..."
+              placeholder="Caută număr comandă, status sau metodă..."
               className="w-full bg-zinc-50/50 border border-zinc-100 rounded-2xl py-4 pl-11 pr-6 text-[10px] font-bold uppercase tracking-widest outline-none shadow-inner focus:border-zinc-300 focus:bg-white transition-all duration-300 placeholder:text-zinc-300 text-zinc-800"
             />
             {searchTerm && (
@@ -143,7 +141,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* CONTROLLER LISTĂ / GRID PRODUS */}
+        {/* GRID LAYOUT */}
         <div className="relative min-h-[400px]">
           <AnimatePresence mode="wait">
             {isLoading && orders.length === 0 ? (
@@ -177,26 +175,10 @@ const Orders = () => {
                     : "opacity-100 blur-0"
                 }`}
               >
+                {/* 🚀 CURĂȚAT: Am scos containerul redundant de afișare metodă plată, 
+                   acum se randează nativ, ordonat și mult mai estetic direct în interiorul componentului copil */}
                 {filteredOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="relative bg-white border border-zinc-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group text-left"
-                  >
-                    <div>
-                      <OrderItem order={order} />
-                    </div>
-
-                    <div className="mt-6 pt-4 border-t border-zinc-50 flex items-center justify-between">
-                      <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
-                        Metodă Plată
-                      </span>
-                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 bg-zinc-50 px-2.5 py-1 rounded-md border border-zinc-100/50">
-                        {order?.payment_method?.toLowerCase() === "card"
-                          ? "💳 Card Online"
-                          : "🚚 Ramburs (COD)"}
-                      </span>
-                    </div>
-                  </div>
+                  <OrderItem key={order.id} order={order} />
                 ))}
               </motion.div>
             ) : (
@@ -223,7 +205,7 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
-        {/* PAGINATION CONTROLLER SYSTEM */}
+        {/* PAGINATION SYSTEM */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
           <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
             <button
