@@ -7,9 +7,10 @@ import {
   DownloadCloud,
   Database,
   ChevronLeft,
-  FileText,
   Plus,
   Edit3,
+  Zap,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,6 +43,13 @@ const MAPPING_FIELDS = [
   { label: "Atribute / Specificații", key: "atributeprodus", required: false },
 ];
 
+// 🚀 Mapare exclusivă pentru fișierul rapid de stocuri
+const QUICK_MAPPING_FIELDS = [
+  { label: "SKU / Cod Unic Intern *", key: "cod_produs", required: true },
+  { label: "Preț Achiziție *", key: "pret", required: true },
+  { label: "Stoc Disponibil *", key: "stoc", required: true },
+];
+
 type ProgressMap = Record<string, { current: number; total: number }>;
 
 interface FeedFormState {
@@ -59,6 +67,7 @@ interface FeedFormState {
     require_img: boolean;
   };
   mapping_config: Record<string, string>;
+  quick_stock_mapping_config: Record<string, string>; // 🚀 NOU: Stocat separat
 }
 
 const INITIAL_FORM_STATE: FeedFormState = {
@@ -76,6 +85,7 @@ const INITIAL_FORM_STATE: FeedFormState = {
     require_img: false,
   },
   mapping_config: {},
+  quick_stock_mapping_config: {},
 };
 
 const surfaceStyle = {
@@ -96,11 +106,16 @@ const inputStyle = {
   color: "var(--text-primary)",
 };
 
+const normalizeKey = (v: string) =>
+  v
+    ?.toLowerCase()
+    ?.replace(/[\s_\-]/g, "")
+    ?.trim();
+
 const AdminImportFeed = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [feeds, setFeeds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
   const [globalLock, setGlobalLock] = useState({
     is_locked: false,
@@ -108,9 +123,14 @@ const AdminImportFeed = () => {
   });
 
   const [progress, setProgress] = useState<ProgressMap>({});
+
+  // 🚀 Stări separate pentru inspectarea celor două tipuri de feed
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [quickStockColumns, setQuickStockColumns] = useState<string[]>([]);
 
   const [isInspecting, setIsInspecting] = useState(false);
+  const [isInspectingQuick, setIsInspectingQuick] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<FeedFormState>(INITIAL_FORM_STATE);
@@ -252,16 +272,23 @@ const AdminImportFeed = () => {
     refreshData();
   }, [refreshData]);
 
-  const handleInspect = async (targetUrl?: string, targetType?: string) => {
-    const urlToInspect = targetUrl || formData.url;
-    const typeToInspect = targetType || formData.feed_type;
+  // 🚀 Adaptat pentru a inspecta separat
+  const handleInspect = async (
+    target: "main" | "quick",
+    specificUrl?: string,
+  ) => {
+    const urlToInspect =
+      specificUrl || (target === "main" ? formData.url : formData.stock_url);
+    const typeToInspect = formData.feed_type;
 
     if (!urlToInspect) {
-      toast.error("Introdu URL feed.");
+      toast.error(
+        `Introdu URL pentru ${target === "main" ? "Feed Principal" : "Quick Stock"}.`,
+      );
       return;
     }
 
-    setIsInspecting(true);
+    target === "main" ? setIsInspecting(true) : setIsInspectingQuick(true);
 
     try {
       const res = await apiFetch(
@@ -271,11 +298,18 @@ const AdminImportFeed = () => {
       );
 
       const data = await res.json();
+      const cols = data.columns ?? [];
 
-      setDetectedColumns(data.columns ?? []);
+      if (target === "main") {
+        setDetectedColumns(cols);
+      } else {
+        setQuickStockColumns(cols);
+      }
 
-      if (data.columns?.length > 0) {
-        toast.success("Coloane detectate.");
+      if (cols.length > 0) {
+        toast.success(
+          `${cols.length} coloane detectate pentru ${target === "main" ? "Feed" : "Stoc"}.`,
+        );
       } else {
         toast.error("Nu s-au detectat coloane.");
       }
@@ -283,7 +317,7 @@ const AdminImportFeed = () => {
       console.error(error);
       toast.error("Inspect failed.");
     } finally {
-      setIsInspecting(false);
+      target === "main" ? setIsInspecting(false) : setIsInspectingQuick(false);
     }
   };
 
@@ -303,30 +337,46 @@ const AdminImportFeed = () => {
         require_img: feed.advanced_config?.require_img ?? false,
       },
       mapping_config: feed.mapping_config || {},
+      quick_stock_mapping_config: feed.quick_stock_mapping_config || {},
     });
 
     setShowConfig(true);
 
-    await handleInspect(feed.url, feed.feed_type);
+    if (feed.url) await handleInspect("main", feed.url);
+    if (feed.stock_url) await handleInspect("quick", feed.stock_url);
   };
 
   const handleSave = async () => {
-    const missing = MAPPING_FIELDS.filter(
+    // Validare mapare principala
+    const missingMain = MAPPING_FIELDS.filter(
       (f) => f.required && !formData.mapping_config[f.key],
     );
 
-    if (missing.length > 0) {
-      toast.error(`Mapează: ${missing.map((m) => m.label).join(", ")}`);
+    if (missingMain.length > 0) {
+      toast.error(
+        `Mapează feed principal: ${missingMain.map((m) => m.label).join(", ")}`,
+      );
       return;
+    }
+
+    // Validare mapare stoc rapid (daca URL-ul exista)
+    if (formData.stock_url) {
+      const missingQuick = QUICK_MAPPING_FIELDS.filter(
+        (f) => f.required && !formData.quick_stock_mapping_config[f.key],
+      );
+      if (missingQuick.length > 0) {
+        toast.error(
+          `Mapează Quick Stock: ${missingQuick.map((m) => m.label).join(", ")}`,
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
 
     try {
       const isEdit = !!formData.id;
-
       const endpoint = isEdit ? `/feeds/${formData.id}` : "/feeds/";
-
       const method = isEdit ? "PUT" : "POST";
 
       const payload = {
@@ -344,12 +394,12 @@ const AdminImportFeed = () => {
 
         setFormData(INITIAL_FORM_STATE);
         setDetectedColumns([]);
+        setQuickStockColumns([]);
         setShowConfig(false);
 
         refreshData();
       } else {
         const err = await res.json();
-
         toast.error(err.detail || "Save failed.");
       }
     } catch (error) {
@@ -474,6 +524,7 @@ const AdminImportFeed = () => {
             onClick={() => {
               setFormData(INITIAL_FORM_STATE);
               setDetectedColumns([]);
+              setQuickStockColumns([]);
               setShowConfig(true);
             }}
             disabled={globalLock.is_locked}
@@ -502,7 +553,7 @@ const AdminImportFeed = () => {
             }}
           >
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full min-w-[1200px]">
                 <thead
                   className="border-b"
                   style={{
@@ -517,9 +568,8 @@ const AdminImportFeed = () => {
                     }}
                   >
                     <th className="p-8 px-10 text-left">Feed</th>
-
+                    <th className="p-8 text-left">Quick Stock Mapping</th>
                     <th className="p-8 text-center">Status</th>
-
                     <th className="p-8 px-10 text-right">Acțiuni</th>
                   </tr>
                 </thead>
@@ -539,16 +589,26 @@ const AdminImportFeed = () => {
                           )
                         : 0;
 
+                    // Extragem maparea rapida (fallback la maparea principala daca e vechi)
+                    const mapping =
+                      feed.quick_stock_mapping_config ||
+                      feed.mapping_config ||
+                      {};
+
+                    const skuField = mapping.cod_produs || "NESELECTAT";
+                    const stockField = mapping.stoc || "IGNORAT";
+                    const priceField = mapping.pret || "IGNORAT";
+
                     return (
                       <tr
                         key={feed.id}
                         className="border-b"
                         style={borderStyle}
                       >
-                        <td className="p-8 px-10">
-                          <div className="flex items-center gap-4">
+                        <td className="p-8 px-10 align-top">
+                          <div className="flex items-start gap-4">
                             <div
-                              className="size-12 rounded-2xl border flex items-center justify-center"
+                              className="size-12 rounded-2xl border flex items-center justify-center shrink-0"
                               style={{
                                 ...surfaceSecondaryStyle,
                                 ...borderStyle,
@@ -558,7 +618,7 @@ const AdminImportFeed = () => {
                               <Database size={20} />
                             </div>
 
-                            <div>
+                            <div className="space-y-2">
                               <div
                                 className="font-black text-lg"
                                 style={{
@@ -569,7 +629,7 @@ const AdminImportFeed = () => {
                               </div>
 
                               <div
-                                className="text-[10px] uppercase tracking-widest mt-1 flex gap-3"
+                                className="text-[10px] uppercase tracking-widest flex gap-3 flex-wrap"
                                 style={{
                                   color: "var(--text-secondary)",
                                 }}
@@ -578,46 +638,153 @@ const AdminImportFeed = () => {
 
                                 {feed.stock_url && (
                                   <span
+                                    className="flex items-center gap-1"
                                     style={{
                                       color: "var(--success-color)",
                                     }}
                                   >
+                                    <Zap size={10} />
                                     QUICK STOCK
                                   </span>
                                 )}
+
+                                {feed.auto_sync && (
+                                  <span
+                                    style={{
+                                      color: "var(--royal-violet)",
+                                    }}
+                                  >
+                                    AUTO SYNC
+                                  </span>
+                                )}
                               </div>
+
+                              {feed.stock_url && (
+                                <div
+                                  className="mt-4 rounded-2xl border p-4 text-[11px]"
+                                  style={{
+                                    ...surfaceSecondaryStyle,
+                                    ...borderStyle,
+                                  }}
+                                >
+                                  <div
+                                    className="font-black uppercase tracking-wider mb-3 flex items-center gap-2"
+                                    style={{
+                                      color: "var(--royal-violet)",
+                                    }}
+                                  >
+                                    <Eye size={12} />
+                                    Quick Feed Detect
+                                  </div>
+
+                                  <div
+                                    className="grid grid-cols-1 gap-2"
+                                    style={{
+                                      color: "var(--text-secondary)",
+                                    }}
+                                  >
+                                    <div className="flex justify-between gap-4">
+                                      <span>SKU:</span>
+                                      <span
+                                        className="font-black"
+                                        style={{
+                                          color: "var(--success-color)",
+                                        }}
+                                      >
+                                        {skuField}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between gap-4">
+                                      <span>PREȚ:</span>
+                                      <span
+                                        className="font-black"
+                                        style={{
+                                          color:
+                                            priceField === "IGNORAT"
+                                              ? "var(--warning-color)"
+                                              : "var(--success-color)",
+                                        }}
+                                      >
+                                        {priceField}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between gap-4">
+                                      <span>STOC:</span>
+                                      <span
+                                        className="font-black"
+                                        style={{
+                                          color:
+                                            stockField === "IGNORAT"
+                                              ? "var(--warning-color)"
+                                              : "var(--success-color)",
+                                        }}
+                                      >
+                                        {stockField}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
+                        </td>
 
-                          {expandedLogId === feed.id && feed.error_log && (
-                            <pre
-                              className="mt-4 p-5 rounded-2xl text-[11px] overflow-auto"
-                              style={{
-                                backgroundColor: "var(--dark-amethyst)",
-                                color: "var(--success-color)",
-                              }}
+                        <td className="p-8 align-top">
+                          {feed.stock_url ? (
+                            <div className="space-y-3">
+                              {Object.entries(mapping)
+                                .filter(
+                                  ([key, value]) =>
+                                    value &&
+                                    QUICK_MAPPING_FIELDS.map(
+                                      (f) => f.key,
+                                    ).includes(key),
+                                )
+                                .map(([key, value]) => (
+                                  <div
+                                    key={key}
+                                    className="rounded-xl border px-4 py-3 text-[11px]"
+                                    style={{
+                                      ...surfaceSecondaryStyle,
+                                      ...borderStyle,
+                                    }}
+                                  >
+                                    <div
+                                      className="uppercase font-black mb-1"
+                                      style={{ color: "var(--royal-violet)" }}
+                                    >
+                                      {key}
+                                    </div>
+                                    <div
+                                      style={{ color: "var(--text-primary)" }}
+                                    >
+                                      {String(value)}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div
+                              className="text-xs italic"
+                              style={{ color: "var(--text-secondary)" }}
                             >
-                              {feed.error_log}
-                            </pre>
+                              Fără Quick Stock URL
+                            </div>
                           )}
                         </td>
 
-                        <td className="p-8">
+                        <td className="p-8 align-top">
                           {isProcessing ? (
                             <div className="space-y-3">
                               <div
                                 className="flex justify-between text-[10px] uppercase font-black"
-                                style={{
-                                  color: "var(--royal-violet)",
-                                }}
+                                style={{ color: "var(--royal-violet)" }}
                               >
                                 <span>
                                   {prog?.current || 0} / {prog?.total || 0}
                                 </span>
-
                                 <span>{pct}%</span>
                               </div>
-
                               <div
                                 className="h-2 rounded-full overflow-hidden"
                                 style={{
@@ -626,9 +793,7 @@ const AdminImportFeed = () => {
                               >
                                 <motion.div
                                   initial={{ width: 0 }}
-                                  animate={{
-                                    width: `${pct}%`,
-                                  }}
+                                  animate={{ width: `${pct}%` }}
                                   className="h-full rounded-full"
                                   style={{
                                     background: "var(--primary-gradient)",
@@ -658,11 +823,11 @@ const AdminImportFeed = () => {
                           )}
                         </td>
 
-                        <td className="p-8 px-10">
+                        <td className="p-8 px-10 align-top">
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => handleEditIntent(feed)}
-                              className="p-3 rounded-xl border"
+                              className="p-3 rounded-xl border hover:opacity-80 transition-opacity"
                               style={{
                                 ...surfaceStyle,
                                 ...borderStyle,
@@ -671,10 +836,9 @@ const AdminImportFeed = () => {
                             >
                               <Edit3 size={16} />
                             </button>
-
                             <button
                               onClick={handleForceUnlock}
-                              className="p-3 rounded-xl border"
+                              className="p-3 rounded-xl border hover:opacity-80 transition-opacity"
                               style={{
                                 ...surfaceStyle,
                                 ...borderStyle,
@@ -683,10 +847,9 @@ const AdminImportFeed = () => {
                             >
                               <Unlock size={16} />
                             </button>
-
                             <button
                               onClick={() => handleDelete(feed.id)}
-                              className="p-3 rounded-xl border"
+                              className="p-3 rounded-xl border hover:opacity-80 transition-opacity"
                               style={{
                                 ...surfaceStyle,
                                 ...borderStyle,
@@ -717,41 +880,26 @@ const AdminImportFeed = () => {
                 setShowConfig(false);
                 setFormData(INITIAL_FORM_STATE);
                 setDetectedColumns([]);
+                setQuickStockColumns([]);
               }}
-              className="flex items-center gap-2 text-[10px] uppercase"
-              style={{
-                color: "var(--text-secondary)",
-              }}
+              className="flex items-center gap-2 text-[10px] uppercase font-black"
+              style={{ color: "var(--text-secondary)" }}
             >
-              <ChevronLeft size={14} />
-              Înapoi
+              <ChevronLeft size={14} /> Înapoi
             </button>
 
             <div
-              className="rounded-[2.5rem] shadow-2xl border overflow-hidden"
-              style={{
-                ...surfaceStyle,
-                ...borderStyle,
-              }}
+              className="rounded-[2.5rem] shadow-2xl border overflow-hidden pb-12"
+              style={{ ...surfaceStyle, ...borderStyle }}
             >
               <div className="p-10 md:p-16 space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <Label
-                      style={{
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      Nume Furnizor
-                    </Label>
-
+                    <Label>Nume Furnizor</Label>
                     <input
                       value={formData.name}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          name: e.target.value,
-                        })
+                        setFormData({ ...formData, name: e.target.value })
                       }
                       className="w-full rounded-2xl px-6 py-4 border"
                       style={inputStyle}
@@ -759,58 +907,7 @@ const AdminImportFeed = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <Label
-                      style={{
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      Feed URL
-                    </Label>
-
-                    <input
-                      value={formData.url}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          url: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-2xl px-6 py-4 border"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label
-                      style={{
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      Quick Stock URL
-                    </Label>
-
-                    <input
-                      value={formData.stock_url}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          stock_url: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-2xl px-6 py-4 border"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label
-                      style={{
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      Adaos %
-                    </Label>
-
+                    <Label>Adaos %</Label>
                     <input
                       type="number"
                       value={formData.markup_percentage}
@@ -824,102 +921,268 @@ const AdminImportFeed = () => {
                       style={inputStyle}
                     />
                   </div>
+
+                  <div className="space-y-3 col-span-1 md:col-span-2">
+                    <Label className="flex gap-2 items-center">
+                      <Database size={14} /> URL Feed Principal (Catalog
+                      Complet)
+                    </Label>
+                    <div className="flex gap-2">
+                      <input
+                        value={formData.url}
+                        onChange={(e) =>
+                          setFormData({ ...formData, url: e.target.value })
+                        }
+                        className="flex-1 rounded-2xl px-6 py-4 border"
+                        style={inputStyle}
+                        placeholder="Ex: https://furnizor.ro/feed.csv"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleInspect("main")}
+                        disabled={isInspecting}
+                        className="text-white px-8 py-4 rounded-2xl font-black uppercase flex items-center gap-2"
+                        style={{ background: "var(--primary-gradient)" }}
+                      >
+                        {isInspecting ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Search size={16} />
+                        )}
+                        Inspectează
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 col-span-1 md:col-span-2">
+                    <Label className="flex gap-2 items-center">
+                      <Zap
+                        size={14}
+                        style={{ color: "var(--warning-color)" }}
+                      />{" "}
+                      Quick Stock URL (Doar Stoc & Preț - Opțional)
+                    </Label>
+                    <div className="flex gap-2">
+                      <input
+                        value={formData.stock_url}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            stock_url: e.target.value,
+                          })
+                        }
+                        className="flex-1 rounded-2xl px-6 py-4 border"
+                        style={inputStyle}
+                        placeholder="Ex: https://furnizor.ro/stock.csv"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleInspect("quick")}
+                        disabled={isInspectingQuick || !formData.stock_url}
+                        className="text-white px-8 py-4 rounded-2xl font-black uppercase flex items-center gap-2 disabled:opacity-50"
+                        style={{ background: "var(--dark-amethyst)" }}
+                      >
+                        {isInspectingQuick ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : (
+                          <Search size={16} />
+                        )}
+                        Inspectează Stoc
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    onClick={() => handleInspect()}
-                    disabled={isInspecting}
-                    className="text-white px-10 py-4 rounded-2xl font-black uppercase flex items-center gap-2"
-                    style={{
-                      background: "var(--primary-gradient)",
-                    }}
-                  >
-                    {isInspecting ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Search size={16} />
-                    )}
-                    Inspectează
-                  </button>
-                </div>
-
+                {/* Mapare Feed Principal */}
                 {detectedColumns.length > 0 && (
-                  <div className="space-y-8">
-                    <h3
-                      className="text-xs uppercase font-black"
-                      style={{
-                        color: "var(--dark-amethyst)",
-                      }}
-                    >
-                      Mapping
-                    </h3>
+                  <div className="space-y-8 pt-8 border-t" style={borderStyle}>
+                    <div className="flex items-center justify-between">
+                      <h3
+                        className="text-xs uppercase font-black"
+                        style={{ color: "var(--dark-amethyst)" }}
+                      >
+                        Mapare Feed Principal
+                      </h3>
+                      <div
+                        className="text-[11px]"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        {detectedColumns.length} coloane detectate
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {MAPPING_FIELDS.map((field) => (
-                        <div
-                          key={field.key}
-                          className="rounded-2xl border p-5"
-                          style={{
-                            ...surfaceStyle,
-                            ...borderStyle,
-                          }}
-                        >
-                          <Label
-                            className="text-[10px]"
-                            style={{
-                              color: "var(--royal-violet)",
-                            }}
-                          >
-                            {field.label}
-                          </Label>
+                      {MAPPING_FIELDS.map((field) => {
+                        const selectedValue =
+                          formData.mapping_config[field.key] ?? "";
+                        const isMatched = detectedColumns.some(
+                          (c) =>
+                            normalizeKey(c) === normalizeKey(selectedValue),
+                        );
 
-                          <select
-                            value={formData.mapping_config[field.key] ?? ""}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                mapping_config: {
-                                  ...formData.mapping_config,
-                                  [field.key]: e.target.value,
-                                },
-                              })
-                            }
-                            className="w-full mt-3 rounded-xl px-4 py-3 border"
-                            style={inputStyle}
+                        return (
+                          <div
+                            key={field.key}
+                            className="rounded-2xl border p-5"
+                            style={{ ...surfaceSecondaryStyle, ...borderStyle }}
                           >
-                            <option value="">Ignoră</option>
-
-                            {detectedColumns.map((c) => (
-                              <option key={c} value={c}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      ))}
+                            <Label
+                              className="text-[10px]"
+                              style={{ color: "var(--royal-violet)" }}
+                            >
+                              {field.label}
+                            </Label>
+                            <select
+                              value={selectedValue}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  mapping_config: {
+                                    ...formData.mapping_config,
+                                    [field.key]: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-full mt-3 rounded-xl px-4 py-3 border"
+                              style={inputStyle}
+                            >
+                              <option value="">Ignoră</option>
+                              {detectedColumns.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                            <div
+                              className="mt-3 text-[10px] uppercase font-black"
+                              style={{
+                                color: selectedValue
+                                  ? isMatched
+                                    ? "var(--success-color)"
+                                    : "var(--warning-color)"
+                                  : "var(--text-secondary)",
+                              }}
+                            >
+                              {!selectedValue
+                                ? "IGNORAT"
+                                : isMatched
+                                  ? "MAPAT"
+                                  : "NEDETECTAT"}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSubmitting || detectedColumns.length === 0}
-                  className="text-white px-16 py-6 rounded-2xl uppercase font-black flex items-center gap-3 disabled:opacity-50"
-                  style={{
-                    background: "var(--primary-gradient)",
-                  }}
-                >
-                  {isSubmitting ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <DownloadCloud size={18} />
-                  )}
+                {/* Mapare Feed Secundar (Quick Stock) */}
+                {quickStockColumns.length > 0 && formData.stock_url && (
+                  <div className="space-y-8 pt-8 border-t" style={borderStyle}>
+                    <div className="flex items-center justify-between">
+                      <h3
+                        className="text-xs uppercase font-black flex items-center gap-2"
+                        style={{ color: "var(--warning-color)" }}
+                      >
+                        <Zap size={14} /> Mapare Quick Stock
+                      </h3>
+                      <div
+                        className="text-[11px]"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        {quickStockColumns.length} coloane detectate în stoc
+                      </div>
+                    </div>
 
-                  {formData.id ? "Actualizează" : "Salvează"}
-                </button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {QUICK_MAPPING_FIELDS.map((field) => {
+                        const selectedValue =
+                          formData.quick_stock_mapping_config[field.key] ?? "";
+                        const isMatched = quickStockColumns.some(
+                          (c) =>
+                            normalizeKey(c) === normalizeKey(selectedValue),
+                        );
+
+                        return (
+                          <div
+                            key={`quick_${field.key}`}
+                            className="rounded-2xl border p-5"
+                            style={{ ...surfaceStyle, ...borderStyle }}
+                          >
+                            <Label
+                              className="text-[10px]"
+                              style={{ color: "var(--warning-color)" }}
+                            >
+                              {field.label}
+                            </Label>
+                            <select
+                              value={selectedValue}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  quick_stock_mapping_config: {
+                                    ...formData.quick_stock_mapping_config,
+                                    [field.key]: e.target.value,
+                                  },
+                                })
+                              }
+                              className="w-full mt-3 rounded-xl px-4 py-3 border"
+                              style={inputStyle}
+                            >
+                              <option value="">Ignoră</option>
+                              {quickStockColumns.map((c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              ))}
+                            </select>
+                            <div
+                              className="mt-3 text-[10px] uppercase font-black"
+                              style={{
+                                color: selectedValue
+                                  ? isMatched
+                                    ? "var(--success-color)"
+                                    : "var(--danger-color)"
+                                  : "var(--text-secondary)",
+                              }}
+                            >
+                              {!selectedValue
+                                ? "IGNORAT"
+                                : isMatched
+                                  ? "MAPAT"
+                                  : "NEDETECTAT"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  className="pt-8 border-t flex justify-end"
+                  style={borderStyle}
+                >
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={
+                      isSubmitting ||
+                      (detectedColumns.length === 0 && !formData.id)
+                    }
+                    className="text-white px-16 py-6 rounded-2xl uppercase font-black flex items-center gap-3 disabled:opacity-50"
+                    style={{ background: "var(--primary-gradient)" }}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <DownloadCloud size={18} />
+                    )}
+                    {formData.id
+                      ? "Actualizează Configurația"
+                      : "Salvează & Inițiază"}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
