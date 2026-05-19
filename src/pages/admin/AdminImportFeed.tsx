@@ -1,16 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  RefreshCw,
   Trash2,
   Search,
   Loader2,
   Unlock,
   DownloadCloud,
   Database,
-  Settings2,
   ChevronLeft,
   FileText,
-  Sliders,
   Plus,
   Edit3,
 } from "lucide-react";
@@ -21,6 +18,7 @@ import { Label } from "@/components/ui/label";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
+
 const WS_BASE_URL = API_BASE_URL.replace("https://", "wss://").replace(
   "http://",
   "ws://",
@@ -46,11 +44,29 @@ const MAPPING_FIELDS = [
 
 type ProgressMap = Record<string, { current: number; total: number }>;
 
-const INITIAL_FORM_STATE = {
-  id: undefined as string | undefined, // Adăugat pentru a urmări dacă suntem pe modul Editare
+interface FeedFormState {
+  id?: string;
+  name: string;
+  feed_type: string;
+  url: string;
+  stock_url: string;
+  markup_percentage: number;
+  csv_separator: string;
+  text_delimiter: string;
+  auto_sync: boolean;
+  advanced_config: {
+    min_stock: number;
+    require_img: boolean;
+  };
+  mapping_config: Record<string, string>;
+}
+
+const INITIAL_FORM_STATE: FeedFormState = {
+  id: undefined,
   name: "",
   feed_type: "CSV",
   url: "",
+  stock_url: "",
   markup_percentage: 15.0,
   csv_separator: ";",
   text_delimiter: '"',
@@ -59,7 +75,25 @@ const INITIAL_FORM_STATE = {
     min_stock: 0,
     require_img: false,
   },
-  mapping_config: {} as Record<string, string>,
+  mapping_config: {},
+};
+
+const surfaceStyle = {
+  backgroundColor: "var(--surface-bg)",
+};
+
+const surfaceSecondaryStyle = {
+  backgroundColor: "var(--surface-secondary)",
+};
+
+const borderStyle = {
+  borderColor: "var(--border-color)",
+};
+
+const inputStyle = {
+  backgroundColor: "var(--input-bg)",
+  borderColor: "var(--border-color)",
+  color: "var(--text-primary)",
 };
 
 const AdminImportFeed = () => {
@@ -72,39 +106,38 @@ const AdminImportFeed = () => {
     is_locked: false,
     locked_by: null as string | null,
   });
+
   const [progress, setProgress] = useState<ProgressMap>({});
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
 
   const [isInspecting, setIsInspecting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [formData, setFormData] = useState<FeedFormState>(INITIAL_FORM_STATE);
 
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
 
-  const cleanFid = (id: any) => {
+  const reconnectAttemptsRef = useRef(0);
+
+  const cleanFid = (id: unknown) => {
     if (!id) return null;
+
     return String(id)
       .replace(/^b['"]/, "")
       .replace(/['"]$/, "")
       .trim();
   };
 
-  const apiFetch = useCallback(
-    (path: string, opts?: RequestInit) =>
-      fetch(`${API_BASE_URL}/api/v1${path}`, {
-        credentials: "include",
-        ...opts,
-        headers: {
-          "Content-Type": "application/json",
-          ...opts?.headers,
-        },
-      }),
-    [],
-  );
+  const apiFetch = useCallback(async (path: string, opts?: RequestInit) => {
+    return fetch(`${API_BASE_URL}/api/v1${path}`, {
+      credentials: "include",
+      ...opts,
+      headers: {
+        "Content-Type": "application/json",
+        ...opts?.headers,
+      },
+    });
+  }, []);
 
   const refreshData = useCallback(async () => {
     try {
@@ -112,10 +145,12 @@ const AdminImportFeed = () => {
         apiFetch("/feeds/"),
         apiFetch("/feeds/status"),
       ]);
+
       const feedsData = await feedsRes.json();
       const statusData = await statusRes.json();
 
       setFeeds(feedsData.items || []);
+
       const activeFid = cleanFid(statusData.active_feed_id);
 
       setGlobalLock({
@@ -133,7 +168,8 @@ const AdminImportFeed = () => {
         }));
       }
     } catch (error) {
-      console.error("Eroare la refresh date:", error);
+      console.error(error);
+      toast.error("Eroare la încărcarea feed-urilor.");
     } finally {
       setLoading(false);
     }
@@ -141,22 +177,32 @@ const AdminImportFeed = () => {
 
   useEffect(() => {
     let heartbeat: ReturnType<typeof setInterval>;
+
     const connectWS = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
       const ws = new WebSocket(`${WS_BASE_URL}/api/v1/ws/import-progress`);
+
       wsRef.current = ws;
 
       ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+
         heartbeat = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) ws.send("ping");
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send("ping");
+          }
         }, 30000);
       };
 
       ws.onmessage = (event) => {
         if (event.data === "pong") return;
+
         try {
           const msg = JSON.parse(event.data);
+
           const fid = cleanFid(msg.feed_id);
+
           if (msg.type === "IMPORT_PROGRESS" || msg.type === "IMPORT_STARTED") {
             setProgress((prev) => ({
               ...prev,
@@ -165,28 +211,40 @@ const AdminImportFeed = () => {
                 total: msg.total || 0,
               },
             }));
-            if (fid) setGlobalLock({ is_locked: true, locked_by: fid });
-          } else if (msg.type === "IMPORT_COMPLETED") {
-            toast.success("Sincronizare completă finalizată!");
+
+            if (fid) {
+              setGlobalLock({
+                is_locked: true,
+                locked_by: fid,
+              });
+            }
+          }
+
+          if (msg.type === "IMPORT_COMPLETED") {
+            toast.success("Sincronizare finalizată.");
             refreshData();
           }
         } catch (e) {
-          console.error("Eroare parsare mesaj WS:", e);
+          console.error(e);
         }
       };
 
       ws.onclose = () => {
         clearInterval(heartbeat);
-        reconnectTimeoutRef.current = setTimeout(connectWS, 3000);
+
+        reconnectAttemptsRef.current += 1;
+
+        const timeout = Math.min(30000, reconnectAttemptsRef.current * 3000);
+
+        setTimeout(connectWS, timeout);
       };
     };
 
     connectWS();
+
     return () => {
       wsRef.current?.close();
       clearInterval(heartbeat);
-      if (reconnectTimeoutRef.current)
-        clearTimeout(reconnectTimeoutRef.current);
     };
   }, [refreshData]);
 
@@ -194,77 +252,49 @@ const AdminImportFeed = () => {
     refreshData();
   }, [refreshData]);
 
-  const handleSync = async (id: string) => {
-    setGlobalLock({ is_locked: true, locked_by: id });
-    try {
-      const res = await apiFetch(`/feeds/${id}/sync`, { method: "POST" });
-      if (res.ok) {
-        toast.info("Procesul de import a fost inițiat...");
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.detail || "Eroare la pornirea sincronizării.");
-        refreshData();
-      }
-    } catch {
-      toast.error("Eroare de rețea.");
-      refreshData();
-    }
-  };
-
-  const handleForceUnlock = async () => {
-    if (
-      !window.confirm(
-        "Ești sigur? Această acțiune va curăța toate blocajele distribuite în Redis.",
-      )
-    )
-      return;
-    try {
-      const res = await apiFetch("/feeds/force-unlock", { method: "POST" });
-      if (res.ok) {
-        toast.success("Distributed locking resetat cu succes.");
-        setProgress({});
-        refreshData();
-      } else {
-        toast.error("Eroare la deblocarea sistemului.");
-      }
-    } catch (error) {
-      toast.error("Eroare de conexiune cu serverul.");
-    }
-  };
-
   const handleInspect = async (targetUrl?: string, targetType?: string) => {
     const urlToInspect = targetUrl || formData.url;
     const typeToInspect = targetType || formData.feed_type;
 
-    if (!urlToInspect) return;
+    if (!urlToInspect) {
+      toast.error("Introdu URL feed.");
+      return;
+    }
+
     setIsInspecting(true);
+
     try {
       const res = await apiFetch(
-        `/feeds/inspect?url=${encodeURIComponent(urlToInspect)}&feed_type=${typeToInspect}`,
+        `/feeds/inspect?url=${encodeURIComponent(
+          urlToInspect,
+        )}&feed_type=${typeToInspect}`,
       );
+
       const data = await res.json();
+
       setDetectedColumns(data.columns ?? []);
+
       if (data.columns?.length > 0) {
-        toast.success("Structură tabelară mapată cu succes!");
-        return data.columns;
+        toast.success("Coloane detectate.");
       } else {
-        toast.error("Nu s-au putut detecta coloanele. Verifică URL-ul.");
+        toast.error("Nu s-au detectat coloane.");
       }
     } catch (error) {
-      toast.error("Eroare la inspectarea URL-ului.");
+      console.error(error);
+      toast.error("Inspect failed.");
     } finally {
       setIsInspecting(false);
     }
   };
 
-  // 🚀 LOGICĂ NOUĂ: Funcție pentru încărcarea datelor unui feed existent în formular
   const handleEditIntent = async (feed: any) => {
     setFormData({
       id: feed.id,
-      name: feed.name,
+      name: feed.name || "",
       feed_type: feed.feed_type || "CSV",
-      url: feed.url,
-      markup_percentage: feed.markup_percentage ?? 15.0,
+      url: feed.url || "",
+      stock_url: feed.stock_url || "",
+      markup_percentage: feed.markup_percentage ?? 15,
       csv_separator: feed.csv_separator || ";",
       text_delimiter: feed.text_delimiter || '"',
       auto_sync: feed.auto_sync ?? true,
@@ -276,7 +306,7 @@ const AdminImportFeed = () => {
     });
 
     setShowConfig(true);
-    // Inspectăm automat URL-ul pentru a re-popula drop-down-urile cu coloanele detectate live
+
     await handleInspect(feed.url, feed.feed_type);
   };
 
@@ -284,454 +314,583 @@ const AdminImportFeed = () => {
     const missing = MAPPING_FIELDS.filter(
       (f) => f.required && !formData.mapping_config[f.key],
     );
+
     if (missing.length > 0) {
-      toast.error(
-        `Te rog mapiază câmpurile obligatorii: ${missing.map((m) => m.label).join(", ")}`,
-      );
+      toast.error(`Mapează: ${missing.map((m) => m.label).join(", ")}`);
       return;
     }
 
     setIsSubmitting(true);
+
     try {
-      // 🚀 DINAMIC: Dacă avem formData.id rulați PUT (Edit), altfel POST (Create)
       const isEdit = !!formData.id;
+
       const endpoint = isEdit ? `/feeds/${formData.id}` : "/feeds/";
+
       const method = isEdit ? "PUT" : "POST";
 
+      const payload = {
+        ...formData,
+        stock_url: formData.stock_url || null,
+      };
+
       const res = await apiFetch(endpoint, {
-        method: method,
-        body: JSON.stringify(formData),
+        method,
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
-        toast.success(
-          isEdit
-            ? "Configurație actualizată cu succes!"
-            : "Configurare salvată în sistem.",
-        );
-        setShowConfig(false);
+        toast.success(isEdit ? "Feed actualizat." : "Feed creat cu succes.");
+
         setFormData(INITIAL_FORM_STATE);
         setDetectedColumns([]);
+        setShowConfig(false);
+
         refreshData();
       } else {
         const err = await res.json();
-        toast.error(err.detail || "Eroare la salvare.");
+
+        toast.error(err.detail || "Save failed.");
       }
     } catch (error) {
-      toast.error("Eroare de rețea la salvare.");
+      console.error(error);
+      toast.error("Network error.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (
-      !window.confirm(
-        "Ștergi această sursă? Produsele deja importate vor fi păstrate.",
-      )
-    )
-      return;
+    if (!window.confirm("Ștergi feed-ul?")) return;
+
     try {
-      const res = await apiFetch(`/feeds/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/feeds/${id}`, {
+        method: "DELETE",
+      });
+
       if (res.ok) {
-        toast.success("Sursă eliminată.");
+        toast.success("Feed șters.");
         refreshData();
       } else {
-        toast.error("Eroare la eliminarea feed-ului.");
+        toast.error("Delete failed.");
       }
     } catch (error) {
-      toast.error("Eroare de conexiune.");
+      console.error(error);
+      toast.error("Network error.");
     }
   };
 
-  if (loading)
+  const handleForceUnlock = async () => {
+    if (!window.confirm("Resetezi lock-urile Redis?")) return;
+
+    try {
+      const res = await apiFetch("/feeds/force-unlock", {
+        method: "POST",
+      });
+
+      if (res.ok) {
+        toast.success("Lock resetat.");
+        setProgress({});
+        refreshData();
+      } else {
+        toast.error("Unlock failed.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Network error.");
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-zinc-50/30">
+      <div
+        className="h-screen flex items-center justify-center"
+        style={surfaceSecondaryStyle}
+      >
         <Loader2
-          className="animate-spin text-[var(--royal-violet)]"
+          className="animate-spin"
           size={36}
+          style={{
+            color: "var(--royal-violet)",
+          }}
         />
       </div>
     );
+  }
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
+    <div className="w-full space-y-10 pb-20">
+      <header
+        className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 pb-12 border-b"
+        style={borderStyle}
+      >
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <span
               className="w-12 h-[1px]"
-              style={{ backgroundColor: "var(--royal-violet)" }}
+              style={{
+                backgroundColor: "var(--royal-violet)",
+              }}
             />
+
             <span
               className="text-[10px] font-black uppercase tracking-[0.5em] flex items-center gap-2"
-              style={{ color: "var(--royal-violet)" }}
+              style={{
+                color: "var(--royal-violet)",
+              }}
             >
               <div
-                className={`size-2 rounded-full ${globalLock.is_locked ? "bg-amber-500 animate-ping" : "bg-emerald-50"}`}
+                className="size-2 rounded-full"
+                style={{
+                  backgroundColor: globalLock.is_locked
+                    ? "var(--warning-color)"
+                    : "var(--success-color)",
+                }}
               />
-              {globalLock.is_locked
-                ? "Sincronizare activă Celery"
-                : "Catalog Feeds Hub"}
+
+              {globalLock.is_locked ? "Sincronizare activă" : "Catalog Feeds"}
             </span>
           </div>
-          <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
-            External <span style={{ color: "var(--royal-violet)" }}>Feeds</span>
+
+          <h1
+            className="heading-serif text-5xl md:text-6xl italic tracking-tighter"
+            style={{
+              color: "var(--dark-amethyst)",
+            }}
+          >
+            External{" "}
+            <span
+              style={{
+                color: "var(--royal-violet)",
+              }}
+            >
+              Feeds
+            </span>
           </h1>
         </div>
 
-        <AnimatePresence mode="popLayout">
-          {!showConfig && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <button
-                onClick={() => {
-                  setFormData(INITIAL_FORM_STATE);
-                  setDetectedColumns([]);
-                  setShowConfig(true);
-                }}
-                disabled={globalLock.is_locked}
-                className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 disabled:opacity-50 whitespace-nowrap"
-                style={{ background: "var(--primary-gradient)" }}
-              >
-                <Plus size={16} /> Configurare Sursă Nouă
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!showConfig && (
+          <button
+            onClick={() => {
+              setFormData(INITIAL_FORM_STATE);
+              setDetectedColumns([]);
+              setShowConfig(true);
+            }}
+            disabled={globalLock.is_locked}
+            className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl disabled:opacity-50"
+            style={{
+              background: "var(--primary-gradient)",
+            }}
+          >
+            <Plus size={16} />
+            Configurare Sursă Nouă
+          </button>
+        )}
       </header>
 
       <AnimatePresence mode="wait">
         {!showConfig ? (
           <motion.div
             key="list"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-[2.5rem] shadow-2xl border overflow-hidden"
+            style={{
+              ...surfaceStyle,
+              ...borderStyle,
+            }}
           >
-            <div className="overflow-x-auto no-scrollbar">
-              <table className="w-full text-left min-w-[800px]">
-                <thead className="bg-zinc-50/50 border-b border-zinc-100 text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                  <tr>
-                    <th className="p-8 px-10">Sursă Date / Structură</th>
-                    <th className="p-8 text-center">Status Sincronizare</th>
-                    <th className="p-8 px-10 text-right">Acțiuni Management</th>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px]">
+                <thead
+                  className="border-b"
+                  style={{
+                    ...surfaceSecondaryStyle,
+                    ...borderStyle,
+                  }}
+                >
+                  <tr
+                    className="text-[10px] uppercase tracking-widest"
+                    style={{
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    <th className="p-8 px-10 text-left">Feed</th>
+
+                    <th className="p-8 text-center">Status</th>
+
+                    <th className="p-8 px-10 text-right">Acțiuni</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-50">
-                  {feeds.length > 0 ? (
-                    feeds.map((feed) => {
-                      const isProcessing =
-                        globalLock.is_locked &&
-                        globalLock.locked_by === feed.id;
-                      const prog = progress[feed.id];
-                      const pct =
-                        prog && prog.total > 0
-                          ? Math.min(
-                              100,
-                              Math.round((prog.current / prog.total) * 100),
-                            )
-                          : 0;
-                      const isLogOpen = expandedLogId === feed.id;
 
-                      return (
-                        <tr
-                          key={feed.id}
-                          className="hover:bg-zinc-50/20 transition-colors group"
-                        >
-                          <td className="p-8 px-10 vertical-align-middle">
-                            <div className="flex items-center gap-4">
-                              <div className="size-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:bg-[var(--royal-violet)] transition-all shadow-sm">
-                                <Database size={20} />
-                              </div>
-                              <div>
-                                <div className="font-black text-lg text-[var(--dark-amethyst)] uppercase tracking-tight">
-                                  {feed.name}
-                                </div>
-                                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-3">
-                                  <span>{feed.feed_type} Format</span>
-                                  {feed.error_log && (
-                                    <button
-                                      onClick={() =>
-                                        setExpandedLogId(
-                                          isLogOpen ? null : feed.id,
-                                        )
-                                      }
-                                      className="text-[var(--royal-violet)] hover:underline flex items-center gap-1 lower-case font-mono font-black"
-                                    >
-                                      <FileText size={12} />{" "}
-                                      {isLogOpen
-                                        ? "[Ascunde Raport]"
-                                        : "[Vezi Raport Audit]"}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <AnimatePresence>
-                              {isLogOpen && feed.error_log && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  className="mt-4 overflow-hidden"
-                                >
-                                  <pre className="p-5 bg-zinc-950 text-emerald-400 font-mono text-[11px] leading-relaxed rounded-2xl border border-zinc-900 shadow-inner max-w-xl whitespace-pre-line text-left">
-                                    {feed.error_log}
-                                  </pre>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </td>
-                          <td className="w-[350px] p-8 align-middle">
-                            {isProcessing ? (
-                              <div className="space-y-3">
-                                <div
-                                  className="flex justify-between text-[10px] font-black uppercase tracking-widest"
-                                  style={{ color: "var(--royal-violet)" }}
-                                >
-                                  <span>
-                                    {prog
-                                      ? `${prog.current.toLocaleString()} / ${prog.total.toLocaleString()}`
-                                      : "Evaluare fișier..."}
-                                  </span>
-                                  <span>{pct}%</span>
-                                </div>
-                                <div className="h-2.5 bg-zinc-100 rounded-full overflow-hidden relative shadow-inner">
-                                  <motion.div
-                                    className="absolute top-0 left-0 h-full rounded-full"
-                                    style={{
-                                      background: "var(--primary-gradient)",
-                                    }}
-                                    规律={{ width: `${pct}%` }}
-                                    animate={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex justify-center">
-                                <span
-                                  className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border tracking-tight ${
-                                    feed.status === "SUCCESS"
-                                      ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                      : "bg-zinc-50 text-zinc-400 border-zinc-200"
-                                  }`}
-                                >
-                                  {feed.status || "IDLE"}
-                                </span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-8 px-10 text-right align-middle">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => handleSync(feed.id)}
-                                disabled={globalLock.is_locked}
-                                className="px-6 py-3 rounded-xl bg-white border border-zinc-200 text-[var(--dark-amethyst)] font-black text-[9px] uppercase shadow-sm active:scale-95 transition-transform"
-                              >
-                                Sync
-                              </button>
-                              {/* 🚀 BUTON NOU: Permite editarea mapping-ului live */}
-                              <button
-                                onClick={() => handleEditIntent(feed)}
-                                disabled={globalLock.is_locked}
-                                className="p-3 bg-white border border-zinc-200 text-[var(--royal-violet)] rounded-xl shadow-sm hover:bg-zinc-50 transition-colors"
-                                title="Editează Mapare Coloane"
-                              >
-                                <Edit3 size={16} />
-                              </button>
-                              <button
-                                onClick={handleForceUnlock}
-                                className="p-3 bg-white border border-zinc-200 text-amber-500 rounded-xl shadow-sm"
-                              >
-                                <Unlock size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(feed.id)}
-                                disabled={isProcessing}
-                                className="p-3 bg-white border border-zinc-200 text-rose-500 rounded-xl shadow-sm"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={3}
-                        className="py-32 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest"
+                <tbody>
+                  {feeds.map((feed) => {
+                    const isProcessing =
+                      globalLock.is_locked && globalLock.locked_by === feed.id;
+
+                    const prog = progress[feed.id];
+
+                    const pct =
+                      prog && prog.total > 0
+                        ? Math.min(
+                            100,
+                            Math.round((prog.current / prog.total) * 100),
+                          )
+                        : 0;
+
+                    return (
+                      <tr
+                        key={feed.id}
+                        className="border-b"
+                        style={borderStyle}
                       >
-                        Niciun flux comercial configurat în baza de date
-                      </td>
-                    </tr>
-                  )}
+                        <td className="p-8 px-10">
+                          <div className="flex items-center gap-4">
+                            <div
+                              className="size-12 rounded-2xl border flex items-center justify-center"
+                              style={{
+                                ...surfaceSecondaryStyle,
+                                ...borderStyle,
+                                color: "var(--royal-violet)",
+                              }}
+                            >
+                              <Database size={20} />
+                            </div>
+
+                            <div>
+                              <div
+                                className="font-black text-lg"
+                                style={{
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                {feed.name}
+                              </div>
+
+                              <div
+                                className="text-[10px] uppercase tracking-widest mt-1 flex gap-3"
+                                style={{
+                                  color: "var(--text-secondary)",
+                                }}
+                              >
+                                <span>{feed.feed_type}</span>
+
+                                {feed.stock_url && (
+                                  <span
+                                    style={{
+                                      color: "var(--success-color)",
+                                    }}
+                                  >
+                                    QUICK STOCK
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {expandedLogId === feed.id && feed.error_log && (
+                            <pre
+                              className="mt-4 p-5 rounded-2xl text-[11px] overflow-auto"
+                              style={{
+                                backgroundColor: "var(--dark-amethyst)",
+                                color: "var(--success-color)",
+                              }}
+                            >
+                              {feed.error_log}
+                            </pre>
+                          )}
+                        </td>
+
+                        <td className="p-8">
+                          {isProcessing ? (
+                            <div className="space-y-3">
+                              <div
+                                className="flex justify-between text-[10px] uppercase font-black"
+                                style={{
+                                  color: "var(--royal-violet)",
+                                }}
+                              >
+                                <span>
+                                  {prog?.current || 0} / {prog?.total || 0}
+                                </span>
+
+                                <span>{pct}%</span>
+                              </div>
+
+                              <div
+                                className="h-2 rounded-full overflow-hidden"
+                                style={{
+                                  backgroundColor: "var(--surface-secondary)",
+                                }}
+                              >
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{
+                                    width: `${pct}%`,
+                                  }}
+                                  className="h-full rounded-full"
+                                  style={{
+                                    background: "var(--primary-gradient)",
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex justify-center">
+                              <span
+                                className="px-4 py-1 rounded-full text-[10px] uppercase border"
+                                style={{
+                                  backgroundColor:
+                                    feed.status === "SUCCESS"
+                                      ? "color-mix(in srgb, var(--success-color) 10%, transparent)"
+                                      : "var(--surface-secondary)",
+                                  color:
+                                    feed.status === "SUCCESS"
+                                      ? "var(--success-color)"
+                                      : "var(--text-secondary)",
+                                  borderColor: "var(--border-color)",
+                                }}
+                              >
+                                {feed.status || "IDLE"}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="p-8 px-10">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleEditIntent(feed)}
+                              className="p-3 rounded-xl border"
+                              style={{
+                                ...surfaceStyle,
+                                ...borderStyle,
+                                color: "var(--royal-violet)",
+                              }}
+                            >
+                              <Edit3 size={16} />
+                            </button>
+
+                            <button
+                              onClick={handleForceUnlock}
+                              className="p-3 rounded-xl border"
+                              style={{
+                                ...surfaceStyle,
+                                ...borderStyle,
+                                color: "var(--warning-color)",
+                              }}
+                            >
+                              <Unlock size={16} />
+                            </button>
+
+                            <button
+                              onClick={() => handleDelete(feed.id)}
+                              className="p-3 rounded-xl border"
+                              style={{
+                                ...surfaceStyle,
+                                ...borderStyle,
+                                color: "var(--danger-color)",
+                              }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </motion.div>
         ) : (
-          <motion.div key="config" className="space-y-6">
+          <motion.div
+            key="config"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-6"
+          >
             <button
               onClick={() => {
                 setShowConfig(false);
                 setFormData(INITIAL_FORM_STATE);
                 setDetectedColumns([]);
               }}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400"
+              className="flex items-center gap-2 text-[10px] uppercase"
+              style={{
+                color: "var(--text-secondary)",
+              }}
             >
-              <ChevronLeft size={14} /> Înapoi la listă
+              <ChevronLeft size={14} />
+              Înapoi
             </button>
-            <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 overflow-hidden">
+
+            <div
+              className="rounded-[2.5rem] shadow-2xl border overflow-hidden"
+              style={{
+                ...surfaceStyle,
+                ...borderStyle,
+              }}
+            >
               <div className="p-10 md:p-16 space-y-12">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                    <Label
+                      style={{
+                        color: "var(--text-secondary)",
+                      }}
+                    >
                       Nume Furnizor
                     </Label>
+
                     <input
                       value={formData.name}
                       onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-bold text-[var(--dark-amethyst)] shadow-inner outline-none"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                      Format
-                    </Label>
-                    <select
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-bold text-[var(--dark-amethyst)] outline-none"
-                      value={formData.feed_type}
-                      onChange={(e) =>
-                        setFormData({ ...formData, feed_type: e.target.value })
-                      }
-                    >
-                      <option value="CSV">Fișier CSV Tabular (Excel)</option>
-                      <option value="XML">Structură XML Flux</option>
-                    </select>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                      Cron Automat
-                    </Label>
-                    <select
-                      className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-bold text-[var(--dark-amethyst)] outline-none"
-                      value={formData.auto_sync ? "true" : "false"}
-                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          auto_sync: e.target.value === "true",
+                          name: e.target.value,
                         })
                       }
+                      className="w-full rounded-2xl px-6 py-4 border"
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label
+                      style={{
+                        color: "var(--text-secondary)",
+                      }}
                     >
-                      <option value="true">Activat (Cron Automat)</option>
-                      <option value="false">Dezactivat (Doar Manual)</option>
-                    </select>
-                  </div>
-                </div>
+                      Feed URL
+                    </Label>
 
-                {formData.feed_type === "CSV" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-zinc-100">
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                        Separator
-                      </Label>
-                      <input
-                        value={formData.csv_separator}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            csv_separator: e.target.value,
-                          })
-                        }
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-mono font-bold"
-                      />
-                    </div>
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                        Delimitator Text
-                      </Label>
-                      <input
-                        value={formData.text_delimiter}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            text_delimiter: e.target.value,
-                          })
-                        }
-                        className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-mono font-bold"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-3 pt-6 border-t border-zinc-100">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-[var(--royal-violet)]">
-                    URL Sursă Date
-                  </Label>
-                  <div className="flex flex-col md:flex-row gap-4">
                     <input
                       value={formData.url}
                       onChange={(e) =>
-                        setFormData({ ...formData, url: e.target.value })
+                        setFormData({
+                          ...formData,
+                          url: e.target.value,
+                        })
                       }
-                      className="flex-1 bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-mono font-bold text-sm"
+                      className="w-full rounded-2xl px-6 py-4 border"
+                      style={inputStyle}
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleInspect()}
-                      disabled={isInspecting || !formData.url}
-                      className="text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase bg-[var(--dark-amethyst)] shadow-xl flex items-center gap-2"
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label
+                      style={{
+                        color: "var(--text-secondary)",
+                      }}
                     >
-                      {isInspecting ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Search size={16} />
-                      )}{" "}
-                      Inspectează Coloane
-                    </button>
+                      Quick Stock URL
+                    </Label>
+
+                    <input
+                      value={formData.stock_url}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          stock_url: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-2xl px-6 py-4 border"
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label
+                      style={{
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      Adaos %
+                    </Label>
+
+                    <input
+                      type="number"
+                      value={formData.markup_percentage}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          markup_percentage: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full rounded-2xl px-6 py-4 border"
+                      style={inputStyle}
+                    />
                   </div>
                 </div>
 
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleInspect()}
+                    disabled={isInspecting}
+                    className="text-white px-10 py-4 rounded-2xl font-black uppercase flex items-center gap-2"
+                    style={{
+                      background: "var(--primary-gradient)",
+                    }}
+                  >
+                    {isInspecting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Search size={16} />
+                    )}
+                    Inspectează
+                  </button>
+                </div>
+
                 {detectedColumns.length > 0 && (
-                  <div className="pt-10 border-t border-zinc-100 space-y-8">
-                    <h3 className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
-                      Mapping Schema
+                  <div className="space-y-8">
+                    <h3
+                      className="text-xs uppercase font-black"
+                      style={{
+                        color: "var(--dark-amethyst)",
+                      }}
+                    >
+                      Mapping
                     </h3>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {MAPPING_FIELDS.map((f) => (
+                      {MAPPING_FIELDS.map((field) => (
                         <div
-                          key={f.key}
-                          className="bg-white p-5 rounded-2xl border border-zinc-100 shadow-sm space-y-3"
+                          key={field.key}
+                          className="rounded-2xl border p-5"
+                          style={{
+                            ...surfaceStyle,
+                            ...borderStyle,
+                          }}
                         >
-                          <Label className="text-[9px] font-black uppercase tracking-widest text-[var(--royal-violet)] flex justify-between">
-                            <span>{f.label}</span>
-                            {f.required && (
-                              <span className="text-rose-500">*</span>
-                            )}
+                          <Label
+                            className="text-[10px]"
+                            style={{
+                              color: "var(--royal-violet)",
+                            }}
+                          >
+                            {field.label}
                           </Label>
+
                           <select
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-bold shadow-sm outline-none focus:border-[var(--royal-violet)] transition-colors"
-                            value={formData.mapping_config[f.key] ?? ""}
+                            value={formData.mapping_config[field.key] ?? ""}
                             onChange={(e) =>
                               setFormData({
                                 ...formData,
                                 mapping_config: {
                                   ...formData.mapping_config,
-                                  [f.key]: e.target.value,
+                                  [field.key]: e.target.value,
                                 },
                               })
                             }
+                            className="w-full mt-3 rounded-xl px-4 py-3 border"
+                            style={inputStyle}
                           >
-                            <option value="">Ignoră Coloana</option>
+                            <option value="">Ignoră</option>
+
                             {detectedColumns.map((c) => (
                               <option key={c} value={c}>
                                 {c}
@@ -744,98 +903,23 @@ const AdminImportFeed = () => {
                   </div>
                 )}
 
-                <div className="pt-10 border-t border-zinc-100 space-y-8">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
-                    Filtre de Siguranță & Protecție Catalog
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-zinc-50/50 p-8 rounded-3xl border border-zinc-100 shadow-inner">
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                        Excludere Stoc Sub Limita
-                      </Label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.advanced_config.min_stock}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            advanced_config: {
-                              ...formData.advanced_config,
-                              min_stock: parseInt(e.target.value, 10) || 0,
-                            },
-                          })
-                        }
-                        className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold"
-                      />
-                    </div>
-                    <div className="space-y-3 flex flex-col justify-between">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                        Poze Obligatorii Furnizor
-                      </Label>
-                      <div className="flex items-center gap-4 py-2">
-                        <input
-                          type="checkbox"
-                          id="require_img_toggle"
-                          checked={formData.advanced_config.require_img}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              advanced_config: {
-                                ...formData.advanced_config,
-                                require_img: e.target.checked,
-                              },
-                            })
-                          }
-                          className="size-5 rounded cursor-pointer"
-                        />
-                        <label
-                          htmlFor="require_img_toggle"
-                          className="text-xs font-bold text-zinc-500 cursor-pointer select-none"
-                        >
-                          Respinge produsele fără imagini
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isSubmitting || detectedColumns.length === 0}
+                  className="text-white px-16 py-6 rounded-2xl uppercase font-black flex items-center gap-3 disabled:opacity-50"
+                  style={{
+                    background: "var(--primary-gradient)",
+                  }}
+                >
+                  {isSubmitting ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <DownloadCloud size={18} />
+                  )}
 
-                <div className="p-10 bg-zinc-50 border-t border-zinc-100 flex justify-between items-center rounded-b-[2.5rem] -mx-10 md:-mx-16 -mb-10 md:-mb-16">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                      Adaos Fix Global Fallback (%)
-                    </Label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
-                      value={formData.markup_percentage}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          markup_percentage: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className="w-32 bg-white border rounded-xl px-6 py-3 text-2xl font-black text-center shadow-sm"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={isSubmitting || detectedColumns.length === 0}
-                    className="text-white px-16 py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl flex items-center gap-3 active:scale-98 transition-transform disabled:opacity-50"
-                    style={{ background: "var(--primary-gradient)" }}
-                  >
-                    {isSubmitting ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <DownloadCloud size={18} />
-                    )}{" "}
-                    {formData.id
-                      ? "Actualizează Configurația"
-                      : "Salvează & Importă"}
-                  </button>
-                </div>
+                  {formData.id ? "Actualizează" : "Salvează"}
+                </button>
               </div>
             </div>
           </motion.div>
