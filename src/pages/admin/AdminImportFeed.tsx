@@ -12,6 +12,7 @@ import {
   FileText,
   Sliders,
   Plus,
+  Edit3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,6 +46,22 @@ const MAPPING_FIELDS = [
 
 type ProgressMap = Record<string, { current: number; total: number }>;
 
+const INITIAL_FORM_STATE = {
+  id: undefined as string | undefined, // Adăugat pentru a urmări dacă suntem pe modul Editare
+  name: "",
+  feed_type: "CSV",
+  url: "",
+  markup_percentage: 15.0,
+  csv_separator: ";",
+  text_delimiter: '"',
+  auto_sync: true,
+  advanced_config: {
+    min_stock: 0,
+    require_img: false,
+  },
+  mapping_config: {} as Record<string, string>,
+};
+
 const AdminImportFeed = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [feeds, setFeeds] = useState<any[]>([]);
@@ -61,20 +78,7 @@ const AdminImportFeed = () => {
   const [isInspecting, setIsInspecting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    feed_type: "CSV",
-    url: "",
-    markup_percentage: 15.0,
-    csv_separator: ";",
-    text_delimiter: '"',
-    auto_sync: true,
-    advanced_config: {
-      min_stock: 0,
-      require_img: false,
-    },
-    mapping_config: {} as Record<string, string>,
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -94,6 +98,10 @@ const AdminImportFeed = () => {
       fetch(`${API_BASE_URL}/api/v1${path}`, {
         credentials: "include",
         ...opts,
+        headers: {
+          "Content-Type": "application/json",
+          ...opts?.headers,
+        },
       }),
     [],
   );
@@ -224,17 +232,21 @@ const AdminImportFeed = () => {
     }
   };
 
-  const handleInspect = async () => {
-    if (!formData.url) return;
+  const handleInspect = async (targetUrl?: string, targetType?: string) => {
+    const urlToInspect = targetUrl || formData.url;
+    const typeToInspect = targetType || formData.feed_type;
+
+    if (!urlToInspect) return;
     setIsInspecting(true);
     try {
       const res = await apiFetch(
-        `/feeds/inspect?url=${encodeURIComponent(formData.url)}&feed_type=${formData.feed_type}`,
+        `/feeds/inspect?url=${encodeURIComponent(urlToInspect)}&feed_type=${typeToInspect}`,
       );
       const data = await res.json();
       setDetectedColumns(data.columns ?? []);
       if (data.columns?.length > 0) {
         toast.success("Structură tabelară mapată cu succes!");
+        return data.columns;
       } else {
         toast.error("Nu s-au putut detecta coloanele. Verifică URL-ul.");
       }
@@ -243,6 +255,29 @@ const AdminImportFeed = () => {
     } finally {
       setIsInspecting(false);
     }
+  };
+
+  // 🚀 LOGICĂ NOUĂ: Funcție pentru încărcarea datelor unui feed existent în formular
+  const handleEditIntent = async (feed: any) => {
+    setFormData({
+      id: feed.id,
+      name: feed.name,
+      feed_type: feed.feed_type || "CSV",
+      url: feed.url,
+      markup_percentage: feed.markup_percentage ?? 15.0,
+      csv_separator: feed.csv_separator || ";",
+      text_delimiter: feed.text_delimiter || '"',
+      auto_sync: feed.auto_sync ?? true,
+      advanced_config: {
+        min_stock: feed.advanced_config?.min_stock ?? 0,
+        require_img: feed.advanced_config?.require_img ?? false,
+      },
+      mapping_config: feed.mapping_config || {},
+    });
+
+    setShowConfig(true);
+    // Inspectăm automat URL-ul pentru a re-popula drop-down-urile cu coloanele detectate live
+    await handleInspect(feed.url, feed.feed_type);
   };
 
   const handleSave = async () => {
@@ -258,14 +293,25 @@ const AdminImportFeed = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await apiFetch("/feeds/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      // 🚀 DINAMIC: Dacă avem formData.id rulați PUT (Edit), altfel POST (Create)
+      const isEdit = !!formData.id;
+      const endpoint = isEdit ? `/feeds/${formData.id}` : "/feeds/";
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await apiFetch(endpoint, {
+        method: method,
         body: JSON.stringify(formData),
       });
+
       if (res.ok) {
-        toast.success("Configurare salvată în sistem.");
+        toast.success(
+          isEdit
+            ? "Configurație actualizată cu succes!"
+            : "Configurare salvată în sistem.",
+        );
         setShowConfig(false);
+        setFormData(INITIAL_FORM_STATE);
+        setDetectedColumns([]);
         refreshData();
       } else {
         const err = await res.json();
@@ -322,7 +368,7 @@ const AdminImportFeed = () => {
               style={{ color: "var(--royal-violet)" }}
             >
               <div
-                className={`size-2 rounded-full ${globalLock.is_locked ? "bg-amber-500 animate-ping" : "bg-emerald-500"}`}
+                className={`size-2 rounded-full ${globalLock.is_locked ? "bg-amber-500 animate-ping" : "bg-emerald-50"}`}
               />
               {globalLock.is_locked
                 ? "Sincronizare activă Celery"
@@ -342,7 +388,11 @@ const AdminImportFeed = () => {
               exit={{ opacity: 0 }}
             >
               <button
-                onClick={() => setShowConfig(true)}
+                onClick={() => {
+                  setFormData(INITIAL_FORM_STATE);
+                  setDetectedColumns([]);
+                  setShowConfig(true);
+                }}
                 disabled={globalLock.is_locked}
                 className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 disabled:opacity-50 whitespace-nowrap"
                 style={{ background: "var(--primary-gradient)" }}
@@ -457,6 +507,7 @@ const AdminImportFeed = () => {
                                     style={{
                                       background: "var(--primary-gradient)",
                                     }}
+                                    规律={{ width: `${pct}%` }}
                                     animate={{ width: `${pct}%` }}
                                   />
                                 </div>
@@ -480,9 +531,18 @@ const AdminImportFeed = () => {
                               <button
                                 onClick={() => handleSync(feed.id)}
                                 disabled={globalLock.is_locked}
-                                className="px-6 py-3 rounded-xl bg-white border border-zinc-200 text-[var(--dark-amethyst)] font-black text-[9px] uppercase shadow-sm"
+                                className="px-6 py-3 rounded-xl bg-white border border-zinc-200 text-[var(--dark-amethyst)] font-black text-[9px] uppercase shadow-sm active:scale-95 transition-transform"
                               >
                                 Sync
+                              </button>
+                              {/* 🚀 BUTON NOU: Permite editarea mapping-ului live */}
+                              <button
+                                onClick={() => handleEditIntent(feed)}
+                                disabled={globalLock.is_locked}
+                                className="p-3 bg-white border border-zinc-200 text-[var(--royal-violet)] rounded-xl shadow-sm hover:bg-zinc-50 transition-colors"
+                                title="Editează Mapare Coloane"
+                              >
+                                <Edit3 size={16} />
                               </button>
                               <button
                                 onClick={handleForceUnlock}
@@ -519,7 +579,11 @@ const AdminImportFeed = () => {
         ) : (
           <motion.div key="config" className="space-y-6">
             <button
-              onClick={() => setShowConfig(false)}
+              onClick={() => {
+                setShowConfig(false);
+                setFormData(INITIAL_FORM_STATE);
+                setDetectedColumns([]);
+              }}
               className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400"
             >
               <ChevronLeft size={14} /> Înapoi la listă
@@ -556,7 +620,7 @@ const AdminImportFeed = () => {
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                      Cron 2 ore
+                      Cron Automat
                     </Label>
                     <select
                       className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-6 py-4 font-bold text-[var(--dark-amethyst)] outline-none"
@@ -623,7 +687,7 @@ const AdminImportFeed = () => {
                     />
                     <button
                       type="button"
-                      onClick={handleInspect}
+                      onClick={() => handleInspect()}
                       disabled={isInspecting || !formData.url}
                       className="text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase bg-[var(--dark-amethyst)] shadow-xl flex items-center gap-2"
                     >
@@ -655,7 +719,7 @@ const AdminImportFeed = () => {
                             )}
                           </Label>
                           <select
-                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-bold"
+                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-bold shadow-sm outline-none focus:border-[var(--royal-violet)] transition-colors"
                             value={formData.mapping_config[f.key] ?? ""}
                             onChange={(e) =>
                               setFormData({
@@ -759,7 +823,7 @@ const AdminImportFeed = () => {
                     type="button"
                     onClick={handleSave}
                     disabled={isSubmitting || detectedColumns.length === 0}
-                    className="text-white px-16 py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl flex items-center gap-3"
+                    className="text-white px-16 py-6 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl flex items-center gap-3 active:scale-98 transition-transform disabled:opacity-50"
                     style={{ background: "var(--primary-gradient)" }}
                   >
                     {isSubmitting ? (
@@ -767,7 +831,9 @@ const AdminImportFeed = () => {
                     ) : (
                       <DownloadCloud size={18} />
                     )}{" "}
-                    Salvează & Importă
+                    {formData.id
+                      ? "Actualizează Configurația"
+                      : "Salvează & Importă"}
                   </button>
                 </div>
               </div>
