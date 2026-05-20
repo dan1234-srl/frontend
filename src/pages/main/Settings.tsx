@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "@/components/header/Header";
+import Navbar from "@/components/header/Navbar";
 import Footer from "@/components/footer/Footer";
 import {
   Bell,
@@ -43,11 +43,12 @@ const WebsiteSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
-      <Header />
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans selection:bg-[var(--royal-violet)] selection:text-white antialiased">
+      {/* Folosim componenta globală corectă care conține stările de login/meniu */}
+      <Navbar />
 
-      <main className="flex-1 pt-32 pb-20 px-6 md:px-12 lg:px-24">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 pt-40 pb-20 px-6 md:px-12 lg:px-24 max-w-[1400px] mx-auto w-full">
+        <div className="w-full">
           {/* Buton Înapoi */}
           <button
             onClick={() => navigate("/account")}
@@ -55,7 +56,7 @@ const WebsiteSettings = () => {
           >
             <ArrowLeft
               size={12}
-              className="group-hover:-translate-x-1 transition-transform"
+              className="group-hover:-translate-x-1 transition-transform duration-300"
             />
             Înapoi la cont
           </button>
@@ -63,12 +64,18 @@ const WebsiteSettings = () => {
           {/* Header Arhitectural */}
           <header className="mb-16 pb-10 border-b border-zinc-100">
             <div className="flex items-center gap-3 mb-4">
-              <span className="h-px w-8 bg-brand" />
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-brand">
+              <span
+                className="h-[2px] w-8 rounded-full"
+                style={{ background: "var(--primary-gradient)" }}
+              />
+              <p
+                className="text-[10px] font-black uppercase tracking-[0.5em]"
+                style={{ color: "var(--royal-violet)" }}
+              >
                 Setări Sistem
               </p>
             </div>
-            <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic">
+            <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-[var(--dark-amethyst)]">
               Preferințe <em>personale</em>
             </h1>
           </header>
@@ -81,7 +88,7 @@ const WebsiteSettings = () => {
                   label="Limba Afișată"
                   description="Alege limba în care dorești să explorezi magazinul"
                   control={
-                    <select className="bg-transparent border-b border-zinc-200 text-[10px] font-black uppercase tracking-widest py-2 outline-none focus:border-brand cursor-pointer">
+                    <select className="bg-transparent border-b border-zinc-200 text-[10px] font-black uppercase tracking-widest py-2 outline-none focus:border-[var(--royal-violet)] cursor-pointer">
                       <option>Română (RO)</option>
                       <option>English (EN)</option>
                     </select>
@@ -91,7 +98,7 @@ const WebsiteSettings = () => {
                   label="Monedă"
                   description="Prețurile vor fi convertite automat"
                   control={
-                    <select className="bg-transparent border-b border-zinc-200 text-[10px] font-black uppercase tracking-widest py-2 outline-none focus:border-brand cursor-pointer">
+                    <select className="bg-transparent border-b border-zinc-200 text-[10px] font-black uppercase tracking-widest py-2 outline-none focus:border-[var(--royal-violet)] cursor-pointer">
                       <option>RON (L)</option>
                       <option>EUR (€)</option>
                       <option>USD ($)</option>
@@ -133,24 +140,28 @@ const WebsiteSettings = () => {
               <motion.section
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-brand-deep text-white p-10 rounded-[3rem] shadow-2xl relative overflow-hidden"
+                className="p-10 rounded-[3rem] shadow-2xl relative overflow-hidden text-white"
+                style={{ backgroundColor: "var(--dark-amethyst)" }}
               >
                 {/* Decor fundal */}
-                <Lock className="absolute -right-4 -top-4 size-32 text-white/5" />
+                <Lock className="absolute -right-4 -top-4 size-32 opacity-5 pointer-events-none" />
 
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#c77dfb] mb-10 flex items-center gap-3">
+                <h3
+                  className="text-[10px] font-black uppercase tracking-[0.4em] mb-10 flex items-center gap-3"
+                  style={{ color: "var(--lavender-purple)" }}
+                >
                   <ShieldCheck size={14} /> Securitate Cont
                 </h3>
 
                 <div className="space-y-8 relative z-10">
                   <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-brand-softest/40 px-1">
+                    <Label className="text-[9px] font-black uppercase tracking-widest opacity-40 px-1">
                       Parola Actuală
                     </Label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
-                        className="w-full bg-transparent border-b border-white/10 py-3 text-sm outline-none focus:border-brand transition-all pr-10 text-white font-medium"
+                        className="w-full bg-transparent border-b border-white/10 py-3 text-sm outline-none transition-all pr-10 text-white font-medium focus:border-white/40"
                         placeholder="••••••••"
                       />
                       <button
@@ -168,34 +179,40 @@ const WebsiteSettings = () => {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-brand-softest/40 px-1">
+                    <Label className="text-[9px] font-black uppercase tracking-widest opacity-40 px-1">
                       Parola Nouă
                     </Label>
                     <input
                       type="password"
-                      className="w-full bg-transparent border-b border-white/10 py-3 text-sm outline-none focus:border-brand transition-all text-white font-medium"
+                      className="w-full bg-transparent border-b border-white/10 py-3 text-sm outline-none transition-all text-white font-medium focus:border-white/40"
                     />
                   </div>
 
-                  <button className="w-full bg-white text-brand-deep text-[10px] font-black uppercase tracking-[0.3em] py-4 rounded-2xl hover:bg-brand-softest transition-colors shadow-lg">
+                  <button className="w-full bg-white text-zinc-900 text-[10px] font-black uppercase tracking-[0.3em] py-4 rounded-2xl hover:bg-zinc-100 transition-all shadow-lg active:scale-98">
                     Actualizează Parola
                   </button>
                 </div>
 
                 <div className="mt-10 pt-8 border-t border-white/5">
                   <div className="flex items-start gap-4">
-                    <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                      <ShieldCheck size={18} className="text-[#c77dfb]" />
+                    <div className="size-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0 border border-white/10">
+                      <ShieldCheck
+                        size={18}
+                        style={{ color: "var(--mauve-magic)" }}
+                      />
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-white">
                         Autentificare 2FA
                       </p>
-                      <p className="text-[10px] text-brand-softest/50 mt-2 leading-relaxed font-medium">
+                      <p className="text-[11px] opacity-40 mt-2 leading-relaxed font-medium">
                         Adaugă un strat suplimentar de protecție folosind
                         telefonul tău.
                       </p>
-                      <button className="text-[9px] font-black uppercase tracking-widest text-[#c77dfb] mt-4 underline underline-offset-8 hover:text-white transition-colors">
+                      <button
+                        className="text-[9px] font-black uppercase tracking-widest mt-4 underline underline-offset-8 transition-colors hover:text-white"
+                        style={{ color: "var(--lavender-purple)" }}
+                      >
                         Configurează acum
                       </button>
                     </div>
@@ -214,7 +231,7 @@ const WebsiteSettings = () => {
                 </p>
                 <button
                   onClick={handleDeleteAccount}
-                  className="text-[10px] font-black uppercase tracking-widest text-red-600 underline underline-offset-8 hover:text-red-800"
+                  className="text-[10px] font-black uppercase tracking-widest text-red-600 underline underline-offset-8 hover:text-red-800 transition-colors"
                 >
                   Șterge definitiv contul
                 </button>
@@ -225,7 +242,7 @@ const WebsiteSettings = () => {
           <div className="mt-16 flex justify-center">
             <button
               onClick={handleSaveSettings}
-              className="px-20 h-16 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-black shadow-2xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="px-20 h-16 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl hover:bg-black shadow-2xl transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               Salvează Modificările
             </button>
@@ -256,7 +273,7 @@ const Section = ({
     className="bg-zinc-50/50 border border-zinc-100 p-10 rounded-[3rem] text-left"
   >
     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400 mb-10 pb-4 border-b border-zinc-100 flex items-center gap-3">
-      {icon} {title}
+      <span style={{ color: "var(--royal-violet)" }}>{icon}</span> {title}
     </h3>
     <div className="space-y-10">{children}</div>
   </motion.section>
@@ -275,7 +292,11 @@ const Row = ({
 }) => (
   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
     <div className="flex items-start gap-4 min-w-0">
-      {icon && <div className="text-brand mt-1 shrink-0">{icon}</div>}
+      {icon && (
+        <div className="mt-1 shrink-0" style={{ color: "var(--royal-violet)" }}>
+          {icon}
+        </div>
+      )}
       <div className="min-w-0">
         <p className="text-xs font-black uppercase tracking-widest text-zinc-900">
           {label}
