@@ -185,7 +185,7 @@ const AnimatedRoutes = () => {
             }
           />
           <Route
-            path="/settings"
+            path="/account/settings"
             element={
               <PageWrapper>
                 <WebsiteSettings />
