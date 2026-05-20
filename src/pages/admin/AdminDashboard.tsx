@@ -28,6 +28,7 @@ const AdminDashboard = () => {
   const [isRecoveringOrders, setIsRecoveringOrders] = useState(false);
   const [isMasterActivating, setIsMasterActivating] = useState(false);
   const [isReindexing, setIsReindexing] = useState(false);
+  const [isMasterSyncing, setIsMasterSyncing] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -209,6 +210,23 @@ const AdminDashboard = () => {
         {/* Action Controls styled with dynamic glass borders */}
         <div className="flex flex-wrap gap-3 w-full xl:w-auto bg-white/40 p-2 rounded-3xl border border-zinc-100 backdrop-blur-sm shadow-sm">
           <ActionButton
+            icon={<RefreshCw size={14} strokeWidth={2.5} />}
+            label="Master Sync"
+            onClick={() =>
+              handleAction(
+                () =>
+                  fetch(`${API_BASE_URL}/api/v1/admin/master-sync`, {
+                    method: "POST",
+                    credentials: "include",
+                  }),
+                setIsMasterSyncing,
+                "Sistemul a pornit procesul de auto-reparare și reindexare.",
+              )
+            }
+            isLoading={isMasterSyncing}
+            color="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+          />
+          <ActionButton
             icon={<Search size={14} strokeWidth={2.5} />}
             label="Reindex Search"
             onClick={() =>
@@ -274,7 +292,7 @@ const AdminDashboard = () => {
               )
             }
             isLoading={isRecoveringOrders}
-            color="#10b981"
+            color="#1e1e24"
           />
         </div>
       </section>
@@ -516,12 +534,17 @@ const AdminDashboard = () => {
 
 /* --- HIGH END BUTTON COMPONENT --- */
 const ActionButton = ({ icon, label, onClick, isLoading, color }: any) => {
+  const isGradient = color.includes("gradient");
+
   return (
     <button
       onClick={onClick}
       disabled={isLoading}
       className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3.5 text-[10px] font-black uppercase tracking-widest text-white transition-all rounded-2xl disabled:opacity-40 hover:brightness-110 shadow-md active:scale-[0.98]"
-      style={{ backgroundColor: color }}
+      style={{
+        background: isGradient ? color : undefined,
+        backgroundColor: !isGradient ? color : undefined,
+      }}
     >
       {isLoading ? <RefreshCw className="animate-spin" size={13} /> : icon}
       <span>{label}</span>
