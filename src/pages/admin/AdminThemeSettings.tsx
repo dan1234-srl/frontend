@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import {
   Save,
   Loader2,
-  RefreshCcw,
   Plus,
   Check,
   Trash2,
@@ -27,11 +26,6 @@ const PALETTE_FIELDS: Array<{ key: keyof ThemeColors; label: string }> = [
   { key: "mauve", label: "Softest" },
 ];
 
-const UI_FIELDS: Array<{ key: keyof ThemeColors; label: string }> = [
-  { key: "text_primary", label: "Text Color" },
-  { key: "surface_bg", label: "Surface BG" },
-];
-
 const AdminThemeSettings = () => {
   const {
     theme,
@@ -52,21 +46,23 @@ const AdminThemeSettings = () => {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [previewLive, setPreviewLive] = useState(true);
   const [loadingLib, setLoadingLib] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Încărcare
+  // Încărcare inițială librărie
   useEffect(() => {
     refreshLibrary().finally(() => setLoadingLib(false));
   }, [refreshLibrary]);
 
-  // Sincronizare la montare
+  // Sincronizare inițială - se execută O SINGURĂ DATĂ când se încarcă tema activă primită de la backend
   useEffect(() => {
-    if (theme && !editingId) {
+    if (theme && !isInitialized) {
       setFormData(theme);
       setEditingId(theme.id || null);
+      setIsInitialized(true);
     }
-  }, [theme, editingId]);
+  }, [theme, isInitialized]);
 
-  // Cleanup Preview
+  // Cleanup Preview la părăsirea paginii
   useEffect(() => {
     return () => resetPreview();
   }, [resetPreview]);
@@ -78,7 +74,6 @@ const AdminThemeSettings = () => {
     (formData.royal_violet as string) ||
     "#3c096c";
 
-  // Extragem culorile din string-ul curent pentru a le pune în color-pickerele de gradient
   const { gradStart, gradEnd } = useMemo(() => {
     const gradStr = formData.primary_gradient;
     if (!gradStr)
@@ -91,16 +86,19 @@ const AdminThemeSettings = () => {
     return { gradStart: autoGradientStart, gradEnd: autoGradientEnd };
   }, [formData.primary_gradient, autoGradientStart, autoGradientEnd]);
 
-  const activeGradient =
-    formData.primary_gradient ||
-    `linear-gradient(135deg, ${autoGradientStart} 0%, ${autoGradientEnd} 100%)`;
+  const activeGradient = useMemo(() => {
+    return (
+      formData.primary_gradient ||
+      `linear-gradient(135deg, ${autoGradientStart} 0%, ${autoGradientEnd} 100%)`
+    );
+  }, [formData.primary_gradient, autoGradientStart, autoGradientEnd]);
 
-  // Live preview forțat
+  // Live preview controlat dinamic, fără să asculte de contextul global 'theme'
   useEffect(() => {
     if (previewLive && formData.royal_violet) {
-      previewTheme({ ...formData, primary_gradient: activeGradient });
+      previewTheme({ ...formData, primary_gradient: activeGradient } as ThemeColors);
     }
-  }, [formData, previewLive, previewTheme, activeGradient]);
+  }, [formData, previewLive, activeGradient, previewTheme]);
 
   const handleField = (key: keyof ThemeColors, value: string) => {
     setFormData((p) => ({ ...p, [key]: value }));
@@ -111,12 +109,12 @@ const AdminThemeSettings = () => {
     const newEnd = type === "end" ? val : gradEnd;
     handleField(
       "primary_gradient",
-      `linear-gradient(135deg, ${newStart} 0%, ${newEnd} 100%)`,
+      `linear-gradient(135deg, ${newStart} 0%, ${newEnd} 100%)`
     );
   };
 
   const resetToAutoGradient = () => {
-    handleField("primary_gradient", ""); // Lăsăm string gol pentru ca motorul să folosească fallback-ul
+    handleField("primary_gradient", "");
     toast.success("Gradient resetat la modul automat");
   };
 
@@ -133,6 +131,7 @@ const AdminThemeSettings = () => {
       setFormData({
         ...currentColors,
         name: `Varianta Nouă ${themes.length + 1}`,
+        primary_gradient: "",
       });
     }
     toast.info("Am pregătit o pânză nouă bazată pe paleta curentă.");
@@ -143,7 +142,6 @@ const AdminThemeSettings = () => {
 
     setIsSaving(true);
     try {
-      // Garantăm existența unui gradient înainte de salvare pentru a evita DB NULL
       const finalGradient =
         formData.primary_gradient ||
         `linear-gradient(135deg, ${autoGradientStart} 0%, ${autoGradientEnd} 100%)`;
@@ -163,7 +161,7 @@ const AdminThemeSettings = () => {
 
       if (saved) {
         toast.success(
-          asNew ? "Design salvat ca variantă nouă!" : "Identitate actualizată!",
+          asNew ? "Design salvat ca variantă nouă!" : "Identitate actualizată!"
         );
         setEditingId(saved.id);
         setFormData(saved);
@@ -176,7 +174,7 @@ const AdminThemeSettings = () => {
       }
     } catch (err) {
       toast.error("Eroare la salvare. Verificați datele.");
-    } finally {
+    } finaly {
       setIsSaving(false);
     }
   };
@@ -196,7 +194,7 @@ const AdminThemeSettings = () => {
         await refreshLibrary();
         await refreshTheme();
       }
-    } finally {
+    } finaly {
       setIsApplying(null);
     }
   };
@@ -215,7 +213,7 @@ const AdminThemeSettings = () => {
         if (editingId === themeId) startNew();
         await refreshLibrary();
       }
-    } finally {
+    } finaly {
       setIsDeleting(null);
     }
   };
@@ -223,7 +221,7 @@ const AdminThemeSettings = () => {
   if (loadingLib)
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="animate-spin text-brand" size={40} />
+        <Loader2 className="animate-spin text-zinc-900" size={40} />
       </div>
     );
 
@@ -233,8 +231,8 @@ const AdminThemeSettings = () => {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="h-1 w-10 bg-brand rounded-full" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-brand">
+            <div className="h-1 w-10 bg-zinc-900 rounded-full" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">
               Identity System
             </span>
           </div>
@@ -247,7 +245,7 @@ const AdminThemeSettings = () => {
           <button
             onClick={() => {
               setPreviewLive(!previewLive);
-              previewLive ? resetPreview() : previewTheme(formData);
+              previewLive ? resetPreview() : previewTheme(formData as ThemeColors);
             }}
             className={`flex items-center gap-2 px-6 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
               previewLive
@@ -255,12 +253,11 @@ const AdminThemeSettings = () => {
                 : "bg-white text-zinc-400"
             }`}
           >
-            {previewLive ? <Eye size={16} /> : <EyeOff size={16} />} Preview
-            Live
+            {previewLive ? <Eye size={16} /> : <EyeOff size={16} />} Preview Live
           </button>
           <button
             onClick={startNew}
-            className="h-14 px-8 bg-brand text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-brand/20 hover:brightness-110 active:scale-95 transition-all"
+            className="h-14 px-8 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition-all"
           >
             <Plus size={18} /> Design Nou
           </button>
@@ -294,7 +291,7 @@ const AdminThemeSettings = () => {
             type="text"
             value={formData.name || ""}
             onChange={(e) => handleField("name", e.target.value)}
-            className="text-4xl md:text-5xl font-serif bg-transparent border-b border-zinc-100 w-full focus:outline-none focus:border-brand py-3 transition-all"
+            className="text-4xl md:text-5xl font-serif bg-transparent border-b border-zinc-100 w-full focus:outline-none py-3 transition-all"
             placeholder="Ex: Sapphire Atelier..."
           />
 
@@ -304,7 +301,7 @@ const AdminThemeSettings = () => {
                 key={f.key}
                 label={f.label}
                 value={(formData[f.key] as string) || "#000000"}
-                onChange={(v) => handleField(f.key, v)}
+                onChange={(v: string) => handleField(f.key, v)}
               />
             ))}
           </div>
@@ -333,7 +330,7 @@ const AdminThemeSettings = () => {
               </div>
               <button
                 onClick={resetToAutoGradient}
-                className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2 text-brand hover:bg-brand/10 px-4 py-2 rounded-full transition-all"
+                className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2 text-zinc-900 hover:bg-zinc-200 px-4 py-2 rounded-full transition-all"
               >
                 <Wand2 size={12} /> Auto (Din Bază)
               </button>
@@ -352,7 +349,6 @@ const AdminThemeSettings = () => {
               />
             </div>
 
-            {/* Visualizer mic */}
             <div
               className="h-4 w-full rounded-full shadow-inner"
               style={{ background: activeGradient }}
@@ -369,14 +365,14 @@ const AdminThemeSettings = () => {
               {isSaving ? (
                 <Loader2 className="animate-spin" size={18} />
               ) : (
-                <Save size={18} />
+                <Check size={18} />
               )}{" "}
               Update Curentă
             </button>
             <button
               onClick={() => handleSave(true)}
               disabled={isSaving}
-              className="flex-1 h-16 bg-brand text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg shadow-brand/20 hover:brightness-110 transition-all active:scale-95"
+              className="flex-1 h-16 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all active:scale-95"
             >
               <Sparkles size={18} /> Salvează ca Nouă
             </button>
@@ -466,15 +462,14 @@ const AdminThemeSettings = () => {
 
 const ColorInput = ({ label, value, onChange }: any) => (
   <div className="space-y-3 group">
-    <label className="text-[9px] font-black uppercase text-zinc-400 ml-1 group-focus-within:text-brand tracking-widest">
+    <label className="text-[9px] font-black uppercase text-zinc-400 ml-1 tracking-widest">
       {label}
     </label>
-    <div className="flex items-center gap-3 p-3 bg-white rounded-3xl border border-zinc-100 focus-within:border-brand/30 transition-all shadow-sm">
+    <div className="flex items-center gap-3 p-3 bg-white rounded-3xl border border-zinc-100 focus-within:border-zinc-300 transition-all shadow-sm">
       <div
         className="size-10 rounded-2xl border-4 border-zinc-50 shadow-sm shrink-0 relative overflow-hidden"
         style={{ backgroundColor: value || "#000000" }}
       >
-        {/* Nativ color picker, apelează eyedropper-ul sistemului */}
         <input
           type="color"
           value={value || "#000000"}
@@ -518,7 +513,7 @@ const ThemeCard = ({
         isActive
           ? "border-zinc-900 shadow-xl"
           : isEditing
-            ? "border-brand shadow-md"
+            ? "border-zinc-400 shadow-md"
             : "border-zinc-100 hover:border-zinc-300"
       }`}
       onClick={onEdit}
@@ -556,7 +551,7 @@ const ThemeCard = ({
                 onApply();
               }}
               disabled={isApplying}
-              className="w-full h-11 bg-brand text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-lg shadow-brand/30"
+              className="w-full h-11 bg-white text-zinc-900 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 transition-transform shadow-lg"
             >
               {isApplying ? (
                 <Loader2 size={14} className="animate-spin" />
