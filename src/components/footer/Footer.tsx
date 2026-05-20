@@ -111,18 +111,21 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full mt-32 relative overflow-hidden bg-white selection:bg-zinc-900 selection:text-white">
-      {/* 1. HIGH-END NEWSLETTER (Minimal & Architectural) */}
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12 pt-16 pb-24 border-b border-zinc-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-6 items-center">
+    <footer className="w-full mt-40 relative bg-transparent selection:bg-zinc-900 selection:text-white">
+      {/* 1. HIGH-END NEWSLETTER (Minimal & Floating Above) */}
+      <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-20 mb-[-4rem]">
+        <div className="bg-white rounded-[3rem] border border-zinc-100 p-10 md:p-16 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.04)] grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-7 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="w-8 h-[1px] bg-zinc-400" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">
+              <span
+                className="w-6 h-[2px]"
+                style={{ background: "var(--primary-gradient)" }}
+              />
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
                 Newsletter Collective
               </span>
             </div>
-            <h2 className="heading-serif text-4xl md:text-6xl font-medium tracking-tighter text-zinc-900 leading-[0.95]">
+            <h2 className="heading-serif text-3xl md:text-5xl font-medium tracking-tighter text-zinc-900 leading-[1.05]">
               {t(
                 "Rămâi în avangarda designului.",
                 "Stay ahead of the design vanguard.",
@@ -141,74 +144,73 @@ const Footer = () => {
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
                 placeholder={t("Adresa ta de email", "Your email address")}
-                className="w-full bg-zinc-50 border border-zinc-200/60 rounded-2xl py-5 pl-6 pr-16 text-sm outline-none transition-all duration-500 font-medium text-zinc-900 focus:bg-white focus:border-zinc-900 focus:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                className="w-full bg-zinc-50 border border-zinc-200/60 rounded-2xl py-4.5 pl-6 pr-16 text-xs font-semibold outline-none transition-all duration-500 text-zinc-900 focus:bg-white focus:border-zinc-900 focus:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
               />
               <button
                 type="submit"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 size-11 text-white rounded-xl flex items-center justify-center transition-all duration-300 shadow-md active:scale-95"
+                className="absolute right-2 top-1/2 -translate-y-1/2 size-11 text-white rounded-xl flex items-center justify-center transition-all duration-300 shadow-md active:scale-95"
                 style={{ background: "var(--primary-gradient)" }}
               >
-                <ArrowRight size={16} strokeWidth={2.5} />
+                <ArrowRight size={15} strokeWidth={2.5} />
               </button>
-              {inputFocused && (
-                <motion.div
-                  layoutId="input-glow"
-                  className="absolute -inset-px rounded-2xl pointer-events-none border border-zinc-900 z-10"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
             </motion.form>
           </div>
         </div>
       </div>
 
-      {/* 2. THE CHASM (Premium Architectural Split Line) */}
+      {/* 2. THE GEOMETRIC CHASM & MAIN INTERIOR */}
       <div
-        className="h-2 w-full opacity-60"
-        style={{ background: "var(--primary-gradient)" }}
-      />
-
-      {/* 3. CORE DEEP FOOTER */}
-      <div
-        className="text-white pt-24 pb-12 px-6 md:px-12 relative z-10"
-        style={{ backgroundColor: "var(--dark-amethyst)" }}
+        className="pt-36 pb-12 px-6 md:px-12 relative z-10"
+        style={{
+          backgroundColor: "var(--dark-amethyst)",
+          clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
+        }}
       >
-        {/* Subtle mesh background distortion for immersive atmosphere */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-screen overflow-hidden">
+        {/* Decorative thin structural outline mapping the asymmetric slope */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px] opacity-70 z-20 pointer-events-none"
+          style={{
+            background: "var(--primary-gradient)",
+            clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
+          }}
+        />
+
+        {/* Ambient mesh space distortion */}
+        <div className="absolute inset-0 opacity-25 pointer-events-none mix-blend-screen overflow-hidden">
           <div
-            className="absolute -top-40 -right-40 size-[500px] rounded-full blur-[140px]"
+            className="absolute -top-20 right-10 size-[600px] rounded-full blur-[150px]"
             style={{ background: "var(--royal-violet)" }}
           />
           <div
-            className="absolute -bottom-40 -left-40 size-[500px] rounded-full blur-[140px]"
+            className="absolute bottom-0 left-10 size-[450px] rounded-full blur-[130px]"
             style={{ background: "var(--lavender-purple)" }}
           />
         </div>
 
-        <div className="max-w-[1400px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-16 lg:gap-8 mb-28">
-            {/* BRANDING LOGO & MANIFESTO */}
-            <div className="lg:col-span-5 space-y-8">
+        <div className="max-w-[1400px] mx-auto relative z-10 pt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-16 lg:gap-12 mb-24">
+            {/* BRAND MANIFESTO BRAND BOX */}
+            <div className="lg:col-span-5 space-y-8 text-left">
               <Link to="/" className="inline-block group">
                 <motion.img
-                  whileHover={{ scale: 1.01 }}
+                  whileHover={{ scale: 1.02 }}
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
-                  className="h-8 w-auto brightness-0 invert opacity-90 transition-opacity"
+                  className="h-7 w-auto brightness-0 invert opacity-90 transition-opacity"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = getValidImageUrl(null);
                   }}
                 />
               </Link>
-              <p className="text-xs text-white/50 leading-relaxed max-w-sm font-medium tracking-wide">
+              <p className="text-xs text-white/40 leading-relaxed max-w-sm font-medium tracking-wide">
                 {t(
-                  "Platformă digitală unde viziunea atemporală întâlnește arhitectura codului și materia nobilă a designului global.",
-                  "Digital platform where timeless vision meets code architecture and the noble matter of global design.",
+                  "Arhitectură digitală complet integrată. O viziune atemporală ce reunește materia nobilă a designului contemporan universal sub o singură umbrelă tehnologică.",
+                  "Fully integrated digital architecture. A timeless vision joining the noble matter of global contemporary design under a single technological ecosystem.",
                 )}
               </p>
 
-              {/* Ultra modern micro-borders for icons */}
-              <div className="flex gap-3">
+              {/* Monolithic micro-brackets for icons */}
+              <div className="flex gap-2.5">
                 {socialLinks.map(({ id, Icon, href, label }) => (
                   <motion.a
                     key={id}
@@ -218,24 +220,25 @@ const Footer = () => {
                     aria-label={label}
                     whileHover={{
                       y: -3,
-                      backgroundColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                      borderColor: "rgba(255,255,255,0.3)",
                     }}
-                    className="size-11 rounded-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-white backdrop-blur-md transition-colors"
+                    className="size-10 rounded-xl border border-white/10 flex items-center justify-center text-white/50 hover:text-white backdrop-blur-xl transition-all duration-300"
                     style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
                   >
-                    <Icon size={16} strokeWidth={2} />
+                    <Icon size={15} strokeWidth={2.5} />
                   </motion.a>
                 ))}
               </div>
             </div>
 
-            {/* NAVIGATION LINK MATRICES */}
-            <div className="lg:col-span-4 grid grid-cols-2 gap-8">
+            {/* NAVIGATION LINKS CONTAINER */}
+            <div className="lg:col-span-4 grid grid-cols-2 gap-8 text-left">
               <div className="space-y-6">
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] block opacity-40">
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
                   {t("Navigare", "Explore")}
                 </span>
-                <ul className="flex flex-col gap-3.5 text-xs font-semibold tracking-wide text-white/60">
+                <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/50">
                   {collectionLinks.map((link) => (
                     <li key={link.name}>
                       <Link
@@ -244,8 +247,8 @@ const Footer = () => {
                       >
                         {link.name}
                         <ArrowUpRight
-                          size={11}
-                          className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out"
+                          size={10}
+                          className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out text-white/80"
                         />
                       </Link>
                     </li>
@@ -254,10 +257,10 @@ const Footer = () => {
               </div>
 
               <div className="space-y-6">
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] block opacity-40">
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
                   {t("Asistență", "Support")}
                 </span>
-                <ul className="flex flex-col gap-3.5 text-xs font-semibold tracking-wide text-white/60">
+                <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/50">
                   {supportLinks.map((link) => (
                     <li key={link.name}>
                       <Link
@@ -272,16 +275,16 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* THE STUDIO CONTACT INFO */}
-            <div className="lg:col-span-3 space-y-6 lg:text-right">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] block opacity-40">
+            {/* METROPOLITAN STUDIO HUB */}
+            <div className="lg:col-span-3 space-y-5 lg:text-right text-left">
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
                 {t("Contact", "Hub")}
               </span>
-              <div className="space-y-3 text-xs font-medium tracking-wide text-white/70 leading-relaxed">
-                <p className="opacity-80">Calea Dorobanți 123, RO</p>
+              <div className="space-y-3 text-xs font-semibold tracking-wide text-white/60 leading-relaxed">
+                <p className="opacity-70">Calea Dorobanți 123, RO</p>
                 <a
                   href="mailto:hello@evem-boutique.ro"
-                  className="block font-bold hover:underline bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80"
+                  className="inline-block font-bold hover:underline bg-clip-text text-transparent"
                   style={{
                     backgroundImage: "var(--primary-gradient)",
                     WebkitBackgroundClip: "text",
@@ -289,22 +292,21 @@ const Footer = () => {
                 >
                   hello@evem-boutique.ro
                 </a>
-                <div className="flex items-center gap-2 lg:justify-end pt-2 text-[11px] font-bold uppercase tracking-widest text-white/40">
-                  <Globe size={12} className="opacity-70" />{" "}
-                  <span>Ships Worldwide</span>
+                <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-40">
+                  <Globe size={11} /> <span>Ships Worldwide</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* LOWER META BAR (Copyright & Legals) */}
-          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+          {/* LOWER META BAR (Isomorphic Floating Card Layout) */}
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 backdrop-blur-md">
             <div className="flex items-center gap-3">
               <span
                 className="size-1.5 rounded-full"
                 style={{ background: "var(--primary-gradient)" }}
               />
-              <p className="text-[10px] font-medium tracking-wider text-white/40 uppercase">
+              <p className="text-[9px] font-bold tracking-widest text-white/30 uppercase">
                 © {new Date().getFullYear()} Evem Studio. Project Zero Node.
               </p>
             </div>
@@ -317,7 +319,7 @@ const Footer = () => {
                     href={link.path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] font-bold uppercase tracking-wider text-white/30 hover:text-white/80 transition-colors"
+                    className="text-[9px] font-bold uppercase tracking-wider text-white/30 hover:text-white/70 transition-colors"
                   >
                     {link.name}
                   </a>
@@ -325,7 +327,7 @@ const Footer = () => {
                   <Link
                     key={link.name}
                     to={link.path}
-                    className="text-[10px] font-bold uppercase tracking-wider text-white/30 hover:text-white/80 transition-colors"
+                    className="text-[9px] font-bold uppercase tracking-wider text-white/30 hover:text-white/70 transition-colors"
                   >
                     {link.name}
                   </Link>
