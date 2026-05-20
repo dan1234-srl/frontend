@@ -215,7 +215,7 @@ const AdminDashboard = () => {
             onClick={() =>
               handleAction(
                 () =>
-                  fetch(`${API_BASE_URL}/api/v1/products/master-sync`, {
+                  fetch(`${API_BASE_URL}/api/v1/products/admin/master-sync`, {
                     method: "POST",
                     credentials: "include",
                   }),
