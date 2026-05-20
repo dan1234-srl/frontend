@@ -65,31 +65,30 @@ const PLACEHOLDER_IMG =
 
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
+
   let data = imageSource;
 
+  // 1. Dacă e string, încearcă să-l parșezi (poate e JSON stringificat)
   if (typeof data === "string") {
-    if (data.startsWith("http") || data.startsWith("/")) {
-      return data.startsWith("/") ? `${API_BASE_URL}${data}` : data;
-    }
     try {
       data = JSON.parse(data);
     } catch {
-      return data || PLACEHOLDER_IMG;
+      // Dacă nu e JSON, tratăm ca URL direct
+      return data;
     }
   }
 
+  // 2. Acum 'data' ar trebui să fie obiect
   if (data && typeof data === "object") {
+    // Verifică dacă are cheia 'main' (cazul tău specific)
     const container = data.main || data;
-    const url =
-      container.medium ||
+    return (
       container.large ||
+      container.medium ||
       container.small ||
       container.url ||
-      (Array.isArray(data) ? data[0] : null);
-
-    if (url && typeof url === "string") {
-      return url.startsWith("/") ? `${API_BASE_URL}${url}` : url;
-    }
+      PLACEHOLDER_IMG
+    );
   }
 
   return PLACEHOLDER_IMG;
