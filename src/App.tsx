@@ -39,6 +39,7 @@ const Account = lazy(() => import("./pages/main/Account"));
 const Orders = lazy(() => import("./pages/main/Orders"));
 const Addresses = lazy(() => import("./pages/main/Addresses"));
 const WebsiteSettings = lazy(() => import("./pages/main/Settings"));
+const Settings = lazy(() => import("./pages/main/Account"));
 
 // --- STRIPE (Lazy Loaded) ---
 const SuccessPage = lazy(() => import("./pages/stripe/SuccessPage"));
@@ -188,7 +189,7 @@ const AnimatedRoutes = () => {
             path="/account/settings"
             element={
               <PageWrapper>
-                <WebsiteSettings />
+                <Settings />
               </PageWrapper>
             }
           />
