@@ -56,7 +56,7 @@ const FilterDrawer = () => {
     <AnimatePresence>
       {filtersOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end">
-          {/* Backdrop blur — identic cu ShoppingBag */}
+          {/* Backdrop blur */}
           <motion.div
             key="filter-backdrop"
             initial={{ opacity: 0 }}
@@ -214,6 +214,49 @@ const Navbar = () => {
     ],
   );
 
+  // Fetch Theme Variables
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/v1/themes/active`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Theme fetch failed");
+        return res.json();
+      })
+      .then((theme) => {
+        if (!theme) return;
+        const root = document.documentElement;
+
+        // Mapăm culorile din modelul de backend pe variabilele CSS
+        if (theme.dark_amethyst)
+          root.style.setProperty("--dark-amethyst", theme.dark_amethyst);
+        if (theme.dark_amethyst_2)
+          root.style.setProperty("--dark-amethyst-2", theme.dark_amethyst_2);
+        if (theme.indigo_ink)
+          root.style.setProperty("--indigo-ink", theme.indigo_ink);
+        if (theme.indigo_velvet)
+          root.style.setProperty("--indigo-velvet", theme.indigo_velvet);
+        if (theme.royal_violet)
+          root.style.setProperty("--royal-violet", theme.royal_violet);
+        if (theme.lavender_purple)
+          root.style.setProperty("--lavender-purple", theme.lavender_purple);
+        if (theme.mauve_magic)
+          root.style.setProperty("--mauve-magic", theme.mauve_magic);
+        if (theme.mauve) root.style.setProperty("--mauve", theme.mauve);
+        if (theme.text_primary)
+          root.style.setProperty("--text-primary", theme.text_primary);
+        if (theme.surface_bg)
+          root.style.setProperty("--surface-bg", theme.surface_bg);
+        if (theme.primary_gradient)
+          root.style.setProperty("--primary-gradient", theme.primary_gradient);
+      })
+      .catch((err) => {
+        console.warn(
+          "Could not load dynamic theme, falling back to CSS defaults:",
+          err,
+        );
+      });
+  }, []);
+
+  // Fetch Vouchers
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
       .then((res) => res.json())

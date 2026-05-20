@@ -1,7 +1,12 @@
+import { useEffect } from "react";
 import { ArrowRight, Instagram, Mail, ArrowUpRight, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
 
 // --- FUNCȚIA DE UTILITATE PENTRU IMAGINI ---
 // Plasată în afara componentei pentru a fi disponibilă fără erori de referință
@@ -18,9 +23,6 @@ const getValidImageUrl = (imageSource: string | null | undefined): string => {
     const parsed = JSON.parse(imageSource as string);
     return parsed?.main?.large || parsed?.url || "";
   } catch {
-    const API_BASE_URL =
-      import.meta.env.VITE_API_URL ||
-      "https://linea-backend-production.up.railway.app";
     return (imageSource as string).startsWith("/")
       ? `${API_BASE_URL}${imageSource}`
       : (imageSource as string);
@@ -32,6 +34,47 @@ const Footer = () => {
   const language = langContext?.language || "ro";
 
   const t = (ro: string, en: string) => (language === "en" ? en : ro);
+
+  // Preia și aplică tema activă independent, util dacă Navbar-ul nu este randat
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/v1/themes/active`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Theme fetch failed");
+        return res.json();
+      })
+      .then((theme) => {
+        if (!theme) return;
+        const root = document.documentElement;
+
+        if (theme.dark_amethyst)
+          root.style.setProperty("--dark-amethyst", theme.dark_amethyst);
+        if (theme.dark_amethyst_2)
+          root.style.setProperty("--dark-amethyst-2", theme.dark_amethyst_2);
+        if (theme.indigo_ink)
+          root.style.setProperty("--indigo-ink", theme.indigo_ink);
+        if (theme.indigo_velvet)
+          root.style.setProperty("--indigo-velvet", theme.indigo_velvet);
+        if (theme.royal_violet)
+          root.style.setProperty("--royal-violet", theme.royal_violet);
+        if (theme.lavender_purple)
+          root.style.setProperty("--lavender-purple", theme.lavender_purple);
+        if (theme.mauve_magic)
+          root.style.setProperty("--mauve-magic", theme.mauve_magic);
+        if (theme.mauve) root.style.setProperty("--mauve", theme.mauve);
+        if (theme.text_primary)
+          root.style.setProperty("--text-primary", theme.text_primary);
+        if (theme.surface_bg)
+          root.style.setProperty("--surface-bg", theme.surface_bg);
+        if (theme.primary_gradient)
+          root.style.setProperty("--primary-gradient", theme.primary_gradient);
+      })
+      .catch((err) => {
+        console.warn(
+          "Could not load dynamic theme in Footer, falling back to CSS defaults:",
+          err,
+        );
+      });
+  }, []);
 
   const collectionLinks = [
     { name: "Archive", path: "/category/archive" },
