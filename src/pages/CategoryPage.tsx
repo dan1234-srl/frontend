@@ -1,12 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import {
-  Loader2,
-  ChevronDown,
-  LayoutGrid,
-  Grid2X2,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Loader2, LayoutGrid, Grid2X2, SlidersHorizontal } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
 import { SortDropdown } from "../components/shop/SortDropdown";
@@ -150,6 +144,9 @@ const CategoryPage = () => {
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // 🚀 REFACOTORIZARE PENTRU INFINITE SCROLL
+  const observerTarget = useRef<HTMLDivElement | null>(null);
+
   const formatFallbackName = (str: string | undefined) => {
     if (!str) return "";
     return str
@@ -229,10 +226,31 @@ const CategoryPage = () => {
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
         );
         const data = await res.json();
+
         setProducts((prev) =>
           append ? [...prev, ...(data.items || [])] : data.items || [],
         );
         setTotalPages(data.pages || 1);
+
+        // Dacă s-a făcut o filtrare nouă sau s-a schimbat categoria (nu append), resetăm pagina în URL la 1
+        if (!append) {
+          setSearchParams(
+            (prev) => {
+              prev.set("page", "1");
+              return prev;
+            },
+            { replace: true },
+          );
+        } else {
+          // Actualizăm parametrul de pagină din URL pe măsură ce utilizatorul dă scroll în jos
+          setSearchParams(
+            (prev) => {
+              prev.set("page", page.toString());
+              return prev;
+            },
+            { replace: true },
+          );
+        }
       } catch {
         // fail silently
       } finally {
@@ -240,12 +258,42 @@ const CategoryPage = () => {
         setLoadingMore(false);
       }
     },
-    [slug, searchParams],
+    [slug, searchParams, setSearchParams],
   );
 
+  // Efect declanșat inițial la schimbarea filtrelor sau a categoriei
   useEffect(() => {
     fetchProducts(1, false);
-  }, [slug, searchParams, fetchProducts]);
+  }, [slug, searchParams.get("sort")]);
+  // Am scos searchParams complet de aici ca să nu se re-declanșeze fetch-ul la schimbarea paginii din URL
+
+  // 🚀 INTERSECTION OBSERVER PENTRU DETECȚIE SCROLL AUTOMAT
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Dacă elementul devine vizibil, nu se încarcă deja date și mai avem pagini disponibile
+        if (
+          entries[0].isIntersecting &&
+          !loadingMore &&
+          !loading &&
+          currentPage < totalPages
+        ) {
+          fetchProducts(currentPage + 1, true);
+        }
+      },
+      {
+        rootMargin: "200px", // Declanșează încărcarea cu 200px înainte ca utilizatorul să ajungă chiar la fundul paginii
+      },
+    );
+
+    observer.observe(target);
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [currentPage, totalPages, loadingMore, loading, fetchProducts]);
 
   const activeFiltersCount = (() => {
     let count = 0;
@@ -447,27 +495,16 @@ const CategoryPage = () => {
                   ))}
                 </div>
 
+                {/* 🚀 ELEMENTUL ELEMENT TRIGGER PENTRU INFINITE SCROLL */}
                 {currentPage < totalPages && (
-                  <div className="flex justify-center pt-12 border-t border-zinc-100">
-                    <button
-                      onClick={() => fetchProducts(currentPage + 1, true)}
-                      disabled={loadingMore}
-                      className="flex flex-col items-center gap-3 group transition-transform active:scale-95"
-                    >
-                      <div className="w-14 h-14 rounded-full border border-zinc-100 bg-white flex items-center justify-center group-hover:bg-zinc-950 group-hover:text-white group-hover:border-zinc-950 transition-all duration-300 shadow-sm">
-                        {loadingMore ? (
-                          <Loader2 className="animate-spin" size={16} />
-                        ) : (
-                          <ChevronDown
-                            className="group-hover:translate-y-0.5 transition-transform"
-                            size={16}
-                          />
-                        )}
-                      </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-black transition-colors">
-                        Încarcă Mai Multe
-                      </span>
-                    </button>
+                  <div
+                    ref={observerTarget}
+                    className="flex flex-col items-center justify-center py-12 gap-3"
+                  >
+                    <Loader2 className="animate-spin text-zinc-400" size={24} />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                      Se încarcă mai multe produse...
+                    </span>
                   </div>
                 )}
               </div>

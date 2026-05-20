@@ -322,7 +322,7 @@ const AdminCategories = () => {
           </div>
           <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
             Ierarhie{" "}
-            <span style={{ color: "var(--royal-violet)" }}>Colecții</span>
+            <span style={{ color: "var(--royal-violet)" }}>Categorii</span>
           </h1>
         </div>
 

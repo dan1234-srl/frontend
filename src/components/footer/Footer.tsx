@@ -181,7 +181,7 @@ const Footer = () => {
                   className="text-[10px] font-black uppercase tracking-[0.4em]"
                   style={{ color: "var(--lavender-purple)" }}
                 >
-                  {t("Colecții", "Collections")}
+                  {t("Categorii", "Categories")}
                 </h4>
                 <ul className="flex flex-col gap-4 text-[11px] font-bold uppercase tracking-widest text-white/50">
                   {collectionLinks.map((link) => (
