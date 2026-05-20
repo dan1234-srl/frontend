@@ -195,7 +195,7 @@ const AdminLayout = () => {
       ],
     },
   ];
-  a;
+
   return (
     <div className="fixed inset-0 flex bg-white font-sans overflow-hidden w-full h-screen">
       <LayoutGroup id="admin-sidebar-group">
