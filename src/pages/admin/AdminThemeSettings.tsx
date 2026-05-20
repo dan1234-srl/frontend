@@ -53,7 +53,7 @@ const AdminThemeSettings = () => {
     refreshLibrary().finally(() => setLoadingLib(false));
   }, [refreshLibrary]);
 
-  // Sincronizare inițială - se execută O SINGURĂ DATĂ când se încarcă tema activă primită de la backend
+  // Sincronizare inițială - se execută O SINGURĂ DAT AM când se încarcă tema activă primită de la backend
   useEffect(() => {
     if (theme && !isInitialized) {
       setFormData(theme);
@@ -96,7 +96,10 @@ const AdminThemeSettings = () => {
   // Live preview controlat dinamic, fără să asculte de contextul global 'theme'
   useEffect(() => {
     if (previewLive && formData.royal_violet) {
-      previewTheme({ ...formData, primary_gradient: activeGradient } as ThemeColors);
+      previewTheme({
+        ...formData,
+        primary_gradient: activeGradient,
+      } as ThemeColors);
     }
   }, [formData, previewLive, activeGradient, previewTheme]);
 
@@ -109,7 +112,7 @@ const AdminThemeSettings = () => {
     const newEnd = type === "end" ? val : gradEnd;
     handleField(
       "primary_gradient",
-      `linear-gradient(135deg, ${newStart} 0%, ${newEnd} 100%)`
+      `linear-gradient(135deg, ${newStart} 0%, ${newEnd} 100%)`,
     );
   };
 
@@ -161,7 +164,7 @@ const AdminThemeSettings = () => {
 
       if (saved) {
         toast.success(
-          asNew ? "Design salvat ca variantă nouă!" : "Identitate actualizată!"
+          asNew ? "Design salvat ca variantă nouă!" : "Identitate actualizată!",
         );
         setEditingId(saved.id);
         setFormData(saved);
@@ -174,7 +177,7 @@ const AdminThemeSettings = () => {
       }
     } catch (err) {
       toast.error("Eroare la salvare. Verificați datele.");
-    } finaly {
+    } finally {
       setIsSaving(false);
     }
   };
@@ -194,7 +197,7 @@ const AdminThemeSettings = () => {
         await refreshLibrary();
         await refreshTheme();
       }
-    } finaly {
+    } finally {
       setIsApplying(null);
     }
   };
@@ -213,7 +216,7 @@ const AdminThemeSettings = () => {
         if (editingId === themeId) startNew();
         await refreshLibrary();
       }
-    } finaly {
+    } finally {
       setIsDeleting(null);
     }
   };
@@ -245,7 +248,9 @@ const AdminThemeSettings = () => {
           <button
             onClick={() => {
               setPreviewLive(!previewLive);
-              previewLive ? resetPreview() : previewTheme(formData as ThemeColors);
+              previewLive
+                ? resetPreview()
+                : previewTheme(formData as ThemeColors);
             }}
             className={`flex items-center gap-2 px-6 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${
               previewLive
@@ -253,7 +258,8 @@ const AdminThemeSettings = () => {
                 : "bg-white text-zinc-400"
             }`}
           >
-            {previewLive ? <Eye size={16} /> : <EyeOff size={16} />} Preview Live
+            {previewLive ? <Eye size={16} /> : <EyeOff size={16} />} Preview
+            Live
           </button>
           <button
             onClick={startNew}
