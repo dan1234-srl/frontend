@@ -104,9 +104,40 @@ const AnimatedRoutes = () => {
 
   return (
     <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="brands" element={<AdminBrands />} />
+          <Route path="attributes" element={<AdminAttributes />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="coupons" element={<AdminCoupons />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="messages" element={<AdminMessages />} />
+          <Route path="newsletter" element={<AdminNewsletter />} />
+          <Route path="pages" element={<AdminPages />} />
+          <Route path="email-templates" element={<AdminEmailTemplates />} />
+          <Route
+            path="wishlist-analytics"
+            element={<AdminWishlistAnalytics />}
+          />
+          <Route path="import" element={<AdminImportFeed />} />
+          <Route path="export" element={<AdminExportFeed />} />
+          <Route path="theme" element={<AdminThemeSettings />} />
+          <Route path="settings" element={<AdminGeneralSettings />} />
+        </Route>
+      </Routes>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          {/* RUTE PUBLICE */}
           <Route
             path="/"
             element={
@@ -131,8 +162,6 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-
-          {/* AUTH */}
           <Route
             path="/reset-password"
             element={
@@ -141,8 +170,6 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-
-          {/* STRIPE */}
           <Route
             path="/order-confirmation"
             element={
@@ -159,8 +186,6 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-
-          {/* ACCOUNT */}
           <Route
             path="/account/profile"
             element={
@@ -193,8 +218,6 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-
-          {/* INFO */}
           <Route
             path="/about/our-story"
             element={
@@ -251,49 +274,15 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-        </Routes>
-
-        {/* ADMIN */}
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="brands" element={<AdminBrands />} />
-          <Route path="attributes" element={<AdminAttributes />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="coupons" element={<AdminCoupons />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          <Route path="messages" element={<AdminMessages />} />
-          <Route path="newsletter" element={<AdminNewsletter />} />
-          <Route path="pages" element={<AdminPages />} />
-          <Route path="email-templates" element={<AdminEmailTemplates />} />
           <Route
-            path="wishlist-analytics"
-            element={<AdminWishlistAnalytics />}
+            path="*"
+            element={
+              <PageWrapper>
+                <NotFound />
+              </PageWrapper>
+            }
           />
-          <Route path="import" element={<AdminImportFeed />} />
-          <Route path="export" element={<AdminExportFeed />} />
-          <Route path="theme" element={<AdminThemeSettings />} />
-          <Route path="settings" element={<AdminGeneralSettings />} />
-        </Route>
-
-        {/* 404 */}
-        <Route
-          path="*"
-          element={
-            <PageWrapper>
-              <NotFound />
-            </PageWrapper>
-          }
-        />
+        </Routes>
       </AnimatePresence>
     </Suspense>
   );
