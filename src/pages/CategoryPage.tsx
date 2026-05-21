@@ -164,11 +164,13 @@ const CategoryPage = () => {
   useEffect(() => {
     if (!slug) return;
     setFiltersData(null);
-    fetch(`${API_BASE_URL}/api/v1/products/filters/${slug}`)
+    fetch(
+      `${API_BASE_URL}/api/v1/products/filters/${slug}?${searchParams.toString()}`,
+    )
       .then((res) => res.json())
       .then((data) => setFiltersData(data))
       .catch(() => {});
-  }, [slug]);
+  }, [slug, searchParams.toString()]);
 
   useEffect(() => {
     if (!slug) return;
@@ -259,8 +261,10 @@ const CategoryPage = () => {
   );
 
   useEffect(() => {
+    // Resetăm la pagina 1 doar dacă nu este un scroll infinit (append)
+    // Deoarece aici e prima încărcare sau schimbare de filtru, folosim append: false
     fetchProducts(1, false);
-  }, [slug, searchParams.get("sort")]);
+  }, [slug, searchParams.toString()]);
 
   // INTERSECTION OBSERVER PENTRU DETECȚIE SCROLL AUTOMAT
   useEffect(() => {
@@ -384,7 +388,7 @@ const CategoryPage = () => {
             >
               <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
                 <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
-                  Filtre Portofoliu
+                  Filtre categorii
                 </SheetTitle>
               </SheetHeader>
 
