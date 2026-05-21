@@ -7,11 +7,6 @@ const decodedCache = new Set<string>();
 interface SmartImageProps {
   src: string | null | undefined;
   alt: string;
-  /**
-   * Aspect-ratio CSS (ex: "3/4"). Dacă e setat, wrapper-ul îl impune.
-   * Dacă lipsește, wrapper-ul devine `h-full w-full` (umple părintele,
-   * util când părintele are deja un aspect ratio fixat — caz curent).
-   */
   aspectRatio?: string;
   sizes?: string;
   widths?: number[];
@@ -39,27 +34,21 @@ export const SmartImage = memo(function SmartImage({
   onClick,
 }: SmartImageProps) {
   const finalSrc = src || "/placeholder.svg";
-  const [loaded, setLoaded] = useState(() => decodedCache.has(finalSrc));
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  // Verificăm imediat dacă este în cache pentru a evita flash-ul de skeleton
+  const [loaded, setLoaded] = useState(() => decodedCache.has(cfImg(finalSrc)));
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (decodedCache.has(finalSrc)) {
-      setLoaded(true);
-      return;
-    }
-    const node = imgRef.current;
-    if (node && node.complete && node.naturalWidth > 0) {
-      decodedCache.add(finalSrc);
+    const final = cfImg(finalSrc);
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
+      decodedCache.add(final);
       setLoaded(true);
     }
   }, [finalSrc]);
 
   const lqipUrl = lqip || cfLqip(finalSrc);
   const srcSet = cfSrcSet(finalSrc, widths, cfOpts);
-  const fallbackSrc = cfImg(finalSrc, {
-    w: widths?.[Math.floor((widths.length - 1) / 2)] ?? 640,
-    ...cfOpts,
-  });
+  const fallbackSrc = cfImg(finalSrc, { ...cfOpts });
 
   return (
     <div
@@ -69,34 +58,37 @@ export const SmartImage = memo(function SmartImage({
         !aspectRatio && "h-full w-full",
         className,
       )}
-      style={{
-        aspectRatio,
-        backgroundImage: loaded ? undefined : `url("${lqipUrl}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      style={{ aspectRatio }}
     >
+      {/* 1. LQIP mai rapid cu transformare CSS pentru blur */}
+      {!loaded && (
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-500"
+          style={{ backgroundImage: `url("${lqipUrl}")` }}
+        />
+      )}
+
       <img
         ref={imgRef}
         src={fallbackSrc}
         srcSet={srcSet}
         sizes={sizes}
         alt={alt}
+        // 2. Prioritizarea browserului (Crucial pentru LCP)
         loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
         decoding="async"
-        // @ts-expect-error - non-standard attribute, supported by modern browsers
-        fetchpriority={eager ? "high" : "auto"}
         onLoad={() => {
-          decodedCache.add(finalSrc);
+          decodedCache.add(cfImg(finalSrc));
           setLoaded(true);
         }}
         onError={(e) => {
           (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
-          setLoaded(true);
         }}
         className={cn(
-          "absolute inset-0 h-full w-full",
+          "absolute inset-0 h-full w-full transition-opacity duration-500",
           objectFit === "contain" ? "object-contain" : "object-cover",
+          loaded ? "opacity-100" : "opacity-0",
           imgClassName,
         )}
         draggable={false}
@@ -105,11 +97,12 @@ export const SmartImage = memo(function SmartImage({
   );
 });
 
-/** Prefetch o imagine în background și o marchează în cache. */
+/** Prefetch optimizat pentru a marca imaginea ca "gata" în cache */
 export function prefetchImage(url?: string | null) {
   if (!url || typeof window === "undefined") return;
-  const final = cfImg(url, { w: 640 });
+  const final = cfImg(url);
   if (decodedCache.has(final)) return;
+
   const img = new Image();
   img.decoding = "async";
   img.src = final;
