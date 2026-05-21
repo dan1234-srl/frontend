@@ -26,9 +26,9 @@ const SearchModal = ({
   useEffect(() => {
     if (!isConfigValid || !isOpen) return;
 
-    setSearching(true);
-
-    const delayDebounceFn = setTimeout(async () => {
+    // Funcție pentru a face fetch-ul fără să arate loader-ul (silent refresh)
+    const performSearch = async (silent = false) => {
+      if (!silent) setSearching(true);
       try {
         const response = await fetch(`${meiliUrl}/indexes/products/search`, {
           method: "POST",
@@ -36,25 +36,29 @@ const SearchModal = ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${meiliKey}`,
           },
-          body: JSON.stringify({
-            q: query,
-            limit: 18,
-          }),
+          body: JSON.stringify({ q: query, limit: 18 }),
         });
-
-        if (!response.ok) throw new Error("MeiliSearch server error");
-
         const data = await response.json();
         setHits(data.hits || []);
       } catch (error) {
-        console.error("Eroare la request-ul nativ MeiliSearch:", error);
+        console.error("Eroare MeiliSearch:", error);
       } finally {
-        setSearching(false);
-        setInitialSearchDone(true);
+        if (!silent) setSearching(false);
       }
-    }, 250); // Redus ușor la 250ms pentru o reacție mai "snappy"
+    };
 
-    return () => clearTimeout(delayDebounceFn);
+    // 1. Căutare inițială când se deschide sau se schimbă query-ul
+    const delayDebounceFn = setTimeout(performSearch, 250);
+
+    // 2. Interval de refresh la 10 secunde (doar dacă modalul e deschis)
+    const refreshInterval = setInterval(() => {
+      performSearch(true); // Silent update
+    }, 10000);
+
+    return () => {
+      clearTimeout(delayDebounceFn);
+      clearInterval(refreshInterval);
+    };
   }, [query, meiliUrl, meiliKey, isConfigValid, isOpen]);
 
   const handleClose = () => {
