@@ -14,17 +14,17 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { FiltersProvider } from "@/contexts/FiltersContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ScrollToTop from "./components/ScrollToTop";
 
-// --- PAGINI PUBLICE (Lazy Loaded) ---
+// ─── Public (lazy) ───
 const Index = lazy(() => import("./pages/Index"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// --- PAGINI DESPRE (Lazy Loaded) ---
+// ─── About (lazy) ───
 const OurStory = lazy(() => import("./pages/about/OurStory"));
 const Sustainability = lazy(() => import("./pages/about/Sustainability"));
 const SizeGuide = lazy(() => import("./pages/about/SizeGuide"));
@@ -33,19 +33,17 @@ const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
-// --- AUTH & ACCOUNT (Lazy Loaded) ---
+// ─── Auth & Account (lazy) ───
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const Account = lazy(() => import("./pages/main/Account"));
 const Orders = lazy(() => import("./pages/main/Orders"));
 const Addresses = lazy(() => import("./pages/main/Addresses"));
-const WebsiteSettings = lazy(() => import("./pages/main/Settings"));
-const Settings = lazy(() => import("./pages/main/Account"));
 
-// --- STRIPE (Lazy Loaded) ---
+// ─── Stripe (lazy) ───
 const SuccessPage = lazy(() => import("./pages/stripe/SuccessPage"));
 const CancelPage = lazy(() => import("./pages/stripe/CancelPage"));
 
-// --- ADMIN (Lazy Loaded) ---
+// ─── Admin (lazy) ───
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
@@ -74,11 +72,22 @@ const AdminGeneralSettings = lazy(
   () => import("./pages/admin/AdminGeneralSettings"),
 );
 
-const queryClient = new QueryClient();
+// Single Query Client + sane defaults (caching, no refetch storm).
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
+// Minimal fallback: doar un puls subtil, fără overlay full-screen (zero blocking paint).
 const PageLoader = () => (
-  <div className="fixed inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-50">
-    <div className="w-8 h-8 border-2 border-zinc-200 border-t-zinc-800 rounded-full animate-spin" />
+  <div className="fixed top-0 left-0 right-0 h-[2px] z-[100] overflow-hidden">
+    <div className="h-full w-1/3 bg-zinc-900 animate-[shimmer_1.2s_ease-in-out_infinite]" />
   </div>
 );
 
@@ -87,7 +96,7 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
-    transition={{ duration: 0.5 }}
+    transition={{ duration: 0.25, ease: "easeOut" }}
   >
     {children}
   </motion.div>
@@ -101,43 +110,45 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
 
   return (
     <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="brands" element={<AdminBrands />} />
-          <Route path="attributes" element={<AdminAttributes />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="coupons" element={<AdminCoupons />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          <Route path="messages" element={<AdminMessages />} />
-          <Route path="newsletter" element={<AdminNewsletter />} />
-          <Route path="pages" element={<AdminPages />} />
-          <Route path="email-templates" element={<AdminEmailTemplates />} />
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={isAdmin ? "admin" : location.pathname}>
+          {/* ── Admin (fără animation per-route, doar layout share) ── */}
           <Route
-            path="wishlist-analytics"
-            element={<AdminWishlistAnalytics />}
-          />
-          <Route path="import" element={<AdminImportFeed />} />
-          <Route path="export" element={<AdminExportFeed />} />
-          <Route path="theme" element={<AdminThemeSettings />} />
-          <Route path="settings" element={<AdminGeneralSettings />} />
-        </Route>
-      </Routes>
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="brands" element={<AdminBrands />} />
+            <Route path="attributes" element={<AdminAttributes />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="coupons" element={<AdminCoupons />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="reviews" element={<AdminReviews />} />
+            <Route path="messages" element={<AdminMessages />} />
+            <Route path="newsletter" element={<AdminNewsletter />} />
+            <Route path="pages" element={<AdminPages />} />
+            <Route path="email-templates" element={<AdminEmailTemplates />} />
+            <Route
+              path="wishlist-analytics"
+              element={<AdminWishlistAnalytics />}
+            />
+            <Route path="import" element={<AdminImportFeed />} />
+            <Route path="export" element={<AdminExportFeed />} />
+            <Route path="theme" element={<AdminThemeSettings />} />
+            <Route path="settings" element={<AdminGeneralSettings />} />
+          </Route>
+
+          {/* ── Public ── */}
           <Route
             path="/"
             element={
@@ -162,126 +173,21 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-          <Route
-            path="/reset-password"
-            element={
-              <PageWrapper>
-                <ResetPassword />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/order-confirmation"
-            element={
-              <PageWrapper>
-                <SuccessPage />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/order-canceled"
-            element={
-              <PageWrapper>
-                <CancelPage />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/account/profile"
-            element={
-              <PageWrapper>
-                <Account />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/account/addresses"
-            element={
-              <PageWrapper>
-                <Addresses />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/account/orders"
-            element={
-              <PageWrapper>
-                <Orders />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/account/settings"
-            element={
-              <PageWrapper>
-                <Settings />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/about/our-story"
-            element={
-              <PageWrapper>
-                <OurStory />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/about/sustainability"
-            element={
-              <PageWrapper>
-                <Sustainability />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/about/size-guide"
-            element={
-              <PageWrapper>
-                <SizeGuide />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/about/customer-care"
-            element={
-              <PageWrapper>
-                <CustomerCare />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/about/store-locator"
-            element={
-              <PageWrapper>
-                <StoreLocator />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/privacy-policy"
-            element={
-              <PageWrapper>
-                <PrivacyPolicy />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="/terms-of-service"
-            element={
-              <PageWrapper>
-                <TermsOfService />
-              </PageWrapper>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <PageWrapper>
-                <NotFound />
-              </PageWrapper>
-            }
-          />
+          <Route path="/reset-password" element={<PageWrapper><ResetPassword /></PageWrapper>} />
+          <Route path="/order-confirmation" element={<PageWrapper><SuccessPage /></PageWrapper>} />
+          <Route path="/order-canceled" element={<PageWrapper><CancelPage /></PageWrapper>} />
+          <Route path="/account/profile" element={<PageWrapper><Account /></PageWrapper>} />
+          <Route path="/account/addresses" element={<PageWrapper><Addresses /></PageWrapper>} />
+          <Route path="/account/orders" element={<PageWrapper><Orders /></PageWrapper>} />
+          <Route path="/account/settings" element={<PageWrapper><Account /></PageWrapper>} />
+          <Route path="/about/our-story" element={<PageWrapper><OurStory /></PageWrapper>} />
+          <Route path="/about/sustainability" element={<PageWrapper><Sustainability /></PageWrapper>} />
+          <Route path="/about/size-guide" element={<PageWrapper><SizeGuide /></PageWrapper>} />
+          <Route path="/about/customer-care" element={<PageWrapper><CustomerCare /></PageWrapper>} />
+          <Route path="/about/store-locator" element={<PageWrapper><StoreLocator /></PageWrapper>} />
+          <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
+          <Route path="/terms-of-service" element={<PageWrapper><TermsOfService /></PageWrapper>} />
+          <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
         </Routes>
       </AnimatePresence>
     </Suspense>
@@ -294,12 +200,6 @@ const App = () => (
       <LanguageProvider>
         <AuthProvider>
           <CartProvider>
-            {/*
-              FiltersProvider învelește TooltipProvider astfel încât
-              Navbar (care montează FilterDrawer) și CategoryPage
-              (care apelează openFilters / setFiltersData) să partajeze
-              același context indiferent de poziția lor în arbore.
-            */}
             <FiltersProvider>
               <TooltipProvider>
                 <Toaster />

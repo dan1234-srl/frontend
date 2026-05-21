@@ -79,7 +79,10 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
               src={getRawImgUrl(imageObjects[currentIndex])}
               alt="Imagine produs"
               eager
-              className="h-full w-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
+              objectFit="contain"
+              sizes="(max-width: 1024px) 100vw, 500px"
+              widths={[480, 640, 800, 1024]}
+              className="h-full w-full p-4 transition-transform duration-700 group-hover:scale-105 bg-white"
             />
           </motion.div>
         </AnimatePresence>
