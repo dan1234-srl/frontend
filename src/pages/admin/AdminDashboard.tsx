@@ -565,7 +565,7 @@ const StatusPill = ({ status }: { status: string }) => {
     colors = {
       bg: "rgba(123, 44, 191, 0.05)",
       text: "var(--royal-violet)",
-      borderColor: "rgba(123, 44, 191, 0.15)",
+      border: "rgba(123, 44, 191, 0.15)",
     };
 
   return (
@@ -574,7 +574,7 @@ const StatusPill = ({ status }: { status: string }) => {
       style={{
         backgroundColor: colors.bg,
         color: colors.text,
-        borderColor: colors.border || (colors as any).borderColor,
+        borderColor: colors.border,
       }}
     >
       {status || "Inactiv"}
