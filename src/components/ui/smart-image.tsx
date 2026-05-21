@@ -7,40 +7,27 @@ const decodedCache = new Set<string>();
 interface SmartImageProps {
   src: string | null | undefined;
   alt: string;
-  /** ex: "3/4", "1/1", "16/9". Mereu setează → zero CLS. */
+  /**
+   * Aspect-ratio CSS (ex: "3/4"). Dacă e setat, wrapper-ul îl impune.
+   * Dacă lipsește, wrapper-ul devine `h-full w-full` (umple părintele,
+   * util când părintele are deja un aspect ratio fixat — caz curent).
+   */
   aspectRatio?: string;
-  /** `sizes` HTML pentru srcset. Default: 100vw. */
   sizes?: string;
-  /** width-urile pentru srcset. */
   widths?: number[];
-  /** Imagine inline LQIP (background blur). Generată automat din src dacă nu e dată. */
   lqip?: string;
-  /** Imagine LCP → eager + fetchpriority high. */
   eager?: boolean;
-  /** "cover" implicit. Pentru galerii produs poți folosi "contain". */
   objectFit?: "cover" | "contain";
-  /** Stiluri aplicate WRAPPER-ului (rounding, background, etc). */
   className?: string;
-  /** Stiluri suplimentare pentru tag-ul <img> intern. */
   imgClassName?: string;
-  /** Opțiuni Cloudflare suplimentare (quality, format). */
   cfOpts?: Omit<CfOpts, "w" | "h">;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
-/**
- * Imagine performantă cu zero layout shift.
- *
- * - Wrapper-ul are întotdeauna un `aspect-ratio` fix → fără reflow.
- * - LQIP afișat ca `background-image` blur peste wrapper → imagine vizibilă
- *   în <50ms chiar și pe 3G.
- * - `<img>` real cu `srcset` Cloudflare + decoding async.
- * - Fără tranziție de opacitate (LQIP de sub face apariția instant).
- */
 export const SmartImage = memo(function SmartImage({
   src,
   alt,
-  aspectRatio = "1/1",
+  aspectRatio,
   sizes = "100vw",
   widths,
   lqip,
@@ -55,7 +42,6 @@ export const SmartImage = memo(function SmartImage({
   const [loaded, setLoaded] = useState(() => decodedCache.has(finalSrc));
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  // Detectează cache hit la mount (când imaginea era deja decodată în alt component).
   useEffect(() => {
     if (decodedCache.has(finalSrc)) {
       setLoaded(true);
@@ -70,12 +56,19 @@ export const SmartImage = memo(function SmartImage({
 
   const lqipUrl = lqip || cfLqip(finalSrc);
   const srcSet = cfSrcSet(finalSrc, widths, cfOpts);
-  const fallbackSrc = cfImg(finalSrc, { w: widths?.[Math.floor((widths.length - 1) / 2)] ?? 640, ...cfOpts });
+  const fallbackSrc = cfImg(finalSrc, {
+    w: widths?.[Math.floor((widths.length - 1) / 2)] ?? 640,
+    ...cfOpts,
+  });
 
   return (
     <div
       onClick={onClick}
-      className={cn("relative overflow-hidden bg-zinc-100", className)}
+      className={cn(
+        "relative overflow-hidden bg-zinc-100",
+        !aspectRatio && "h-full w-full",
+        className,
+      )}
       style={{
         aspectRatio,
         backgroundImage: loaded ? undefined : `url("${lqipUrl}")`,
