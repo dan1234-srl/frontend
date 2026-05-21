@@ -187,6 +187,7 @@ const AdminProducts = () => {
         sort_order: sortOrder,
         status: queryStatus,
         stock_status: queryStock,
+        _t: Date.now().toString(), // 🚀 ACEASTA ESTE REZOLVAREA
       });
 
       if (debouncedSearch) {
@@ -198,7 +199,10 @@ const AdminProducts = () => {
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
       const [prodRes, catRes] = await Promise.all([
-        fetch(`${endpoint}?${params.toString()}`, { credentials: "include" }),
+        fetch(`${endpoint}?${params.toString()}`, {
+          credentials: "include",
+          headers: { "Cache-Control": "no-cache" }, // 🚀 Forțează revalidarea
+        }),
         fetch(`${API_BASE_URL}/api/v1/categories/`, { credentials: "include" }),
       ]);
 
