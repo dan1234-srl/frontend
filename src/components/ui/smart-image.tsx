@@ -13,6 +13,7 @@ interface SmartImageProps extends Omit<
   className?: string;
   eager?: boolean;
   fallback?: string;
+  sizes?: string; // 🚀 Adăugat pentru performanță
 }
 
 export const SmartImage = memo(function SmartImage({
@@ -22,50 +23,33 @@ export const SmartImage = memo(function SmartImage({
   className,
   eager = false,
   fallback = "/placeholder.svg",
+  sizes = "100vw",
   ...rest
 }: SmartImageProps) {
   const [loaded, setLoaded] = useState(() => decodedCache.has(src));
   const [errored, setErrored] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (decodedCache.has(src)) {
+    // Dacă imaginea e deja în cache, setăm loaded imediat
+    if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
       setLoaded(true);
-      setErrored(false);
-      return;
-    }
-    setLoaded(false);
-    setErrored(false);
-
-    const node = imgRef.current;
-    if (node && node.complete && node.naturalWidth > 0) {
       decodedCache.add(src);
-      setLoaded(true);
     }
   }, [src]);
 
-  const handleLoad = () => {
-    decodedCache.add(src);
-    setLoaded(true);
-  };
-
-  const handleError = () => {
-    setErrored(true);
-    setLoaded(true);
-  };
-
   return (
-    <>
+    <div className={cn("relative overflow-hidden bg-zinc-100", className)}>
+      {/* Skeleton / LQIP Overlay */}
       {!loaded && (
-        <div aria-hidden className="absolute inset-0 skeleton-shimmer" />
+        <div className="absolute inset-0 z-10 animate-pulse bg-zinc-200" />
       )}
 
       {lqip && !loaded && (
         <img
           src={lqip}
           alt=""
-          aria-hidden
-          className="absolute inset-0 h-full w-full object-cover scale-105 blur-xl opacity-60"
+          className="absolute inset-0 h-full w-full object-cover blur-md scale-105"
         />
       )}
 
@@ -75,25 +59,19 @@ export const SmartImage = memo(function SmartImage({
         alt={alt}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
-
         fetchPriority={eager ? "high" : "low"}
-        onLoad={handleLoad}
-        onError={handleError}
+        sizes={sizes}
+        onLoad={() => {
+          decodedCache.add(src);
+          setLoaded(true);
+        }}
+        onError={() => setErrored(true)}
         className={cn(
-          "transition-opacity duration-700 ease-in-out", // O tranziție mai lină ajută la percepția vitezei
+          "h-full w-full object-cover transition-opacity duration-500",
           loaded ? "opacity-100" : "opacity-0",
-          className,
         )}
         {...rest}
       />
-    </>
+    </div>
   );
 });
-
-export function prefetchImage(url?: string) {
-  if (!url || decodedCache.has(url)) return;
-  const img = new Image();
-  img.decoding = "async";
-  img.src = url;
-  img.onload = () => decodedCache.add(url);
-}
