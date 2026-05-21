@@ -49,25 +49,21 @@ const ProductDetail = () => {
         return;
       }
 
-      const cached = getPrefetchedProduct(productId);
-      if (cached) {
-        const cachedData = await cached;
-        if (cachedData) {
-          setProduct(cachedData);
-          setLoading(false);
-          window.scrollTo(0, 0);
-          return;
-        }
-      }
-
       setLoading(true);
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/products/${productId}`,
-        );
-        if (!response.ok) throw new Error("Not found");
-        const data = await response.json();
+        // 1. Verificăm cache-ul
+        const cached = getPrefetchedProduct(productId);
+        const data = cached
+          ? await cached
+          : await (
+              await fetch(`${API_BASE_URL}/api/v1/products/${productId}`)
+            ).json();
+
+        if (!data) throw new Error("Not found");
+
         setProduct(data);
+        // 2. Scroll-ul se face după ce setăm datele pentru a fi mai fluid
+        setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0);
       } catch (err) {
         setError(true);
       } finally {
@@ -76,7 +72,6 @@ const ProductDetail = () => {
     };
 
     fetchProductData();
-    window.scrollTo(0, 0);
   }, [productId]);
 
   if (loading)
