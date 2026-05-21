@@ -1,127 +1,97 @@
 /**
- * Cloudflare Image Resizing helper.
- *
- * Folosim Cloudflare Image Resizing prin `<base>/cdn-cgi/image/<options>/<source>`.
- * - format=auto livrează AVIF / WebP automat în funcție de Accept header.
- * - quality 75 implicit (sweet spot pe 3G).
- * - Cache HTTP gestionat de Cloudflare edge.
- *
- * Source-ul poate fi:
- *   - URL absolut (https://s3...) → trecut ca atare,
- *   - path relativ (/uploads/...) → prefixat cu API_BASE_URL,
- *   - data: / blob: / placeholder → returnat fără transformare.
+ * Helper pentru accesarea directă a imaginilor din backend-ul propriu.
+ * Nu mai folosim Cloudflare/Weserv, procesarea se face pe backend la upload.
  */
 
-const CF_BASE = (import.meta.env.VITE_CF_IMAGE_BASE as string | undefined)
-  ?.replace(/\/$/, "");
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL as string | undefined
+)?.replace(/\/$/, "");
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(
-  /\/$/,
-  "",
-);
-
-// Fallback public proxy dacă CDN-ul Cloudflare nu este încă configurat.
-const WESERV_FALLBACK = "https://images.weserv.nl/";
-
-export interface CfOpts {
-  w?: number;
-  h?: number;
-  q?: number;
-  fit?: "cover" | "contain" | "scale-down" | "crop" | "pad";
-  blur?: number; // 1-250
-  format?: "auto" | "webp" | "avif" | "jpeg" | "png";
+export interface ImageOpts {
+  w?: number; // Folosit doar dacă backend-ul ar oferi rute dinamice, aici e ignorat
+  fit?: "cover" | "contain";
 }
 
 function normalizeSource(src: string): string {
-  if (!src) return src;
   if (
+    !src ||
     src.startsWith("data:") ||
     src.startsWith("blob:") ||
-    src.startsWith("/placeholder") ||
-    src.startsWith("/cdn-cgi/")
+    src.startsWith("/placeholder")
   ) {
     return src;
   }
-  if (src.startsWith("//")) return `https:${src}`;
+  if (src.startsWith("http")) return src;
   if (src.startsWith("/") && API_BASE_URL) return `${API_BASE_URL}${src}`;
   return src;
 }
 
 /**
- * Construiește un URL optimizat. Dacă VITE_CF_IMAGE_BASE nu e setat,
- * cade pe images.weserv.nl ca să nu rămânem fără optimizare.
+ * Returnează URL-ul direct către asset.
+ * Dacă backend-ul trimite un JSON (variante), îl parsăm aici.
  */
-export function cfImg(src: string | null | undefined, opts: CfOpts = {}): string {
+export function cfImg(
+  src: string | null | undefined,
+  opts: ImageOpts = {},
+): string {
   if (!src) return "/placeholder.svg";
-  const source = normalizeSource(src);
 
-  if (source.startsWith("data:") || source.startsWith("blob:")) return source;
-  if (source.startsWith("/placeholder")) return source;
-
-  const { w, h, q = 78, fit = "cover", blur, format = "auto" } = opts;
-
-  if (CF_BASE) {
-    const parts: string[] = [`format=${format}`, `quality=${q}`, `fit=${fit}`];
-    if (w) parts.push(`width=${w}`);
-    if (h) parts.push(`height=${h}`);
-    if (blur) parts.push(`blur=${blur}`);
-    // Cloudflare acceptă URL absolut neîncodat după opțiuni.
-    return `${CF_BASE}/cdn-cgi/image/${parts.join(",")}/${source}`;
+  // Dacă sursa este JSON-ul nostru cu variante {main: {medium: '...', small: '...'}}
+  if (typeof src === "string" && src.trim().startsWith("{")) {
+    try {
+      const data = JSON.parse(src);
+      // Selectăm varianta medium/default
+      const url = data?.main?.medium || data?.main?.large || data?.url || "";
+      return normalizeSource(url);
+    } catch {
+      return "/placeholder.svg";
+    }
   }
 
-  // Fallback weserv.nl
-  const params = new URLSearchParams();
-  params.set("url", source.replace(/^https?:\/\//, ""));
-  if (w) params.set("w", String(w));
-  if (h) params.set("h", String(h));
-  params.set("fit", fit === "contain" ? "contain" : "cover");
-  params.set("output", format === "auto" ? "webp" : format);
-  params.set("q", String(q));
-  if (blur) params.set("blur", String(Math.min(blur, 100)));
-  return `${WESERV_FALLBACK}?${params.toString()}`;
+  return normalizeSource(src);
 }
 
 /**
- * Generează un srcset modern pentru o lățime intrinsecă cunoscută.
- * Returnează string-ul `srcset` + width-urile folosite (pentru debug).
+ * Pentru imagini deja optimizate, srcset-ul va returna aceeași sursă
+ * (deoarece fișierul este deja livrat optim de pe assets.evem.ro)
  */
 export function cfSrcSet(
   src: string | null | undefined,
-  widths: number[] = [320, 480, 640, 800, 1200, 1600],
-  opts: Omit<CfOpts, "w"> = {},
+  widths: number[] = [320, 480, 640, 800, 1200],
 ): string {
   if (!src) return "";
-  return widths
-    .map((w) => `${cfImg(src, { ...opts, w })} ${w}w`)
-    .join(", ");
+  const source = cfImg(src);
+  return widths.map((w) => `${source} ${w}w`).join(", ");
 }
 
 /**
- * URL pentru LQIP (low-quality placeholder).
- * 24px lățime + blur agresiv = ~500 bytes, decodează instant.
+ * LQIP (Placeholder) - Folosește varianta 'small' dacă există în JSON-ul de backend
  */
 export function cfLqip(src: string | null | undefined): string {
-  return cfImg(src, { w: 32, q: 30, blur: 60 });
+  if (!src || typeof src !== "string" || !src.trim().startsWith("{"))
+    return "/placeholder.svg";
+  try {
+    const data = JSON.parse(src);
+    return normalizeSource(data?.main?.small || data?.main?.medium || "");
+  } catch {
+    return "/placeholder.svg";
+  }
 }
 
 /**
- * Preload-uri programatice pentru imaginea LCP.
- * Injectează un `<link rel="preload" as="image" imagesrcset=... imagesizes=...>`.
+ * Preload pentru LCP (Largest Contentful Paint).
  */
-export function preloadLcp(
-  src: string | null | undefined,
-  sizes: string,
-  widths?: number[],
-) {
+export function preloadLcp(src: string | null | undefined, sizes: string) {
   if (!src || typeof document === "undefined") return;
-  const id = `lcp-preload-${btoa(unescape(encodeURIComponent(src))).slice(0, 24)}`;
+  const url = cfImg(src);
+  const id = `lcp-preload-${btoa(url).slice(0, 16)}`;
   if (document.getElementById(id)) return;
+
   const link = document.createElement("link");
   link.id = id;
   link.rel = "preload";
   link.as = "image";
-  link.setAttribute("imagesrcset", cfSrcSet(src, widths));
-  link.setAttribute("imagesizes", sizes);
+  link.href = url;
   link.setAttribute("fetchpriority", "high");
   document.head.appendChild(link);
 }
