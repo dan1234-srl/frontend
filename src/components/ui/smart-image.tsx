@@ -13,7 +13,7 @@ interface SmartImageProps extends Omit<
   className?: string;
   eager?: boolean;
   fallback?: string;
-  sizes?: string; // 🚀 Adăugat pentru performanță
+  sizes?: string;
 }
 
 export const SmartImage = memo(function SmartImage({
@@ -31,7 +31,7 @@ export const SmartImage = memo(function SmartImage({
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    // Dacă imaginea e deja în cache, setăm loaded imediat
+    // Verificăm dacă imaginea e deja complet încărcată în cache-ul browserului
     if (imgRef.current?.complete && imgRef.current?.naturalWidth > 0) {
       setLoaded(true);
       decodedCache.add(src);
@@ -40,7 +40,6 @@ export const SmartImage = memo(function SmartImage({
 
   return (
     <div className={cn("relative overflow-hidden bg-zinc-100", className)}>
-      {/* Skeleton / LQIP Overlay */}
       {!loaded && (
         <div className="absolute inset-0 z-10 animate-pulse bg-zinc-200" />
       )}
@@ -75,3 +74,12 @@ export const SmartImage = memo(function SmartImage({
     </div>
   );
 });
+
+// 🚀 Exportul este acum prezent
+export function prefetchImage(url?: string) {
+  if (!url || decodedCache.has(url)) return;
+  const img = new Image();
+  img.decoding = "async";
+  img.src = url;
+  img.onload = () => decodedCache.add(url);
+}
