@@ -1,13 +1,15 @@
 import { Link } from "react-router-dom";
-import { memo, useMemo, useState, useEffect } from "react";
+import { memo, useMemo, useState, useEffect, useCallback } from "react";
 import { Heart, Star } from "lucide-react";
 import { SmartImage } from "@/components/ui/smart-image";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+// Importăm utilitarele pentru prefetch
+import { prefetchProduct, prefetchImage } from "@/lib/prefetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
-// 🚀 Parsare optimizată în afara componentei
+// Parsare optimizată a obiectului media din backend
 const parseImage = (media: any) => {
   let data = media;
   if (typeof data === "string" && data.trim().startsWith("{")) {
@@ -40,7 +42,14 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Sincronizare wishlist (se execută doar la schimbarea userului sau produsului)
+  // 🚀 DECLANȘATOR PREFETCH: Se activează la hover pe card
+  const handlePrefetch = useCallback(() => {
+    prefetchProduct(product.id);
+    const imgs = parseImage(product.image_url);
+    if (imgs.medium) prefetchImage(imgs.medium);
+  }, [product.id, product.image_url]);
+
+  // Sincronizare stare favorite
   useEffect(() => {
     const checkFavorite = () => {
       if (user) {
@@ -58,7 +67,7 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
     checkFavorite();
   }, [user, product.id]);
 
-  // 🚀 Calcularea statisticilor optimizată prin useMemo
+  // Calcul statistici optimizat prin useMemo
   const stats = useMemo(() => {
     const mainImg = parseImage(product.image_url);
     const basePrice = Number(
@@ -88,15 +97,7 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
       basePrice,
       isOutOfStock,
     };
-  }, [
-    product.image_url,
-    product.original_price,
-    product.base_price,
-    product.price,
-    product.sale_price,
-    product.stock_quantity,
-    product.is_active,
-  ]);
+  }, [product]);
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,7 +133,7 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
     } else {
       const local = JSON.parse(localStorage.getItem("guest_wishlist") || "[]");
       const exists = local.some((item: any) => item.id === product.id);
-      let updated = exists
+      const updated = exists
         ? local.filter((item: any) => item.id !== product.id)
         : [
             ...local,
@@ -152,8 +153,10 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
   };
 
   return (
-    <article className="group relative flex flex-col h-full bg-white rounded-lg">
-      {/* Imaginea */}
+    <article
+      className="group relative flex flex-col h-full bg-white rounded-lg"
+      onMouseEnter={handlePrefetch}
+    >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#f8f5fb] rounded-sm">
         <Link to={`/product/${product.slug}`} className="block h-full w-full">
           <SmartImage
@@ -194,7 +197,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
         )}
       </div>
 
-      {/* Info Produs */}
       <Link
         to={`/product/${product.slug}`}
         className="mt-4 space-y-2 px-1 text-left flex-1"
