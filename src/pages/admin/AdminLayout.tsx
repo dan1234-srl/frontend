@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -21,14 +21,13 @@ import {
   Heart,
   Users,
 } from "lucide-react";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 
-// 🚀 SIDEBAR MEMORIZAT: Nu se va re-randa la schimbarea paginii
+// SidebarContent rămâne neschimbat, este deja eficient
 const SidebarContent = memo(
   ({ isSidebarOpen, mobile, user, menuGroups, navigate }: any) => {
     const location = useLocation();
-
     return (
       <div className="flex flex-col h-full py-4">
         <div className="h-16 flex items-center shrink-0 px-6 mb-4">
@@ -41,7 +40,6 @@ const SidebarContent = memo(
             </div>
           )}
         </div>
-
         <div className="flex-1 overflow-y-auto luxury-scrollbar px-3 space-y-6">
           {menuGroups.map((group: any, idx: number) => (
             <div key={idx}>
@@ -60,13 +58,6 @@ const SidebarContent = memo(
                       to={item.path}
                       className={`group relative flex items-center h-11 my-0.5 rounded-xl transition-all duration-200 ${isActive ? "bg-zinc-100" : "hover:bg-zinc-50"}`}
                     >
-                      {isActive && (
-                        <motion.div
-                          layoutId="active-highlight"
-                          className="absolute left-0 w-1 h-5 rounded-r-full z-20"
-                          style={{ backgroundColor: group.color }}
-                        />
-                      )}
                       <div className="w-[54px] lg:w-[80px] flex items-center justify-center shrink-0 z-10">
                         <div
                           className="flex items-center justify-center size-8 rounded-lg transition-all duration-300"
@@ -94,26 +85,8 @@ const SidebarContent = memo(
             </div>
           ))}
         </div>
-
-        <div className="mt-auto pt-4 px-3 space-y-2 border-t border-zinc-50">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div
-              className="size-8 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm shrink-0"
-              style={{ background: "var(--primary-gradient)" }}
-            >
-              {user?.first_name?.[0] || "A"}
-            </div>
-            {(isSidebarOpen || mobile) && (
-              <div className="min-w-0 text-left">
-                <p className="text-[10px] font-black text-zinc-900 truncate uppercase tracking-tighter">
-                  {user?.first_name} {user?.last_name}
-                </p>
-                <p className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest">
-                  Administrator
-                </p>
-              </div>
-            )}
-          </div>
+        {/* Footer Sidebar */}
+        <div className="mt-auto pt-4 px-3 border-t border-zinc-50">
           <button
             onClick={() => navigate("/")}
             className="w-full flex items-center h-11 rounded-xl text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
@@ -133,16 +106,13 @@ const SidebarContent = memo(
   },
 );
 
+SidebarContent.displayName = "SidebarContent";
+
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [location.pathname]);
 
   const menuGroups = [
     {
@@ -198,49 +168,42 @@ const AdminLayout = () => {
 
   return (
     <div className="fixed inset-0 flex bg-white font-sans overflow-hidden w-full h-screen">
-      <LayoutGroup id="admin-sidebar-group">
-        <aside
-          className="hidden lg:flex flex-col bg-white border-r border-zinc-100 h-full shrink-0 relative z-50 transition-all duration-300"
-          style={{ width: isSidebarOpen ? 240 : 80 }}
+      {/* SIDEBAR - Persistent, nu se re-randează */}
+      <aside
+        className="hidden lg:flex flex-col bg-white border-r border-zinc-100 h-full shrink-0 relative z-50 transition-all duration-300"
+        style={{ width: isSidebarOpen ? 240 : 80 }}
+      >
+        <SidebarContent
+          isSidebarOpen={isSidebarOpen}
+          menuGroups={menuGroups}
+          user={user}
+          navigate={navigate}
+        />
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="absolute -right-3 top-1/2 size-6 bg-white border border-zinc-100 rounded-full flex items-center justify-center z-[60]"
         >
-          <SidebarContent
-            isSidebarOpen={isSidebarOpen}
-            menuGroups={menuGroups}
-            user={user}
-            navigate={navigate}
-          />
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="absolute -right-3 top-1/2 size-6 bg-white border border-zinc-100 rounded-full flex items-center justify-center z-[60]"
-          >
-            {isSidebarOpen ? <X size={10} /> : <Menu size={10} />}
-          </button>
-        </aside>
+          {isSidebarOpen ? <X size={10} /> : <Menu size={10} />}
+        </button>
+      </aside>
 
-        <div className="flex-1 flex flex-col h-full bg-[var(--background)] overflow-hidden">
-          <header className="lg:hidden h-14 border-b border-zinc-100 bg-white flex items-center justify-between px-4">
-            <button onClick={() => setIsMobileOpen(true)}>
-              <Menu size={20} />
-            </button>
-            <img src="/LINEA-1.svg" className="h-2.5 brightness-0" />
-          </header>
-
-          <main className="flex-1 overflow-y-auto">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: "linear" }}
-                className="p-4 sm:p-6 lg:p-10"
-              >
-                <Outlet />
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
-      </LayoutGroup>
+      {/* CONȚINUT - Singura zonă care se animă */}
+      <div className="flex-1 flex flex-col h-full bg-[var(--background)] overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="p-4 sm:p-6 lg:p-10"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 };
