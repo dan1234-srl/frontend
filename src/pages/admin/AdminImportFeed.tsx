@@ -11,6 +11,8 @@ import {
   Edit3,
   Zap,
   Eye,
+  Activity,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,7 +45,6 @@ const MAPPING_FIELDS = [
   { label: "Atribute / Specificații", key: "atributeprodus", required: false },
 ];
 
-// 🚀 Mapare exclusivă pentru fișierul rapid de stocuri
 const QUICK_MAPPING_FIELDS = [
   { label: "SKU / Cod Unic Intern *", key: "cod_produs", required: true },
   { label: "Preț Achiziție *", key: "pret", required: true },
@@ -67,7 +68,7 @@ interface FeedFormState {
     require_img: boolean;
   };
   mapping_config: Record<string, string>;
-  quick_stock_mapping_config: Record<string, string>; // 🚀 NOU: Stocat separat
+  quick_stock_mapping_config: Record<string, string>;
 }
 
 const INITIAL_FORM_STATE: FeedFormState = {
@@ -112,6 +113,15 @@ const normalizeKey = (v: string) =>
     ?.replace(/[\s_\-]/g, "")
     ?.trim();
 
+const statusCard = (active: boolean) => ({
+  backgroundColor: active
+    ? "color-mix(in srgb, var(--warning-color) 10%, transparent)"
+    : "color-mix(in srgb, var(--success-color) 10%, transparent)",
+  border: `1px solid ${
+    active ? "var(--warning-color)" : "var(--success-color)"
+  }`,
+});
+
 const AdminImportFeed = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [feeds, setFeeds] = useState<any[]>([]);
@@ -124,7 +134,6 @@ const AdminImportFeed = () => {
 
   const [progress, setProgress] = useState<ProgressMap>({});
 
-  // 🚀 Stări separate pentru inspectarea celor două tipuri de feed
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
   const [quickStockColumns, setQuickStockColumns] = useState<string[]>([]);
 
@@ -132,6 +141,10 @@ const AdminImportFeed = () => {
   const [isInspectingQuick, setIsInspectingQuick] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [masterSyncLoading, setMasterSyncLoading] = useState(false);
+
+  const [masterSyncStatus, setMasterSyncStatus] = useState<any>(null);
 
   const [formData, setFormData] = useState<FeedFormState>(INITIAL_FORM_STATE);
 
@@ -158,6 +171,50 @@ const AdminImportFeed = () => {
       },
     });
   }, []);
+
+  const fetchMasterSyncStatus = useCallback(async () => {
+    try {
+      const res = await apiFetch("/admin/master-sync/status");
+
+      if (res.ok) {
+        const data = await res.json();
+        setMasterSyncStatus(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [apiFetch]);
+
+  const handleRunHeavySync = async () => {
+    if (
+      !window.confirm(
+        "Pornești Heavy Sync global? Acest proces poate dura foarte mult.",
+      )
+    )
+      return;
+
+    setMasterSyncLoading(true);
+
+    try {
+      const res = await apiFetch("/admin/master-sync/run", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success(data.message || "Heavy sync pornit.");
+        fetchMasterSyncStatus();
+      } else {
+        toast.error(data.detail || "Sync failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error.");
+    } finally {
+      setMasterSyncLoading(false);
+    }
+  };
 
   const refreshData = useCallback(async () => {
     try {
@@ -194,6 +251,16 @@ const AdminImportFeed = () => {
       setLoading(false);
     }
   }, [apiFetch]);
+
+  useEffect(() => {
+    fetchMasterSyncStatus();
+
+    const interval = setInterval(() => {
+      fetchMasterSyncStatus();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchMasterSyncStatus]);
 
   useEffect(() => {
     let heartbeat: ReturnType<typeof setInterval>;
@@ -243,6 +310,7 @@ const AdminImportFeed = () => {
           if (msg.type === "IMPORT_COMPLETED") {
             toast.success("Sincronizare finalizată.");
             refreshData();
+            fetchMasterSyncStatus();
           }
         } catch (e) {
           console.error(e);
@@ -266,24 +334,26 @@ const AdminImportFeed = () => {
       wsRef.current?.close();
       clearInterval(heartbeat);
     };
-  }, [refreshData]);
+  }, [refreshData, fetchMasterSyncStatus]);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
 
-  // 🚀 Adaptat pentru a inspecta separat
   const handleInspect = async (
     target: "main" | "quick",
     specificUrl?: string,
   ) => {
     const urlToInspect =
       specificUrl || (target === "main" ? formData.url : formData.stock_url);
+
     const typeToInspect = formData.feed_type;
 
     if (!urlToInspect) {
       toast.error(
-        `Introdu URL pentru ${target === "main" ? "Feed Principal" : "Quick Stock"}.`,
+        `Introdu URL pentru ${
+          target === "main" ? "Feed Principal" : "Quick Stock"
+        }.`,
       );
       return;
     }
@@ -298,6 +368,7 @@ const AdminImportFeed = () => {
       );
 
       const data = await res.json();
+
       const cols = data.columns ?? [];
 
       if (target === "main") {
@@ -308,7 +379,9 @@ const AdminImportFeed = () => {
 
       if (cols.length > 0) {
         toast.success(
-          `${cols.length} coloane detectate pentru ${target === "main" ? "Feed" : "Stoc"}.`,
+          `${cols.length} coloane detectate pentru ${
+            target === "main" ? "Feed" : "Stoc"
+          }.`,
         );
       } else {
         toast.error("Nu s-au detectat coloane.");
@@ -347,7 +420,6 @@ const AdminImportFeed = () => {
   };
 
   const handleSave = async () => {
-    // Validare mapare principala
     const missingMain = MAPPING_FIELDS.filter(
       (f) => f.required && !formData.mapping_config[f.key],
     );
@@ -359,11 +431,11 @@ const AdminImportFeed = () => {
       return;
     }
 
-    // Validare mapare stoc rapid (daca URL-ul exista)
     if (formData.stock_url) {
       const missingQuick = QUICK_MAPPING_FIELDS.filter(
         (f) => f.required && !formData.quick_stock_mapping_config[f.key],
       );
+
       if (missingQuick.length > 0) {
         toast.error(
           `Mapează Quick Stock: ${missingQuick.map((m) => m.label).join(", ")}`,
@@ -376,7 +448,9 @@ const AdminImportFeed = () => {
 
     try {
       const isEdit = !!formData.id;
+
       const endpoint = isEdit ? `/feeds/${formData.id}` : "/feeds/";
+
       const method = isEdit ? "PUT" : "POST";
 
       const payload = {
@@ -393,8 +467,10 @@ const AdminImportFeed = () => {
         toast.success(isEdit ? "Feed actualizat." : "Feed creat cu succes.");
 
         setFormData(INITIAL_FORM_STATE);
+
         setDetectedColumns([]);
         setQuickStockColumns([]);
+
         setShowConfig(false);
 
         refreshData();
@@ -470,6 +546,213 @@ const AdminImportFeed = () => {
 
   return (
     <div className="w-full space-y-10 pb-20">
+      {/* HEAVY SYNC PANEL */}
+
+      <div
+        className="rounded-[2.5rem] border p-8 md:p-10 shadow-2xl"
+        style={{
+          ...surfaceStyle,
+          ...borderStyle,
+        }}
+      >
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Activity
+                size={18}
+                style={{
+                  color: "var(--royal-violet)",
+                }}
+              />
+
+              <span
+                className="uppercase text-[11px] font-black tracking-[0.3em]"
+                style={{
+                  color: "var(--royal-violet)",
+                }}
+              >
+                System Monitoring
+              </span>
+            </div>
+
+            <h2
+              className="text-4xl font-black tracking-tight"
+              style={{
+                color: "var(--dark-amethyst)",
+              }}
+            >
+              Master Heavy Sync
+            </h2>
+
+            <p
+              className="max-w-3xl text-sm leading-relaxed"
+              style={{
+                color: "var(--text-secondary)",
+              }}
+            >
+              Rulează sincronizarea completă enterprise: feed-uri, categorii,
+              atribute, rebuild filtre, invalidare cache și reindexare completă
+              Meilisearch.
+            </p>
+          </div>
+
+          <div className="flex gap-4 flex-wrap">
+            <button
+              onClick={fetchMasterSyncStatus}
+              className="px-6 py-4 rounded-2xl border flex items-center gap-2 font-black uppercase text-[11px]"
+              style={{
+                ...surfaceSecondaryStyle,
+                ...borderStyle,
+                color: "var(--text-primary)",
+              }}
+            >
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+
+            <button
+              onClick={handleRunHeavySync}
+              disabled={masterSyncLoading}
+              className="text-white px-8 py-4 rounded-2xl font-black uppercase flex items-center gap-2 disabled:opacity-50"
+              style={{
+                background: "var(--primary-gradient)",
+              }}
+            >
+              {masterSyncLoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Zap size={16} />
+              )}
+              Run Heavy Sync
+            </button>
+          </div>
+        </div>
+
+        {masterSyncStatus && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-10">
+              {[
+                {
+                  label: "MASTER SYNC",
+                  active: masterSyncStatus.master_sync_running,
+                },
+                {
+                  label: "SEARCH REINDEX",
+                  active: masterSyncStatus.search_reindex_running,
+                },
+                {
+                  label: "FILTER REBUILD",
+                  active: masterSyncStatus.filters_rebuild_running,
+                },
+                {
+                  label: "SEARCH SETUP",
+                  active: masterSyncStatus.search_setup_running,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl p-6"
+                  style={statusCard(item.active)}
+                >
+                  <div
+                    className="text-[10px] uppercase tracking-widest font-black"
+                    style={{
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {item.label}
+                  </div>
+
+                  <div className="mt-5 flex items-center gap-3">
+                    <div
+                      className="size-3 rounded-full animate-pulse"
+                      style={{
+                        backgroundColor: item.active
+                          ? "var(--warning-color)"
+                          : "var(--success-color)",
+                      }}
+                    />
+
+                    <span
+                      className="font-black text-sm"
+                      style={{
+                        color: item.active
+                          ? "var(--warning-color)"
+                          : "var(--success-color)",
+                      }}
+                    >
+                      {item.active ? "RUNNING" : "READY"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
+              {[
+                {
+                  label: "Catalog",
+                  value: masterSyncStatus.catalog_version,
+                },
+                {
+                  label: "Categories",
+                  value: masterSyncStatus.categories_version,
+                },
+                {
+                  label: "Listing",
+                  value: masterSyncStatus.listing_version,
+                },
+                {
+                  label: "Filters",
+                  value: masterSyncStatus.filters_version,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border p-5"
+                  style={{
+                    ...surfaceSecondaryStyle,
+                    ...borderStyle,
+                  }}
+                >
+                  <div
+                    className="text-[10px] uppercase tracking-widest font-black"
+                    style={{
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {item.label}
+                  </div>
+
+                  <div
+                    className="mt-3 text-2xl font-black"
+                    style={{
+                      color: "var(--royal-violet)",
+                    }}
+                  >
+                    v{item.value ?? 0}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              className="mt-8 text-xs"
+              style={{
+                color: "var(--text-secondary)",
+              }}
+            >
+              Ultima actualizare:{" "}
+              {masterSyncStatus.updated_at
+                ? new Date(masterSyncStatus.updated_at).toLocaleString()
+                : "-"}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* EXISTING UI */}
+
       <header
         className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 pb-12 border-b"
         style={borderStyle}
