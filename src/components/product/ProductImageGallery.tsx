@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 interface GalleryProps {
   mainImage: any;
   additionalImages?: any;
+  isLCP?: boolean; // Adaugă asta aici
 }
 
 const getRawImgUrl = (imgData: any): string => {
@@ -27,7 +28,11 @@ const getRawImgUrl = (imgData: any): string => {
   return typeof imgData === "string" ? imgData : "";
 };
 
-const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
+const ProductImageGallery = ({
+  mainImage,
+  additionalImages,
+  isLCP = false,
+}: GalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
@@ -78,7 +83,7 @@ const ProductImageGallery = ({ mainImage, additionalImages }: GalleryProps) => {
             <SmartImage
               src={getRawImgUrl(imageObjects[currentIndex])}
               alt="Imagine produs"
-              eager
+              eager={isLCP} // Acum primește corect valoarea
               objectFit="contain"
               sizes="(max-width: 1024px) 100vw, 500px"
               widths={[480, 640, 800, 1024]}

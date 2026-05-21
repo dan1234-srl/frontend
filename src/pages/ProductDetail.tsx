@@ -129,6 +129,9 @@ const ProductDetail = () => {
             <ProductImageGallery
               mainImage={processedMainImage}
               additionalImages={processedGallery}
+              // Adaugă acest prop în ProductImageGallery.tsx
+              // care să aplice <SmartImage eager={true} /> pe imaginea principală
+              isLCP={true}
             />
           </div>
 
