@@ -9,6 +9,7 @@ import ProductCarousel from "../components/content/ProductCarousel";
 import ProductReviews from "../components/product/ProductReviews";
 import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 import { getPrefetchedProduct } from "@/lib/prefetch";
+import { preloadLcp } from "@/lib/cf-image";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -41,6 +42,16 @@ const ProductDetail = () => {
     };
   }, [product]);
 
+  // 🚀 LCP preload — large variant pentru imaginea principală
+  useEffect(() => {
+    if (!processedMainImage) return;
+    const lcp =
+      processedMainImage.large ||
+      processedMainImage.medium ||
+      processedMainImage.small;
+    if (lcp) preloadLcp(lcp);
+  }, [processedMainImage]);
+
   useEffect(() => {
     const fetchProductData = async () => {
       if (!productId || productId === "null") {
@@ -49,21 +60,25 @@ const ProductDetail = () => {
         return;
       }
 
+      const cached = getPrefetchedProduct(productId);
+      if (cached) {
+        const cachedData = await cached;
+        if (cachedData) {
+          setProduct(cachedData);
+          setLoading(false);
+          window.scrollTo(0, 0);
+          return;
+        }
+      }
+
       setLoading(true);
       try {
-        // 1. Verificăm cache-ul
-        const cached = getPrefetchedProduct(productId);
-        const data = cached
-          ? await cached
-          : await (
-              await fetch(`${API_BASE_URL}/api/v1/products/${productId}`)
-            ).json();
-
-        if (!data) throw new Error("Not found");
-
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/products/${productId}`,
+        );
+        if (!response.ok) throw new Error("Not found");
+        const data = await response.json();
         setProduct(data);
-        // 2. Scroll-ul se face după ce setăm datele pentru a fi mai fluid
-        setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0);
       } catch (err) {
         setError(true);
       } finally {
@@ -72,6 +87,7 @@ const ProductDetail = () => {
     };
 
     fetchProductData();
+    window.scrollTo(0, 0);
   }, [productId]);
 
   if (loading)
@@ -129,9 +145,6 @@ const ProductDetail = () => {
             <ProductImageGallery
               mainImage={processedMainImage}
               additionalImages={processedGallery}
-              // Adaugă acest prop în ProductImageGallery.tsx
-              // care să aplice <SmartImage eager={true} /> pe imaginea principală
-              isLCP={true}
             />
           </div>
 

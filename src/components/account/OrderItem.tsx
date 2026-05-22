@@ -45,9 +45,7 @@ export const OrderItem = ({ order }: any) => {
       rawUrl = source?.main?.medium || source?.url || source?.medium || "";
     }
 
-    return rawUrl
-      ? `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=300&fit=cover&output=webp`
-      : "/placeholder-product.jpg";
+    return rawUrl || "/placeholder-product.jpg";
   };
 
   const getSafeAddress = () => {

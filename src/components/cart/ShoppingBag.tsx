@@ -123,8 +123,8 @@ const ShoppingBag = ({
       (typeof source === "string" ? source : "");
     if (!rawUrl) return "";
 
-    // Optimizare via image proxy pentru viteză de încărcare ultra-modernă
-    return `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=200&h=260&fit=cover&output=webp`;
+    // S3 deja livrează variante optimizate (small/medium/large)
+    return rawUrl;
   };
 
   useEffect(() => {

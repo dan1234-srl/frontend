@@ -1,97 +1,79 @@
 /**
- * Helper pentru accesarea directă a imaginilor din backend-ul propriu.
- * Nu mai folosim Cloudflare/Weserv, procesarea se face pe backend la upload.
+ * Image helper — S3 variants direct (small=200, medium=400, large=1000).
+ *
+ * Imaginile sunt deja optimizate la upload pe S3 (assets.evem.ro). NU mai trecem
+ * prin niciun proxy (weserv / cloudflare image resizing) pentru că:
+ *   - adaugă 200-2000ms latență pe 3G,
+ *   - pierdem caching-ul nativ S3/CloudFront,
+ *   - fișierele sunt deja AVIF/WebP-equivalent ca dimensiune.
+ *
+ * Caller-ul alege varianta corectă: `medium` pentru grid, `large` pentru detail,
+ * `small` ca LQIP / thumbnail.
  */
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_URL as string | undefined
 )?.replace(/\/$/, "");
 
-export interface ImageOpts {
-  w?: number; // Folosit doar dacă backend-ul ar oferi rute dinamice, aici e ignorat
-  fit?: "cover" | "contain";
+export interface CfOpts {
+  w?: number;
+  h?: number;
+  q?: number;
+  fit?: "cover" | "contain" | "scale-down" | "crop" | "pad";
+  blur?: number;
+  format?: "auto" | "webp" | "avif" | "jpeg" | "png";
 }
 
 function normalizeSource(src: string): string {
+  if (!src) return src;
   if (
-    !src ||
     src.startsWith("data:") ||
     src.startsWith("blob:") ||
     src.startsWith("/placeholder")
   ) {
     return src;
   }
-  if (src.startsWith("http")) return src;
+  if (src.startsWith("//")) return `https:${src}`;
   if (src.startsWith("/") && API_BASE_URL) return `${API_BASE_URL}${src}`;
   return src;
 }
 
-/**
- * Returnează URL-ul direct către asset.
- * Dacă backend-ul trimite un JSON (variante), îl parsăm aici.
- */
+/** Întoarce URL-ul S3 direct, fără transformări. */
 export function cfImg(
   src: string | null | undefined,
-  opts: ImageOpts = {},
+  _opts: CfOpts = {},
 ): string {
   if (!src) return "/placeholder.svg";
-
-  // Dacă sursa este JSON-ul nostru cu variante {main: {medium: '...', small: '...'}}
-  if (typeof src === "string" && src.trim().startsWith("{")) {
-    try {
-      const data = JSON.parse(src);
-      // Selectăm varianta medium/default
-      const url = data?.main?.medium || data?.main?.large || data?.url || "";
-      return normalizeSource(url);
-    } catch {
-      return "/placeholder.svg";
-    }
-  }
-
   return normalizeSource(src);
 }
 
-/**
- * Pentru imagini deja optimizate, srcset-ul va returna aceeași sursă
- * (deoarece fișierul este deja livrat optim de pe assets.evem.ro)
- */
+/** Fără srcset — S3 livrează varianta corectă aleasă de caller. */
 export function cfSrcSet(
-  src: string | null | undefined,
-  widths: number[] = [320, 480, 640, 800, 1200],
+  _src: string | null | undefined,
+  _widths?: number[],
+  _opts?: Omit<CfOpts, "w">,
 ): string {
-  if (!src) return "";
-  const source = cfImg(src);
-  return widths.map((w) => `${source} ${w}w`).join(", ");
+  return "";
 }
 
-/**
- * LQIP (Placeholder) - Folosește varianta 'small' dacă există în JSON-ul de backend
- */
+/** LQIP = small variant (când caller-ul nu îl pasează explicit). */
 export function cfLqip(src: string | null | undefined): string {
-  if (!src || typeof src !== "string" || !src.trim().startsWith("{"))
-    return "/placeholder.svg";
-  try {
-    const data = JSON.parse(src);
-    return normalizeSource(data?.main?.small || data?.main?.medium || "");
-  } catch {
-    return "/placeholder.svg";
-  }
+  if (!src) return "/placeholder.svg";
+  return normalizeSource(src);
 }
 
-/**
- * Preload pentru LCP (Largest Contentful Paint).
- */
-export function preloadLcp(src: string | null | undefined, sizes: string) {
+/** Preload pentru LCP — un singur href, prioritate maximă. */
+export function preloadLcp(src: string | null | undefined) {
   if (!src || typeof document === "undefined") return;
-  const url = cfImg(src);
-  const id = `lcp-preload-${btoa(url).slice(0, 16)}`;
+  const href = normalizeSource(src);
+  const id = `lcp-preload-${btoa(unescape(encodeURIComponent(href))).slice(0, 24)}`;
   if (document.getElementById(id)) return;
-
   const link = document.createElement("link");
   link.id = id;
   link.rel = "preload";
   link.as = "image";
-  link.href = url;
+  link.href = href;
   link.setAttribute("fetchpriority", "high");
+  link.crossOrigin = "anonymous";
   document.head.appendChild(link);
 }

@@ -57,10 +57,8 @@ const OptimizedImage = ({
   const [error, setError] = useState(false);
 
   const cleanSrc = getValidImageUrl(src);
-  // Optional: mai folosești weserv proxy, dar acum pozele din S3 sunt deja optimizate WEBP
-  const optimizedSrc = cleanSrc
-    ? `https://images.weserv.nl/?url=${encodeURIComponent(cleanSrc)}&w=200&h=200&fit=cover&output=webp`
-    : null;
+  // S3 livrează deja imagini optimizate
+  const optimizedSrc = cleanSrc || null;
 
   if (!optimizedSrc || error)
     return (

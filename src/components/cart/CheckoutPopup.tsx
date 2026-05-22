@@ -48,9 +48,7 @@ const getImageUrl = (imageInput: any) => {
     source?.small ||
     source?.large ||
     (typeof source === "string" ? source : "");
-  return rawUrl
-    ? `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=200&h=260&fit=cover&output=webp`
-    : "/placeholder.png";
+  return rawUrl || "/placeholder.png";
 };
 
 // --- COMPONENTA INPUT PREMIUM CONTROLATĂ CU VALIDARE INLINE ---

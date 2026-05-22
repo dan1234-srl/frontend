@@ -15,8 +15,23 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
+import { preloadLcp } from "@/lib/cf-image";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
+
+const extractLcpUrl = (product: any): string | null => {
+  if (!product) return null;
+  let data = product.image_url;
+  if (typeof data === "string" && data.trim().startsWith("{")) {
+    try {
+      data = JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+  const container = data?.main || data;
+  return container?.medium || container?.large || container?.small || null;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER
@@ -265,6 +280,13 @@ const CategoryPage = () => {
     // Deoarece aici e prima încărcare sau schimbare de filtru, folosim append: false
     fetchProducts(1, false);
   }, [slug, searchParams.toString()]);
+
+  // 🚀 LCP preload — prima imagine de produs (medium variant) declanșată imediat
+  useEffect(() => {
+    if (!products.length) return;
+    const url = extractLcpUrl(products[0]);
+    if (url) preloadLcp(url);
+  }, [products]);
 
   // INTERSECTION OBSERVER PENTRU DETECȚIE SCROLL AUTOMAT
   useEffect(() => {
