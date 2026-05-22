@@ -20,8 +20,10 @@ import { preloadLcp } from "@/lib/cf-image";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 const extractLcpUrl = (product: any): string | null => {
-  if (!product) return null;
+  if (!product || !product.image_url) return null;
+
   let data = product.image_url;
+  // Dacă e string JSON, parsează-l
   if (typeof data === "string" && data.trim().startsWith("{")) {
     try {
       data = JSON.parse(data);
@@ -29,8 +31,12 @@ const extractLcpUrl = (product: any): string | null => {
       return null;
     }
   }
+
   const container = data?.main || data;
-  return container?.medium || container?.large || container?.small || null;
+  const url = container?.medium || container?.large || container?.small;
+
+  // VALIDARE CRITICĂ: Asigură-te că returnezi doar string sau null
+  return typeof url === "string" ? url : null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -285,7 +291,10 @@ const CategoryPage = () => {
   useEffect(() => {
     if (!products.length) return;
     const url = extractLcpUrl(products[0]);
-    if (url) preloadLcp(url);
+    // Adaugă verificarea asta aici:
+    if (url && typeof url === "string") {
+      preloadLcp(url);
+    }
   }, [products]);
 
   // INTERSECTION OBSERVER PENTRU DETECȚIE SCROLL AUTOMAT
