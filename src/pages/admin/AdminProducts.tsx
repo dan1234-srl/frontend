@@ -165,7 +165,10 @@ const AdminProducts = () => {
   }, [searchTerm]);
 
   const fetchData = useCallback(async () => {
+    // Verificăm dacă suntem admin
+    console.log("Status isAdmin:", isAdmin);
     if (!isAdmin) return;
+
     try {
       setLoading(true);
       const endpoint = debouncedSearch
@@ -187,7 +190,7 @@ const AdminProducts = () => {
         sort_order: sortOrder,
         status: queryStatus,
         stock_status: queryStock,
-        _t: Date.now().toString(), // 🚀 ACEASTA ESTE REZOLVAREA
+        _t: Date.now().toString(),
       });
 
       if (debouncedSearch) {
@@ -195,29 +198,21 @@ const AdminProducts = () => {
         params.append("q", debouncedSearch);
         params.append("is_admin_view", "true");
       }
-
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
-      const [prodRes, catRes] = await Promise.all([
-        fetch(`${endpoint}?${params.toString()}`, {
-          credentials: "include",
-          headers: { "Cache-Control": "no-cache" }, // 🚀 Forțează revalidarea
-        }),
-        fetch(`${API_BASE_URL}/api/v1/categories/`, { credentials: "include" }),
-      ]);
+      const res = await fetch(`${endpoint}?${params.toString()}`, {
+        credentials: "include",
+        headers: { "Cache-Control": "no-cache" },
+      });
 
-      const prodData = await prodRes.json();
-      const catData = await catRes.json();
+      const data = await res.json();
+      console.log("API Response Data:", data); // 🚀 ACESTA ESTE PASUL CRITIC
 
-      setProducts(prodData.items || []);
-      setTotalPages(prodData.pages || 1);
-      setTotalItems(prodData.total || 0);
-
-      const fetchedCategories = Array.isArray(catData)
-        ? catData
-        : catData.items || [];
-      setCategories(fetchedCategories);
-    } catch {
+      setProducts(data.items || []);
+      setTotalPages(data.pages || 1);
+      setTotalItems(data.total || 0);
+    } catch (err) {
+      console.error("Fetch error:", err);
       toast.error("Eroare server la încărcarea datelor.");
     } finally {
       setLoading(false);
