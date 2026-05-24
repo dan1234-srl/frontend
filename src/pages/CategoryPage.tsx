@@ -21,9 +21,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 const extractLcpUrl = (product: any): string | null => {
   if (!product || !product.image_url) return null;
-
   let data = product.image_url;
-  // Dacă e string JSON, parsează-l
   if (typeof data === "string" && data.trim().startsWith("{")) {
     try {
       data = JSON.parse(data);
@@ -31,11 +29,8 @@ const extractLcpUrl = (product: any): string | null => {
       return null;
     }
   }
-
   const container = data?.main || data;
   const url = container?.medium || container?.large || container?.small;
-
-  // VALIDARE CRITICĂ: Asigură-te că returnezi doar string sau null
   return typeof url === "string" ? url : null;
 };
 
@@ -198,13 +193,7 @@ const CategoryPage = () => {
     fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!data) {
-          setCampaignBanners([]);
-        } else if (Array.isArray(data)) {
-          setCampaignBanners(data);
-        } else {
-          setCampaignBanners([data]);
-        }
+        setCampaignBanners(Array.isArray(data) ? data : data ? [data] : []);
       })
       .catch(() => setCampaignBanners([]));
   }, [slug]);
@@ -232,17 +221,9 @@ const CategoryPage = () => {
           }
         });
 
+        // Setare sortare default
         const currentSort = searchParams.get("sort");
-        if (currentSort === "pret-crescator" || currentSort === "price_asc") {
-          params.set("sort", "pret-crescator");
-        } else if (
-          currentSort === "pret-descrescator" ||
-          currentSort === "price_desc"
-        ) {
-          params.set("sort", "pret-descrescator");
-        } else {
-          params.set("sort", "cele-mai-noi");
-        }
+        params.set("sort", currentSort || "cele-mai-noi");
 
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
@@ -254,25 +235,19 @@ const CategoryPage = () => {
         );
         setTotalPages(data.pages || 1);
 
+        // FIX: Actualizăm URL-ul DOAR la încărcarea inițială (sau schimbare de filtru)
+        // Nu mai actualizăm pagina în URL în timpul infinite scroll-ului
         if (!append) {
           setSearchParams(
             (prev) => {
-              prev.set("page", "1");
-              return prev;
-            },
-            { replace: true },
-          );
-        } else {
-          setSearchParams(
-            (prev) => {
-              prev.set("page", page.toString());
-              return prev;
+              const newParams = new URLSearchParams(prev);
+              newParams.set("page", "1");
+              return newParams;
             },
             { replace: true },
           );
         }
       } catch {
-        // fail silently
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -282,22 +257,15 @@ const CategoryPage = () => {
   );
 
   useEffect(() => {
-    // Resetăm la pagina 1 doar dacă nu este un scroll infinit (append)
-    // Deoarece aici e prima încărcare sau schimbare de filtru, folosim append: false
     fetchProducts(1, false);
-  }, [slug, searchParams.toString()]);
+  }, [slug, searchParams.toString()]); // Observă că fetchProducts e stabil, deci nu intră în buclă
 
-  // 🚀 LCP preload — prima imagine de produs (medium variant) declanșată imediat
   useEffect(() => {
     if (!products.length) return;
     const url = extractLcpUrl(products[0]);
-    // Adaugă verificarea asta aici:
-    if (url && typeof url === "string") {
-      preloadLcp(url);
-    }
+    if (url && typeof url === "string") preloadLcp(url);
   }, [products]);
 
-  // INTERSECTION OBSERVER PENTRU DETECȚIE SCROLL AUTOMAT
   useEffect(() => {
     const target = observerTarget.current;
     if (!target) return;
@@ -313,9 +281,7 @@ const CategoryPage = () => {
           fetchProducts(currentPage + 1, true);
         }
       },
-      {
-        rootMargin: "200px",
-      },
+      { rootMargin: "200px" },
     );
 
     observer.observe(target);

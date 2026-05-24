@@ -173,21 +173,126 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
-          <Route path="/reset-password" element={<PageWrapper><ResetPassword /></PageWrapper>} />
-          <Route path="/order-confirmation" element={<PageWrapper><SuccessPage /></PageWrapper>} />
-          <Route path="/order-canceled" element={<PageWrapper><CancelPage /></PageWrapper>} />
-          <Route path="/account/profile" element={<PageWrapper><Account /></PageWrapper>} />
-          <Route path="/account/addresses" element={<PageWrapper><Addresses /></PageWrapper>} />
-          <Route path="/account/orders" element={<PageWrapper><Orders /></PageWrapper>} />
-          <Route path="/account/settings" element={<PageWrapper><Account /></PageWrapper>} />
-          <Route path="/about/our-story" element={<PageWrapper><OurStory /></PageWrapper>} />
-          <Route path="/about/sustainability" element={<PageWrapper><Sustainability /></PageWrapper>} />
-          <Route path="/about/size-guide" element={<PageWrapper><SizeGuide /></PageWrapper>} />
-          <Route path="/about/customer-care" element={<PageWrapper><CustomerCare /></PageWrapper>} />
-          <Route path="/about/store-locator" element={<PageWrapper><StoreLocator /></PageWrapper>} />
-          <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
-          <Route path="/terms-of-service" element={<PageWrapper><TermsOfService /></PageWrapper>} />
-          <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
+          <Route
+            path="/reset-password"
+            element={
+              <PageWrapper>
+                <ResetPassword />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/order-confirmation"
+            element={
+              <PageWrapper>
+                <SuccessPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/order-canceled"
+            element={
+              <PageWrapper>
+                <CancelPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/account/profile"
+            element={
+              <PageWrapper>
+                <Account />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/account/addresses"
+            element={
+              <PageWrapper>
+                <Addresses />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/account/orders"
+            element={
+              <PageWrapper>
+                <Orders />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/account/settings"
+            element={
+              <PageWrapper>
+                <Account />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/our-story"
+            element={
+              <PageWrapper>
+                <OurStory />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/sustainability"
+            element={
+              <PageWrapper>
+                <Sustainability />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/size-guide"
+            element={
+              <PageWrapper>
+                <SizeGuide />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/customer-care"
+            element={
+              <PageWrapper>
+                <CustomerCare />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/about/store-locator"
+            element={
+              <PageWrapper>
+                <StoreLocator />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/privacy-policy"
+            element={
+              <PageWrapper>
+                <PrivacyPolicy />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/terms-of-service"
+            element={
+              <PageWrapper>
+                <TermsOfService />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <PageWrapper>
+                <NotFound />
+              </PageWrapper>
+            }
+          />
         </Routes>
       </AnimatePresence>
     </Suspense>
