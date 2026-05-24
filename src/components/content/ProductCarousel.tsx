@@ -17,14 +17,19 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 interface ProductCarouselProps {
   categorySlug?: string;
-  title?: string;
+  title?: React.ReactNode;
   subtitle?: string;
+  sort?: string;
+
+  limit?: number;
 }
 
 const ProductCarousel = ({
   categorySlug,
   title,
   subtitle,
+  sort,
+  limit = 20,
 }: ProductCarouselProps) => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,10 +38,11 @@ const ProductCarousel = ({
     const fetchCarouselProducts = async () => {
       setLoading(true);
       try {
-        // Am mărit limita la 20 pentru a asigura fluiditatea caruselului cu 8 elemente vizibile
-        const url = `${API_BASE_URL}/api/v1/products/?limit=20${
-          categorySlug ? `&category_slug=${categorySlug}` : ""
-        }`;
+        const params = new URLSearchParams();
+        params.set("limit", String(limit));
+        if (categorySlug) params.set("category_slug", categorySlug);
+        if (sort) params.set("sort", sort);
+        const url = `${API_BASE_URL}/api/v1/products/?${params.toString()}`;
         const res = await fetch(url, { credentials: "include" });
         const data = await res.json();
         const productList = data.items || (Array.isArray(data) ? data : []);
@@ -49,7 +55,8 @@ const ProductCarousel = ({
     };
 
     fetchCarouselProducts();
-  }, [categorySlug]);
+  }, [categorySlug, sort, limit]);
+
 
   const getImageUrl = (p: any) => {
     const imgData = p.image_url;
@@ -136,7 +143,12 @@ const ProductCarousel = ({
                       prefetchProduct(p.sku);
                       if (imgMedium) prefetchImage(imgMedium);
                     }}
+                    onTouchStart={() => {
+                      prefetchProduct(p.sku);
+                      if (imgMedium) prefetchImage(imgMedium);
+                    }}
                   >
+
                     {/* Media Container - Aspect ratio mai strâns pentru a permite 8 pe rând */}
                     <div className="relative aspect-[3/4] bg-zinc-50 overflow-hidden mb-4 border border-zinc-100 transition-all duration-500 group-hover/card:shadow-md">
                       <SmartImage

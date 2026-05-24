@@ -1,5 +1,6 @@
-import { useState, memo } from "react";
+import { useState, memo, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
+
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -110,9 +111,16 @@ SidebarContent.displayName = "SidebarContent";
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
 
   const menuGroups = [
     {
@@ -145,7 +153,6 @@ const AdminLayout = () => {
       items: [
         { name: "Cupoane", icon: Ticket, path: "/admin/coupons" },
         { name: "Recenzii", icon: Star, path: "/admin/reviews" },
-        // --- NOU: Wishlist Analytics ---
         {
           name: "Wishlist Trends",
           icon: Heart,
@@ -166,9 +173,10 @@ const AdminLayout = () => {
     },
   ];
 
+
   return (
     <div className="fixed inset-0 flex bg-white font-sans overflow-hidden w-full h-screen">
-      {/* SIDEBAR - Persistent, nu se re-randează */}
+      {/* SIDEBAR DESKTOP */}
       <aside
         className="hidden lg:flex flex-col bg-white border-r border-zinc-100 h-full shrink-0 relative z-50 transition-all duration-300"
         style={{ width: isSidebarOpen ? 240 : 80 }}
@@ -187,8 +195,59 @@ const AdminLayout = () => {
         </button>
       </aside>
 
-      {/* CONȚINUT - Singura zonă care se animă */}
+      {/* SIDEBAR MOBIL — drawer */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsMobileOpen(false)}
+              className="lg:hidden fixed inset-0 bg-zinc-900/30 backdrop-blur-md z-[70]"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="lg:hidden fixed top-0 left-0 bottom-0 w-[260px] bg-white border-r border-zinc-100 z-[80] shadow-2xl"
+            >
+              <SidebarContent
+                isSidebarOpen={true}
+                mobile
+                menuGroups={menuGroups}
+                user={user}
+                navigate={navigate}
+              />
+              <button
+                onClick={() => setIsMobileOpen(false)}
+                aria-label="Închide meniul"
+                className="absolute top-4 right-4 size-8 rounded-full border border-zinc-100 flex items-center justify-center bg-white hover:bg-zinc-900 hover:text-white transition-all"
+              >
+                <X size={14} />
+              </button>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* CONȚINUT */}
       <div className="flex-1 flex flex-col h-full bg-[var(--background)] overflow-hidden">
+        {/* Mobile topbar */}
+        <header className="lg:hidden h-14 flex items-center justify-between px-4 border-b border-zinc-100 bg-white shrink-0">
+          <button
+            onClick={() => setIsMobileOpen(true)}
+            aria-label="Deschide meniul"
+            className="size-10 rounded-xl border border-zinc-100 flex items-center justify-center hover:bg-zinc-50 transition-all"
+          >
+            <Menu size={16} />
+          </button>
+          <img src="/LINEA-1.svg" className="h-3 brightness-0" alt="Evem" />
+          <div className="size-10" />
+        </header>
+
         <main className="flex-1 overflow-y-auto">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div
@@ -209,3 +268,4 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
+
