@@ -229,14 +229,16 @@ const AdminProducts = () => {
   ]);
 
   useEffect(() => {
-    // Refresh la fiecare 30 de secunde
+    // 1. Apelează fetchData imediat la montare
+    fetchData();
+
+    // 2. Refresh la fiecare 30 de secunde
     const interval = setInterval(() => {
       fetchData();
     }, 30000);
 
     return () => clearInterval(interval);
   }, [fetchData]);
-
   const handleToggleStatus = async (sku: string, currentStatus: string) => {
     const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
     try {
