@@ -201,6 +201,7 @@ const AdminProducts = () => {
       setLoading(false);
       return;
     }
+
     try {
       setLoading(true);
       const endpoint = debouncedSearch
@@ -209,6 +210,7 @@ const AdminProducts = () => {
 
       let queryStatus = statusFilter;
       let queryStock = stockFilter;
+
       if (statusFilter === "OUT_OF_STOCK") {
         queryStatus = "ALL";
         queryStock = "OUT_OF_STOCK";
@@ -223,6 +225,7 @@ const AdminProducts = () => {
         stock_status: queryStock,
         _t: Date.now().toString(),
       });
+
       if (debouncedSearch) {
         params.append("search", debouncedSearch);
         params.append("q", debouncedSearch);
@@ -230,12 +233,17 @@ const AdminProducts = () => {
       }
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
+      // 🚀 AICI ESTE FIX-UL: Am adăugat linia care îți lipsea
       const res = await fetch(`${endpoint}?${params.toString()}`, {
         credentials: "include",
         headers: { "Cache-Control": "no-cache" },
       });
-      if (!res.ok) throw new Error("Eroare API");
+
+      if (!res.ok) throw new Error("Eroare la încărcare");
+
       const data = await res.json();
+      console.log("DEBUG: Date primite:", data);
+
       setProducts(data.items || []);
       setTotalPages(data.pages || 1);
       setTotalItems(data.total || 0);
