@@ -32,6 +32,9 @@ const CustomerCare = lazy(() => import("./pages/about/CustomerCare"));
 const StoreLocator = lazy(() => import("./pages/about/StoreLocator"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+
 
 // ─── Auth & Account (lazy) ───
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
