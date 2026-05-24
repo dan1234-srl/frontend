@@ -117,8 +117,10 @@ const AdminLayout = () => {
   const location = useLocation();
 
   // Close mobile drawer on route change
-  const lastPath = useState(location.pathname)[0];
-  if (lastPath !== location.pathname && isMobileOpen) setIsMobileOpen(false);
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
 
   const menuGroups = [
     {
