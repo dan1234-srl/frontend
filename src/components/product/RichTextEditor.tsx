@@ -258,12 +258,11 @@ export const RichTextEditor = ({
   // Sincronizare inițială value → DOM
   useEffect(() => {
     if (!editorRef.current) return;
-    if (editorRef.current.innerHTML !== value) {
-      isInternalUpdate.current = true;
-      editorRef.current.innerHTML = value || "";
-      isInternalUpdate.current = false;
-    }
-  }, [value]);
+    isInternalUpdate.current = true;
+    editorRef.current.innerHTML = value || "";
+    isInternalUpdate.current = false;
+    // Rulează DOAR la mount (array gol) — key pe componentă garantează remontare
+  }, []); // <-- array gol, nu [value]
 
   // Detectare formate active la cursor
   const updateActiveFormats = useCallback(() => {

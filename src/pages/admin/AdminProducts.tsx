@@ -1187,11 +1187,12 @@ const AdminProducts = () => {
                     La randare, ProductDescription.tsx îl afișează perfect.
                   */}
                   <RichTextEditor
+                    key={editingProduct?.sku || "new-product"}
                     value={formData.description}
                     onChange={(html) =>
                       setFormData({ ...formData, description: html })
                     }
-                    placeholder="Descrie produsul: caracteristici, specificații, avantaje... Poți adăuga emoji 🎁, liste, titluri și chiar video YouTube!"
+                    placeholder="Descrie produsul: caracteristici, specificații, avantaje..."
                     minHeight={320}
                   />
 
