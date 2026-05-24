@@ -19,12 +19,16 @@ interface ProductCarouselProps {
   categorySlug?: string;
   title?: string;
   subtitle?: string;
+  sort?: string;
+  limit?: number;
 }
 
 const ProductCarousel = ({
   categorySlug,
   title,
   subtitle,
+  sort,
+  limit = 20,
 }: ProductCarouselProps) => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,10 +37,11 @@ const ProductCarousel = ({
     const fetchCarouselProducts = async () => {
       setLoading(true);
       try {
-        // Am mărit limita la 20 pentru a asigura fluiditatea caruselului cu 8 elemente vizibile
-        const url = `${API_BASE_URL}/api/v1/products/?limit=20${
-          categorySlug ? `&category_slug=${categorySlug}` : ""
-        }`;
+        const params = new URLSearchParams();
+        params.set("limit", String(limit));
+        if (categorySlug) params.set("category_slug", categorySlug);
+        if (sort) params.set("sort", sort);
+        const url = `${API_BASE_URL}/api/v1/products/?${params.toString()}`;
         const res = await fetch(url, { credentials: "include" });
         const data = await res.json();
         const productList = data.items || (Array.isArray(data) ? data : []);
@@ -49,7 +54,8 @@ const ProductCarousel = ({
     };
 
     fetchCarouselProducts();
-  }, [categorySlug]);
+  }, [categorySlug, sort, limit]);
+
 
   const getImageUrl = (p: any) => {
     const imgData = p.image_url;
