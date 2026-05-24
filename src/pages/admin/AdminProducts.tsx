@@ -1,3 +1,9 @@
+/**
+ * AdminProducts.tsx
+ * Pagina de administrare catalog produse.
+ * Modificare principală: textarea "Documentație Editorială" → RichTextEditor complet.
+ */
+
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -45,9 +51,14 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// 🚀 IMPORT EDITOR WYSIWYG
+import { RichTextEditor } from "@/components/product/RichTextEditor";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
 
 const PremiumInput = ({ label, value, onChange, icon }: any) => (
   <div className="space-y-1.5 text-left w-full">
@@ -63,38 +74,29 @@ const PremiumInput = ({ label, value, onChange, icon }: any) => (
   </div>
 );
 
-// --- UTILS ---
-const generateSlug = (text: string) => {
-  return text
+const generateSlug = (text: string) =>
+  text
     .toString()
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "-")
     .replace(/[^\w-]+/g, "")
     .replace(/--+/g, "-");
-};
 
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return PLACEHOLDER_IMG;
-
   let data = imageSource;
-
-  // 1. Dacă e string, încearcă să-l parșezi (poate e JSON stringificat)
   if (typeof data === "string") {
     try {
       data = JSON.parse(data);
     } catch {
-      // Dacă nu e JSON, tratăm ca URL direct
       return data;
     }
   }
-
-  // 2. Acum 'data' ar trebui să fie obiect
   if (data && typeof data === "object") {
-    // Verifică dacă are cheia 'main' (cazul tău specific)
     const container = data.main || data;
     return (
       container.large ||
@@ -104,7 +106,6 @@ const getValidImageUrl = (imageSource: any) => {
       PLACEHOLDER_IMG
     );
   }
-
   return PLACEHOLDER_IMG;
 };
 
@@ -119,7 +120,8 @@ const getStatusBadge = (status: string, stock: number) => {
   return "bg-zinc-50 border-zinc-200 text-zinc-500";
 };
 
-// --- MAIN COMPONENT ---
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 const AdminProducts = () => {
   const { isAdmin } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
@@ -128,7 +130,6 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  // Stări Filtre și Sortare
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -138,7 +139,6 @@ const AdminProducts = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [uploading, setUploading] = useState<string | null>(null);
 
-  // Paginație
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -169,6 +169,8 @@ const AdminProducts = () => {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+
+  // ── Fetch Categorii ────────────────────────────────────────────────────────
   const fetchCategories = useCallback(async () => {
     if (!isAdmin) return;
     try {
@@ -177,29 +179,28 @@ const AdminProducts = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        // Verificăm cum vine răspunsul (array sau obiect cu items)
-        const fetchedCategories = Array.isArray(data) ? data : data.items || [];
-        setCategories(fetchedCategories);
+        setCategories(Array.isArray(data) ? data : data.items || []);
       }
     } catch (e) {
       console.error("Eroare la categorii:", e);
     }
   }, [isAdmin]);
 
+  // ── Debounce search ────────────────────────────────────────────────────────
   useEffect(() => {
-    const handler = setTimeout(() => {
+    const h = setTimeout(() => {
       setDebouncedSearch(searchTerm);
       setCurrentPage(1);
     }, 400);
-    return () => clearTimeout(handler);
+    return () => clearTimeout(h);
   }, [searchTerm]);
 
+  // ── Fetch Produse ──────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     if (!isAdmin) {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       const endpoint = debouncedSearch
@@ -208,7 +209,6 @@ const AdminProducts = () => {
 
       let queryStatus = statusFilter;
       let queryStock = stockFilter;
-
       if (statusFilter === "OUT_OF_STOCK") {
         queryStatus = "ALL";
         queryStock = "OUT_OF_STOCK";
@@ -223,7 +223,6 @@ const AdminProducts = () => {
         stock_status: queryStock,
         _t: Date.now().toString(),
       });
-
       if (debouncedSearch) {
         params.append("search", debouncedSearch);
         params.append("q", debouncedSearch);
@@ -231,17 +230,12 @@ const AdminProducts = () => {
       }
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
-      // 🚀 AICI ERA PROBLEMA: Linia de fetch lipsea
       const res = await fetch(`${endpoint}?${params.toString()}`, {
         credentials: "include",
         headers: { "Cache-Control": "no-cache" },
       });
-
       if (!res.ok) throw new Error("Eroare API");
-
       const data = await res.json();
-      console.log("DEBUG: Date primite:", data);
-
       setProducts(data.items || []);
       setTotalPages(data.pages || 1);
       setTotalItems(data.total || 0);
@@ -264,15 +258,13 @@ const AdminProducts = () => {
   ]);
 
   useEffect(() => {
-    fetchCategories(); // Se încarcă o singură dată
-    fetchData(); // Încarcă produsele
-
-    const interval = setInterval(() => {
-      fetchData();
-    }, 30000);
+    fetchCategories();
+    fetchData();
+    const interval = setInterval(() => fetchData(), 30000);
     return () => clearInterval(interval);
   }, [fetchData, fetchCategories]);
 
+  // ── Toggle Status ──────────────────────────────────────────────────────────
   const handleToggleStatus = async (sku: string, currentStatus: string) => {
     const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
     try {
@@ -282,37 +274,28 @@ const AdminProducts = () => {
         body: JSON.stringify({ status: newStatus }),
         credentials: "include",
       });
-
       if (res.ok) {
-        toast.success(`Catalog sincronizat! Status nou: ${newStatus}`);
+        toast.success(`Status actualizat: ${newStatus}`);
         fetchData();
-      } else {
-        toast.error("Eroare la actualizarea statusului.");
-      }
+      } else toast.error("Eroare la actualizarea statusului.");
     } catch {
       toast.error("Eroare de conexiune la server.");
     }
   };
 
+  // ── Open Edit Modal ────────────────────────────────────────────────────────
   const openEdit = (p: any = null) => {
     if (p) {
       setEditingProduct(p);
-
       let parsedImageUrl = p.image_url;
       if (typeof p.image_url === "string") {
         try {
           parsedImageUrl = JSON.parse(p.image_url);
-        } catch {
-          parsedImageUrl = p.image_url;
-        }
+        } catch {}
       }
 
       let galleryImages: string[] = [];
-      if (
-        parsedImageUrl &&
-        typeof parsedImageUrl === "object" &&
-        Array.isArray(parsedImageUrl.gallery)
-      ) {
+      if (parsedImageUrl?.gallery && Array.isArray(parsedImageUrl.gallery)) {
         galleryImages = parsedImageUrl.gallery.map((img: any) =>
           typeof img === "string" ? img : img.medium || img.large || img.url,
         );
@@ -323,19 +306,13 @@ const AdminProducts = () => {
               ? JSON.parse(p.additional_image_link)
               : p.additional_image_link;
           if (Array.isArray(parsed)) galleryImages = parsed;
-        } catch {
-          galleryImages = [];
-        }
+        } catch {}
       }
 
       let mainImg = "";
       if (parsedImageUrl && typeof parsedImageUrl === "object") {
-        const mainContainer = parsedImageUrl.main || parsedImageUrl;
-        mainImg =
-          mainContainer.medium ||
-          mainContainer.large ||
-          mainContainer.url ||
-          "";
+        const c = parsedImageUrl.main || parsedImageUrl;
+        mainImg = c.medium || c.large || c.url || "";
       } else {
         mainImg = p.image_url || "";
       }
@@ -347,9 +324,7 @@ const AdminProducts = () => {
             typeof p.attributes_json === "string"
               ? JSON.parse(p.attributes_json)
               : p.attributes_json;
-        } catch {
-          parsedAttributes = {};
-        }
+        } catch {}
       }
 
       setFormData({
@@ -359,6 +334,8 @@ const AdminProducts = () => {
         category_id: p.category_id || p.category?.id || "",
         additional_image_link: galleryImages,
         attributes_json: parsedAttributes,
+        // 🚀 Descrierea vine direct ca HTML (sau text) din DB
+        description: p.description || "",
       });
     } else {
       setEditingProduct(null);
@@ -367,17 +344,16 @@ const AdminProducts = () => {
     setIsModalOpen(true);
   };
 
+  // ── Image Upload ───────────────────────────────────────────────────────────
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number | "main",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(index === "main" ? "main" : `extra-${index}`);
     const data = new FormData();
     data.append("file", file);
-
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/upload/image`, {
         method: "POST",
@@ -387,7 +363,6 @@ const AdminProducts = () => {
       const result = await res.json();
       const uploadedUrl = result.url || result.file_url || result.data?.url;
       if (!uploadedUrl) throw new Error("Upload invalid");
-
       if (index === "main") {
         setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
       } else {
@@ -398,15 +373,15 @@ const AdminProducts = () => {
           additional_image_link: nl.filter(Boolean),
         }));
       }
-      toast.success("Resursă vizuală procesată pe AWS S3.");
+      toast.success("Imagine urcată pe S3.");
     } catch {
-      toast.error("Eroare la încărcarea imaginii securizate.");
+      toast.error("Eroare la încărcarea imaginii.");
     } finally {
       setUploading(null);
     }
   };
 
-  // 🚀 RESTAURAT DE PLIN: Logica handleSave sincronizată cu schemele noi din backend
+  // ── Save ───────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
@@ -425,6 +400,7 @@ const AdminProducts = () => {
       stock_quantity: Number(formData.stock_quantity),
       category_id: formData.category_id,
       image_url: formData.image_url,
+      // 🚀 Descrierea se salvează ca HTML complet (cu emoji, spații, iframe-uri)
       description: formData.description || "",
       weight: Number(formData.weight || 0),
       length: Number(formData.length || 0),
@@ -451,7 +427,6 @@ const AdminProducts = () => {
         credentials: "include",
         body: JSON.stringify(payload),
       });
-
       if (res.ok) {
         toast.success("Catalog sincronizat cu succes!");
         fetchData();
@@ -473,7 +448,7 @@ const AdminProducts = () => {
 
   return (
     <div className="w-full space-y-6 px-2 sm:px-4 md:px-8 pb-20 animate-in fade-in duration-500 font-sans text-left selection:bg-[var(--royal-violet)] selection:text-white">
-      {/* BRAND CONTROLS HEADER */}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 border-b border-zinc-100 pb-8 pt-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -486,7 +461,6 @@ const AdminProducts = () => {
             Catalog Portofoliu
           </h1>
         </div>
-
         <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <div className="relative flex-1 sm:w-80 group">
             <Search
@@ -509,7 +483,7 @@ const AdminProducts = () => {
         </div>
       </header>
 
-      {/* CONTROLS BAR */}
+      {/* ── Controls Bar ───────────────────────────────────────────────────── */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-zinc-50/50 p-4 rounded-2xl border border-zinc-100">
         <div className="flex gap-4 sm:gap-6 border-b xl:border-none pb-2 xl:pb-0 overflow-x-auto no-scrollbar">
           {["ALL", "ACTIVE", "DRAFT", "OUT_OF_STOCK"].map((f) => (
@@ -521,7 +495,7 @@ const AdminProducts = () => {
               }}
               className={`pb-2 whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] transition-all relative ${
                 statusFilter === f
-                  ? "text-[var(--royal-violet)] font-black scale-105"
+                  ? "text-[var(--royal-violet)] scale-105"
                   : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
@@ -537,6 +511,7 @@ const AdminProducts = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto">
+          {/* Filtru Categorie */}
           <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm">
             <Filter size={12} className="text-[var(--royal-violet)] mr-2" />
             <select
@@ -556,6 +531,7 @@ const AdminProducts = () => {
             </select>
           </div>
 
+          {/* Filtru Stoc */}
           <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm">
             <Package size={12} className="text-[var(--royal-violet)] mr-2" />
             <select
@@ -572,6 +548,7 @@ const AdminProducts = () => {
             </select>
           </div>
 
+          {/* Sortare */}
           <div className="relative flex items-center bg-white rounded-xl border border-zinc-200/60 px-3 py-2.5 shadow-sm">
             <ArrowUpDown
               size={12}
@@ -601,9 +578,9 @@ const AdminProducts = () => {
         {totalItems} articole indexate
       </div>
 
-      {/* COMPONENTĂ RESPONSIVĂ HIBRIDĂ */}
+      {/* ── Tabel ──────────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
-        {/* MOBILE GRID VIEW */}
+        {/* Mobile */}
         <div className="block md:hidden p-4 space-y-4">
           {loading ? (
             [...Array(3)].map((_, i) => (
@@ -639,7 +616,7 @@ const AdminProducts = () => {
                         crossOrigin="anonymous"
                         onError={handleImageError}
                         className="w-full h-full object-contain"
-                        alt="Asset"
+                        alt=""
                       />
                     </div>
                     <div className="space-y-1 min-w-0 flex-1">
@@ -696,7 +673,7 @@ const AdminProducts = () => {
           )}
         </div>
 
-        {/* LUXURY DESKTOP TABLE */}
+        {/* Desktop Table */}
         <div className="hidden md:block overflow-x-auto luxury-scrollbar">
           <Table className="min-w-[900px]">
             <TableHeader className="bg-zinc-50/50">
@@ -770,7 +747,7 @@ const AdminProducts = () => {
                               crossOrigin="anonymous"
                               onError={handleImageError}
                               className="object-contain h-full w-full"
-                              alt="Produs"
+                              alt=""
                             />
                           </div>
                           <div className="space-y-0.5 min-w-0">
@@ -786,14 +763,11 @@ const AdminProducts = () => {
                           </div>
                         </div>
                       </TableCell>
-
-                      {/* 🚀 REPARAT ATOMIC: Numele real al categoriei cu stratificare multi-fallback */}
                       <TableCell className="text-center">
                         <span className="text-[10px] font-black text-[var(--royal-violet)] uppercase tracking-widest bg-[var(--royal-violet)]/[0.03] border border-[var(--royal-violet)]/10 px-3 py-1.5 rounded-lg">
                           {p.category_name || p.category?.name || "General"}
                         </span>
                       </TableCell>
-
                       <TableCell className="text-center">
                         <span
                           className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border whitespace-nowrap ${getStatusBadge(p.status, currentStock)}`}
@@ -830,9 +804,7 @@ const AdminProducts = () => {
                                 handleToggleStatus(p.sku, p.status || "ACTIVE")
                               }
                               title={
-                                p.status === "DRAFT"
-                                  ? "Publică în catalog"
-                                  : "Treci în stadiul de Schiță"
+                                p.status === "DRAFT" ? "Publică" : "Schiță"
                               }
                               className="p-2 bg-zinc-50 rounded-lg border border-zinc-100 hover:bg-amber-500 hover:text-white transition-colors"
                             >
@@ -853,7 +825,7 @@ const AdminProducts = () => {
           </Table>
         </div>
 
-        {/* PAGINATION */}
+        {/* Pagination */}
         {!loading && totalPages > 1 && (
           <div className="p-6 bg-zinc-50/50 border-t border-zinc-100 flex justify-center items-center gap-4 shrink-0">
             <button
@@ -877,9 +849,10 @@ const AdminProducts = () => {
         )}
       </div>
 
-      {/* FULL RESPONSIVE CONFIGURATOR MODAL */}
+      {/* ── Modal Editare ───────────────────────────────────────────────────── */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-[1350px] w-full h-full sm:h-[94vh] sm:w-[96vw] p-0 rounded-none sm:rounded-[2.5rem] border-none bg-[#F8F9FA] shadow-2xl flex flex-col overflow-hidden">
+          {/* Header Modal */}
           <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-[var(--royal-violet)] text-white hidden sm:block">
@@ -888,7 +861,7 @@ const AdminProducts = () => {
               <div>
                 <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
                   {formData.sku
-                    ? `Editare Resursă: ${formData.sku}`
+                    ? `Editare: ${formData.sku}`
                     : "Fișă Articol Nou"}
                 </DialogTitle>
                 <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-black mt-0.5">
@@ -904,10 +877,12 @@ const AdminProducts = () => {
             </button>
           </header>
 
+          {/* Body Modal */}
           <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* MEDIA WORKSPACE */}
+              {/* ── Coloana Media ──────────────────────────────────────────── */}
               <div className="lg:col-span-4 space-y-6 md:sticky md:top-0">
+                {/* Imagine principală */}
                 <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
                   <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <ImageIcon size={12} /> Thumbnail Principal
@@ -920,7 +895,7 @@ const AdminProducts = () => {
                           crossOrigin="anonymous"
                           onError={handleImageError}
                           className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-102"
-                          alt="Main Workspace"
+                          alt=""
                         />
                         <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-xs">
                           <button
@@ -944,7 +919,7 @@ const AdminProducts = () => {
                           <Upload size={32} strokeWidth={1.5} />
                         )}
                         <span className="text-[9px] font-black uppercase tracking-widest text-center">
-                          Alege fișier webp
+                          Alege fișier
                         </span>
                         <input
                           type="file"
@@ -956,6 +931,7 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
+                {/* Galerie */}
                 <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
                   <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <Layers size={12} /> Sub-Imagini Galerie
@@ -975,7 +951,7 @@ const AdminProducts = () => {
                               crossOrigin="anonymous"
                               onError={handleImageError}
                               className="w-full h-full object-cover"
-                              alt="Thumb"
+                              alt=""
                             />
                             <button
                               onClick={() => {
@@ -1011,8 +987,9 @@ const AdminProducts = () => {
                 </div>
               </div>
 
-              {/* ARHITECTURĂ INFORMAȚIONALĂ */}
+              {/* ── Coloana Date ────────────────────────────────────────────── */}
               <div className="lg:col-span-8 space-y-6">
+                {/* Identificatori */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
                   <div className="space-y-1">
                     <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
@@ -1021,7 +998,7 @@ const AdminProducts = () => {
                     <input
                       className="w-full bg-transparent border-b-2 border-zinc-100 pb-2 text-2xl md:text-3xl font-black outline-none focus:border-[var(--royal-violet)] transition-all text-[var(--dark-amethyst)] placeholder:text-zinc-200 tracking-tight"
                       value={formData.name}
-                      placeholder="Introduceți titlul complet al produsului..."
+                      placeholder="Titlul complet al produsului..."
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1031,7 +1008,6 @@ const AdminProducts = () => {
                       }
                     />
                   </div>
-
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <PremiumInput
                       label="Cod SKU"
@@ -1051,7 +1027,7 @@ const AdminProducts = () => {
                     />
                     <div className="space-y-1.5 text-left w-full">
                       <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                        Structură Segment
+                        Segment
                       </Label>
                       <select
                         className="w-full bg-zinc-50 rounded-xl px-3 py-3.5 text-xs font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] text-[var(--dark-amethyst)] appearance-none shadow-inner cursor-pointer"
@@ -1074,7 +1050,7 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* LOGISTICĂ & PREȚ */}
+                {/* Financiare */}
                 <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                     <DollarSign size={13} /> Financiare & Matrice Logistică
@@ -1104,7 +1080,7 @@ const AdminProducts = () => {
                         type="number"
                         className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
                         value={formData.sale_price || ""}
-                        placeholder="Fără promo"
+                        placeholder="—"
                         onChange={(e) =>
                           setFormData({
                             ...formData,
@@ -1131,7 +1107,7 @@ const AdminProducts = () => {
                     </div>
                     <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center flex flex-col justify-center">
                       <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Status Catalog
+                        Status
                       </Label>
                       <select
                         className="bg-transparent text-[10px] font-black text-center text-zinc-900 uppercase border-none outline-none cursor-pointer w-full"
@@ -1141,12 +1117,11 @@ const AdminProducts = () => {
                         }
                       >
                         <option value="ACTIVE">Public</option>
-                        <option value="DRAFT">Schiță / Draft</option>
+                        <option value="DRAFT">Schiță</option>
                         <option value="OUT_OF_STOCK">Fără stoc</option>
                       </select>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-zinc-100/70">
                     <PremiumInput
                       label="Masă (g)"
@@ -1195,33 +1170,47 @@ const AdminProducts = () => {
                   </div>
                 </div>
 
-                {/* EDITORIAL MATRIX & SEO */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                {/* ── 🚀 DESCRIERE CU EDITOR WYSIWYG ──────────────────────── */}
+                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
                       <AlignLeft size={13} /> Documentație Editorială
-                      (Descriere)
-                    </Label>
-                    <textarea
-                      className="w-full h-32 bg-zinc-50 rounded-2xl p-4 text-xs font-medium leading-relaxed border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none shadow-inner"
-                      value={formData.description}
-                      placeholder="Specificații, detalii de fabrică..."
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                    />
+                    </h3>
+                    <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
+                      Suportă emoji · YouTube · Formatare
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-zinc-100/70">
+                  {/* 
+                    🚀 ÎNLOCUIM TEXTAREA cu RichTextEditor.
+                    Valoarea este HTML string — se salvează direct în DB ca `description`.
+                    La randare, ProductDescription.tsx îl afișează perfect.
+                  */}
+                  <RichTextEditor
+                    value={formData.description}
+                    onChange={(html) =>
+                      setFormData({ ...formData, description: html })
+                    }
+                    placeholder="Descrie produsul: caracteristici, specificații, avantaje... Poți adăuga emoji 🎁, liste, titluri și chiar video YouTube!"
+                    minHeight={320}
+                  />
+
+                  <p className="text-[9px] text-zinc-300 font-bold uppercase tracking-widest">
+                    ✓ Spațiile, emoji-urile și video-urile sunt salvate și
+                    randate exact cum le scrii
+                  </p>
+                </div>
+
+                {/* SEO + Atribute */}
+                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* SEO */}
                     <div className="space-y-4">
                       <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
-                        <Globe size={13} /> Parametri Crawling SEO
+                        <Globe size={13} /> Parametri SEO
                       </h4>
                       <PremiumInput
-                        label="Mecanism URL (Slug)"
+                        label="Slug URL"
                         value={formData.slug}
                         onChange={(e: any) =>
                           setFormData({ ...formData, slug: e.target.value })
@@ -1254,6 +1243,7 @@ const AdminProducts = () => {
                       </div>
                     </div>
 
+                    {/* Atribute */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
@@ -1261,9 +1251,7 @@ const AdminProducts = () => {
                         </h4>
                         <button
                           onClick={() => {
-                            const k = prompt(
-                              "Cheie Atribut Nou (Ex: Culoare, Compatibilitate):",
-                            );
+                            const k = prompt("Cheie Atribut (Ex: Culoare):");
                             if (k)
                               setFormData({
                                 ...formData,
@@ -1275,7 +1263,7 @@ const AdminProducts = () => {
                           }}
                           className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
                         >
-                          + Adaugă Parametru
+                          + Adaugă
                         </button>
                       </div>
                       <div className="space-y-2 max-h-[220px] overflow-y-auto luxury-scrollbar pr-1">
@@ -1329,6 +1317,7 @@ const AdminProducts = () => {
             </div>
           </div>
 
+          {/* Footer Modal */}
           <DialogFooter className="px-6 md:px-10 py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5 text-zinc-400">
               <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
