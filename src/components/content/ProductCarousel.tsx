@@ -143,7 +143,12 @@ const ProductCarousel = ({
                       prefetchProduct(p.sku);
                       if (imgMedium) prefetchImage(imgMedium);
                     }}
+                    onTouchStart={() => {
+                      prefetchProduct(p.sku);
+                      if (imgMedium) prefetchImage(imgMedium);
+                    }}
                   >
+
                     {/* Media Container - Aspect ratio mai strâns pentru a permite 8 pe rând */}
                     <div className="relative aspect-[3/4] bg-zinc-50 overflow-hidden mb-4 border border-zinc-100 transition-all duration-500 group-hover/card:shadow-md">
                       <SmartImage
