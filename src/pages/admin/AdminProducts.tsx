@@ -166,17 +166,13 @@ const AdminProducts = () => {
 
   const fetchData = useCallback(async () => {
     // Dacă nu știm încă cine e utilizatorul, nu facem fetch, dar nici nu lăsăm blocat
-    if (isAdmin === undefined) return;
-
-    // Dacă nu e admin, oprim loading-ul ca să nu stea blocat
     if (!isAdmin) {
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true); // Abia acum pornim loading-ul
-
+      setLoading(true);
       const endpoint = debouncedSearch
         ? `${API_BASE_URL}/api/v1/products/search/live`
         : `${API_BASE_URL}/api/v1/products/admin-inventory`;
@@ -206,21 +202,14 @@ const AdminProducts = () => {
       }
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
-      const res = await fetch(`${endpoint}?${params.toString()}`, {
-        credentials: "include",
-        headers: { "Cache-Control": "no-cache" },
-      });
-
       const data = await res.json();
-
       setProducts(data.items || []);
       setTotalPages(data.pages || 1);
       setTotalItems(data.total || 0);
     } catch (err) {
-      console.error("Fetch error:", err);
-      toast.error("Eroare server la încărcarea datelor.");
+      toast.error("Eroare la încărcarea produselor.");
     } finally {
-      setLoading(false); // <--- ACEASTA LINIE SE EXECUTĂ ACUM ÎNTOTDEAUNA
+      setLoading(false);
     }
   }, [
     isAdmin,
@@ -234,10 +223,31 @@ const AdminProducts = () => {
   ]);
 
   useEffect(() => {
-    if (isAdmin !== undefined) {
+    fetchCategories(); // Se încarcă o singură dată
+    fetchData(); // Încarcă produsele
+
+    const interval = setInterval(() => {
       fetchData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData, fetchCategories]);
+
+  const fetchCategories = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/categories/`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Verificăm cum vine răspunsul (array sau obiect cu items)
+        const fetchedCategories = Array.isArray(data) ? data : data.items || [];
+        setCategories(fetchedCategories);
+      }
+    } catch (e) {
+      console.error("Eroare la categorii:", e);
     }
-  }, [fetchData]);
+  }, [isAdmin]);
 
   const handleToggleStatus = async (sku: string, currentStatus: string) => {
     const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
