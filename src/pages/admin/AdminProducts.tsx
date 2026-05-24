@@ -49,6 +49,20 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
+const PremiumInput = ({ label, value, onChange, icon }: any) => (
+  <div className="space-y-1.5 text-left w-full">
+    <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+      {icon} {label}
+    </Label>
+    <input
+      className="w-full bg-zinc-50 rounded-xl px-3 py-3 text-xs font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
+      value={value}
+      onChange={onChange}
+      placeholder="..."
+    />
+  </div>
+);
+
 // --- UTILS ---
 const generateSlug = (text: string) => {
   return text
@@ -155,6 +169,22 @@ const AdminProducts = () => {
   };
 
   const [formData, setFormData] = useState(initialFormState);
+  const fetchCategories = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/categories/`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Verificăm cum vine răspunsul (array sau obiect cu items)
+        const fetchedCategories = Array.isArray(data) ? data : data.items || [];
+        setCategories(fetchedCategories);
+      }
+    } catch (e) {
+      console.error("Eroare la categorii:", e);
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -231,23 +261,6 @@ const AdminProducts = () => {
     }, 30000);
     return () => clearInterval(interval);
   }, [fetchData, fetchCategories]);
-
-  const fetchCategories = useCallback(async () => {
-    if (!isAdmin) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/categories/`, {
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        // Verificăm cum vine răspunsul (array sau obiect cu items)
-        const fetchedCategories = Array.isArray(data) ? data : data.items || [];
-        setCategories(fetchedCategories);
-      }
-    } catch (e) {
-      console.error("Eroare la categorii:", e);
-    }
-  }, [isAdmin]);
 
   const handleToggleStatus = async (sku: string, currentStatus: string) => {
     const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
@@ -1343,19 +1356,5 @@ const AdminProducts = () => {
     </div>
   );
 };
-
-const PremiumInput = ({ label, value, onChange, icon }: any) => (
-  <div className="space-y-1.5 text-left w-full">
-    <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
-      {icon} {label}
-    </Label>
-    <input
-      className="w-full bg-zinc-50 rounded-xl px-3 py-3 text-xs font-bold text-[var(--dark-amethyst)] border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all shadow-inner placeholder:text-zinc-300"
-      value={value}
-      onChange={onChange}
-      placeholder="..."
-    />
-  </div>
-);
 
 export default AdminProducts;
