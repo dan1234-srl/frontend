@@ -17,9 +17,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 interface ProductCarouselProps {
   categorySlug?: string;
-  title?: string;
+  title?: React.ReactNode;
   subtitle?: string;
   sort?: string;
+
   limit?: number;
 }
 
