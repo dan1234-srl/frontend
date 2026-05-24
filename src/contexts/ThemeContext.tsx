@@ -52,13 +52,12 @@ const applyToDOM = (t: ThemeColors) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
 
-  // 1. Fallback-uri stricte: Nu lăsăm culori goale (negru sau mov mort)
+  // Fallback-uri pentru siguranță
   const brand = t.royal_violet || "#7b2cbf";
   const deep = t.dark_amethyst || "#10002b";
   const bg = t.surface_bg || "#FBFBFD";
   const text = t.text_primary || "#10002b";
 
-  // 2. Mapăm TOATE variabilele CSS cerute de index.css
   const vars: Record<string, string> = {
     "--dark-amethyst": deep,
     "--dark-amethyst-2": t.dark_amethyst_2 || deep,
@@ -77,14 +76,12 @@ const applyToDOM = (t: ThemeColors) => {
 
   Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
 
-  // 3. AUTO-GRADIENT: Ignorăm un gradient NULL din baza de date
   const safeGradient =
     t.primary_gradient && t.primary_gradient !== "NULL"
       ? t.primary_gradient
       : `linear-gradient(135deg, ${deep} 0%, ${t.indigo_ink || brand} 100%)`;
 
   root.style.setProperty("--primary-gradient", safeGradient);
-  root.style.setProperty("--gradient-primary", safeGradient);
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -96,7 +93,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshTheme = useCallback(async () => {
     try {
-      // _t=Date.now() forțează browserul să ceară datele proaspete, ignorând cache-ul mov vechi
       const r = await fetch(
         `${API_BASE}/api/v1/themes/active?_t=${Date.now()}`,
       );
@@ -121,7 +117,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       if (r.ok) setThemes(await r.json());
     } catch (e) {
-      console.warn("Nu s-au putut încărca temele. (Normal pentru vizitatori)");
+      console.warn("Theme library load failed.");
     }
   }, []);
 
@@ -129,34 +125,43 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     data: Partial<ThemeColors>,
     targetId: string | null,
   ) => {
-    const url = targetId
-      ? `${API_BASE}/api/v1/themes/${targetId}`
-      : `${API_BASE}/api/v1/themes/`;
-    const r = await fetch(url, {
-      method: targetId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
-    if (r.ok) {
+    try {
+      const url = targetId
+        ? `${API_BASE}/api/v1/themes/${targetId}`
+        : `${API_BASE}/api/v1/themes/`;
+      const r = await fetch(url, {
+        method: targetId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!r.ok) throw new Error("Failed to save");
       const saved = await r.json();
+      toast.success("Temă salvată cu succes!");
       await refreshLibrary();
       return saved;
+    } catch (e) {
+      toast.error("Eroare la salvarea temei");
+      return null;
     }
-    return null;
   };
 
   const applyTheme = async (themeId: string) => {
-    const r = await fetch(`${API_BASE}/api/v1/themes/${themeId}/activate`, {
-      method: "PATCH",
-      credentials: "include",
-    });
-    if (r.ok) {
-      await refreshTheme();
-      await refreshLibrary();
-      return true;
+    try {
+      const r = await fetch(`${API_BASE}/api/v1/themes/${themeId}/activate`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (r.ok) {
+        await refreshTheme();
+        toast.success("Temă activată!");
+        return true;
+      }
+      throw new Error();
+    } catch {
+      toast.error("Nu s-a putut activa tema");
+      return false;
     }
-    return false;
   };
 
   const deleteTheme = useCallback(async (themeId: string) => {
@@ -167,27 +172,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       if (r.ok) {
         setThemes((prev) => prev.filter((t) => t.id !== themeId));
+        toast.success("Temă ștearsă");
         return true;
       }
       return false;
-    } catch (e) {
+    } catch {
       return false;
     }
   }, []);
 
   const previewTheme = useCallback(
     (data: Partial<ThemeColors>) => {
-      applyToDOM({ ...(theme || {}), ...data });
+      if (theme) applyToDOM({ ...theme, ...data });
     },
     [theme],
   );
 
   const resetPreview = useCallback(() => {
     if (theme) applyToDOM(theme);
-    else {
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (cached) applyToDOM(JSON.parse(cached));
-    }
   }, [theme]);
 
   useEffect(() => {

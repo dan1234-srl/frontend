@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "@/contexts/ThemeContext"; // 1. Importăm hook-ul de temă
 
 const API_BASE_URL =
   (import.meta.env.VITE_API_URL as string) ||
@@ -10,6 +11,7 @@ const API_BASE_URL =
 const STORAGE_KEY = "evem_newsletter_dismissed_v1";
 
 const NewsletterPopup = () => {
+  const { theme } = useTheme(); // 2. Accesăm tema globală
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,16 +81,16 @@ const NewsletterPopup = () => {
               <X size={14} />
             </button>
 
+            {/* 3. Gradient dinamic folosind variabila CSS */}
             <div
               className="px-8 pt-12 pb-8 text-center text-white relative overflow-hidden"
               style={{
-                background:
-                  "linear-gradient(135deg, var(--brand, #0a0a0a), var(--brand-ink, #2d2d2d))",
+                background: "var(--primary-gradient)",
               }}
             >
               <Sparkles size={28} className="mx-auto mb-3 opacity-80" />
               <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-70 mb-3">
-                EVEM Inner Circle
+                {theme?.name || "EVEM"} Inner Circle
               </p>
               <h2 className="heading-serif text-3xl leading-tight">
                 Bun venit în <span className="italic">comunitate</span>
@@ -99,7 +101,7 @@ const NewsletterPopup = () => {
               <p className="text-sm text-zinc-600 leading-relaxed text-center">
                 Înscrie-te și primește{" "}
                 <span className="font-black text-zinc-900">10% reducere</span>{" "}
-                la prima comandă, plus acces în avans la colecțiile noi.
+                la prima comandă.
               </p>
 
               <div className="relative">
@@ -113,17 +115,18 @@ const NewsletterPopup = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="adresa@email.ro"
-                  className="w-full h-14 pl-11 pr-4 rounded-2xl border border-zinc-200 bg-zinc-50/50 text-sm font-medium focus:outline-none focus:border-zinc-900 focus:bg-white transition-all"
+                  // 4. Border focus dinamic
+                  className="w-full h-14 pl-11 pr-4 rounded-2xl border border-zinc-200 bg-zinc-50/50 text-sm font-medium focus:outline-none focus:border-[var(--royal-violet)] focus:bg-white transition-all"
                 />
               </div>
 
+              {/* 5. Buton cu gradient dinamic */}
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full h-14 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.3em] disabled:opacity-50 transition-all hover:scale-[1.01] active:scale-[0.99]"
                 style={{
-                  background:
-                    "linear-gradient(135deg, var(--brand, #0a0a0a), var(--brand-ink, #2d2d2d))",
+                  background: "var(--primary-gradient)",
                 }}
               >
                 {loading ? "Se abonează..." : "Mă abonez"}
@@ -132,7 +135,8 @@ const NewsletterPopup = () => {
               <button
                 type="button"
                 onClick={dismiss}
-                className="w-full text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
+                // 6. Hover color dinamic
+                className="w-full text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-[var(--royal-violet)] transition-colors"
               >
                 Poate altă dată
               </button>
