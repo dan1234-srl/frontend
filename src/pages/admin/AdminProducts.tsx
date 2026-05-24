@@ -165,12 +165,18 @@ const AdminProducts = () => {
   }, [searchTerm]);
 
   const fetchData = useCallback(async () => {
-    // Verificăm dacă suntem admin
-    console.log("Status isAdmin:", isAdmin);
-    if (!isAdmin) return;
+    // Dacă nu știm încă cine e utilizatorul, nu facem fetch, dar nici nu lăsăm blocat
+    if (isAdmin === undefined) return;
+
+    // Dacă nu e admin, oprim loading-ul ca să nu stea blocat
+    if (!isAdmin) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      setLoading(true);
+      setLoading(true); // Abia acum pornim loading-ul
+
       const endpoint = debouncedSearch
         ? `${API_BASE_URL}/api/v1/products/search/live`
         : `${API_BASE_URL}/api/v1/products/admin-inventory`;
@@ -206,7 +212,6 @@ const AdminProducts = () => {
       });
 
       const data = await res.json();
-      console.log("API Response Data:", data); // 🚀 ACESTA ESTE PASUL CRITIC
 
       setProducts(data.items || []);
       setTotalPages(data.pages || 1);
@@ -215,7 +220,7 @@ const AdminProducts = () => {
       console.error("Fetch error:", err);
       toast.error("Eroare server la încărcarea datelor.");
     } finally {
-      setLoading(false);
+      setLoading(false); // <--- ACEASTA LINIE SE EXECUTĂ ACUM ÎNTOTDEAUNA
     }
   }, [
     isAdmin,
@@ -229,16 +234,11 @@ const AdminProducts = () => {
   ]);
 
   useEffect(() => {
-    // 1. Apelează fetchData imediat la montare
-    fetchData();
-
-    // 2. Refresh la fiecare 30 de secunde
-    const interval = setInterval(() => {
+    if (isAdmin !== undefined) {
       fetchData();
-    }, 30000);
-
-    return () => clearInterval(interval);
+    }
   }, [fetchData]);
+
   const handleToggleStatus = async (sku: string, currentStatus: string) => {
     const newStatus = currentStatus === "DRAFT" ? "ACTIVE" : "DRAFT";
     try {
