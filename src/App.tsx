@@ -289,6 +289,23 @@ const AnimatedRoutes = () => {
             }
           />
           <Route
+            path="/return-policy"
+            element={
+              <PageWrapper>
+                <ReturnPolicy />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/cookie-policy"
+            element={
+              <PageWrapper>
+                <CookiePolicy />
+              </PageWrapper>
+            }
+          />
+
+          <Route
             path="*"
             element={
               <PageWrapper>
