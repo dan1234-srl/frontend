@@ -195,7 +195,6 @@ const AdminProducts = () => {
   }, [searchTerm]);
 
   const fetchData = useCallback(async () => {
-    // Dacă nu știm încă cine e utilizatorul, nu facem fetch, dar nici nu lăsăm blocat
     if (!isAdmin) {
       setLoading(false);
       return;
@@ -232,12 +231,23 @@ const AdminProducts = () => {
       }
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
+      // 🚀 AICI ERA PROBLEMA: Linia de fetch lipsea
+      const res = await fetch(`${endpoint}?${params.toString()}`, {
+        credentials: "include",
+        headers: { "Cache-Control": "no-cache" },
+      });
+
+      if (!res.ok) throw new Error("Eroare API");
+
       const data = await res.json();
+      console.log("DEBUG: Date primite:", data);
+
       setProducts(data.items || []);
       setTotalPages(data.pages || 1);
       setTotalItems(data.total || 0);
     } catch (err) {
-      toast.error("Eroare la încărcarea produselor.");
+      console.error("Fetch error:", err);
+      toast.error("Eroare la încărcarea datelor.");
     } finally {
       setLoading(false);
     }
@@ -250,6 +260,7 @@ const AdminProducts = () => {
     sortOrder,
     categoryIdFilter,
     stockFilter,
+    itemsPerPage,
   ]);
 
   useEffect(() => {
