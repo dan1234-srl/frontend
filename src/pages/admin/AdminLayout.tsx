@@ -110,9 +110,14 @@ SidebarContent.displayName = "SidebarContent";
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close mobile drawer on route change
+  const lastPath = useState(location.pathname)[0];
+  if (lastPath !== location.pathname && isMobileOpen) setIsMobileOpen(false);
 
   const menuGroups = [
     {
@@ -145,7 +150,6 @@ const AdminLayout = () => {
       items: [
         { name: "Cupoane", icon: Ticket, path: "/admin/coupons" },
         { name: "Recenzii", icon: Star, path: "/admin/reviews" },
-        // --- NOU: Wishlist Analytics ---
         {
           name: "Wishlist Trends",
           icon: Heart,
@@ -165,6 +169,7 @@ const AdminLayout = () => {
       ],
     },
   ];
+
 
   return (
     <div className="fixed inset-0 flex bg-white font-sans overflow-hidden w-full h-screen">
