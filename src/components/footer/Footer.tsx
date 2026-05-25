@@ -83,10 +83,10 @@ const Footer = () => {
   ];
 
   const supportLinks = [
-    { name: t("Ghid Mărimi", "Size Guide"), path: "/size-guide" },
-    { name: t("Livrare", "Shipping"), path: "/shipping" },
-    { name: t("Retur", "Returns"), path: "/returns" },
-    { name: t("Termeni", "Terms"), path: "/terms" },
+    { name: t("Ghid Mărimi", "Size Guide"), path: "/about/size-guide" },
+    { name: t("Customer Care", "Customer Care"), path: "/about/customer-care" },
+    { name: t("Retur", "Returns"), path: "/return-policy" },
+    { name: t("Termeni", "Terms"), path: "/terms-of-service" },
   ];
 
   const socialLinks = [
@@ -99,15 +99,26 @@ const Footer = () => {
     {
       id: "mail",
       Icon: Mail,
-      href: "mailto:hello@evem-boutique.ro",
+      href: "mailto:contact@evem.ro",
       label: "Email",
     },
   ];
 
   const legalLinks = [
-    { name: "Privacy", path: "/privacy" },
-    { name: "Cookies", path: "/cookies" },
-    { name: "ANPC", path: "https://anpc.ro", external: true },
+    { name: t("Confidențialitate", "Privacy"), path: "/privacy-policy" },
+    { name: "Cookies", path: "/cookie-policy" },
+    { name: "Retur", path: "/return-policy" },
+    { name: "Termeni", path: "/terms-of-service" },
+    {
+      name: "ANPC",
+      path: "https://anpc.ro/ce-este-sal/",
+      external: true,
+    },
+    {
+      name: "SOL",
+      path: "https://ec.europa.eu/consumers/odr",
+      external: true,
+    },
   ];
 
   return (
@@ -281,17 +292,22 @@ const Footer = () => {
                 {t("Contact", "Hub")}
               </span>
               <div className="space-y-3 text-xs font-semibold tracking-wide text-white/60 leading-relaxed">
-                <p className="opacity-70">Calea Dorobanți 123, RO</p>
+                <p className="opacity-70">EVEM Boutique SRL</p>
+                <p className="opacity-50 text-[10px]">
+                  CUI: RO12345678 · Reg. Com.: J40/0000/2026
+                </p>
+                <p className="opacity-70">Calea Dorobanți 123, București</p>
                 <a
-                  href="mailto:hello@evem-boutique.ro"
+                  href="mailto:contact@evem.ro"
                   className="inline-block font-bold hover:underline bg-clip-text text-transparent"
                   style={{
                     backgroundImage: "var(--primary-gradient)",
                     WebkitBackgroundClip: "text",
                   }}
                 >
-                  hello@evem-boutique.ro
+                  contact@evem.ro
                 </a>
+                <p className="opacity-50 text-[10px]">+40 770 000 000</p>
                 <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-40">
                   <Globe size={11} /> <span>Ships Worldwide</span>
                 </div>

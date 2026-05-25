@@ -128,9 +128,17 @@ const SuccessPage = () => {
       : "N/A";
 
   const items: any[] = order?.items || [];
-  const total =
-    order?.total ||
-    items.reduce((s, it) => s + (it.price || 0) * (it.quantity || 1), 0);
+  const subtotal = Number(order?.subtotal_amount || 0);
+  const discount = Number(order?.discount_amount || 0);
+  const shipping = Number(order?.shipping_fee || 0);
+  const total = Number(
+    order?.total_amount ||
+      order?.total ||
+      items.reduce((s, it) => {
+        const d = getItemDetails(it);
+        return s + d.price * d.quantity;
+      }, 0),
+  );
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[var(--deep-twilight)] font-sans flex flex-col">
@@ -280,13 +288,39 @@ const SuccessPage = () => {
                   })}
 
                   {total > 0 && (
-                    <div className="flex justify-between items-center pt-4 mt-4 border-t border-zinc-100">
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
-                        Total
-                      </span>
-                      <span className="text-lg font-black">
-                        {total.toLocaleString()} RON
-                      </span>
+                    <div className="pt-4 mt-4 border-t border-zinc-100 space-y-2">
+                      {subtotal > 0 && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-zinc-500">Subtotal</span>
+                          <span className="text-zinc-700 font-semibold">
+                            {subtotal.toLocaleString("ro-RO")} RON
+                          </span>
+                        </div>
+                      )}
+                      {discount > 0 && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-zinc-500">Reducere</span>
+                          <span className="text-emerald-600 font-semibold">
+                            −{discount.toLocaleString("ro-RO")} RON
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500">Livrare</span>
+                        <span className="text-zinc-700 font-semibold">
+                          {shipping > 0
+                            ? `${shipping.toLocaleString("ro-RO")} RON`
+                            : "Gratuit"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-3 mt-2 border-t border-zinc-100">
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
+                          Total
+                        </span>
+                        <span className="text-lg font-black">
+                          {total.toLocaleString("ro-RO")} RON
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
