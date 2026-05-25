@@ -33,8 +33,11 @@ const GLSLockerMap = ({
         {deliveryPoints.map((point: any) => (
           <Marker
             key={point.id}
-            position={[point.latitude, point.longitude]}
-            eventHandlers={{ click: () => setSelectedLocker(point) }}
+            // Folosește point.lat și point.lng, NU latitude/longitude
+            position={[point.lat, point.lng]}
+            eventHandlers={{
+              click: () => setSelectedLocker(point),
+            }}
           >
             <Popup>
               <div className="p-2 space-y-2">
