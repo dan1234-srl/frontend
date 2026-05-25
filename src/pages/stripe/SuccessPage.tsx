@@ -64,21 +64,38 @@ const SuccessPage = () => {
   }, [isSuccess, clearCart, navigate]);
 
   useEffect(() => {
-    if (!isSuccess || orderId === "N/A") return;
+    // 🚀 ADĂUGAT: Debug log ca să vedem dacă intră aici
+    console.log("DEBUG: useEffect declanșat cu:", { isSuccess, orderId });
+
+    if (!isSuccess || orderId === "N/A") {
+      console.log(
+        "DEBUG: Condiție de oprire atinsă (isSuccess fals sau orderId N/A)",
+      );
+      return;
+    }
+
     let cancel = false;
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
-          credentials: "include",
-        });
+        const url = `${API_BASE_URL}/api/v1/orders/${orderId}`;
+        console.log("DEBUG: Fetching URL:", url);
+
+        const res = await fetch(url, { credentials: "include" });
+
+        // 🚀 ADĂUGAT: Vedem statusul răspunsului
+        console.log("DEBUG: Status răspuns:", res.status);
+
         if (res.ok) {
           const data = await res.json();
-          console.log("STRUCTURA COMENZII DIN API:", data); // AICI VEZI CE AI
+          console.log("DEBUG: Date primite:", data);
           if (!cancel) setOrder(data);
+        } else {
+          console.error("DEBUG: Eroare API - Status nu e OK");
         }
-      } catch {
-        /* silent */
+      } catch (err) {
+        // 🚀 ADĂUGAT: Acum vei vedea eroarea!
+        console.error("DEBUG: Eroare critică la fetch:", err);
       } finally {
         if (!cancel) setLoading(false);
       }
