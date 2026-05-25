@@ -1,4 +1,17 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// Fix pentru iconițele lipsă
+const DefaultIcon = L.icon({
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 const GLSLockerMap = ({
   deliveryPoints,
@@ -6,42 +19,43 @@ const GLSLockerMap = ({
   setSelectedLocker,
 }: any) => {
   return (
-    <MapContainer
-      center={[45.9432, 24.9668]}
-      zoom={7}
-      className="h-[450px] w-full rounded-2xl z-0"
-    >
-      <TileLayer
-        attribution="&copy; OpenStreetMap"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div className="overflow-hidden rounded-2xl border border-zinc-100 shadow-xl h-[450px]">
+      <MapContainer
+        center={[45.9432, 24.9668]}
+        zoom={7}
+        className="h-full w-full"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        />
 
-      {deliveryPoints.map((point: any) => (
-        <Marker
-          key={point.id}
-          position={[point.latitude, point.longitude]}
-          eventHandlers={{
-            click: () => setSelectedLocker(point),
-          }}
-        >
-          <Popup>
-            <div className="space-y-2">
-              <p className="font-bold">{point.name}</p>
-
-              <p>
-                {point.street} {point.house_number}
-              </p>
-
-              <p>{point.city}</p>
-
-              <button onClick={() => setSelectedLocker(point)}>
-                Selectează
-              </button>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+        {deliveryPoints.map((point: any) => (
+          <Marker
+            key={point.id}
+            position={[point.latitude, point.longitude]}
+            eventHandlers={{ click: () => setSelectedLocker(point) }}
+          >
+            <Popup>
+              <div className="p-2 space-y-2">
+                <p className="font-black text-[10px] uppercase text-zinc-800">
+                  {point.name}
+                </p>
+                <p className="text-[10px] text-zinc-500">
+                  {point.street} {point.house_number}
+                </p>
+                <button
+                  onClick={() => setSelectedLocker(point)}
+                  className="w-full mt-2 py-2 bg-black text-white text-[9px] font-black uppercase rounded-lg"
+                >
+                  Selectează
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
 };
 
