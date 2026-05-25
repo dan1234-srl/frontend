@@ -35,26 +35,28 @@ const getItemImage = (item: any) => {
 };
 
 const getItemDetails = (item: any) => {
-  // Prindem varianta din DB: product_name_at_purchase
+  // Debug brut pentru a vedea ce primim de la API-ul tău
+  console.log("DEBUG: Structura Item primit:", item);
+
+  // Încercăm toate posibilitățile de nume
   const name =
-    item.product_name_at_purchase ||
     item.product_name ||
+    item.product_name_at_purchase ||
     item.name ||
     item.product?.name ||
     "Produs fără nume";
 
-  // Prindem varianta din DB: unit_price_at_purchase sau price_at_purchase
+  // Încercăm toate posibilitățile de preț
   const price = Number(
     item.unit_price_at_purchase ||
       item.price_at_purchase ||
-      item.total_item_price / (item.quantity || 1) || // Fallback dacă trimite doar totalul
       item.price ||
       item.unit_price ||
-      item.product?.price ||
+      item.total_item_price ||
       0,
   );
 
-  const brand = item.brand_name || item.product?.brand_name || "EVEM";
+  const brand = item.brand_name || "EVEM";
   const quantity = Number(item.quantity || 1);
 
   return { name, price, brand, quantity };
