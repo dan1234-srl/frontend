@@ -203,7 +203,7 @@ const SearchModal = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1000] bg-white/95 flex flex-col transform-gpu"
+          className="fixed inset-0 z-[1000] bg-white flex flex-col transform-gpu"
         >
           {/* HEADER BAR */}
           <div className="flex items-center justify-between px-6 lg:px-16 py-8 border-b border-zinc-100 bg-white shrink-0">
