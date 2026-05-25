@@ -35,21 +35,26 @@ const getItemImage = (item: any) => {
 };
 
 const getItemDetails = (item: any) => {
-  // 🚀 DEBUG: Acest log va apărea în consola browserului când se randează lista
-  console.log("DEBUG: Structura completă a unui produs:", item);
-
-  // Dacă API-ul tău are o structură ciudată, aici o vedem imediat
+  // Prindem varianta din DB: product_name_at_purchase
   const name =
+    item.product_name_at_purchase ||
     item.product_name ||
     item.name ||
     item.product?.name ||
-    item.title ||
     "Produs fără nume";
+
+  // Prindem varianta din DB: unit_price_at_purchase sau price_at_purchase
   const price = Number(
-    item.price || item.unit_price || item.amount || item.product?.price || 0,
+    item.unit_price_at_purchase ||
+      item.price_at_purchase ||
+      item.total_item_price / (item.quantity || 1) || // Fallback dacă trimite doar totalul
+      item.price ||
+      item.unit_price ||
+      item.product?.price ||
+      0,
   );
-  const brand =
-    item.brand_name || item.product?.brand_name || item.brand || "EVEM";
+
+  const brand = item.brand_name || item.product?.brand_name || "EVEM";
   const quantity = Number(item.quantity || 1);
 
   return { name, price, brand, quantity };
