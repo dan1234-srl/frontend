@@ -292,58 +292,86 @@ const AdminProducts = () => {
   };
 
   // ── Open Edit Modal ────────────────────────────────────────────────────────
-  const openEdit = (p: any = null) => {
+  const openEdit = async (p: any = null) => {
     if (p) {
-      setEditingProduct(p);
-      let parsedImageUrl = p.image_url;
-      if (typeof p.image_url === "string") {
-        try {
-          parsedImageUrl = JSON.parse(p.image_url);
-        } catch {}
-      }
+      let productToEdit = p;
 
-      let galleryImages: string[] = [];
-      if (parsedImageUrl?.gallery && Array.isArray(parsedImageUrl.gallery)) {
-        galleryImages = parsedImageUrl.gallery.map((img: any) =>
-          typeof img === "string" ? img : img.medium || img.large || img.url,
+      // 1. Fetch date complete din DB pentru a avea descrierea și restul câmpurilor
+      try {
+        const token = localStorage.getItem("token") || "";
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/products/admin/detail/${p.sku}`,
+          {
+            credentials: "include",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
         );
-      } else if (p.additional_image_link) {
+
+        if (res.ok) {
+          productToEdit = await res.json();
+        } else {
+          console.warn(
+            "Nu am putut obține detaliile complete, folosesc datele din listă.",
+          );
+        }
+      } catch (err) {
+        console.error("Eroare fetch detalii:", err);
+        toast.error("Eroare la încărcarea datelor complete.");
+      }
+
+      setEditingProduct(productToEdit);
+
+      // 2. Parsare complexă - pregătirea datelor pentru `formData`
+
+      // Parsare Imagine Principală
+      let parsedImageUrl = productToEdit.image_url;
+      if (typeof parsedImageUrl === "string") {
         try {
-          const parsed =
-            typeof p.additional_image_link === "string"
-              ? JSON.parse(p.additional_image_link)
-              : p.additional_image_link;
-          if (Array.isArray(parsed)) galleryImages = parsed;
+          parsedImageUrl = JSON.parse(parsedImageUrl);
+        } catch {}
+      }
+      const mainImg =
+        parsedImageUrl?.main?.medium ||
+        parsedImageUrl?.url ||
+        parsedImageUrl?.medium ||
+        productToEdit.image_url ||
+        "";
+
+      // Parsare Galerie
+      let galleryImages: string[] = [];
+      if (productToEdit.additional_image_link) {
+        try {
+          const raw =
+            typeof productToEdit.additional_image_link === "string"
+              ? JSON.parse(productToEdit.additional_image_link)
+              : productToEdit.additional_image_link;
+          galleryImages = Array.isArray(raw) ? raw : [];
         } catch {}
       }
 
-      let mainImg = "";
-      if (parsedImageUrl && typeof parsedImageUrl === "object") {
-        const c = parsedImageUrl.main || parsedImageUrl;
-        mainImg = c.medium || c.large || c.url || "";
-      } else {
-        mainImg = p.image_url || "";
-      }
-
+      // Parsare Atribute JSON
       let parsedAttributes = {};
-      if (p.attributes_json) {
+      if (productToEdit.attributes_json) {
         try {
           parsedAttributes =
-            typeof p.attributes_json === "string"
-              ? JSON.parse(p.attributes_json)
-              : p.attributes_json;
+            typeof productToEdit.attributes_json === "string"
+              ? JSON.parse(productToEdit.attributes_json)
+              : productToEdit.attributes_json;
         } catch {}
       }
 
+      // 3. Setare Form State
       setFormData({
         ...initialFormState,
-        ...p,
+        ...productToEdit, // Populează câmpurile simple
         image_url: mainImg,
-        category_id: p.category_id || p.category?.id || "",
+        category_id:
+          productToEdit.category_id || productToEdit.category?.id || "",
         additional_image_link: galleryImages,
         attributes_json: parsedAttributes,
-        // 🚀 Descrierea vine direct ca HTML (sau text) din DB
-        description: p.description || "",
+        description: productToEdit.description || "", // Aici se va popula editorul RichText
       });
     } else {
       setEditingProduct(null);
@@ -351,7 +379,6 @@ const AdminProducts = () => {
     }
     setIsModalOpen(true);
   };
-
   // ── Image Upload ───────────────────────────────────────────────────────────
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
