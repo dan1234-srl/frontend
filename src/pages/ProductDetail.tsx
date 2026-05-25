@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
 import ProductImageGallery from "../components/product/ProductImageGallery";
@@ -10,8 +11,6 @@ import ProductReviews from "../components/product/ProductReviews";
 import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 import { getPrefetchedProduct } from "@/lib/prefetch";
 import { preloadLcp } from "@/lib/cf-image";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -22,7 +21,8 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const navigate = useNavigate(); // Aici
+  const navigate = useNavigate();
+
   const { processedMainImage, processedGallery } = useMemo(() => {
     if (!product) return { processedMainImage: null, processedGallery: [] };
 
@@ -44,7 +44,6 @@ const ProductDetail = () => {
     };
   }, [product]);
 
-  // 🚀 LCP preload — large variant pentru imaginea principală
   useEffect(() => {
     if (!processedMainImage) return;
     const lcp =
@@ -62,25 +61,18 @@ const ProductDetail = () => {
         return;
       }
 
-      const cached = getPrefetchedProduct(productId);
-      if (cached) {
-        const cachedData = await cached;
-        if (cachedData) {
-          setProduct(cachedData);
-          setLoading(false);
-          window.scrollTo(0, 0);
-          return;
-        }
-      }
-
       setLoading(true);
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/products/${productId}`,
-        );
-        if (!response.ok) throw new Error("Not found");
-        const data = await response.json();
+        const cached = getPrefetchedProduct(productId);
+        const data = cached
+          ? await cached
+          : await (
+              await fetch(`${API_BASE_URL}/api/v1/products/${productId}`)
+            ).json();
+
+        if (!data) throw new Error("Not found");
         setProduct(data);
+        setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0);
       } catch (err) {
         setError(true);
       } finally {
@@ -89,45 +81,30 @@ const ProductDetail = () => {
     };
 
     fetchProductData();
-    window.scrollTo(0, 0);
   }, [productId]);
 
-  if (loading)
-    return (
-      <div className="min-h-screen bg-white">
-        <button
-          onClick={() => navigate(-1)}
-          className="fixed top-8 left-4 md:left-12 z-[100] p-3 bg-white/60 backdrop-blur-md rounded-full border border-zinc-100 shadow-lg hover:bg-white transition-all duration-300 hover:shadow-xl active:scale-95 group"
-          aria-label="Înapoi"
-        >
-          <ChevronLeft
-            size={20}
-            className="text-zinc-800 group-hover:text-[var(--royal-violet)] transition-colors"
-          />
-        </button>
-
-        <Navbar />
-        {/* 🚀 REPARAT ATOMIC: Spacer adăugat și în starea de loading pentru a alinia scheletul perfect sub Navbar */}
-        <div
-          className="w-full h-[8.5rem] lg:h-[9.25rem] shrink-0"
-          aria-hidden="true"
+  return (
+    <div className="min-h-screen bg-white relative">
+      {/* Buton Back Global - Vizibil mereu */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-8 left-4 md:left-12 z-[100] p-3 bg-white/60 backdrop-blur-md rounded-full border border-zinc-100 shadow-lg hover:bg-white transition-all duration-300 hover:shadow-xl active:scale-95 group"
+        aria-label="Înapoi"
+      >
+        <ChevronLeft
+          size={20}
+          className="text-zinc-800 group-hover:text-[var(--royal-violet)] transition-colors"
         />
-        <main className="px-6 max-w-[1400px] mx-auto pb-20">
+      </button>
+
+      <Navbar />
+
+      {loading ? (
+        <main className="px-6 pt-[8.5rem] lg:pt-[9.25rem] max-w-[1400px] mx-auto pb-20">
           <ProductDetailSkeleton />
         </main>
-      </div>
-    );
-
-  if (error || !product)
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <Navbar />
-        {/* 🚀 REPARAT ATOMIC: Spacer adăugat în starea de eroare */}
-        <div
-          className="w-full h-[8.5rem] lg:h-[9.25rem] shrink-0"
-          aria-hidden="true"
-        />
-        <main className="flex-1 flex flex-col items-center justify-center text-center p-6">
+      ) : error || !product ? (
+        <main className="flex-1 flex flex-col items-center justify-center pt-[8.5rem] text-center p-6">
           <h1 className="text-2xl font-serif mb-4">Produsul nu a fost găsit</h1>
           <Link
             to="/"
@@ -136,54 +113,33 @@ const ProductDetail = () => {
             Înapoi în magazin
           </Link>
         </main>
-        <Footer />
-      </div>
-    );
-
-  return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-
-      {/* 🚀 REPARAT ATOMIC: Acest Spacer structural oprește intrarea titlului sub meniu pe orice ecran (mobil/desktop) */}
-      <div
-        className="w-full h-[8.5rem] lg:h-[9.25rem] shrink-0"
-        aria-hidden="true"
-      />
-
-      {/* Containerul principal folosește items-start pentru a permite coloanelor să aibă înălțimi diferite */}
-      <main className="px-6 lg:px-12 max-w-[1400px] mx-auto pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-          {/* COLOANA STÂNGA: Galeria (Ea devine Sticky) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-40">
-            <ProductImageGallery
-              mainImage={processedMainImage}
-              additionalImages={processedGallery}
+      ) : (
+        <main className="px-6 lg:px-12 pt-[8.5rem] lg:pt-[9.25rem] max-w-[1400px] mx-auto pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+            <div className="lg:col-span-5 lg:sticky lg:top-40">
+              <ProductImageGallery
+                mainImage={processedMainImage}
+                additionalImages={processedGallery}
+                isLCP={true}
+              />
+            </div>
+            <div className="lg:col-span-7 flex flex-col gap-12">
+              <ProductInfo product={product} />
+              <div className="h-px bg-zinc-100 w-full" />
+              <ProductDescription product={product} />
+            </div>
+          </div>
+          <div className="mt-24 border-t border-zinc-100 pt-16">
+            <ProductReviews reviews={product.reviews || []} />
+          </div>
+          <div className="mt-20">
+            <ProductCarousel
+              categorySlug={product.category?.slug}
+              title="Produse Similare"
             />
           </div>
-
-          {/* COLOANA DREAPTĂ: Info & Descriere (Ea curge natural) */}
-          <div className="lg:col-span-7 flex flex-col gap-12">
-            <ProductInfo product={product} />
-
-            <div className="h-px bg-zinc-100 w-full" />
-
-            <ProductDescription product={product} />
-          </div>
-        </div>
-
-        {/* SECȚIUNI FULL WIDTH (SUB GRID) */}
-        <div className="mt-24 border-t border-zinc-100 pt-16">
-          <ProductReviews reviews={product.reviews || []} />
-        </div>
-
-        <div className="mt-20">
-          <ProductCarousel
-            categorySlug={product.category?.slug}
-            title="Produse Similare"
-          />
-        </div>
-      </main>
-
+        </main>
+      )}
       <Footer />
     </div>
   );
