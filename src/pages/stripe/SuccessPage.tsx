@@ -19,12 +19,32 @@ const getItemImage = (item: any) => {
     if (source.startsWith("http")) return source;
     try {
       const parsed = JSON.parse(source);
-      return parsed?.main?.medium || parsed?.url || parsed?.medium || "/placeholder.png";
+      return (
+        parsed?.main?.medium ||
+        parsed?.url ||
+        parsed?.medium ||
+        "/placeholder.png"
+      );
     } catch {
       return "/placeholder.png";
     }
   }
-  return source?.main?.medium || source?.url || source?.medium || "/placeholder.png";
+  return (
+    source?.main?.medium || source?.url || source?.medium || "/placeholder.png"
+  );
+};
+
+const getItemDetails = (item: any) => {
+  // Încearcă mai multe variante, în funcție de cum returnează backend-ul
+  const name =
+    item.product_name || item.name || item.product?.name || "Produs fără nume";
+  const price = Number(
+    item.price || item.unit_price || item.product?.price || 0,
+  );
+  const brand = item.brand_name || item.product?.brand_name || "EVEM";
+  const quantity = Number(item.quantity || 1);
+
+  return { name, price, brand, quantity };
 };
 
 const SuccessPage = () => {
@@ -54,6 +74,7 @@ const SuccessPage = () => {
         });
         if (res.ok) {
           const data = await res.json();
+          console.log("STRUCTURA COMENZII DIN API:", data); // AICI VEZI CE AI
           if (!cancel) setOrder(data);
         }
       } catch {
@@ -77,10 +98,9 @@ const SuccessPage = () => {
       : "N/A";
 
   const items: any[] = order?.items || [];
-  const total = order?.total || items.reduce(
-    (s, it) => s + (it.price || 0) * (it.quantity || 1),
-    0,
-  );
+  const total =
+    order?.total ||
+    items.reduce((s, it) => s + (it.price || 0) * (it.quantity || 1), 0);
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[var(--deep-twilight)] font-sans flex flex-col">
@@ -123,7 +143,10 @@ const SuccessPage = () => {
 
           <div className="space-y-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none">
-              Comandă <span className="text-zinc-500 italic font-light">Confirmată</span>
+              Comandă{" "}
+              <span className="text-zinc-500 italic font-light">
+                Confirmată
+              </span>
             </h1>
             <p className="text-[10px] uppercase tracking-[0.5em] text-zinc-400 font-bold">
               Vă mulțumim pentru încredere
@@ -186,40 +209,45 @@ const SuccessPage = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {items.map((it, i) => (
-                    <motion.div
-                      key={it.id || i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 * i }}
-                      className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-100 hover:border-zinc-200 transition-all"
-                    >
-                      <div className="size-16 sm:size-20 rounded-xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0">
-                        <SmartImage
-                          src={getItemImage(it)}
-                          alt={it.product_name || "Produs"}
-                          eager
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold mb-0.5">
-                          {it.brand_name || "EVEM"}
+                  {items.map((it, i) => {
+                    const details = getItemDetails(it); // 🚀 Folosim helper-ul aici
+
+                    return (
+                      <motion.div
+                        key={it.id || i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 * i }}
+                        className="flex items-center gap-4 p-3 rounded-2xl bg-white border border-zinc-100"
+                      >
+                        <div className="size-16 sm:size-20 rounded-xl overflow-hidden bg-zinc-50 border border-zinc-100 shrink-0">
+                          <SmartImage
+                            src={getItemImage(it)}
+                            alt={details.name}
+                            eager
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold mb-0.5">
+                            {details.brand}
+                          </p>
+                          <p className="text-xs sm:text-sm font-black text-zinc-900 line-clamp-1">
+                            {details.name}
+                          </p>
+                          <p className="text-[10px] text-zinc-400 mt-0.5">
+                            Cantitate: {details.quantity}
+                          </p>
+                        </div>
+                        <p className="text-xs sm:text-sm font-black text-zinc-900 whitespace-nowrap">
+                          {(details.price * details.quantity).toLocaleString(
+                            "ro-RO",
+                          )}{" "}
+                          RON
                         </p>
-                        <p className="text-xs sm:text-sm font-black text-zinc-900 line-clamp-1">
-                          {it.product_name || it.name || "Produs"}
-                        </p>
-                        <p className="text-[10px] text-zinc-400 mt-0.5">
-                          Cant: {it.quantity || 1}
-                          {it.variant_name ? ` · ${it.variant_name}` : ""}
-                        </p>
-                      </div>
-                      <p className="text-xs sm:text-sm font-black text-zinc-900 whitespace-nowrap">
-                        {((it.price || 0) * (it.quantity || 1)).toLocaleString()}{" "}
-                        RON
-                      </p>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
 
                   {total > 0 && (
                     <div className="flex justify-between items-center pt-4 mt-4 border-t border-zinc-100">
