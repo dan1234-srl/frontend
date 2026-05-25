@@ -86,13 +86,6 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-white relative">
       {/* 🚀 BUTON BACK "ATOMIC" - Trebuie să apară acum */}
-      <button
-        onClick={() => navigate(-1)}
-        className="fixed top-28 left-4 md:left-12 z-[9999] p-3 bg-white/60 backdrop-blur-md rounded-full border border-zinc-100 shadow-lg hover:bg-white transition-all duration-300 hover:shadow-xl active:scale-95 group"
-        aria-label="Înapoi"
-      >
-        <ChevronLeft size={20} className="text-zinc-800" />
-      </button>
 
       <Navbar />
 
@@ -111,7 +104,13 @@ const ProductDetail = () => {
           </Link>
         </main>
       ) : (
-        <main className="px-6 lg:px-12 pt-[8.5rem] lg:pt-[9.25rem] max-w-[1400px] mx-auto pb-24">
+        <main className="px-6 lg:px-12 pt-[9.25rem] max-w-[1400px] mx-auto pb-24">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 mb-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-black transition-colors"
+          >
+            <ChevronLeft size={14} /> Înapoi la Categorie
+          </button>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
             <div className="lg:col-span-5 lg:sticky lg:top-40">
               <ProductImageGallery
