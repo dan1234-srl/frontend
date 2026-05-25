@@ -88,13 +88,10 @@ const ProductDetail = () => {
       {/* 🚀 BUTON BACK "ATOMIC" - Trebuie să apară acum */}
       <button
         onClick={() => navigate(-1)}
-        className="fixed top-8 left-4 md:left-12 z-[9999] p-3 bg-white/60 backdrop-blur-md rounded-full border border-zinc-100 shadow-2xl hover:bg-white transition-all duration-300 hover:shadow-xl active:scale-95 group"
+        className="fixed top-28 left-4 md:left-12 z-[9999] p-3 bg-white/60 backdrop-blur-md rounded-full border border-zinc-100 shadow-lg hover:bg-white transition-all duration-300 hover:shadow-xl active:scale-95 group"
         aria-label="Înapoi"
       >
-        <ChevronLeft
-          size={20}
-          className="text-zinc-800 group-hover:text-[var(--royal-violet)] transition-colors"
-        />
+        <ChevronLeft size={20} className="text-zinc-800" />
       </button>
 
       <Navbar />
