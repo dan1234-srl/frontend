@@ -198,7 +198,9 @@ const CheckoutPopup = ({
   useEffect(() => {
     const loadShippingConfig = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/shipping/config`);
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/orders/shipping/config`,
+        );
 
         const data = await res.json();
 
@@ -216,7 +218,9 @@ const CheckoutPopup = ({
   useEffect(() => {
     const loadLockers = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/gls/delivery-points`);
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/orders/gls/delivery-points`,
+        );
 
         const data = await res.json();
 
