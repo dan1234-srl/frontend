@@ -10,6 +10,8 @@ import ProductReviews from "../components/product/ProductReviews";
 import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 import { getPrefetchedProduct } from "@/lib/prefetch";
 import { preloadLcp } from "@/lib/cf-image";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -20,7 +22,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
+  const navigate = useNavigate(); // Aici
   const { processedMainImage, processedGallery } = useMemo(() => {
     if (!product) return { processedMainImage: null, processedGallery: [] };
 
@@ -93,6 +95,17 @@ const ProductDetail = () => {
   if (loading)
     return (
       <div className="min-h-screen bg-white">
+        <button
+          onClick={() => navigate(-1)}
+          className="fixed top-8 left-4 md:left-12 z-[100] p-3 bg-white/60 backdrop-blur-md rounded-full border border-zinc-100 shadow-lg hover:bg-white transition-all duration-300 hover:shadow-xl active:scale-95 group"
+          aria-label="Înapoi"
+        >
+          <ChevronLeft
+            size={20}
+            className="text-zinc-800 group-hover:text-[var(--royal-violet)] transition-colors"
+          />
+        </button>
+
         <Navbar />
         {/* 🚀 REPARAT ATOMIC: Spacer adăugat și în starea de loading pentru a alinia scheletul perfect sub Navbar */}
         <div
