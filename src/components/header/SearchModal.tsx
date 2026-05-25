@@ -1,10 +1,17 @@
-import { useState, useEffect, useMemo, memo } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  memo,
+  useCallback,
+  useTransition,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Loader2, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🚀 SKELETON CARD (Izolat pentru performanță)
+// 🚀 SKELETON CARD (Izolat și foarte ușor de randat)
 // ─────────────────────────────────────────────────────────────────────────────
 const HitSkeleton = memo(() => (
   <div className="flex flex-col gap-3 p-3 rounded-2xl w-full h-full">
@@ -20,7 +27,7 @@ const HitSkeleton = memo(() => (
 HitSkeleton.displayName = "HitSkeleton";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🚀 HIT CARD (Izolat și Memoizat. Nu se va re-randa inutil)
+// 🚀 HIT CARD (Complet Memoizat)
 // ─────────────────────────────────────────────────────────────────────────────
 const HitCard = memo(
   ({ hit, onClick }: { hit: any; onClick: (slug: string) => void }) => {
@@ -48,8 +55,8 @@ const HitCard = memo(
       <motion.button
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
         onClick={() => onClick(hit.slug)}
         className="group flex flex-col gap-3 p-3 hover:bg-zinc-50 transition-colors duration-200 rounded-2xl text-left w-full h-full"
       >
@@ -57,7 +64,7 @@ const HitCard = memo(
           <img
             src={parsedImage}
             alt={hit.name}
-            className={`w-full h-full object-cover transition-all duration-700 transform-gpu group-hover:scale-105 ${
+            className={`w-full h-full object-cover transition-opacity duration-300 transform-gpu group-hover:scale-105 ${
               imgLoaded ? "opacity-100" : "opacity-0"
             }`}
             onLoad={() => setImgLoaded(true)}
@@ -78,7 +85,7 @@ const HitCard = memo(
           )}
         </div>
         <div className="space-y-1.5 px-1 flex-1 flex flex-col">
-          <p className="text-[9px] uppercase tracking-[0.3em] text-zinc-400 font-bold">
+          <p className="text-[9px] uppercase tracking-[0.3em] text-zinc-400 font-bold line-clamp-1">
             {hit.brand || "Colecție Nouă"}
           </p>
           <h4 className="text-[12px] font-semibold tracking-tight text-zinc-800 leading-snug line-clamp-2 flex-1">
@@ -105,9 +112,14 @@ const SearchModal = ({
   onClose: () => void;
 }) => {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  // Folosim o valoare locală pentru input ca să nu blocăm tastarea
+  const [inputValue, setInputValue] = useState("");
+  // Valoarea "debounced" pe care o trimitem efectiv la fetch
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [hits, setHits] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [isPending, startTransition] = useTransition(); // React 18 Magic 🚀
+  const [isFetching, setIsFetching] = useState(false);
   const [initialSearchDone, setInitialSearchDone] = useState(false);
 
   const meiliUrl = import.meta.env.VITE_MEILI_URL;
@@ -117,11 +129,21 @@ const SearchModal = ({
     return !!(meiliUrl && meiliUrl.startsWith("http") && meiliKey);
   }, [meiliUrl, meiliKey]);
 
+  // Debounce pentru a aștepta ca utilizatorul să termine de tastat
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      setSearchQuery(inputValue);
+    }, 300); // Așteptăm 300ms după ultima apăsare de tastă
+    return () => clearTimeout(timer);
+  }, [inputValue, isOpen]);
+
+  // Fetch separat, ascultă doar de 'searchQuery'
   useEffect(() => {
     if (!isConfigValid || !isOpen) return;
 
     const performSearch = async () => {
-      setSearching(true);
+      setIsFetching(true);
       try {
         const response = await fetch(`${meiliUrl}/indexes/products/search`, {
           method: "POST",
@@ -129,43 +151,58 @@ const SearchModal = ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${meiliKey}`,
           },
-          body: JSON.stringify({ q: query, limit: 18 }),
+          body: JSON.stringify({ q: searchQuery, limit: 18 }),
         });
         const data = await response.json();
-        setHits(data.hits || []);
+
+        // 🚀 startTransition amână randarea DOM-ului până când input-ul e liber
+        startTransition(() => {
+          setHits(data.hits || []);
+          setInitialSearchDone(true);
+        });
       } catch (error) {
         console.error("Eroare MeiliSearch:", error);
       } finally {
-        setSearching(false);
-        setInitialSearchDone(true);
+        setIsFetching(false);
       }
     };
 
-    // Debounce de 300ms pentru a nu face spam la server la fiecare tastare rapidă
-    const delayDebounceFn = setTimeout(performSearch, 300);
+    performSearch();
+  }, [searchQuery, meiliUrl, meiliKey, isConfigValid, isOpen]);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [query, meiliUrl, meiliKey, isConfigValid, isOpen]);
-
-  const handleClose = () => {
-    setQuery("");
+  const handleClose = useCallback(() => {
+    setInputValue("");
+    setSearchQuery("");
     setHits([]);
     setInitialSearchDone(false);
     onClose();
+  }, [onClose]);
+
+  const handleHitClick = useCallback(
+    (slug: string) => {
+      navigate(`/product/${slug}`);
+      handleClose();
+    },
+    [navigate, handleClose],
+  );
+
+  const handleSuggestionClick = (tag: string) => {
+    setInputValue(tag);
+    // Dacă utilizatorul alege o sugestie, o trimitem instant
+    setSearchQuery(tag);
   };
 
-  const handleHitClick = (slug: string) => {
-    navigate(`/product/${slug}`);
-    handleClose();
-  };
+  // Starea vizuală de "încărcare" combină atât rețeaua (isFetching) cât și calculul React (isPending)
+  const isCurrentlySearching =
+    isFetching || isPending || inputValue !== searchQuery;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-          animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
-          exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 z-[1000] bg-white/95 flex flex-col transform-gpu"
         >
           {/* HEADER BAR */}
@@ -203,16 +240,17 @@ const SearchModal = ({
                     <input
                       autoFocus
                       type="text"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
                       placeholder="Caută în catalogul de produse..."
-                      className="w-full bg-transparent border-b-2 border-zinc-100 py-6 pl-14 pr-14 text-3xl lg:text-6xl font-serif italic outline-none focus:border-[var(--dark-amethyst)] transition-colors placeholder:text-zinc-200 text-black"
+                      // Am eliminat font-serif dacă era prea "greu" la render
+                      className="w-full bg-transparent border-b-2 border-zinc-100 py-6 pl-14 pr-14 text-3xl lg:text-5xl italic outline-none focus:border-[var(--dark-amethyst)] transition-colors placeholder:text-zinc-200 text-black"
                     />
 
                     {/* Loader Input */}
                     <div className="absolute right-2 flex items-center gap-2">
                       <AnimatePresence>
-                        {searching && (
+                        {isCurrentlySearching && (
                           <motion.div
                             initial={{ opacity: 0, scale: 0.5 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -225,9 +263,9 @@ const SearchModal = ({
                           </motion.div>
                         )}
                       </AnimatePresence>
-                      {query && !searching && (
+                      {inputValue && !isCurrentlySearching && (
                         <button
-                          onClick={() => setQuery("")}
+                          onClick={() => setInputValue("")}
                           className="text-zinc-300 hover:text-black p-2 transition-colors"
                         >
                           <X size={24} />
@@ -242,7 +280,7 @@ const SearchModal = ({
                       <button
                         key={tag}
                         type="button"
-                        onClick={() => setQuery(tag)}
+                        onClick={() => handleSuggestionClick(tag)}
                         className="px-4 py-2 rounded-full border border-zinc-200 text-zinc-500 hover:border-black hover:text-black hover:bg-zinc-50 transition-colors"
                       >
                         {tag}
@@ -252,8 +290,8 @@ const SearchModal = ({
                 </div>
 
                 {/* ZONA DE AFIȘARE REZULTATE */}
-                <div className="flex-1 overflow-y-auto pb-32 luxury-scrollbar relative w-full">
-                  {searching && !initialSearchDone ? (
+                <div className="flex-1 overflow-y-auto pb-32 luxury-scrollbar relative w-full transform-gpu">
+                  {isCurrentlySearching && !initialSearchDone ? (
                     // 1. SKELETONS la prima încărcare
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-10">
                       {[...Array(12)].map((_, i) => (
@@ -263,21 +301,20 @@ const SearchModal = ({
                   ) : hits.length > 0 ? (
                     // 2. PRODUSE GĂSITE
                     <div
-                      className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-10 transition-opacity duration-200 ${
-                        searching ? "opacity-40" : "opacity-100"
+                      className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-10 transition-opacity duration-150 ${
+                        isCurrentlySearching ? "opacity-30" : "opacity-100"
                       }`}
                     >
-                      <AnimatePresence mode="popLayout">
-                        {hits.map((hit) => (
-                          <HitCard
-                            key={hit.id}
-                            hit={hit}
-                            onClick={handleHitClick}
-                          />
-                        ))}
-                      </AnimatePresence>
+                      {/* AM SCOS <AnimatePresence mode="popLayout"> pentru performanță brută */}
+                      {hits.map((hit) => (
+                        <HitCard
+                          key={hit.id}
+                          hit={hit}
+                          onClick={handleHitClick}
+                        />
+                      ))}
                     </div>
-                  ) : initialSearchDone ? (
+                  ) : initialSearchDone && !isCurrentlySearching ? (
                     // 3. ZERO REZULTATE
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -294,7 +331,7 @@ const SearchModal = ({
                       </h3>
                       <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest">
                         Nu am putut găsi produse pentru "
-                        <span className="text-black">{query}</span>"
+                        <span className="text-black">{searchQuery}</span>"
                       </p>
                     </motion.div>
                   ) : null}
