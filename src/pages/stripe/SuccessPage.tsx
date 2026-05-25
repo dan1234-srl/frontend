@@ -128,9 +128,17 @@ const SuccessPage = () => {
       : "N/A";
 
   const items: any[] = order?.items || [];
-  const total =
-    order?.total ||
-    items.reduce((s, it) => s + (it.price || 0) * (it.quantity || 1), 0);
+  const subtotal = Number(order?.subtotal_amount || 0);
+  const discount = Number(order?.discount_amount || 0);
+  const shipping = Number(order?.shipping_fee || 0);
+  const total = Number(
+    order?.total_amount ||
+      order?.total ||
+      items.reduce((s, it) => {
+        const d = getItemDetails(it);
+        return s + d.price * d.quantity;
+      }, 0),
+  );
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[var(--deep-twilight)] font-sans flex flex-col">
