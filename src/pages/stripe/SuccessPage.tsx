@@ -40,10 +40,11 @@ const getItemDetails = (item: any) => {
 
   // Încercăm toate posibilitățile de nume
   const name =
-    item.product_name ||
     item.product_name_at_purchase ||
-    item.name ||
+    item.product_name ||
+    item.product?.product_name_at_purchase || // Dacă e imbricat
     item.product?.name ||
+    item.name ||
     "Produs fără nume";
 
   // Încercăm toate posibilitățile de preț
