@@ -288,13 +288,39 @@ const SuccessPage = () => {
                   })}
 
                   {total > 0 && (
-                    <div className="flex justify-between items-center pt-4 mt-4 border-t border-zinc-100">
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
-                        Total
-                      </span>
-                      <span className="text-lg font-black">
-                        {total.toLocaleString()} RON
-                      </span>
+                    <div className="pt-4 mt-4 border-t border-zinc-100 space-y-2">
+                      {subtotal > 0 && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-zinc-500">Subtotal</span>
+                          <span className="text-zinc-700 font-semibold">
+                            {subtotal.toLocaleString("ro-RO")} RON
+                          </span>
+                        </div>
+                      )}
+                      {discount > 0 && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-zinc-500">Reducere</span>
+                          <span className="text-emerald-600 font-semibold">
+                            −{discount.toLocaleString("ro-RO")} RON
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500">Livrare</span>
+                        <span className="text-zinc-700 font-semibold">
+                          {shipping > 0
+                            ? `${shipping.toLocaleString("ro-RO")} RON`
+                            : "Gratuit"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-3 mt-2 border-t border-zinc-100">
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
+                          Total
+                        </span>
+                        <span className="text-lg font-black">
+                          {total.toLocaleString("ro-RO")} RON
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
