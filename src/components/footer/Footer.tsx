@@ -83,10 +83,10 @@ const Footer = () => {
   ];
 
   const supportLinks = [
-    { name: t("Ghid Mărimi", "Size Guide"), path: "/size-guide" },
-    { name: t("Livrare", "Shipping"), path: "/shipping" },
-    { name: t("Retur", "Returns"), path: "/returns" },
-    { name: t("Termeni", "Terms"), path: "/terms" },
+    { name: t("Ghid Mărimi", "Size Guide"), path: "/about/size-guide" },
+    { name: t("Customer Care", "Customer Care"), path: "/about/customer-care" },
+    { name: t("Retur", "Returns"), path: "/return-policy" },
+    { name: t("Termeni", "Terms"), path: "/terms-of-service" },
   ];
 
   const socialLinks = [
@@ -99,15 +99,26 @@ const Footer = () => {
     {
       id: "mail",
       Icon: Mail,
-      href: "mailto:hello@evem-boutique.ro",
+      href: "mailto:contact@evem.ro",
       label: "Email",
     },
   ];
 
   const legalLinks = [
-    { name: "Privacy", path: "/privacy" },
-    { name: "Cookies", path: "/cookies" },
-    { name: "ANPC", path: "https://anpc.ro", external: true },
+    { name: t("Confidențialitate", "Privacy"), path: "/privacy-policy" },
+    { name: "Cookies", path: "/cookie-policy" },
+    { name: "Retur", path: "/return-policy" },
+    { name: "Termeni", path: "/terms-of-service" },
+    {
+      name: "ANPC",
+      path: "https://anpc.ro/ce-este-sal/",
+      external: true,
+    },
+    {
+      name: "SOL",
+      path: "https://ec.europa.eu/consumers/odr",
+      external: true,
+    },
   ];
 
   return (
