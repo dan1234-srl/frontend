@@ -408,10 +408,7 @@ const CheckoutPopup = ({
   };
 
   const handleCompleteOrder = async () => {
-    if (!validateAll()) {
-      return;
-    }
-
+    if (!validateAll()) return;
     setLoading(true);
 
     try {
@@ -420,34 +417,33 @@ const CheckoutPopup = ({
           sku: (i.sku || i.product_sku).toUpperCase().trim(),
           quantity: parseInt(i.quantity),
         })),
-
-        shipping_method: shippingMethod,
-
-        delivery_point_id:
-          shippingMethod === "locker" ? selectedLocker?.id : null,
-
         shipping_details: {
           firstName: formData.firstName.trim(),
-
           lastName: formData.lastName.trim(),
-
           phone: formData.phone.replace(/\s+/g, ""),
-
           email: formData.email.toLowerCase().trim(),
-
+          delivery_type: shippingMethod, // <--- IMPORTANT pentru backend
+          locker_id: shippingMethod === "locker" ? selectedLocker?.id : null,
+          locker_address:
+            shippingMethod === "locker" ? selectedLocker?.address : null,
           address: {
-            street: formData.street.trim(),
-
-            city: formData.city.trim(),
-
-            county: formData.county.trim(),
+            // Dacă e locker, folosim adresa locker-ului pentru a nu avea erori de validare
+            street:
+              shippingMethod === "locker"
+                ? selectedLocker?.street || "Locker GLS"
+                : formData.street.trim(),
+            city:
+              shippingMethod === "locker"
+                ? selectedLocker?.city
+                : formData.city.trim(),
+            county:
+              shippingMethod === "locker"
+                ? selectedLocker?.county
+                : formData.county.trim(),
           },
         },
-
         payment_method: paymentMethod,
-
         voucher_code: appliedVoucher?.code || null,
-
         save_address: shouldSaveAddress && addressMode === "new",
       };
 
