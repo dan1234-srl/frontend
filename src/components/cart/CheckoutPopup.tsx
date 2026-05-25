@@ -21,8 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-
-const GLSLockerMap = lazy(() => import("./GLSLockerMap"));
+const GLSLockerMap = lazy(() => import("@/pages/gls/GLSLockerMap"));
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
