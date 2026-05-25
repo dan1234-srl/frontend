@@ -292,17 +292,22 @@ const Footer = () => {
                 {t("Contact", "Hub")}
               </span>
               <div className="space-y-3 text-xs font-semibold tracking-wide text-white/60 leading-relaxed">
-                <p className="opacity-70">Calea Dorobanți 123, RO</p>
+                <p className="opacity-70">EVEM Boutique SRL</p>
+                <p className="opacity-50 text-[10px]">
+                  CUI: RO12345678 · Reg. Com.: J40/0000/2026
+                </p>
+                <p className="opacity-70">Calea Dorobanți 123, București</p>
                 <a
-                  href="mailto:hello@evem-boutique.ro"
+                  href="mailto:contact@evem.ro"
                   className="inline-block font-bold hover:underline bg-clip-text text-transparent"
                   style={{
                     backgroundImage: "var(--primary-gradient)",
                     WebkitBackgroundClip: "text",
                   }}
                 >
-                  hello@evem-boutique.ro
+                  contact@evem.ro
                 </a>
+                <p className="opacity-50 text-[10px]">+40 770 000 000</p>
                 <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-40">
                   <Globe size={11} /> <span>Ships Worldwide</span>
                 </div>
