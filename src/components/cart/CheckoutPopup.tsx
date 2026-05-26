@@ -289,7 +289,7 @@ const OrderSummary = ({ cartItems, totals, compact = false }) => (
     <div
       className={`space-y-2 ${!compact ? "flex-1 overflow-y-auto pr-1 custom-scrollbar" : ""}`}
     >
-      {cartItems.map((item) => (
+      {(cartItems || []).map((item) => (
         <div
           key={item.sku || item.product_sku}
           className="flex gap-3 items-center bg-white rounded-xl border border-zinc-100/80 p-2.5"
@@ -601,8 +601,9 @@ const CheckoutPopup = ({
 
   // ── Totals ─────────────────────────────────────────────────────────────────
   const totals = useMemo(() => {
+    // MODIFICAT AICI: Protejăm metoda reduce
     const base =
-      cartItems.reduce(
+      (cartItems || []).reduce(
         (acc, item) => acc + parseFloat(item.price) * (item.quantity || 1),
         0,
       ) ||
@@ -670,7 +671,8 @@ const CheckoutPopup = ({
     setLoading(true);
     try {
       const payload = {
-        items: cartItems.map((i) => ({
+        // MODIFICAT AICI: Protejăm metoda map
+        items: (cartItems || []).map((i) => ({
           sku: (i.sku || i.product_sku).toUpperCase().trim(),
           quantity: parseInt(i.quantity),
         })),
@@ -818,8 +820,8 @@ const CheckoutPopup = ({
                 >
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
                     <ShoppingBag size={11} />
-                    {cartItems.length}{" "}
-                    {cartItems.length === 1 ? "produs" : "produse"}
+                    {(cartItems || []).length}{" "}
+                    {(cartItems || []).length === 1 ? "produs" : "produse"}
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="text-[13px] font-black text-[var(--royal-violet)]">

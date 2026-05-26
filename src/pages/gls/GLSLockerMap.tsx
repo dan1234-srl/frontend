@@ -4,7 +4,7 @@ import L from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// Fix pentru iconițele lipsă
+// Fix pentru iconițele lipsă din react-leaflet
 const DefaultIcon = L.icon({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
@@ -15,13 +15,13 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 const GLSLockerMap = ({
   deliveryPoints,
-  selectedLocker,
+  selectedLocker, // Folosit dacă vrei să randezi un marker diferit pentru cel selectat în viitor
   setSelectedLocker,
 }: any) => {
   return (
     <div className="overflow-hidden rounded-2xl border border-zinc-100 shadow-xl h-[450px]">
       <MapContainer
-        center={[45.9432, 24.9668]}
+        center={[45.9432, 24.9668]} // Centrat pe România
         zoom={7}
         className="h-full w-full"
       >
@@ -30,12 +30,12 @@ const GLSLockerMap = ({
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
 
-        {deliveryPoints.map((point: any) => (
+        {(deliveryPoints || []).map((point: any) => (
           <Marker
             key={point.id}
-            // Folosește point.lat și point.lng, NU latitude/longitude
             position={[point.lat, point.lng]}
             eventHandlers={{
+              // Selecția se face automat când utilizatorul dă click pe marker!
               click: () => setSelectedLocker(point),
             }}
           >
@@ -45,9 +45,8 @@ const GLSLockerMap = ({
                   {point.name}
                 </p>
                 <p className="text-[10px] text-zinc-500">
-                  {point.street} {point.house_number}
+                  {point.street} {point.house_number}, {point.city}
                 </p>
-                {/* Scoate butonul, oricum ai setSelectedLocker la click pe marker */}
               </div>
             </Popup>
           </Marker>
