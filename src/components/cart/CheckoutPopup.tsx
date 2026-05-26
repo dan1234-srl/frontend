@@ -460,7 +460,7 @@ const CheckoutPopup = ({
       return;
     }
 
-    fetch(`${API_BASE_URL}/api/v1/orders/judete`)
+    fetch(`${API_BASE_URL}/api/v1/orders/utils/judete`)
       .then((r) => r.json())
       .then((data) => {
         setCounties(data);
