@@ -454,19 +454,31 @@ const CheckoutPopup = ({
   useEffect(() => {
     if (!isOpen) return;
 
+    // Verifică cache-ul mai întâi
     const cached = sessionStorage.getItem("judete_cache");
     if (cached) {
       setCounties(JSON.parse(cached));
       return;
     }
 
-    fetch(`${API_BASE_URL}/api/v1/orders/utils/judete`)
-      .then((r) => r.json())
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/api/v1/orders/utils/judete`, {
+      signal: controller.signal,
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("API Offline");
+        return r.json();
+      })
       .then((data) => {
         setCounties(data);
         sessionStorage.setItem("judete_cache", JSON.stringify(data));
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Fetch eșuat, dar continuăm fără județe:", err);
+        setCounties([]); // Setează listă goală pentru a opri re-render-ul
+      });
+
+    return () => controller.abort();
   }, [isOpen]);
 
   useEffect(() => {
