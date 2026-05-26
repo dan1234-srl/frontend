@@ -674,7 +674,8 @@ const CheckoutPopup = ({
               <header className="flex justify-between items-center mb-5 pb-4 border-b border-zinc-100">
                 <div>
                   <h2 className="text-2xl font-black tracking-tight text-zinc-900">
-                    Checkout <span className="text-violet-600">Secure</span>
+                    Checkout{" "}
+                    <span className="text-[var(--royal-violet)]">Secure</span>
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
                     {[
@@ -687,7 +688,7 @@ const CheckoutPopup = ({
                           onClick={() => n < step && setStep(n)}
                           className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${
                             step === n
-                              ? "text-violet-600"
+                              ? "text-[var(--royal-violet)]"
                               : step > n
                                 ? "text-zinc-400 hover:text-zinc-600 cursor-pointer"
                                 : "text-zinc-300"
@@ -798,7 +799,7 @@ const CheckoutPopup = ({
                         >
                           <Icon
                             size={18}
-                            className={`transition-colors ${shippingMethod === id ? "text-violet-600" : "text-zinc-400"}`}
+                            className={`transition-colors ${shippingMethod === id ? "text-[var(--royal-violet)]" : "text-zinc-400"}`}
                           />
                           <p
                             className={`text-[11px] font-black uppercase mt-2 leading-tight ${shippingMethod === id ? "text-violet-700" : "text-zinc-600"}`}
@@ -845,7 +846,7 @@ const CheckoutPopup = ({
                                     : "border-zinc-100 hover:border-zinc-200 bg-zinc-50/30"
                                 }`}
                               >
-                                <p className="text-[8px] font-black uppercase text-violet-600">
+                                <p className="text-[8px] font-black uppercase text-[var(--royal-violet)]">
                                   {addr.address_type || "Adresă"}
                                 </p>
                                 <p className="text-[11px] font-bold text-zinc-800 truncate mt-0.5">
@@ -858,7 +859,7 @@ const CheckoutPopup = ({
                                   addressMode === "select" && (
                                     <CheckCircle2
                                       size={12}
-                                      className="absolute top-2.5 right-2.5 text-violet-600"
+                                      className="absolute top-2.5 right-2.5 text-[var(--royal-violet)]"
                                     />
                                   )}
                               </button>
@@ -877,7 +878,7 @@ const CheckoutPopup = ({
                               }}
                               className={`p-3 border-2 border-dashed rounded-xl flex items-center justify-center gap-1.5 transition-all ${
                                 addressMode === "new"
-                                  ? "border-violet-500 text-violet-600 bg-violet-50/20"
+                                  ? "border-violet-500 text-[var(--royal-violet)] bg-violet-50/20"
                                   : "border-zinc-200 text-zinc-400 hover:border-zinc-300"
                               }`}
                             >
@@ -1040,7 +1041,7 @@ const CheckoutPopup = ({
                               fallback={
                                 <div className="h-full flex items-center justify-center bg-zinc-50 gap-2 text-[11px] text-zinc-400">
                                   <Loader2
-                                    className="animate-spin text-violet-600"
+                                    className="animate-spin text-[var(--royal-violet)]"
                                     size={18}
                                   />
                                   Se încarcă harta...
