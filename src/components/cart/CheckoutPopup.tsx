@@ -469,7 +469,6 @@ const CheckoutPopup = ({
       .catch(console.error);
   }, [isOpen]);
 
-  // ── Fetch lockere (lazy, o singură dată) ──────────────────────────────────
   useEffect(() => {
     if (shippingMethod !== "locker" || deliveryPoints.length > 0) return;
     fetch(`${API_BASE_URL}/api/v1/orders/gls/delivery-points`)
