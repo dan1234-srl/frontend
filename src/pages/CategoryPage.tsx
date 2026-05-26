@@ -313,8 +313,9 @@ const CategoryPage = () => {
           </div>
           <div className="flex items-center gap-3 mt-3">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-              {loading && products.length === 0 ? "—" : products.length}{" "}
-              Articole Disponibile
+              {/* 🚀 AICI: Folosește totalProducts în loc de products.length */}
+              {loading && products.length === 0 ? "—" : totalProducts} Articole
+              Disponibile
             </p>
           </div>
         </div>
