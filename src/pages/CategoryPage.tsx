@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
+const [totalProducts, setTotalProducts] = useState(0);
 
 const extractLcpUrl = (product: any): string | null => {
   if (!product || !product.image_url) return null;
@@ -221,7 +222,7 @@ const CategoryPage = () => {
           append ? [...prev, ...(data.items || [])] : data.items || [],
         );
         setTotalPages(data.pages || 1);
-
+        setTotalProducts(data.total || 0);
         // 🚀 FIX: AM ELIMINAT setSearchParams DE AICI CA SĂ NU CREEZE INFINITE RENDER LOOP
       } catch {
       } finally {
@@ -229,7 +230,7 @@ const CategoryPage = () => {
         setLoadingMore(false);
       }
     },
-    [slug, searchParams.toString()], // <-- FOLOSEȘTE toString() AICI
+    [slug, searchParams.toString()],
   );
 
   useEffect(() => {
