@@ -1283,7 +1283,7 @@ const AdminCoupons = () => {
                 <option value="global_campaign_id">
                   🌍 CAMPANIE GLOBALĂ (TOT SITE-UL)
                 </option>
-                {categories.map((cat) => (
+                {(categories || []).map((cat) => (
                   <optgroup label={cat.name} key={cat.id}>
                     <option value={cat.id}>Toată secțiunea {cat.name}</option>
                     {cat.subcategories?.map((sub: any) => (

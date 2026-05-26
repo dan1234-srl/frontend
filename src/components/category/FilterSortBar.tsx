@@ -90,7 +90,7 @@ const FilterSortBar = ({
                       Category
                     </h3>
                     <div className="space-y-3">
-                      {categories.map((category) => (
+                      {(categories || []).map((cat) => (
                         <div
                           key={category}
                           className="flex items-center space-x-3"

@@ -97,7 +97,7 @@ const HomeHero = () => {
                       animate={{ opacity: 1 }}
                       className="space-y-1"
                     >
-                      {categories.map((cat) => (
+                      {(categories || []).map((cat) => (
                         <button
                           key={cat.id}
                           onClick={() =>
