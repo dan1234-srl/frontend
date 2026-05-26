@@ -229,7 +229,7 @@ const CategoryPage = () => {
         setLoadingMore(false);
       }
     },
-    [slug, searchParams],
+    [slug, searchParams.toString()], // <-- FOLOSEȘTE toString() AICI
   );
 
   useEffect(() => {
