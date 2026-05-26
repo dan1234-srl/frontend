@@ -245,12 +245,12 @@ const LockerConfirmCard = ({ locker, onClear }) => (
       initial={{ scale: 0, rotate: -30 }}
       animate={{ scale: 1, rotate: 0 }}
       transition={{ type: "spring", damping: 14, stiffness: 320, delay: 0.05 }}
-      className="p-2 bg-violet-600 text-white rounded-lg shrink-0 shadow-md shadow-violet-400/30"
+      className="p-2 bg-[var(--royal-violet)] text-white rounded-lg shrink-0 shadow-md shadow-violet-400/30"
     >
       <CheckCircle2 size={16} />
     </motion.div>
     <div className="flex-1 min-w-0">
-      <p className="text-[8px] font-black uppercase tracking-widest text-violet-600 flex items-center gap-1">
+      <p className="text-[8px] font-black uppercase tracking-widest text-[var(--royal-violet)] flex items-center gap-1">
         <Sparkles size={8} /> Locker Confirmat
       </p>
       <p className="text-[12px] font-bold text-zinc-800 mt-0.5 truncate">
@@ -696,7 +696,7 @@ const CheckoutPopup = ({
                           <span
                             className={`size-4 rounded-full flex items-center justify-center text-[8px] font-black border transition-all ${
                               step === n
-                                ? "bg-violet-600 border-violet-600 text-white"
+                                ? "bg-[var(--royal-violet)] border-[var(--royal-violet)] text-white"
                                 : step > n
                                   ? "bg-emerald-500 border-emerald-500 text-white"
                                   : "border-zinc-300 text-zinc-300"
@@ -811,7 +811,7 @@ const CheckoutPopup = ({
                           {shippingMethod === id && (
                             <motion.div
                               layoutId="ship-badge"
-                              className="absolute top-2 right-2 p-0.5 bg-violet-600 rounded-full"
+                              className="absolute top-2 right-2 p-0.5 bg-[var(--royal-violet)] rounded-full"
                             >
                               <Check
                                 size={9}
@@ -1209,7 +1209,7 @@ const CheckoutPopup = ({
                           <div
                             className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                               paymentMethod === id
-                                ? "bg-violet-600 border-transparent"
+                                ? "bg-[var(--royal-violet)] border-transparent"
                                 : "border-zinc-200"
                             }`}
                           >
