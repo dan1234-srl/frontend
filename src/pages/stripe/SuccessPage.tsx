@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, ArrowRight, ShoppingBag, Mail, Sparkles } from "lucide-react";
+import {
+  Check,
+  ArrowRight,
+  ShoppingBag,
+  Mail,
+  Sparkles,
+  MapPin,
+  Truck,
+  Package,
+} from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import Footer from "@/components/footer/Footer";
@@ -12,8 +21,10 @@ const API_BASE_URL =
   (import.meta.env.VITE_API_URL as string) ||
   "https://linea-backend-production.up.railway.app";
 
+// Helper pentru extragerea URL-ului imaginii
 const getItemImage = (item: any) => {
-  const source = item.product_image || item.product?.image_url;
+  const source =
+    item.product_image || item.product?.image_url || item.product_image_url;
   if (!source) return "/placeholder.png";
   if (typeof source === "string") {
     if (source.startsWith("http")) return source;
@@ -34,90 +45,61 @@ const getItemImage = (item: any) => {
   );
 };
 
+// Helper pentru preluarea datelor standardizate ale produsului
 const getItemDetails = (item: any) => {
-  // Debug brut pentru a vedea ce primim de la API-ul tău
-  console.log("DEBUG: Structura Item primit:", item);
-
-  // Încercăm toate posibilitățile de nume
-  const name =
-    item.product_name_at_purchase ||
-    item.product_name ||
-    item.product?.product_name_at_purchase || // Dacă e imbricat
-    item.product?.name ||
-    item.name ||
-    "Produs fără nume";
-
-  // Încercăm toate posibilitățile de preț
-  const price = Number(
-    item.unit_price_at_purchase ||
-      item.price_at_purchase ||
-      item.price ||
-      item.unit_price ||
-      item.total_item_price ||
-      0,
-  );
-
-  const brand = item.brand_name || "EVEM";
+  // Aici preluăm exact câmpurile pe care backend-ul le livrează prin OrderItemOut
+  const name = item.product_name || "Produs EVEM";
+  const price = Number(item.price_at_purchase || 0);
+  const brand = "EVEM"; // Poți extrage de pe item dacă backend-ul expune brand-ul
   const quantity = Number(item.quantity || 1);
 
   return { name, price, brand, quantity };
 };
 
 const SuccessPage = () => {
-  const [itemsWithNames, setItemsWithNames] = useState<any[]>([]);
-
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const orderId = searchParams.get("order_id") || "N/A";
   const isSuccess = searchParams.get("success") === "true";
 
   const [order, setOrder] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // Curățăm coșul doar dacă suntem pe pagina de succes
   useEffect(() => {
     if (isSuccess) clearCart();
     else navigate("/");
   }, [isSuccess, clearCart, navigate]);
 
+  // Facem fetch la detaliile comenzii din baza de date
   useEffect(() => {
-    // 🚀 ADĂUGAT: Debug log ca să vedem dacă intră aici
-    console.log("DEBUG: useEffect declanșat cu:", { isSuccess, orderId });
-
-    if (!isSuccess || orderId === "N/A") {
-      console.log(
-        "DEBUG: Condiție de oprire atinsă (isSuccess fals sau orderId N/A)",
-      );
-      return;
-    }
+    if (!isSuccess || orderId === "N/A") return;
 
     let cancel = false;
-    (async () => {
+    const fetchOrder = async () => {
       setLoading(true);
       try {
-        const url = `${API_BASE_URL}/api/v1/orders/${orderId}`;
-        console.log("DEBUG: Fetching URL:", url);
-
-        const res = await fetch(url, { credentials: "include" });
-
-        // 🚀 ADĂUGAT: Vedem statusul răspunsului
-        console.log("DEBUG: Status răspuns:", res.status);
+        const res = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
+          credentials: "include",
+        });
 
         if (res.ok) {
           const data = await res.json();
-          console.log("DEBUG: Date primite:", data);
           if (!cancel) setOrder(data);
         } else {
           console.error("DEBUG: Eroare API - Status nu e OK");
         }
       } catch (err) {
-        // 🚀 ADĂUGAT: Acum vei vedea eroarea!
         console.error("DEBUG: Eroare critică la fetch:", err);
       } finally {
         if (!cancel) setLoading(false);
       }
-    })();
+    };
+
+    fetchOrder();
     return () => {
       cancel = true;
     };
@@ -132,24 +114,36 @@ const SuccessPage = () => {
         : orderId.toUpperCase()
       : "N/A";
 
+  // Extragem valorile bazându-ne direct pe schema Pydantic OrderOut
   const items: any[] = order?.items || [];
   const subtotal = Number(order?.subtotal_amount || 0);
   const discount = Number(order?.discount_amount || 0);
   const shipping = Number(order?.shipping_fee || 0);
-  const total = Number(
-    order?.total_amount ||
-      order?.total ||
-      items.reduce((s, it) => {
-        const d = getItemDetails(it);
-        return s + d.price * d.quantity;
-      }, 0),
-  );
+  const total = Number(order?.total_amount || 0);
+  const deliveryType = order?.delivery_type || "courier";
+
+  // Căutăm adresa pentru a o afișa drăguț. Ne bazăm pe textul JSON salvat în DB.
+  let addressText = "Adresă indisponibilă";
+  try {
+    if (order?.shipping_address) {
+      const parsedAddr = JSON.parse(order.shipping_address);
+      if (parsedAddr.locker_name) {
+        addressText = `${parsedAddr.locker_name}, ${parsedAddr.city}`;
+      } else if (parsedAddr.street) {
+        addressText = `${parsedAddr.street}, ${parsedAddr.city}, ${parsedAddr.county}`;
+      }
+    }
+  } catch (e) {
+    // Dacă shipping_address este doar un string simplu (cum e definit în Pydantic acum)
+    addressText = order?.shipping_address || "Adresă indisponibilă";
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[var(--deep-twilight)] font-sans flex flex-col">
       <Navbar />
 
       <main className="flex-1 flex flex-col items-center px-4 sm:px-6 pt-32 sm:pt-40 pb-24 relative overflow-hidden">
+        {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden z-0">
           <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[var(--french-blue,#3b82f6)] opacity-[0.03] blur-[120px] rounded-full" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-[var(--deep-twilight,#0a0a0a)] opacity-[0.03] blur-[120px] rounded-full" />
@@ -161,6 +155,7 @@ const SuccessPage = () => {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 max-w-3xl w-full border border-zinc-100 p-6 sm:p-10 md:p-16 bg-white/80 backdrop-blur-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.04)] rounded-[2rem] md:rounded-[3rem] text-center"
         >
+          {/* Check Icon */}
           <div className="flex justify-center mb-10">
             <div className="relative">
               <motion.div
@@ -202,9 +197,10 @@ const SuccessPage = () => {
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-zinc-100" />
           </div>
 
+          {/* Cards: Numar comanda & Metoda Livrare */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-10">
-            <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-zinc-50/60 border border-zinc-100">
-              <div className="p-3 rounded-full bg-white shadow-sm">
+            <div className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-zinc-50/60 border border-zinc-100 text-center">
+              <div className="p-3 rounded-full bg-white shadow-sm text-zinc-700">
                 <ShoppingBag size={16} />
               </div>
               <div className="space-y-1">
@@ -214,21 +210,27 @@ const SuccessPage = () => {
                 <p className="text-sm font-black">#{displayOrderId}</p>
               </div>
             </div>
-            <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-zinc-50/60 border border-zinc-100">
-              <div className="p-3 rounded-full bg-white shadow-sm">
-                <Mail size={16} />
+
+            <div className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-zinc-50/60 border border-zinc-100 text-center">
+              <div className="p-3 rounded-full bg-white shadow-sm text-zinc-700">
+                {deliveryType === "locker" ? (
+                  <Package size={16} />
+                ) : (
+                  <Truck size={16} />
+                )}
               </div>
               <div className="space-y-1">
                 <p className="text-[9px] uppercase tracking-widest text-zinc-400 font-bold">
-                  Confirmare
+                  Metodă Livrare
                 </p>
-                <p className="text-sm font-black">Email Trimis</p>
+                <p className="text-sm font-black">
+                  {deliveryType === "locker" ? "Locker GLS" : "Curier Rapid"}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* PRODUSELE COMANDATE */}
-          {/* PRODUSELE COMANDATE */}
+          {/* PRODUSELE COMANDATE & TOTALURI */}
           {(loading || items.length > 0) && (
             <div className="mb-10 text-left">
               <div className="flex items-center justify-between mb-5">
@@ -242,7 +244,7 @@ const SuccessPage = () => {
                 )}
               </div>
 
-              {loading && items.length === 0 ? (
+              {loading ? (
                 <div className="space-y-2">
                   {[...Array(2)].map((_, i) => (
                     <div
@@ -258,7 +260,7 @@ const SuccessPage = () => {
                     const details = getItemDetails(it);
                     return (
                       <motion.div
-                        key={it.id || i}
+                        key={it.product_id || i}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05 * i }}
@@ -283,22 +285,54 @@ const SuccessPage = () => {
                             Cantitate: {details.quantity}
                           </p>
                         </div>
-                        <p className="text-xs sm:text-sm font-black text-zinc-900 whitespace-nowrap">
-                          {(details.price * details.quantity).toLocaleString(
-                            "ro-RO",
-                          )}{" "}
-                          RON
-                        </p>
+                        <div className="text-right">
+                          <p className="text-xs sm:text-sm font-black text-zinc-900 whitespace-nowrap">
+                            {(details.price * details.quantity).toLocaleString(
+                              "ro-RO",
+                            )}{" "}
+                            RON
+                          </p>
+                          {details.quantity > 1 && (
+                            <p className="text-[9px] text-zinc-400 mt-0.5">
+                              {details.price.toLocaleString("ro-RO")} RON / buc
+                            </p>
+                          )}
+                        </div>
                       </motion.div>
                     );
                   })}
 
-                  {/* Secțiunea de Totaluri */}
-                  {total > 0 && (
+                  {/* Adresa de destinație */}
+                  {order && (
+                    <div className="mt-6 p-4 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-start gap-3">
+                      <MapPin
+                        size={16}
+                        className="text-zinc-400 mt-0.5 shrink-0"
+                      />
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">
+                          Destinație (
+                          {deliveryType === "locker"
+                            ? "Locker"
+                            : "Adresă de livrare"}
+                          )
+                        </p>
+                        <p className="text-xs font-semibold text-zinc-800 leading-snug">
+                          {order.customer_name}
+                        </p>
+                        <p className="text-xs text-zinc-600 leading-snug mt-0.5">
+                          {addressText}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Secțiunea de Totaluri Finale */}
+                  {order && (
                     <div className="pt-6 mt-6 border-t border-zinc-100 space-y-3">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-zinc-500 font-medium">
-                          Subtotal
+                          Subtotal produse
                         </span>
                         <span className="font-black text-zinc-900">
                           {subtotal.toLocaleString("ro-RO")} RON
@@ -308,7 +342,7 @@ const SuccessPage = () => {
                       {discount > 0 && (
                         <div className="flex justify-between items-center text-xs">
                           <span className="text-zinc-500 font-medium">
-                            Reducere
+                            Voucher Reducere
                           </span>
                           <span className="font-black text-emerald-600">
                             −{discount.toLocaleString("ro-RO")} RON
@@ -318,8 +352,8 @@ const SuccessPage = () => {
 
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-zinc-500 font-medium">
-                          Livrare{" "}
-                          {order?.delivery_type === "locker"
+                          Taxă Livrare{" "}
+                          {deliveryType === "locker"
                             ? "(GLS Locker)"
                             : "(Curier Rapid)"}
                         </span>
@@ -331,10 +365,15 @@ const SuccessPage = () => {
                       </div>
 
                       <div className="flex justify-between items-center pt-4 mt-2 border-t-2 border-zinc-900">
-                        <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
-                          Total Plată
-                        </span>
-                        <span className="text-xl font-black text-zinc-900">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
+                            Total Achitat
+                          </span>
+                          <span className="text-[9px] text-zinc-400 mt-0.5">
+                            TVA inclus
+                          </span>
+                        </div>
+                        <span className="text-xl sm:text-2xl font-black text-zinc-900">
                           {total.toLocaleString("ro-RO")} RON
                         </span>
                       </div>
@@ -345,6 +384,7 @@ const SuccessPage = () => {
             </div>
           )}
 
+          {/* Footer Call to actions */}
           <div className="space-y-6">
             <p className="text-sm text-zinc-500 leading-relaxed max-w-sm mx-auto font-medium italic">
               "Detaliile fac diferența. Vom pregăti coletul cu cea mai mare
