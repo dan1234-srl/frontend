@@ -34,17 +34,12 @@ const extractLcpUrl = (product: any): string | null => {
   return typeof url === "string" ? url : null;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ: ULTRA-WIDE EDITORIAL HERO BANNER
-// ─────────────────────────────────────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -59,7 +54,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   }, [banners?.length]);
 
   if (!banners || banners.length === 0) return null;
-
   const currentBanner = banners[current];
   if (!currentBanner) return null;
 
@@ -105,17 +99,14 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
                 Campanie Exclusivă
               </span>
             </div>
-
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
               {currentBanner.title}
             </h2>
-
             {currentBanner.subtitle && (
               <p className="text-[10px] md:text-xs font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
                 {currentBanner.subtitle}
               </p>
             )}
-
             <div className="pt-2">
               <button className="px-8 py-4 bg-white text-zinc-950 text-[10px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-2xl active:scale-95 duration-300">
                 {currentBanner.button_text || "DESCOPERĂ COLECȚIA"}
@@ -144,9 +135,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTĂ PRINCIPALĂ: CATEGORY PAGE
-// ─────────────────────────────────────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -221,7 +209,6 @@ const CategoryPage = () => {
           }
         });
 
-        // Setare sortare default
         const currentSort = searchParams.get("sort");
         params.set("sort", currentSort || "cele-mai-noi");
 
@@ -235,30 +222,20 @@ const CategoryPage = () => {
         );
         setTotalPages(data.pages || 1);
 
-        // FIX: Actualizăm URL-ul DOAR la încărcarea inițială (sau schimbare de filtru)
-        // Nu mai actualizăm pagina în URL în timpul infinite scroll-ului
-        if (!append) {
-          setSearchParams(
-            (prev) => {
-              const newParams = new URLSearchParams(prev);
-              newParams.set("page", "1");
-              return newParams;
-            },
-            { replace: true },
-          );
-        }
+        // 🚀 FIX: AM ELIMINAT setSearchParams DE AICI CA SĂ NU CREEZE INFINITE RENDER LOOP
       } catch {
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [slug, searchParams, setSearchParams],
+    [slug, searchParams],
   );
 
   useEffect(() => {
-    fetchProducts(1, false);
-  }, [slug, searchParams.toString()]); // Observă că fetchProducts e stabil, deci nu intră în buclă
+    // Declansam mereu fetch-ul cu pagina corectă din URL
+    fetchProducts(currentPage, false);
+  }, [slug, searchParams.toString()]);
 
   useEffect(() => {
     if (!products.length) return;
@@ -278,6 +255,7 @@ const CategoryPage = () => {
           !loading &&
           currentPage < totalPages
         ) {
+          // 🚀 Aici doar adăugăm pagina la request, infinite scroll nu afectează URL-ul
           fetchProducts(currentPage + 1, true);
         }
       },
@@ -305,9 +283,7 @@ const CategoryPage = () => {
   })();
 
   const categoryTitle = useMemo(() => {
-    if (filtersData?.category_name) {
-      return filtersData.category_name;
-    }
+    if (filtersData?.category_name) return filtersData.category_name;
     if (!slug) return "";
     for (const cat of categoriesTree) {
       if (cat.slug === slug) return cat.name;
@@ -336,14 +312,14 @@ const CategoryPage = () => {
           </div>
           <div className="flex items-center gap-3 mt-3">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-              {loading ? "—" : products.length} Articole Disponibile
+              {loading && products.length === 0 ? "—" : products.length}{" "}
+              Articole Disponibile
             </p>
           </div>
         </div>
 
         <CategoryHeroCarousel banners={campaignBanners} />
 
-        {/* MOBILE CATEGORIES */}
         <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
           <div className="flex gap-2">
             {categoriesTree.map((cat) => (
@@ -362,7 +338,6 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* ACTIONS BAR FILTER & SORT UNIFIED */}
         <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
@@ -412,7 +387,6 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* PRODUCTS GRID SYSTEM */}
         <div className="flex gap-12 items-start">
           <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">

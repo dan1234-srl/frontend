@@ -4,12 +4,10 @@ import { Heart, Star } from "lucide-react";
 import { SmartImage } from "@/components/ui/smart-image";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-// Importăm utilitarele pentru prefetch
 import { prefetchProduct, prefetchImage } from "@/lib/prefetch";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
-// Parsare optimizată a obiectului media din backend
 const parseImage = (media: any) => {
   let data = media;
   if (typeof data === "string" && data.trim().startsWith("{")) {
@@ -42,14 +40,12 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // 🚀 DECLANȘATOR PREFETCH: Se activează la hover pe card
   const handlePrefetch = useCallback(() => {
     prefetchProduct(product.id);
     const imgs = parseImage(product.image_url);
     if (imgs.medium) prefetchImage(imgs.medium);
   }, [product.id, product.image_url]);
 
-  // Sincronizare stare favorite
   useEffect(() => {
     const checkFavorite = () => {
       if (user) {
@@ -67,7 +63,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
     checkFavorite();
   }, [user, product.id]);
 
-  // Calcul statistici optimizat prin useMemo
   const stats = useMemo(() => {
     const mainImg = parseImage(product.image_url);
     const basePrice = Number(
@@ -145,7 +140,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
               slug: product.slug,
             },
           ];
-
       localStorage.setItem("guest_wishlist", JSON.stringify(updated));
       setIsFavorite(!exists);
       toast.info(exists ? "Eliminat din favorite" : "Salvat în wishlist");
@@ -169,7 +163,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
           />
         </Link>
 
-        {/* Buton Favorite */}
         <button
           onClick={handleWishlistToggle}
           className="absolute top-2 right-2 z-30 p-2 rounded-full bg-white/60 backdrop-blur-md hover:bg-white transition-all shadow-sm"
@@ -180,14 +173,12 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
           />
         </button>
 
-        {/* Badge Reducere */}
         {stats.hasDiscount && !stats.isOutOfStock && (
           <div className="absolute top-2 left-2 z-10 bg-black text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg">
             -{stats.discountPct}%
           </div>
         )}
 
-        {/* Stoc Epuizat */}
         {stats.isOutOfStock && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/40 backdrop-blur-[1px]">
             <div className="bg-black text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2">
@@ -209,7 +200,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
           {product.name}
         </h3>
 
-        {/* Rating */}
         <div className="flex items-center gap-1">
           <div className="flex text-amber-400">
             {[...Array(5)].map((_, i) => (
@@ -232,7 +222,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
           </span>
         </div>
 
-        {/* Preț */}
         <div className="flex items-baseline gap-2 pt-1">
           <span
             className={`text-sm font-black ${stats.isOutOfStock ? "text-zinc-400" : "text-black"}`}
