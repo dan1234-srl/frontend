@@ -18,7 +18,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
-const [totalProducts, setTotalProducts] = useState(0);
 
 const extractLcpUrl = (product: any): string | null => {
   if (!product || !product.image_url) return null;
@@ -148,7 +147,7 @@ const CategoryPage = () => {
   const currentPage = parseInt(searchParams.get("page") || "1");
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-
+  const [totalProducts, setTotalProducts] = useState(0);
   const observerTarget = useRef<HTMLDivElement | null>(null);
 
   const formatFallbackName = (str: string | undefined) => {
