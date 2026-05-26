@@ -450,11 +450,22 @@ const CheckoutPopup = ({
   }, [isOpen]);
 
   // ── Fetch județe ───────────────────────────────────────────────────────────
+  // Exemplu în CheckoutPopup
   useEffect(() => {
     if (!isOpen) return;
-    fetch("https://roloca.coldfuse.io/api/judete")
+
+    const cached = sessionStorage.getItem("judete_cache");
+    if (cached) {
+      setCounties(JSON.parse(cached));
+      return;
+    }
+
+    fetch(`${API_BASE_URL}/api/v1/orders/judete`)
       .then((r) => r.json())
-      .then(setCounties)
+      .then((data) => {
+        setCounties(data);
+        sessionStorage.setItem("judete_cache", JSON.stringify(data));
+      })
       .catch(console.error);
   }, [isOpen]);
 
