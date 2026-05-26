@@ -458,31 +458,25 @@ const CheckoutPopup = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    // Verifică cache-ul mai întâi
     const cached = sessionStorage.getItem("judete_cache");
     if (cached) {
+      console.log("Date din cache:", JSON.parse(cached));
       setCounties(JSON.parse(cached));
       return;
     }
 
-    const controller = new AbortController();
-    fetch(`${API_BASE_URL}/api/v1/orders/utils/judete`, {
-      signal: controller.signal,
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("API Offline");
-        return r.json();
-      })
+    fetch(`${API_BASE_URL}/api/v1/orders/utils/judete`)
+      .then((r) => r.json())
       .then((data) => {
-        setCounties(data);
-        sessionStorage.setItem("judete_cache", JSON.stringify(data));
+        console.log("Date primite de la backend:", data); // <--- Vezi ce primești aici
+        if (Array.isArray(data) && data.length > 0) {
+          setCounties(data);
+          sessionStorage.setItem("judete_cache", JSON.stringify(data));
+        } else {
+          console.warn("Datele primite sunt goale sau nu sunt array");
+        }
       })
-      .catch((err) => {
-        console.error("Fetch eșuat, dar continuăm fără județe:", err);
-        setCounties([]); // Setează listă goală pentru a opri re-render-ul
-      });
-
-    return () => controller.abort();
+      .catch((err) => console.error("Eroare fetch:", err));
   }, [isOpen]);
 
   useEffect(() => {
