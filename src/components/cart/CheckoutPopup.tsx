@@ -440,11 +440,15 @@ const CheckoutPopup = ({
     fetch(`${API_BASE_URL}/api/v1/orders/shipping/config`)
       .then((r) => r.json())
       .then((data) => {
-        setShippingConfig({
+        const newCfg = {
           courier_fee: parseFloat(data.courier_fee) || 20.0,
           locker_fee: parseFloat(data.locker_fee) || 15.0,
           free_threshold: parseFloat(data.free_threshold) || 250.0,
-        });
+        };
+        // Doar dacă e diferit, facem set!
+        if (JSON.stringify(newCfg) !== JSON.stringify(shippingConfig)) {
+          setShippingConfig(newCfg);
+        }
       })
       .catch(console.error);
   }, [isOpen]);
@@ -627,6 +631,7 @@ const CheckoutPopup = ({
       total: subtotalAfterDiscount + shippingCost,
     };
   }, [cartItems, propSubtotal, appliedVoucher, shippingMethod, shippingConfig]);
+
   // ── Validare ───────────────────────────────────────────────────────────────
   const validateStep1 = () => {
     const e = {};
