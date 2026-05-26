@@ -19,8 +19,11 @@ import { preloadLcp } from "@/lib/cf-image";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
+// ─────────────────────────────────────────────
+// Utils
+// ─────────────────────────────────────────────
 const extractLcpUrl = (product: any): string | null => {
-  if (!product || !product.image_url) return null;
+  if (!product?.image_url) return null;
   let data = product.image_url;
   if (typeof data === "string" && data.trim().startsWith("{")) {
     try {
@@ -34,6 +37,17 @@ const extractLcpUrl = (product: any): string | null => {
   return typeof url === "string" ? url : null;
 };
 
+const formatFallbackName = (str: string | undefined) => {
+  if (!str) return "";
+  return str
+    .replace(/^cat-/, "")
+    .replace(/-[a-f0-9]{6}$/i, "")
+    .replace(/-/g, " ");
+};
+
+// ─────────────────────────────────────────────
+// Hero Carousel
+// ─────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -92,23 +106,23 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-10" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10" />
 
-          <div className="absolute inset-y-0 left-0 p-8 sm:p-12 md:p-20 flex flex-col justify-center items-start text-left text-white max-w-md md:max-w-2xl z-20 space-y-4">
+          <div className="absolute inset-y-0 left-0 p-6 sm:p-12 md:p-20 flex flex-col justify-center items-start text-left text-white max-w-[90%] sm:max-w-md md:max-w-2xl z-20 space-y-3 sm:space-y-4">
             <div className="flex items-center gap-3">
               <span className="h-[1px] w-8 bg-white/60 block" />
               <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-300">
                 Campanie Exclusivă
               </span>
             </div>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
+            <h2 className="text-xl sm:text-4xl md:text-5xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
               {currentBanner.title}
             </h2>
             {currentBanner.subtitle && (
-              <p className="text-[10px] md:text-xs font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
+              <p className="hidden sm:block text-[10px] md:text-xs font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
                 {currentBanner.subtitle}
               </p>
             )}
-            <div className="pt-2">
-              <button className="px-8 py-4 bg-white text-zinc-950 text-[10px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-2xl active:scale-95 duration-300">
+            <div className="pt-1 sm:pt-2">
+              <button className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-zinc-950 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-2xl active:scale-95 duration-300">
                 {currentBanner.button_text || "DESCOPERĂ COLECȚIA"}
               </button>
             </div>
@@ -117,11 +131,12 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
       </AnimatePresence>
 
       {banners.length > 1 && (
-        <div className="absolute bottom-6 right-10 flex gap-2.5 z-30">
+        <div className="absolute bottom-4 sm:bottom-6 right-6 sm:right-10 flex gap-2.5 z-30">
           {banners.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
+              aria-label={`Slide ${i + 1}`}
               className={`h-1 rounded-full transition-all duration-500 ${
                 current === i
                   ? "w-8 bg-white"
@@ -135,29 +150,37 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   );
 };
 
+// ─────────────────────────────────────────────
+// Main Page
+// ─────────────────────────────────────────────
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Products state
   const [products, setProducts] = useState<any[]>([]);
-  const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
-  const [filtersData, setFiltersData] = useState<any>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
-  const currentPage = parseInt(searchParams.get("page") || "1");
+
+  // ✅ FIX PRINCIPAL: pageToLoad în ref ca să nu cauzeze re-renders în observer
+  const pageToLoadRef = useRef(2);
+  const [pageToLoadState, setPageToLoadState] = useState(2); // doar pentru a re-declanșa observer-ul
+
+  // Other state
+  const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
+  const [filtersData, setFiltersData] = useState<any>(null);
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [totalProducts, setTotalProducts] = useState(0);
+
   const observerTarget = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  const formatFallbackName = (str: string | undefined) => {
-    if (!str) return "";
-    return str
-      .replace(/^cat-/, "")
-      .replace(/-[a-f0-9]{6}$/i, "")
-      .replace(/-/g, " ");
-  };
+  // currentPage din URL — folosit DOAR pentru primul fetch la load/filter change
+  const currentPage = parseInt(searchParams.get("page") || "1");
 
+  // ─── Fetch categories tree ────────────────────
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
@@ -165,6 +188,7 @@ const CategoryPage = () => {
       .catch(() => {});
   }, []);
 
+  // ─── Fetch filters ───────────────────────────
   useEffect(() => {
     if (!slug) return;
     setFiltersData(null);
@@ -176,6 +200,7 @@ const CategoryPage = () => {
       .catch(() => {});
   }, [slug, searchParams.toString()]);
 
+  // ─── Fetch banners ───────────────────────────
   useEffect(() => {
     if (!slug) return;
     fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
@@ -186,10 +211,12 @@ const CategoryPage = () => {
       .catch(() => setCampaignBanners([]));
   }, [slug]);
 
+  // ─── Fetch products ──────────────────────────
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
       if (append) setLoadingMore(true);
       else setLoading(true);
+
       try {
         const params = new URLSearchParams();
         params.set("page", page.toString());
@@ -209,8 +236,7 @@ const CategoryPage = () => {
           }
         });
 
-        const currentSort = searchParams.get("sort");
-        params.set("sort", currentSort || "cele-mai-noi");
+        params.set("sort", searchParams.get("sort") || "cele-mai-noi");
 
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
@@ -222,8 +248,8 @@ const CategoryPage = () => {
         );
         setTotalPages(data.pages || 1);
         setTotalProducts(data.total || 0);
-        // 🚀 FIX: AM ELIMINAT setSearchParams DE AICI CA SĂ NU CREEZE INFINITE RENDER LOOP
       } catch {
+        // silently fail
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -232,43 +258,57 @@ const CategoryPage = () => {
     [slug, searchParams.toString()],
   );
 
+  // ─── Reset + fetch la schimbare slug/filtre ──
   useEffect(() => {
-    // Declansam mereu fetch-ul cu pagina corectă din URL
+    // ✅ Reset pageToLoad la fiecare schimbare de categorie / filtre
+    pageToLoadRef.current = currentPage + 1;
+    setPageToLoadState(currentPage + 1);
     fetchProducts(currentPage, false);
   }, [slug, searchParams.toString()]);
 
+  // ─── Preload LCP ─────────────────────────────
   useEffect(() => {
     if (!products.length) return;
     const url = extractLcpUrl(products[0]);
-    if (url && typeof url === "string") preloadLcp(url);
+    if (url) preloadLcp(url);
   }, [products]);
 
+  // ─── Infinite scroll observer ────────────────
   useEffect(() => {
+    // Disconnect previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
     const target = observerTarget.current;
     if (!target) return;
 
-    const observer = new IntersectionObserver(
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         if (
           entries[0].isIntersecting &&
           !loadingMore &&
           !loading &&
-          currentPage < totalPages
+          pageToLoadRef.current <= totalPages
         ) {
-          // 🚀 Aici doar adăugăm pagina la request, infinite scroll nu afectează URL-ul
-          fetchProducts(currentPage + 1, true);
+          const nextPage = pageToLoadRef.current;
+          pageToLoadRef.current += 1; // ✅ incrementăm imediat în ref (fără re-render)
+          setPageToLoadState(pageToLoadRef.current); // optional: pentru debugging
+          fetchProducts(nextPage, true);
         }
       },
-      { rootMargin: "200px" },
+      { rootMargin: "300px" },
     );
 
-    observer.observe(target);
-    return () => {
-      if (target) observer.unobserve(target);
-    };
-  }, [currentPage, totalPages, loadingMore, loading, fetchProducts]);
+    observerRef.current.observe(target);
 
-  const activeFiltersCount = (() => {
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, [totalPages, loadingMore, loading, fetchProducts]);
+
+  // ─── Active filters count ────────────────────
+  const activeFiltersCount = useMemo(() => {
     let count = 0;
     searchParams.forEach((val, key) => {
       if (
@@ -280,54 +320,61 @@ const CategoryPage = () => {
         count++;
     });
     return count;
-  })();
+  }, [searchParams]);
 
+  // ─── Category title ──────────────────────────
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) return filtersData.category_name;
     if (!slug) return "";
     for (const cat of categoriesTree) {
       if (cat.slug === slug) return cat.name;
       if (cat.subcategories) {
-        const subMatch = cat.subcategories.find(
-          (sub: any) => sub.slug === slug,
-        );
-        if (subMatch) return subMatch.name;
+        const sub = cat.subcategories.find((s: any) => s.slug === slug);
+        if (sub) return sub.name;
       }
     }
     return formatFallbackName(slug);
   }, [slug, filtersData, categoriesTree]);
 
+  // ─── Has more pages? (for sentinel visibility) ─
+  const hasMore = pageToLoadRef.current <= totalPages && !loading;
+
   return (
     <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
+      {/* Navbar spacer */}
       <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
 
-      <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 md:px-12 py-8">
-        <div className="mb-10 md:mb-14">
+      <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-12 py-6 sm:py-8">
+        {/* ── Page Header ── */}
+        <div className="mb-8 md:mb-14">
           <div className="flex items-baseline gap-4 flex-wrap">
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
-              {categoryTitle}
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
+              {categoryTitle || (
+                <span className="inline-block w-48 h-10 bg-zinc-100 rounded-xl animate-pulse" />
+              )}
             </h1>
           </div>
           <div className="flex items-center gap-3 mt-3">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-              {/* 🚀 AICI: Folosește totalProducts în loc de products.length */}
               {loading && products.length === 0 ? "—" : totalProducts} Articole
               Disponibile
             </p>
           </div>
         </div>
 
+        {/* ── Hero Carousel ── */}
         <CategoryHeroCarousel banners={campaignBanners} />
 
-        <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2">
-          <div className="flex gap-2">
+        {/* ── Mobile category pills ── */}
+        <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
+          <div className="flex gap-2 shrink-0">
             {categoriesTree.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className={`whitespace-nowrap px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                className={`whitespace-nowrap px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
                   slug === cat.slug
                     ? "bg-zinc-100 text-black border-zinc-200 shadow-sm"
                     : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"
@@ -339,10 +386,14 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between py-5 mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40">
+        {/* ── Toolbar: Filters + Sort ── */}
+        <div className="flex items-center justify-between py-4 sm:py-5 mb-8 sm:mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40 gap-3">
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
-              <button className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
+              <button
+                className="flex items-center gap-2 sm:gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
+                aria-label="Deschide filtre"
+              >
                 <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
                   <SlidersHorizontal size={14} />
                   {activeFiltersCount > 0 && (
@@ -351,21 +402,21 @@ const CategoryPage = () => {
                     </span>
                   )}
                 </div>
-                <span>Rafinează Portofoliul</span>
+                <span className="hidden sm:inline">Rafinează Portofoliul</span>
+                <span className="sm:hidden">Filtre</span>
               </button>
             </SheetTrigger>
 
             <SheetContent
               side="right"
-              className="w-[90%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
+              className="w-[92%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
             >
-              <SheetHeader className="p-8 border-b border-zinc-100 shrink-0">
+              <SheetHeader className="p-6 sm:p-8 border-b border-zinc-100 shrink-0">
                 <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
                   Filtre categorii
                 </SheetTitle>
               </SheetHeader>
-
-              <div className="flex-1 overflow-y-auto p-8 luxury-scrollbar">
+              <div className="flex-1 overflow-y-auto p-6 sm:p-8 luxury-scrollbar">
                 {filtersData ? (
                   <FilterSidebar filtersData={filtersData} />
                 ) : (
@@ -383,13 +434,15 @@ const CategoryPage = () => {
             </SheetContent>
           </Sheet>
 
-          <div className="w-44 md:w-60">
+          <div className="w-36 sm:w-44 md:w-60 shrink-0">
             <SortDropdown />
           </div>
         </div>
 
-        <div className="flex gap-12 items-start">
-          <aside className="hidden lg:block w-[250px] shrink-0 sticky top-52">
+        {/* ── Main layout: Sidebar + Grid ── */}
+        <div className="flex gap-8 xl:gap-12 items-start">
+          {/* Desktop category sidebar */}
+          <aside className="hidden lg:block w-[220px] xl:w-[250px] shrink-0 sticky top-52">
             <div className="flex items-center gap-2 mb-6 pl-2">
               <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
@@ -436,13 +489,12 @@ const CategoryPage = () => {
             </nav>
           </aside>
 
+          {/* Product grid */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
-              <div className="w-full">
-                <ProductGridSkeleton count={10} />
-              </div>
+              <ProductGridSkeleton count={10} />
             ) : products.length === 0 ? (
-              <div className="text-center py-40 border border-zinc-100 rounded-[2rem] bg-zinc-50/30 flex flex-col items-center justify-center gap-4">
+              <div className="text-center py-32 sm:py-40 border border-zinc-100 rounded-[2rem] bg-zinc-50/30 flex flex-col items-center justify-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
                   <Grid2X2 size={16} className="text-zinc-300" />
                 </div>
@@ -450,11 +502,14 @@ const CategoryPage = () => {
                   <p className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
                     Niciun rezultat găsit
                   </p>
+                  <p className="text-[10px] text-zinc-400">
+                    Încearcă să ajustezi filtrele
+                  </p>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-16">
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-12">
+              <div className="flex flex-col gap-12 sm:gap-16">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
                   {products.map((p, i) => (
                     <ProductCard
                       key={`${p.id}-${i}`}
@@ -464,14 +519,33 @@ const CategoryPage = () => {
                   ))}
                 </div>
 
-                {currentPage < totalPages && (
+                {/* ✅ Sentinel: vizibil doar dacă mai sunt pagini de încărcat */}
+                {hasMore && (
                   <div
                     ref={observerTarget}
-                    className="flex flex-col items-center justify-center py-12 gap-3"
+                    className="flex flex-col items-center justify-center py-10 sm:py-12 gap-3"
+                    aria-live="polite"
                   >
-                    <Loader2 className="animate-spin text-zinc-400" size={24} />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                      Se încarcă mai multe produse...
+                    {loadingMore && (
+                      <>
+                        <Loader2
+                          className="animate-spin text-zinc-400"
+                          size={24}
+                        />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                          Se încarcă mai multe produse...
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* End of results message */}
+                {!hasMore && products.length > 0 && !loading && (
+                  <div className="flex flex-col items-center justify-center py-8 gap-2">
+                    <span className="h-[1px] w-16 bg-zinc-100 block" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">
+                      Toate produsele au fost afișate
                     </span>
                   </div>
                 )}
@@ -486,23 +560,29 @@ const CategoryPage = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-          html { scrollbar-gutter: stable !important; }
-          body[data-scroll-locked] { padding-right: 0px !important; margin-right: 0px !important; overflow: hidden !important; }
-          .no-scrollbar::-webkit-scrollbar { display: none; }
-          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-          .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-          .luxury-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 20px; }
-          
-          [data-radix-focus-trap] ~ div[class*="bg-black/"],
-          div[class*="fixed inset-0 bg-black"],
-          div[data-state="open"][class*="fixed inset-0"] {
-            z-index: 99990 !important;
-            backdrop-filter: blur(12px) !important;
-            -webkit-backdrop-filter: blur(12px) !important;
-            background-color: rgba(9, 9, 11, 0.4) !important;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          }
-        `,
+            html { scrollbar-gutter: stable !important; }
+            body[data-scroll-locked] {
+              padding-right: 0px !important;
+              margin-right: 0px !important;
+              overflow: hidden !important;
+            }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+            .luxury-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(0,0,0,0.05);
+              border-radius: 20px;
+            }
+            [data-radix-focus-trap] ~ div[class*="bg-black/"],
+            div[class*="fixed inset-0 bg-black"],
+            div[data-state="open"][class*="fixed inset-0"] {
+              z-index: 99990 !important;
+              backdrop-filter: blur(12px) !important;
+              -webkit-backdrop-filter: blur(12px) !important;
+              background-color: rgba(9, 9, 11, 0.4) !important;
+              transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            }
+          `,
         }}
       />
     </div>
