@@ -47,12 +47,7 @@ const GLSLockerMap = ({
                 <p className="text-[10px] text-zinc-500">
                   {point.street} {point.house_number}
                 </p>
-                <button
-                  onClick={() => setSelectedLocker(point)}
-                  className="w-full mt-2 py-2 bg-black text-white text-[9px] font-black uppercase rounded-lg"
-                >
-                  Selectează
-                </button>
+                {/* Scoate butonul, oricum ai setSelectedLocker la click pe marker */}
               </div>
             </Popup>
           </Marker>
