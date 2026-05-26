@@ -231,7 +231,7 @@ const LockerConfirmCard = ({ locker, onClear }) => (
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: -6, scale: 0.97 }}
     transition={{ type: "spring", damping: 22, stiffness: 340 }}
-    className="relative p-3.5 rounded-xl border-2 border-violet-500 bg-violet-50/40 flex items-start gap-3 overflow-hidden"
+    className="relative p-3.5 rounded-xl border-2 border-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.4] flex items-start gap-3 overflow-hidden"
   >
     {/* Pulse ring animation */}
     <motion.div
@@ -262,7 +262,7 @@ const LockerConfirmCard = ({ locker, onClear }) => (
     </div>
     <button
       onClick={onClear}
-      className="p-1 rounded-lg hover:bg-violet-100 text-zinc-400 hover:text-zinc-600 transition-colors shrink-0 mt-0.5"
+      className="p-1 rounded-lg hover:bg-[var(--lavender-purple)] text-zinc-400 hover:text-zinc-600 transition-colors shrink-0 mt-0.5"
     >
       <X size={13} />
     </button>
@@ -731,7 +731,7 @@ const CheckoutPopup = ({
                     {cartItems.length === 1 ? "produs" : "produse"}
                   </span>
                   <span className="flex items-center gap-2">
-                    <span className="text-[13px] font-black text-violet-700">
+                    <span className="text-[13px] font-black text-[var(--royal-violet)]">
                       {formatCurrency(totals.total)}
                     </span>
                     <ChevronDown
@@ -793,7 +793,7 @@ const CheckoutPopup = ({
                           onClick={() => setShippingMethod(id)}
                           className={`relative p-3.5 border-2 rounded-xl text-left transition-all overflow-hidden group ${
                             shippingMethod === id
-                              ? "border-violet-500 bg-violet-50/25 shadow-sm"
+                              ? "border-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.25] shadow-sm"
                               : "border-zinc-100 hover:border-zinc-200 bg-zinc-50/40"
                           }`}
                         >
@@ -802,7 +802,7 @@ const CheckoutPopup = ({
                             className={`transition-colors ${shippingMethod === id ? "text-[var(--royal-violet)]" : "text-zinc-400"}`}
                           />
                           <p
-                            className={`text-[11px] font-black uppercase mt-2 leading-tight ${shippingMethod === id ? "text-violet-700" : "text-zinc-600"}`}
+                            className={`text-[11px] font-black uppercase mt-2 leading-tight ${shippingMethod === id ? "text-[var(--royal-violet)]" : "text-zinc-600"}`}
                           >
                             {label}
                           </p>
@@ -842,7 +842,7 @@ const CheckoutPopup = ({
                                 className={`p-3 text-left border-2 rounded-xl transition-all relative ${
                                   selectedAddressId === addr.id &&
                                   addressMode === "select"
-                                    ? "border-violet-500 bg-violet-50/20"
+                                    ? "border-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.20]"
                                     : "border-zinc-100 hover:border-zinc-200 bg-zinc-50/30"
                                 }`}
                               >
@@ -878,7 +878,7 @@ const CheckoutPopup = ({
                               }}
                               className={`p-3 border-2 border-dashed rounded-xl flex items-center justify-center gap-1.5 transition-all ${
                                 addressMode === "new"
-                                  ? "border-violet-500 text-[var(--royal-violet)] bg-violet-50/20"
+                                  ? "border-[var(--royal-violet)] text-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.20]"
                                   : "border-zinc-200 text-zinc-400 hover:border-zinc-300"
                               }`}
                             >
@@ -1032,7 +1032,7 @@ const CheckoutPopup = ({
                           <div
                             className={`rounded-xl overflow-hidden border transition-all duration-300 ${
                               lockerJustSelected
-                                ? "border-violet-500 ring-2 ring-violet-300 ring-offset-1 shadow-lg shadow-violet-200"
+                                ? "border-[var(--royal-violet)] ring-2 ring-violet-300 ring-offset-1 shadow-lg shadow-violet-200"
                                 : "border-zinc-200"
                             }`}
                             style={{ height: "300px" }}
@@ -1182,7 +1182,7 @@ const CheckoutPopup = ({
                           onClick={() => setPaymentMethod(id)}
                           className={`w-full flex items-center gap-3.5 p-4 border-2 rounded-xl text-left transition-all ${
                             paymentMethod === id
-                              ? "border-violet-500 bg-violet-50/20 shadow-sm"
+                              ? "border-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.20] shadow-sm"
                               : "border-zinc-100 hover:border-zinc-200"
                           }`}
                         >
