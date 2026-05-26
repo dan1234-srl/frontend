@@ -553,23 +553,28 @@ const CheckoutPopup = ({
     handleInputChange("county", countyName);
     handleInputChange("city", "");
 
-    console.log("Județ selectat:", countyName); // DEBUG 1
-
     const obj = counties.find((c) => c.nume === countyName);
-    console.log("Obiect județ găsit:", obj); // DEBUG 2
 
     if (!obj) return;
 
     setLoadingCities(true);
     try {
-      const url = `https://roloca.coldfuse.io/api/localitati/${obj.auto}`;
-      console.log("Fetch URL:", url); // DEBUG 3
+      // SCHIMBARE: Acum apelezi backend-ul tău local
+      // Nu mai folosim URL-ul roloca.coldfuse.io
+      const url = `${API_BASE_URL}/api/v1/orders/utils/localitati/${obj.auto}`;
+
       const res = await fetch(url);
+      if (!res.ok) throw new Error("Eroare la preluarea localităților");
+
       const data = await res.json();
-      console.log("Date orașe primite:", data); // DEBUG 4
-      setCities(data);
+      setCities(data); // Backend-ul îți trimite direct lista de obiecte {"nume": "..."}
     } catch (err) {
       console.error("Eroare fetch orașe:", err);
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu am putut încărca localitățile.",
+      });
     } finally {
       setLoadingCities(false);
     }
