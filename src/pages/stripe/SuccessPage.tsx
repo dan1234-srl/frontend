@@ -228,6 +228,7 @@ const SuccessPage = () => {
           </div>
 
           {/* PRODUSELE COMANDATE */}
+          {/* PRODUSELE COMANDATE */}
           {(loading || items.length > 0) && (
             <div className="mb-10 text-left">
               <div className="flex items-center justify-between mb-5">
@@ -252,9 +253,9 @@ const SuccessPage = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
+                  {/* Lista de produse */}
                   {items.map((it, i) => {
-                    const details = getItemDetails(it); // 🚀 Folosim helper-ul aici
-
+                    const details = getItemDetails(it);
                     return (
                       <motion.div
                         key={it.id || i}
@@ -292,42 +293,57 @@ const SuccessPage = () => {
                     );
                   })}
 
-                  {order && (
-                  <div className="pt-6 mt-6 border-t border-zinc-100 space-y-4">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-zinc-500 font-medium">Subtotal</span>
-                      <span className="font-black text-zinc-900">{subtotal.toLocaleString("ro-RO")} RON</span>
-                    </div>
-                    
-                    {discount > 0 && (
+                  {/* Secțiunea de Totaluri */}
+                  {total > 0 && (
+                    <div className="pt-6 mt-6 border-t border-zinc-100 space-y-3">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-zinc-500 font-medium">Reducere</span>
-                        <span className="font-black text-emerald-600">−{discount.toLocaleString("ro-RO")} RON</span>
+                        <span className="text-zinc-500 font-medium">
+                          Subtotal
+                        </span>
+                        <span className="font-black text-zinc-900">
+                          {subtotal.toLocaleString("ro-RO")} RON
+                        </span>
                       </div>
-                    )}
 
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-zinc-500 font-medium">
-                        Livrare {order.delivery_type === 'locker' ? '(GLS Locker)' : '(Curier Rapid)'}
-                      </span>
-                      <span className="font-black text-zinc-900">
-                        {shipping === 0 ? "Gratuit" : `${shipping.toLocaleString("ro-RO")} RON`}
-                      </span>
-                    </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-zinc-500 font-medium">
+                            Reducere
+                          </span>
+                          <span className="font-black text-emerald-600">
+                            −{discount.toLocaleString("ro-RO")} RON
+                          </span>
+                        </div>
+                      )}
 
-                    <div className="flex justify-between items-center pt-4 mt-2 border-t-2 border-zinc-900">
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
-                        Total Plată
-                      </span>
-                      <span className="text-xl font-black text-zinc-900">
-                        {total.toLocaleString("ro-RO")} RON
-                      </span>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500 font-medium">
+                          Livrare{" "}
+                          {order?.delivery_type === "locker"
+                            ? "(GLS Locker)"
+                            : "(Curier Rapid)"}
+                        </span>
+                        <span className="font-black text-zinc-900">
+                          {shipping === 0
+                            ? "Gratuit"
+                            : `${shipping.toLocaleString("ro-RO")} RON`}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-4 mt-2 border-t-2 border-zinc-900">
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-black">
+                          Total Plată
+                        </span>
+                        <span className="text-xl font-black text-zinc-900">
+                          {total.toLocaleString("ro-RO")} RON
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {/* --- AICI SE TERMINĂ SECȚIUNEA NOUĂ --- */}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-6">
             <p className="text-sm text-zinc-500 leading-relaxed max-w-sm mx-auto font-medium italic">
