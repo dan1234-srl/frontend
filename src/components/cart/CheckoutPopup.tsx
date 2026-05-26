@@ -627,7 +627,6 @@ const CheckoutPopup = ({
       total: subtotalAfterDiscount + shippingCost,
     };
   }, [cartItems, propSubtotal, appliedVoucher, shippingMethod, shippingConfig]);
-
   // ── Validare ───────────────────────────────────────────────────────────────
   const validateStep1 = () => {
     const e = {};
