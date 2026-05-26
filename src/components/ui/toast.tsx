@@ -88,33 +88,35 @@ const ToastClose = React.forwardRef<
 ));
 ToastClose.displayName = ToastClose.displayName;
 
-const ToastTitle = React.forwardRef<...>(({ className, ...props }, ref) => (
+const ToastTitle = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Title>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
+>(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
     className={cn(
-      "text-[11px] font-black uppercase tracking-[0.25em] text-zinc-900",
-      // Schimbăm textul de eroare să fie tot un roșu/roz închis, nu alb
-      "group-[.destructive]:text-rose-600", 
+      "text-[11px] font-black uppercase tracking-[0.25em] text-zinc-900 group-[.destructive]:text-rose-600",
       className,
     )}
     {...props}
   />
 ));
-ToastTitle.displayName = ToastTitle.displayName;
+ToastTitle.displayName = ToastPrimitives.Title.displayName;
 
-const ToastDescription = React.forwardRef<...>(({ className, ...props }, ref) => (
+const ToastDescription = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Description>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
+>(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
     className={cn(
-      "text-[12px] leading-relaxed text-zinc-500 font-bold tracking-wide mt-1",
-      // Textul descrierii pentru eroare să fie gri închis, nu gri deschis
-      "group-[.destructive]:text-zinc-700", 
+      "text-[12px] leading-relaxed text-zinc-500 font-bold tracking-wide mt-1 group-[.destructive]:text-zinc-700",
       className,
     )}
     {...props}
   />
 ));
-ToastDescription.displayName = ToastDescription.displayName;
+ToastDescription.displayName = ToastPrimitives.Description.displayName;
 
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
 type ToastActionElement = React.ReactElement<typeof ToastAction>;

@@ -5,6 +5,7 @@ import {
   useCallback,
   lazy,
   Suspense,
+  useRef,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -261,7 +262,12 @@ const LockerConfirmCard = ({ locker, onClear }) => (
       </p>
     </div>
     <button
-      onClick={onClear}
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClear();
+      }}
       className="p-1 rounded-lg hover:bg-[var(--lavender-purple)] text-zinc-400 hover:text-zinc-600 transition-colors shrink-0 mt-0.5"
     >
       <X size={13} />
@@ -392,6 +398,14 @@ const CheckoutPopup = ({
 
   const debouncedSearch = useDebounce(lockerSearch, 280);
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [isOpen]);
+  const scrollContainerRef = useRef(null); // Pentru auto-scroll
+
+  // Configurația de livrare preluată de pe backend
+  const [shippingConfig, setShippingConfig] = useState({
+    courier_fee: 20.0,
+    locker_fee: 15.0,
+    free_threshold: 250.0,
+  });
 
   // ── Init la deschidere ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -419,6 +433,20 @@ const CheckoutPopup = ({
         setAddressMode("new");
       }
     }
+  }, [isOpen]);
+  // ── Fetch configurare livrare (costuri din backend) ──
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch(`${API_BASE_URL}/api/v1/orders/shipping/config`)
+      .then((r) => r.json())
+      .then((data) => {
+        setShippingConfig({
+          courier_fee: parseFloat(data.courier_fee) || 20.0,
+          locker_fee: parseFloat(data.locker_fee) || 15.0,
+          free_threshold: parseFloat(data.free_threshold) || 250.0,
+        });
+      })
+      .catch(console.error);
   }, [isOpen]);
 
   // ── Fetch județe ───────────────────────────────────────────────────────────
@@ -520,10 +548,21 @@ const CheckoutPopup = ({
   };
 
   // Locker select cu animație flash
+  // Locker select cu animație flash și auto-scroll
   const handleLockerSelect = useCallback((locker) => {
     setSelectedLocker(locker);
     setLockerJustSelected(true);
     setTimeout(() => setLockerJustSelected(false), 900);
+
+    // Auto-scroll în jos pentru a vedea lockerul selectat și butonul Continuă
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }, 150); // Un mic delay ca să aibă timp componenta card să apară în DOM
   }, []);
 
   // ── Totals ─────────────────────────────────────────────────────────────────
@@ -535,14 +574,29 @@ const CheckoutPopup = ({
       ) ||
       parseFloat(propSubtotal) ||
       0;
+
     const disc = appliedVoucher?.amount || 0;
+    const subtotalAfterDiscount = Math.max(base - disc, 0);
+
+    // Calculăm costul de livrare pe baza pragului
+    let shippingCost = 0;
+    if (
+      subtotalAfterDiscount > 0 &&
+      subtotalAfterDiscount < shippingConfig.free_threshold
+    ) {
+      shippingCost =
+        shippingMethod === "locker"
+          ? shippingConfig.locker_fee
+          : shippingConfig.courier_fee;
+    }
+
     return {
       subtotal: base,
       discount: disc,
-      shipping: 0,
-      total: Math.max(base - disc, 0),
+      shipping: shippingCost,
+      total: subtotalAfterDiscount + shippingCost,
     };
-  }, [cartItems, propSubtotal, appliedVoucher]);
+  }, [cartItems, propSubtotal, appliedVoucher, shippingMethod, shippingConfig]);
 
   // ── Validare ───────────────────────────────────────────────────────────────
   const validateStep1 = () => {
@@ -669,7 +723,10 @@ const CheckoutPopup = ({
             className="relative z-[1001] w-full max-w-[1160px] bg-white flex flex-col lg:flex-row shadow-2xl h-full overflow-hidden"
           >
             {/* ─────────────── LEFT: Form ─────────────── */}
-            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6 md:px-9 lg:px-11 bg-white custom-scrollbar">
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6 md:px-9 lg:px-11 bg-white custom-scrollbar"
+            >
               {/* Header */}
               <header className="flex justify-between items-center mb-5 pb-4 border-b border-zinc-100">
                 <div>
