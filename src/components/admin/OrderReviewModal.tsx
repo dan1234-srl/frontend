@@ -168,37 +168,45 @@ export const OrderReviewModal = ({
 
   // VALIDATION
   // VALIDATION
+  // VALIDATION
   const validation = useMemo(() => {
     if (!order) return { ok: true, issues: [] as string[] };
     const issues: string[] = [];
 
-    // Validare localitate
-    if (!shipping.city || shipping.city === "—") {
-      issues.push("Lipsește orașul de livrare");
-    }
-
-    // Validare județ
-    if (!shipping.county || shipping.county === "—") {
-      issues.push("Lipsește județul/sectorul");
-    }
-
-    // Validare cod poștal
-    if (!shipping.postalCode || shipping.postalCode === "—") {
-      issues.push("Lipsește codul poștal");
-    }
-
-    // Validare specifică modului de transport
+    // Validare specifică pentru CURIER (strictă)
     if (order.delivery_type !== "locker") {
-      if (!shipping.street || shipping.street === "—") {
+      if (!shipping.city && !shipping.City) issues.push("Lipsește orașul");
+      if (
+        !shipping.county &&
+        !shipping.County &&
+        !shipping.sector &&
+        !shipping.Sector
+      ) {
+        issues.push("Lipsește județul/sectorul");
+      }
+      if (
+        !shipping.postalCode &&
+        !shipping.postal_code &&
+        !shipping.zip &&
+        !shipping.Zip
+      ) {
+        issues.push("Lipsește codul poștal");
+      }
+      if (!shipping.street && !shipping.Street) {
         issues.push("Lipsește strada");
       }
-    } else if (!order.locker_id) {
-      issues.push("Lipsește locker-ul GLS");
+    }
+    // Validare pentru LOCKER (mai permisivă)
+    else {
+      if (!order.locker_id) {
+        issues.push("Lipsește locker-ul GLS");
+      }
     }
 
     if (!order.phone) issues.push("Lipsește telefonul de contact");
     if (!order.email) issues.push("Lipsește email-ul de contact");
 
+    // Validare produse (specificații logistice)
     order.items?.forEach((it) => {
       const p = it.product || {};
       const eff: ProductSpecs = {
