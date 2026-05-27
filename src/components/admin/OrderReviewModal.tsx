@@ -248,7 +248,7 @@ export const OrderReviewModal = ({
     setSavingSku(item.product_sku_at_purchase);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/v1/admin/products/${item.product_id}/specs`,
+        `${API_BASE_URL}/api/v1/orders/admin/products/${item.product_id}/specs`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
