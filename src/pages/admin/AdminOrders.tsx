@@ -416,6 +416,12 @@ const AdminOrders = () => {
           </footer>
         )}
       </div>
+
+      <OrderReviewModal
+        orderId={reviewOrderId}
+        onClose={() => setReviewOrderId(null)}
+        onActionComplete={fetchOrders}
+      />
     </div>
   );
 };
