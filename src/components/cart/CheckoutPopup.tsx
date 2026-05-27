@@ -372,7 +372,7 @@ const CheckoutPopup = ({
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
   const [appliedVoucher, setAppliedVoucher] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, any>>({});
   const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Adrese / localități
@@ -388,7 +388,7 @@ const CheckoutPopup = ({
   // Declare this only ONCE at the component level:
   const [showLockerDropdown, setShowLockerDropdown] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Record<string, any>>({
     email: "",
     firstName: "",
     lastName: "",
