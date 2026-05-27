@@ -91,7 +91,7 @@ const PremiumInput = ({
   helperText,
   type = "text",
   autoComplete,
-}) => {
+}: any) => {
   const isValid = value && !error;
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -167,7 +167,7 @@ const PremiumSelect = ({
   disabled,
   error,
   placeholder,
-}) => {
+}: any) => {
   const isValid = value && !error && !disabled;
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -613,7 +613,7 @@ const CheckoutPopup = ({
         (acc, item) => acc + parseFloat(item.price) * (item.quantity || 1),
         0,
       ) ||
-      parseFloat(propSubtotal) ||
+      parseFloat(String(propSubtotal || 0)) ||
       0;
 
     const disc = appliedVoucher?.amount || 0;
@@ -1092,7 +1092,7 @@ const CheckoutPopup = ({
                               <Checkbox
                                 id="save-addr"
                                 checked={shouldSaveAddress}
-                                onCheckedChange={setShouldSaveAddress}
+                                onCheckedChange={(v) => setShouldSaveAddress(!!v)}
                               />
                               <label
                                 htmlFor="save-addr"
