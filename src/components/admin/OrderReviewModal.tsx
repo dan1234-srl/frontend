@@ -143,34 +143,12 @@ export const OrderReviewModal = ({
 
   // Transformă string-ul din DB (JSON) într-un obiect
   const shipping = useMemo(() => {
-    if (!order?.shipping_address) return {} as any;
-    try {
-      const parsed =
-        typeof order.shipping_address === "string"
-          ? JSON.parse(order.shipping_address)
-          : order.shipping_address;
-
-      // Normalizare robustă: unificăm cheile camelCase și snake_case
-      return {
-        street: parsed.street || parsed.Street || "—",
-        city: parsed.city || parsed.City || "—",
-        county:
-          parsed.county ||
-          parsed.County ||
-          parsed.sector ||
-          parsed.Sector ||
-          "—",
-        postalCode:
-          parsed.postalCode ||
-          parsed.postal_code ||
-          parsed.zip ||
-          parsed.Zip ||
-          "—",
-      };
-    } catch (e) {
-      console.error("Eroare la parsarea adresei de livrare", e);
-      return {} as any;
-    }
+    if (!order?.shipping_address) return {};
+    // Dacă backend-ul trimite obiect, îl folosim direct.
+    // Dacă e string (fallback), îl parșăm.
+    return typeof order.shipping_address === "string"
+      ? JSON.parse(order.shipping_address)
+      : order.shipping_address;
   }, [order]);
 
   // VALIDATION
@@ -532,7 +510,9 @@ export const OrderReviewModal = ({
                   <div className="space-y-3">
                     {order.items?.map((it) => {
                       const p = it.product || {};
-                      const eff = {
+
+                      // Calcul logistica (există deja în codul tău)
+                      const eff: ProductSpecs = {
                         weight: edits[it.product_id || ""]?.weight ?? p.weight,
                         length: edits[it.product_id || ""]?.length ?? p.length,
                         width: edits[it.product_id || ""]?.width ?? p.width,
@@ -547,9 +527,14 @@ export const OrderReviewModal = ({
                         edits[it.product_id] &&
                         Object.keys(edits[it.product_id]).length > 0;
 
-                      // FIX PENTRU NaN RON AICI - ne asigurăm că luăm fallback-uri corecte numerice
-                      const unitPrice = Number(it.unit_price_at_purchase || 0);
-                      const totalPrice = Number(it.total_item_price || 0);
+                      // --- FIX PENTRU NaN RON ---
+                      // Convertim în număr și oferim 0 ca valoare implicită dacă sunt undefined/null
+                      const unitPrice = Number(
+                        it.unit_price_at_purchase ?? it.price_at_purchase ?? 0,
+                      );
+                      const totalPrice = Number(
+                        it.total_item_price ?? unitPrice * (it.quantity || 1),
+                      );
 
                       return (
                         <div
@@ -557,6 +542,7 @@ export const OrderReviewModal = ({
                           className="rounded-2xl border border-zinc-100 bg-white overflow-hidden"
                         >
                           <div className="flex flex-col sm:flex-row gap-4 p-4">
+                            {/* Imaginea produsului */}
                             <div className="size-20 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden shrink-0">
                               <img
                                 src={getImage(it.product_image)}
@@ -568,6 +554,8 @@ export const OrderReviewModal = ({
                                 }
                               />
                             </div>
+
+                            {/* Detalii produs */}
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
                                 SKU {it.product_sku_at_purchase}
@@ -575,6 +563,7 @@ export const OrderReviewModal = ({
                               <p className="text-sm font-black text-[var(--dark-amethyst)] line-clamp-2">
                                 {it.product_name_at_purchase}
                               </p>
+
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-500 mt-1.5">
                                 <span>
                                   Cant: <b>{it.quantity}</b>
