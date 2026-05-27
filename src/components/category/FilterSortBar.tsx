@@ -90,23 +90,24 @@ const FilterSortBar = ({
                       Category
                     </h3>
                     <div className="space-y-3">
-                      {(categories || []).map((cat) => (
-                        <div
-                          key={category}
-                          className="flex items-center space-x-3"
-                        >
-                          <Checkbox
-                            id={category}
-                            className="border-zinc-200 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
-                          />
-                          <Label
-                            htmlFor={category}
-                            className="text-xs font-bold text-zinc-600 cursor-pointer uppercase tracking-wider"
-                          >
-                            {category}
-                          </Label>
-                        </div>
-                      ))}
+                      {(categories || []).map((cat: any) => {
+                        const key = typeof cat === "string" ? cat : cat.slug || cat.id || cat.name;
+                        const label = typeof cat === "string" ? cat : cat.name || key;
+                        return (
+                          <div key={key} className="flex items-center space-x-3">
+                            <Checkbox
+                              id={key}
+                              className="border-zinc-200 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900"
+                            />
+                            <Label
+                              htmlFor={key}
+                              className="text-xs font-bold text-zinc-600 cursor-pointer uppercase tracking-wider"
+                            >
+                              {label}
+                            </Label>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

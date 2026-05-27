@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import OrderReviewModal from "@/components/admin/OrderReviewModal";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -33,6 +34,7 @@ const AdminOrders = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Toate");
@@ -337,9 +339,8 @@ const AdminOrders = () => {
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                       <button
                         className="p-3 bg-white border border-zinc-100 rounded-xl transition-all shadow-sm flex items-center justify-center text-[var(--dark-amethyst)] hover:bg-[var(--dark-amethyst)] hover:text-white"
-                        onClick={() =>
-                          order?.id && navigate(`/admin/orders/${order.id}`)
-                        }
+                        onClick={() => order?.id && setReviewOrderId(order.id)}
+                        title="Vizualizează & aprobă"
                       >
                         <Eye size={16} />
                       </button>
@@ -415,6 +416,12 @@ const AdminOrders = () => {
           </footer>
         )}
       </div>
+
+      <OrderReviewModal
+        orderId={reviewOrderId}
+        onClose={() => setReviewOrderId(null)}
+        onActionComplete={fetchOrders}
+      />
     </div>
   );
 };

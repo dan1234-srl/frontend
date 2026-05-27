@@ -91,7 +91,7 @@ const PremiumInput = ({
   helperText,
   type = "text",
   autoComplete,
-}) => {
+}: any) => {
   const isValid = value && !error;
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -167,7 +167,7 @@ const PremiumSelect = ({
   disabled,
   error,
   placeholder,
-}) => {
+}: any) => {
   const isValid = value && !error && !disabled;
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -372,7 +372,7 @@ const CheckoutPopup = ({
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
   const [appliedVoucher, setAppliedVoucher] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, any>>({});
   const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Adrese / localități
@@ -388,7 +388,7 @@ const CheckoutPopup = ({
   // Declare this only ONCE at the component level:
   const [showLockerDropdown, setShowLockerDropdown] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Record<string, any>>({
     email: "",
     firstName: "",
     lastName: "",
@@ -613,7 +613,7 @@ const CheckoutPopup = ({
         (acc, item) => acc + parseFloat(item.price) * (item.quantity || 1),
         0,
       ) ||
-      parseFloat(propSubtotal) ||
+      parseFloat(String(propSubtotal || 0)) ||
       0;
 
     const disc = appliedVoucher?.amount || 0;
@@ -641,7 +641,7 @@ const CheckoutPopup = ({
 
   // ── Validare ───────────────────────────────────────────────────────────────
   const validateStep1 = () => {
-    const e = {};
+    const e: Record<string, string> = {};
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
       e.email = "Email invalid";
     if (formData.firstName.trim().length < 2) e.firstName = "Min. 2 caractere";
@@ -1092,7 +1092,7 @@ const CheckoutPopup = ({
                               <Checkbox
                                 id="save-addr"
                                 checked={shouldSaveAddress}
-                                onCheckedChange={setShouldSaveAddress}
+                                onCheckedChange={(v) => setShouldSaveAddress(!!v)}
                               />
                               <label
                                 htmlFor="save-addr"
