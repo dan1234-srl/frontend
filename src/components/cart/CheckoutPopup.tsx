@@ -482,18 +482,52 @@ const CheckoutPopup = ({
     return list.slice(0, MAX_MAP_POINTS);
   }, [deliveryPoints, debouncedSearch]);
 
-  const handleSelectAddress = (addr: any) => {
-    setSelectedAddressId(addr.id);
-    setFormData((prev) => ({
-      ...prev,
-      street: addr.street || "",
-      city: addr.city || "",
-      county: addr.county || "",
-      postalCode: addr.postal_code || "",
-    }));
-    setAddressMode("select");
-    setErrors({});
-  };
+  // Înlocuiește handleSelectAddress cu această versiune async
+  const handleSelectAddress = useCallback(
+    async (addr: any) => {
+      setSelectedAddressId(addr.id);
+      setFormData((prev) => ({
+        ...prev,
+        street: addr.street || "",
+        city: addr.city || "",
+        county: addr.county || "",
+        postalCode: addr.postal_code || "",
+      }));
+      setAddressMode("select");
+      setErrors({});
+
+      // Încarcă localitățile pentru județul adresei salvate
+      if (addr.county) {
+        let countyList = counties;
+
+        // Dacă județele nu sunt încă încărcate, le aducem noi
+        if (!countyList.length) {
+          try {
+            const res = await fetch(
+              `${API_BASE_URL}/api/v1/orders/utils/judete`,
+            );
+            countyList = await res.json();
+            if (Array.isArray(countyList)) setCounties(countyList);
+          } catch {}
+        }
+
+        const county = countyList.find((c: any) => c.nume === addr.county);
+        if (!county) return;
+
+        setLoadingCities(true);
+        try {
+          const res = await fetch(
+            `${API_BASE_URL}/api/v1/orders/utils/localitati/${county.auto}`,
+          );
+          if (res.ok) setCities(await res.json());
+        } catch {
+        } finally {
+          setLoadingCities(false);
+        }
+      }
+    },
+    [counties],
+  );
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
