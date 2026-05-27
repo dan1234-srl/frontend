@@ -385,7 +385,9 @@ const CheckoutPopup = ({
   const [lockerSearch, setLockerSearch] = useState("");
   const [selectedLocker, setSelectedLocker] = useState(null);
   const [lockerJustSelected, setLockerJustSelected] = useState(false);
+  // Declare this only ONCE at the component level:
   const [showLockerDropdown, setShowLockerDropdown] = useState(false);
+
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -409,7 +411,6 @@ const CheckoutPopup = ({
 
   // ── Init la deschidere ──────────────────────────────────────────────────────
   // Adaugă această stare lângă celelalte (ex: sub lockerJustSelected)
-  const [showLockerDropdown, setShowLockerDropdown] = useState(false);
 
   // Modifică useEffect-ul de inițializare (cel care ascultă [isOpen])
   useEffect(() => {
