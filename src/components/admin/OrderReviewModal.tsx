@@ -145,11 +145,31 @@ export const OrderReviewModal = ({
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {} as any;
     try {
-      return typeof order.shipping_address === "string"
-        ? JSON.parse(order.shipping_address)
-        : order.shipping_address;
-    } catch {
-      return {};
+      const parsed =
+        typeof order.shipping_address === "string"
+          ? JSON.parse(order.shipping_address)
+          : order.shipping_address;
+
+      // Normalizare robustă: unificăm cheile camelCase și snake_case
+      return {
+        street: parsed.street || parsed.Street || "—",
+        city: parsed.city || parsed.City || "—",
+        county:
+          parsed.county ||
+          parsed.County ||
+          parsed.sector ||
+          parsed.Sector ||
+          "—",
+        postalCode:
+          parsed.postalCode ||
+          parsed.postal_code ||
+          parsed.zip ||
+          parsed.Zip ||
+          "—",
+      };
+    } catch (e) {
+      console.error("Eroare la parsarea adresei de livrare", e);
+      return {} as any;
     }
   }, [order]);
 
@@ -159,32 +179,24 @@ export const OrderReviewModal = ({
     if (!order) return { ok: true, issues: [] as string[] };
     const issues: string[] = [];
 
-    // 1. Validare Oraș
-    if (!shipping.city && !shipping.City) {
+    // Validare localitate
+    if (!shipping.city || shipping.city === "—") {
       issues.push("Lipsește orașul de livrare");
     }
 
-    // 2. Validare Județ / Sector (REZOLVARE EROARE)
-    const hasCounty =
-      shipping.county || shipping.County || shipping.sector || shipping.Sector;
-    if (!hasCounty) {
+    // Validare județ
+    if (!shipping.county || shipping.county === "—") {
       issues.push("Lipsește județul/sectorul");
     }
 
-    // 3. Validare Cod Poștal
-    const hasPostalCode =
-      shipping.postal_code ||
-      shipping.postalCode ||
-      shipping.postalCode ||
-      shipping.zip ||
-      shipping.Zip;
-    if (!hasPostalCode) {
+    // Validare cod poștal
+    if (!shipping.postalCode || shipping.postalCode === "—") {
       issues.push("Lipsește codul poștal");
     }
 
-    // 4. Validare specifică tipului de livrare
+    // Validare specifică modului de transport
     if (order.delivery_type !== "locker") {
-      if (!shipping.street && !shipping.Street) {
+      if (!shipping.street || shipping.street === "—") {
         issues.push("Lipsește strada");
       }
     } else if (!order.locker_id) {
