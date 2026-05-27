@@ -385,7 +385,7 @@ const CheckoutPopup = ({
   const [lockerSearch, setLockerSearch] = useState("");
   const [selectedLocker, setSelectedLocker] = useState(null);
   const [lockerJustSelected, setLockerJustSelected] = useState(false);
-
+  const [showLockerDropdown, setShowLockerDropdown] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -408,6 +408,10 @@ const CheckoutPopup = ({
   });
 
   // ── Init la deschidere ──────────────────────────────────────────────────────
+  // Adaugă această stare lângă celelalte (ex: sub lockerJustSelected)
+  const [showLockerDropdown, setShowLockerDropdown] = useState(false);
+
+  // Modifică useEffect-ul de inițializare (cel care ascultă [isOpen])
   useEffect(() => {
     if (!isOpen) return;
     setAppliedVoucher(initialDiscount);
@@ -415,7 +419,7 @@ const CheckoutPopup = ({
     setErrors({});
     setSummaryOpen(false);
     setSelectedLocker(null);
-    setLockerSearch("");
+    setLockerSearch(""); // Va fi suprascris mai jos dacă există adresă
 
     if (user) {
       setFormData((prev) => ({
@@ -429,6 +433,8 @@ const CheckoutPopup = ({
         const def =
           user.addresses.find((a) => a.is_default) || user.addresses[0];
         handleSelectAddress(def);
+        // Pre-completează căutarea lockerelor cu orașul adresei salvate
+        setLockerSearch(def.city || "");
       } else {
         setAddressMode("new");
       }
@@ -1114,10 +1120,65 @@ const CheckoutPopup = ({
                             <input
                               type="text"
                               value={lockerSearch}
-                              onChange={(e) => setLockerSearch(e.target.value)}
+                              onChange={(e) => {
+                                setLockerSearch(e.target.value);
+                                setShowLockerDropdown(true);
+                              }}
+                              onFocus={() => setShowLockerDropdown(true)}
+                              onBlur={() =>
+                                setTimeout(
+                                  () => setShowLockerDropdown(false),
+                                  200,
+                                )
+                              }
                               placeholder="Caută locker după oraș sau stradă..."
                               className="h-10 w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-3 text-[13px] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-50 transition-all placeholder:text-zinc-300"
                             />
+
+                            {/* Dropdown Rezultate */}
+                            <AnimatePresence>
+                              {showLockerDropdown &&
+                                lockerSearch.trim() &&
+                                filteredLockers.length > 0 && (
+                                  <motion.ul
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    className="absolute z-[1050] top-full left-0 w-full bg-white border border-zinc-200 shadow-xl rounded-lg mt-1 max-h-60 overflow-y-auto custom-scrollbar"
+                                  >
+                                    {filteredLockers.map((locker) => (
+                                      <li
+                                        key={locker.id}
+                                        className="p-3 hover:bg-zinc-50 cursor-pointer border-b border-zinc-100 last:border-0 transition-colors"
+                                        onClick={() => {
+                                          handleLockerSelect(locker);
+                                          setLockerSearch(
+                                            locker.city || locker.name,
+                                          );
+                                          setShowLockerDropdown(false);
+                                        }}
+                                      >
+                                        <div className="flex items-start gap-2">
+                                          <Package
+                                            size={14}
+                                            className="text-[var(--royal-violet)] mt-0.5 shrink-0"
+                                          />
+                                          <div>
+                                            <p className="text-[12px] font-bold text-zinc-800">
+                                              {locker.name}
+                                            </p>
+                                            <p className="text-[10px] text-zinc-500">
+                                              {locker.street}{" "}
+                                              {locker.house_number},{" "}
+                                              {locker.city}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </li>
+                                    ))}
+                                  </motion.ul>
+                                )}
+                            </AnimatePresence>
                           </div>
 
                           {/* Map container */}
