@@ -21,47 +21,61 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
-type ProductSpecs = {
+export type ProductSpecs = {
   weight?: number | null;
   length?: number | null;
   width?: number | null;
   height?: number | null;
 };
 
-type OrderItem = {
+export type OrderItem = {
   id: string;
   product_id?: string;
   product_name_at_purchase: string;
   product_sku_at_purchase: string;
   product_image?: string | null;
   quantity: number;
-  unit_price_at_purchase?: number;
-  price_at_purchase?: number; // Venit din injectarea backend-ului
-  total_item_price?: number;
-  product?: ProductSpecs & {
-    weight?: number | null;
-    length?: number | null;
-    width?: number | null;
-    height?: number | null;
-  };
+  unit_price_at_purchase: number; // Folosim number, nu opțional, pentru a evita NaN
+  total_item_price: number; // Folosim number
+  product?: ProductSpecs;
 };
 
-type Order = {
+export type ShippingAddress = {
+  street?: string;
+  house_number?: string;
+  houseNumber?: string; // Fallback pentru consistență
+  city?: string;
+  county?: string;
+  sector?: string; // Fallback pentru București
+  postalCode?: string;
+  postal_code?: string;
+  zip?: string;
+  locker_id?: string;
+  locker_name?: string;
+};
+
+export type Order = {
   id: string;
   order_number: string;
+  created_at: string; // ISO Date string
   status: string;
   customer_name: string;
   email: string;
   phone: string;
-  shipping_address: string; // JSON string (din backend)
+  shipping_address: ShippingAddress; // Acum este obiect, nu string
   payment_method: string;
+
+  // Finanțe
   subtotal_amount: number;
   discount_amount: number;
   shipping_fee: number;
   total_amount: number;
+
+  // Livrare
   delivery_type?: string;
   locker_id?: string | null;
   locker_address?: string | null;
+
   items: OrderItem[];
 };
 
@@ -144,8 +158,9 @@ export const OrderReviewModal = ({
   // Transformă string-ul din DB (JSON) într-un obiect
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {};
-    // Dacă backend-ul trimite obiect, îl folosim direct.
-    // Dacă e string (fallback), îl parșăm.
+
+    // Backend-ul trimite acum direct obiectul (datorită schimbării din Pydantic)
+    // Dar lăsăm un fallback în caz că vine string
     return typeof order.shipping_address === "string"
       ? JSON.parse(order.shipping_address)
       : order.shipping_address;
@@ -481,21 +496,17 @@ export const OrderReviewModal = ({
                       </>
                     ) : (
                       <>
-                        <Row label="Stradă" value={shipping.street || "—"} />
-                        <Row label="Oraș" value={shipping.city || "—"} />
                         <Row
-                          label="Județ / Sector"
-                          value={shipping.county || shipping.sector || "—"}
+                          label="Stradă"
+                          value={`${shipping.street || ""} ${shipping.house_number || ""}`}
                         />
+                        <Row label="Oraș" value={shipping.city || "—"} />
+                        <Row label="Județ" value={shipping.county || "—"} />
                         <Row
                           label="Cod poștal"
                           value={
-                            shipping.postalCode ||
-                            shipping.postal_code ||
-                            shipping.zip ||
-                            "—"
+                            shipping.postalCode || shipping.postal_code || "—"
                           }
-                          icon={<MapPin size={11} />}
                         />
                       </>
                     )}
