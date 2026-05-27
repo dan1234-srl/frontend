@@ -641,7 +641,7 @@ const CheckoutPopup = ({
 
   // ── Validare ───────────────────────────────────────────────────────────────
   const validateStep1 = () => {
-    const e = {};
+    const e: Record<string, string> = {};
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
       e.email = "Email invalid";
     if (formData.firstName.trim().length < 2) e.firstName = "Min. 2 caractere";
