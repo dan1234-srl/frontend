@@ -154,18 +154,39 @@ export const OrderReviewModal = ({
   }, [order]);
 
   // VALIDATION
+  // VALIDATION
   const validation = useMemo(() => {
     if (!order) return { ok: true, issues: [] as string[] };
     const issues: string[] = [];
 
-    if (!shipping.city) issues.push("Lipsește orașul de livrare");
-    if (!shipping.county && !shipping.sector)
-      issues.push("Lipsește județul/sectorul");
-    if (!shipping.postal_code && !shipping.postalCode && !shipping.zip)
-      issues.push("Lipsește codul poștal");
+    // 1. Validare Oraș
+    if (!shipping.city && !shipping.City) {
+      issues.push("Lipsește orașul de livrare");
+    }
 
+    // 2. Validare Județ / Sector (REZOLVARE EROARE)
+    const hasCounty =
+      shipping.county || shipping.County || shipping.sector || shipping.Sector;
+    if (!hasCounty) {
+      issues.push("Lipsește județul/sectorul");
+    }
+
+    // 3. Validare Cod Poștal
+    const hasPostalCode =
+      shipping.postal_code ||
+      shipping.postalCode ||
+      shipping.postalCode ||
+      shipping.zip ||
+      shipping.Zip;
+    if (!hasPostalCode) {
+      issues.push("Lipsește codul poștal");
+    }
+
+    // 4. Validare specifică tipului de livrare
     if (order.delivery_type !== "locker") {
-      if (!shipping.street) issues.push("Lipsește strada");
+      if (!shipping.street && !shipping.Street) {
+        issues.push("Lipsește strada");
+      }
     } else if (!order.locker_id) {
       issues.push("Lipsește locker-ul GLS");
     }
