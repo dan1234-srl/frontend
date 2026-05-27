@@ -470,29 +470,24 @@ export const OrderReviewModal = ({
                       </>
                     ) : (
                       <>
+                        <Row label="Stradă" value={shipping.street || "—"} />
+                        <Row label="Oraș" value={shipping.city || "—"} />
                         <Row
-                          label="Stradă"
-                          value={`${shipping.street || "—"} ${
-                            shipping.house_number || shipping.houseNumber || ""
-                          }`}
+                          label="Județ / Sector"
+                          value={shipping.county || shipping.sector || "—"}
+                        />
+                        <Row
+                          label="Cod poștal"
+                          value={
+                            shipping.postalCode ||
+                            shipping.postal_code ||
+                            shipping.zip ||
+                            "—"
+                          }
+                          icon={<MapPin size={11} />}
                         />
                       </>
                     )}
-                    <Row label="Oraș" value={shipping.city || "—"} />
-                    <Row
-                      label="Județ / Sector"
-                      value={shipping.county || shipping.sector || "—"}
-                    />
-                    <Row
-                      label="Cod poștal"
-                      value={
-                        shipping.postalCode ||
-                        shipping.postal_code ||
-                        shipping.zip ||
-                        "—"
-                      }
-                      icon={<MapPin size={11} />}
-                    />
                   </InfoBlock>
                 </div>
 
@@ -520,12 +515,8 @@ export const OrderReviewModal = ({
                         Object.keys(edits[it.product_id]).length > 0;
 
                       // FIX PENTRU NaN RON AICI - ne asigurăm că luăm fallback-uri corecte numerice
-                      const unitPrice = Number(
-                        it.price_at_purchase ?? it.unit_price_at_purchase ?? 0,
-                      );
-                      const totalPrice = Number(
-                        it.total_item_price ?? unitPrice * (it.quantity || 1),
-                      );
+                      const unitPrice = Number(it.unit_price_at_purchase || 0);
+                      const totalPrice = Number(it.total_item_price || 0);
 
                       return (
                         <div

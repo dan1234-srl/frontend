@@ -656,7 +656,7 @@ const CheckoutPopup = ({
                   street: formData.street.trim(),
                   city: formData.city.trim(),
                   county: formData.county.trim(),
-                  postalCode: formData.postalCode.trim(),
+                  postalCode: formData.postalCode.trim(), // Asigură-te că trimite codul poștal
                 }
               : {
                   locker_id: selectedLocker?.id,
