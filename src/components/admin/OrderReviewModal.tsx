@@ -12,7 +12,6 @@ import {
   User,
   Mail,
   Phone,
-  Edit3,
   Save,
   ShieldCheck,
 } from "lucide-react";
@@ -36,8 +35,9 @@ type OrderItem = {
   product_sku_at_purchase: string;
   product_image?: string | null;
   quantity: number;
-  unit_price_at_purchase: number;
-  total_item_price: number;
+  unit_price_at_purchase?: number;
+  price_at_purchase?: number; // Venit din injectarea backend-ului
+  total_item_price?: number;
   product?: ProductSpecs & {
     weight?: number | null;
     length?: number | null;
@@ -53,7 +53,7 @@ type Order = {
   customer_name: string;
   email: string;
   phone: string;
-  shipping_address: string; // JSON string
+  shipping_address: string; // JSON string (din backend)
   payment_method: string;
   subtotal_amount: number;
   discount_amount: number;
@@ -96,8 +96,6 @@ export const OrderReviewModal = ({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
-  // Inline edit state for missing product specs
-  // key: product_id -> {weight,length,width,height}
   const [edits, setEdits] = useState<Record<string, ProductSpecs>>({});
   const [savingSku, setSavingSku] = useState<string | null>(null);
 
@@ -120,11 +118,9 @@ export const OrderReviewModal = ({
           const data = await res.json();
           if (!cancel) setOrder(data);
         } else if (res.status === 404) {
-          // Fallback to user endpoint if admin variant not present yet
-          const fb = await fetch(
-            `${API_BASE_URL}/api/v1/orders/${orderId}`,
-            { credentials: "include" },
-          );
+          const fb = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
+            credentials: "include",
+          });
           if (fb.ok) {
             const d = await fb.json();
             if (!cancel) setOrder(d);
@@ -145,6 +141,7 @@ export const OrderReviewModal = ({
     };
   }, [orderId]);
 
+  // Transformă string-ul din DB (JSON) într-un obiect
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {} as any;
     try {
@@ -161,22 +158,21 @@ export const OrderReviewModal = ({
     if (!order) return { ok: true, issues: [] as string[] };
     const issues: string[] = [];
 
-    // Shipping
     if (!shipping.city) issues.push("Lipsește orașul de livrare");
-    if (!shipping.county && !shipping.sector) issues.push("Lipsește județul/sectorul");
+    if (!shipping.county && !shipping.sector)
+      issues.push("Lipsește județul/sectorul");
     if (!shipping.postal_code && !shipping.postalCode && !shipping.zip)
       issues.push("Lipsește codul poștal");
+
     if (order.delivery_type !== "locker") {
       if (!shipping.street) issues.push("Lipsește strada");
-      if (!shipping.house_number && !shipping.houseNumber)
-        issues.push("Lipsește numărul stradal");
     } else if (!order.locker_id) {
       issues.push("Lipsește locker-ul GLS");
     }
+
     if (!order.phone) issues.push("Lipsește telefonul de contact");
     if (!order.email) issues.push("Lipsește email-ul de contact");
 
-    // Items
     order.items?.forEach((it) => {
       const p = it.product || {};
       const eff: ProductSpecs = {
@@ -194,7 +190,11 @@ export const OrderReviewModal = ({
     return { ok: issues.length === 0, issues };
   }, [order, shipping, edits]);
 
-  const updateEdit = (pid: string, field: keyof ProductSpecs, value: string) => {
+  const updateEdit = (
+    pid: string,
+    field: keyof ProductSpecs,
+    value: string,
+  ) => {
     setEdits((prev) => ({
       ...prev,
       [pid]: { ...prev[pid], [field]: value === "" ? null : Number(value) },
@@ -223,8 +223,9 @@ export const OrderReviewModal = ({
         },
       );
       if (res.ok) {
-        toast.success(`Specs actualizate pentru ${item.product_sku_at_purchase}`);
-        // Reflect saved into order locally
+        toast.success(
+          `Specs actualizate pentru ${item.product_sku_at_purchase}`,
+        );
         setOrder((o) =>
           o
             ? {
@@ -384,9 +385,15 @@ export const OrderReviewModal = ({
                 >
                   <div className="flex items-start gap-3">
                     {validation.ok ? (
-                      <ShieldCheck className="text-emerald-600 shrink-0" size={20} />
+                      <ShieldCheck
+                        className="text-emerald-600 shrink-0"
+                        size={20}
+                      />
                     ) : (
-                      <AlertTriangle className="text-amber-600 shrink-0" size={20} />
+                      <AlertTriangle
+                        className="text-amber-600 shrink-0"
+                        size={20}
+                      />
                     )}
                     <div className="flex-1 min-w-0">
                       <p
@@ -479,8 +486,8 @@ export const OrderReviewModal = ({
                     <Row
                       label="Cod poștal"
                       value={
-                        shipping.postal_code ||
                         shipping.postalCode ||
+                        shipping.postal_code ||
                         shipping.zip ||
                         "—"
                       }
@@ -503,12 +510,22 @@ export const OrderReviewModal = ({
                         width: edits[it.product_id || ""]?.width ?? p.width,
                         height: edits[it.product_id || ""]?.height ?? p.height,
                       };
-                      const missingWeight = !eff.weight || Number(eff.weight) <= 0;
-                      const missingDims = !eff.length || !eff.width || !eff.height;
+                      const missingWeight =
+                        !eff.weight || Number(eff.weight) <= 0;
+                      const missingDims =
+                        !eff.length || !eff.width || !eff.height;
                       const hasEdits =
                         it.product_id &&
                         edits[it.product_id] &&
                         Object.keys(edits[it.product_id]).length > 0;
+
+                      // FIX PENTRU NaN RON AICI - ne asigurăm că luăm fallback-uri corecte numerice
+                      const unitPrice = Number(
+                        it.price_at_purchase ?? it.unit_price_at_purchase ?? 0,
+                      );
+                      const totalPrice = Number(
+                        it.total_item_price ?? unitPrice * (it.quantity || 1),
+                      );
 
                       return (
                         <div
@@ -535,23 +552,17 @@ export const OrderReviewModal = ({
                                 {it.product_name_at_purchase}
                               </p>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-500 mt-1.5">
-                                <span>Cant: <b>{it.quantity}</b></span>
+                                <span>
+                                  Cant: <b>{it.quantity}</b>
+                                </span>
                                 <span>
                                   Preț:{" "}
-                                  <b>
-                                    {Number(
-                                      it.unit_price_at_purchase,
-                                    ).toLocaleString("ro-RO")}{" "}
-                                    RON
-                                  </b>
+                                  <b>{unitPrice.toLocaleString("ro-RO")} RON</b>
                                 </span>
                                 <span>
                                   Total:{" "}
                                   <b className="text-[var(--dark-amethyst)]">
-                                    {Number(it.total_item_price).toLocaleString(
-                                      "ro-RO",
-                                    )}{" "}
-                                    RON
+                                    {totalPrice.toLocaleString("ro-RO")} RON
                                   </b>
                                 </span>
                               </div>
@@ -619,10 +630,7 @@ export const OrderReviewModal = ({
                                 }}
                               >
                                 {savingSku === it.product_sku_at_purchase ? (
-                                  <Loader2
-                                    className="animate-spin"
-                                    size={12}
-                                  />
+                                  <Loader2 className="animate-spin" size={12} />
                                 ) : (
                                   <Save size={12} />
                                 )}
@@ -640,7 +648,7 @@ export const OrderReviewModal = ({
                 <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-5 space-y-2">
                   <RowTotal
                     label="Subtotal"
-                    value={Number(order.subtotal_amount).toLocaleString(
+                    value={Number(order.subtotal_amount || 0).toLocaleString(
                       "ro-RO",
                     )}
                   />
@@ -664,7 +672,8 @@ export const OrderReviewModal = ({
                       Total final
                     </span>
                     <span className="heading-serif text-2xl italic text-[var(--dark-amethyst)]">
-                      {Number(order.total_amount).toLocaleString("ro-RO")} RON
+                      {Number(order.total_amount || 0).toLocaleString("ro-RO")}{" "}
+                      RON
                     </span>
                   </div>
                 </div>
@@ -809,7 +818,7 @@ const RowTotal = ({
   accent,
 }: {
   label: string;
-  value: string;
+  value: string | React.ReactNode;
   accent?: string;
 }) => (
   <div className="flex justify-between items-center text-xs">

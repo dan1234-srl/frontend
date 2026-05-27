@@ -38,11 +38,9 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
-// Limita markere hartă pentru performanță
 const MAX_MAP_POINTS = 80;
 
-// ─── useDebounce ──────────────────────────────────────────────────────────────
-function useDebounce(value, delay = 280) {
+function useDebounce(value: string, delay = 280) {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
     const t = setTimeout(() => setDebounced(value), delay);
@@ -51,14 +49,13 @@ function useDebounce(value, delay = 280) {
   return debounced;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatCurrency = (val) =>
+const formatCurrency = (val: number) =>
   new Intl.NumberFormat("ro-RO", {
     style: "decimal",
     minimumFractionDigits: 2,
   }).format(val) + " RON";
 
-const getImageUrl = (imageInput) => {
+const getImageUrl = (imageInput: any) => {
   if (!imageInput) return "/placeholder.png";
   let data = imageInput;
   if (typeof data === "string") {
@@ -79,7 +76,6 @@ const getImageUrl = (imageInput) => {
   return rawUrl || "/placeholder.png";
 };
 
-// ─── PremiumInput ─────────────────────────────────────────────────────────────
 const PremiumInput = ({
   label,
   value,
@@ -158,7 +154,6 @@ const PremiumInput = ({
   );
 };
 
-// ─── PremiumSelect ────────────────────────────────────────────────────────────
 const PremiumSelect = ({
   label,
   value,
@@ -210,7 +205,7 @@ const PremiumSelect = ({
           <option value="" disabled>
             {placeholder}
           </option>
-          {options.map((opt) => (
+          {options.map((opt: any) => (
             <option key={opt.id || opt.auto || opt.nume} value={opt.nume}>
               {opt.nume}
             </option>
@@ -225,8 +220,7 @@ const PremiumSelect = ({
   );
 };
 
-// ─── LockerConfirmCard ────────────────────────────────────────────────────────
-const LockerConfirmCard = ({ locker, onClear }) => (
+const LockerConfirmCard = ({ locker, onClear }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 10, scale: 0.96 }}
     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -234,14 +228,12 @@ const LockerConfirmCard = ({ locker, onClear }) => (
     transition={{ type: "spring", damping: 22, stiffness: 340 }}
     className="relative p-3.5 rounded-xl border-2 border-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.4] flex items-start gap-3 overflow-hidden"
   >
-    {/* Pulse ring animation */}
     <motion.div
       className="absolute inset-0 rounded-xl border-2 border-violet-400"
       initial={{ opacity: 0.8, scale: 1 }}
       animate={{ opacity: 0, scale: 1.03 }}
       transition={{ duration: 0.9, ease: "easeOut" }}
     />
-    {/* Badge checkmark */}
     <motion.div
       initial={{ scale: 0, rotate: -30 }}
       animate={{ scale: 1, rotate: 0 }}
@@ -275,8 +267,7 @@ const LockerConfirmCard = ({ locker, onClear }) => (
   </motion.div>
 );
 
-// ─── OrderSummary ─────────────────────────────────────────────────────────────
-const OrderSummary = ({ cartItems, totals, compact = false }) => (
+const OrderSummary = ({ cartItems, totals, compact = false }: any) => (
   <div
     className={compact ? "space-y-3" : "flex flex-col h-full overflow-hidden"}
   >
@@ -289,7 +280,7 @@ const OrderSummary = ({ cartItems, totals, compact = false }) => (
     <div
       className={`space-y-2 ${!compact ? "flex-1 overflow-y-auto pr-1 custom-scrollbar" : ""}`}
     >
-      {(cartItems || []).map((item) => (
+      {(cartItems || []).map((item: any) => (
         <div
           key={item.sku || item.product_sku}
           className="flex gap-3 items-center bg-white rounded-xl border border-zinc-100/80 p-2.5"
@@ -353,14 +344,13 @@ const OrderSummary = ({ cartItems, totals, compact = false }) => (
   </div>
 );
 
-// ─── Main CheckoutPopup ───────────────────────────────────────────────────────
 const CheckoutPopup = ({
   isOpen,
   onClose,
   cartItems = [],
   subtotal: propSubtotal = 0,
   discount: initialDiscount = null,
-}) => {
+}: any) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -369,23 +359,22 @@ const CheckoutPopup = ({
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [shippingMethod, setShippingMethod] = useState("courier");
   const [addressMode, setAddressMode] = useState("select");
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
   const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
-  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
   const [errors, setErrors] = useState<Record<string, any>>({});
   const [summaryOpen, setSummaryOpen] = useState(false);
 
-  // Adrese / localități
-  const [counties, setCounties] = useState([]);
-  const [cities, setCities] = useState([]);
+  const [counties, setCounties] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
 
-  // GLS Locker
-  const [deliveryPoints, setDeliveryPoints] = useState([]);
+  const [deliveryPoints, setDeliveryPoints] = useState<any[]>([]);
   const [lockerSearch, setLockerSearch] = useState("");
-  const [selectedLocker, setSelectedLocker] = useState(null);
+  const [selectedLocker, setSelectedLocker] = useState<any>(null);
   const [lockerJustSelected, setLockerJustSelected] = useState(false);
-  // Declare this only ONCE at the component level:
   const [showLockerDropdown, setShowLockerDropdown] = useState(false);
 
   const [formData, setFormData] = useState<Record<string, any>>({
@@ -396,23 +385,19 @@ const CheckoutPopup = ({
     street: "",
     city: "",
     county: "",
+    postalCode: "", // Câmp nou adăugat
   });
 
   const debouncedSearch = useDebounce(lockerSearch, 280);
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [isOpen]);
-  const scrollContainerRef = useRef(null); // Pentru auto-scroll
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Configurația de livrare preluată de pe backend
   const [shippingConfig, setShippingConfig] = useState({
     courier_fee: 20.0,
     locker_fee: 15.0,
     free_threshold: 250.0,
   });
 
-  // ── Init la deschidere ──────────────────────────────────────────────────────
-  // Adaugă această stare lângă celelalte (ex: sub lockerJustSelected)
-
-  // Modifică useEffect-ul de inițializare (cel care ascultă [isOpen])
   useEffect(() => {
     if (!isOpen) return;
     setAppliedVoucher(initialDiscount);
@@ -420,7 +405,7 @@ const CheckoutPopup = ({
     setErrors({});
     setSummaryOpen(false);
     setSelectedLocker(null);
-    setLockerSearch(""); // Va fi suprascris mai jos dacă există adresă
+    setLockerSearch("");
 
     if (user) {
       setFormData((prev) => ({
@@ -432,16 +417,15 @@ const CheckoutPopup = ({
       }));
       if (user.addresses?.length > 0) {
         const def =
-          user.addresses.find((a) => a.is_default) || user.addresses[0];
+          user.addresses.find((a: any) => a.is_default) || user.addresses[0];
         handleSelectAddress(def);
-        // Pre-completează căutarea lockerelor cu orașul adresei salvate
         setLockerSearch(def.city || "");
       } else {
         setAddressMode("new");
       }
     }
-  }, [isOpen]);
-  // ── Fetch configurare livrare (costuri din backend) ──
+  }, [isOpen, user, initialDiscount]);
+
   useEffect(() => {
     if (!isOpen) return;
     fetch(`${API_BASE_URL}/api/v1/orders/shipping/config`)
@@ -452,7 +436,6 @@ const CheckoutPopup = ({
           locker_fee: parseFloat(data.locker_fee) || 15.0,
           free_threshold: parseFloat(data.free_threshold) || 250.0,
         };
-        // Doar dacă e diferit, facem set!
         if (JSON.stringify(newCfg) !== JSON.stringify(shippingConfig)) {
           setShippingConfig(newCfg);
         }
@@ -460,41 +443,32 @@ const CheckoutPopup = ({
       .catch(console.error);
   }, [isOpen]);
 
-  // ── Fetch județe ───────────────────────────────────────────────────────────
-  // Exemplu în CheckoutPopup
   useEffect(() => {
     if (!isOpen) return;
-
     const cached = sessionStorage.getItem("judete_cache");
     if (cached) {
-      console.log("Date din cache:", JSON.parse(cached));
       setCounties(JSON.parse(cached));
       return;
     }
-
     fetch(`${API_BASE_URL}/api/v1/orders/utils/judete`)
       .then((r) => r.json())
       .then((data) => {
-        console.log("Date primite de la backend:", data); // <--- Vezi ce primești aici
         if (Array.isArray(data) && data.length > 0) {
           setCounties(data);
           sessionStorage.setItem("judete_cache", JSON.stringify(data));
-        } else {
-          console.warn("Datele primite sunt goale sau nu sunt array");
         }
       })
-      .catch((err) => console.error("Eroare fetch:", err));
+      .catch((err) => console.error("Eroare fetch judete:", err));
   }, [isOpen]);
 
   useEffect(() => {
     if (shippingMethod !== "locker" || deliveryPoints.length > 0) return;
     fetch(`${API_BASE_URL}/api/v1/orders/gls/delivery-points`)
       .then((r) => r.json())
-      .then((data) => setDeliveryPoints(data.filter((x) => x.is_locker)))
+      .then((data) => setDeliveryPoints(data.filter((x: any) => x.is_locker)))
       .catch(console.error);
-  }, [shippingMethod]);
+  }, [shippingMethod, deliveryPoints.length]);
 
-  // ── Lockere filtrate + cap MAX_MAP_POINTS ──────────────────────────────────
   const filteredLockers = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     const list = q
@@ -508,20 +482,20 @@ const CheckoutPopup = ({
     return list.slice(0, MAX_MAP_POINTS);
   }, [deliveryPoints, debouncedSearch]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleSelectAddress = (addr) => {
+  const handleSelectAddress = (addr: any) => {
     setSelectedAddressId(addr.id);
     setFormData((prev) => ({
       ...prev,
-      street: addr.street,
-      city: addr.city,
-      county: addr.county,
+      street: addr.street || "",
+      city: addr.city || "",
+      county: addr.county || "",
+      postalCode: addr.postal_code || "",
     }));
     setAddressMode("select");
     setErrors({});
   };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
@@ -532,7 +506,7 @@ const CheckoutPopup = ({
     }
   };
 
-  const handleFieldBlur = (field) => {
+  const handleFieldBlur = (field: string) => {
     const val = formData[field]?.trim() || "";
     let msg = "";
     if (!val) msg = "Câmp obligatoriu";
@@ -542,7 +516,8 @@ const CheckoutPopup = ({
       msg = "Format 07xxxxxxxx";
     else if ((field === "firstName" || field === "lastName") && val.length < 2)
       msg = "Min. 2 caractere";
-    else if (field === "street" && val.length < 6) msg = "Prea scurtă";
+    else if (field === "street" && val.length < 6) msg = "Adresă prea scurtă";
+    else if (field === "postalCode" && val.length < 4) msg = "Cod invalid";
 
     setErrors((prev) =>
       msg
@@ -555,28 +530,22 @@ const CheckoutPopup = ({
     );
   };
 
-  const handleCountyChange = async (e) => {
+  const handleCountyChange = async (e: any) => {
     const countyName = e.target.value;
     handleInputChange("county", countyName);
     handleInputChange("city", "");
 
     const obj = counties.find((c) => c.nume === countyName);
-
     if (!obj) return;
 
     setLoadingCities(true);
     try {
-      // SCHIMBARE: Acum apelezi backend-ul tău local
-      // Nu mai folosim URL-ul roloca.coldfuse.io
       const url = `${API_BASE_URL}/api/v1/orders/utils/localitati/${obj.auto}`;
-
       const res = await fetch(url);
       if (!res.ok) throw new Error("Eroare la preluarea localităților");
-
       const data = await res.json();
-      setCities(data); // Backend-ul îți trimite direct lista de obiecte {"nume": "..."}
+      setCities(data);
     } catch (err) {
-      console.error("Eroare fetch orașe:", err);
       toast({
         variant: "destructive",
         title: "Eroare",
@@ -587,14 +556,11 @@ const CheckoutPopup = ({
     }
   };
 
-  // Locker select cu animație flash
-  // Locker select cu animație flash și auto-scroll
-  const handleLockerSelect = useCallback((locker) => {
+  const handleLockerSelect = useCallback((locker: any) => {
     setSelectedLocker(locker);
     setLockerJustSelected(true);
     setTimeout(() => setLockerJustSelected(false), 900);
 
-    // Auto-scroll în jos pentru a vedea lockerul selectat și butonul Continuă
     setTimeout(() => {
       if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTo({
@@ -602,15 +568,14 @@ const CheckoutPopup = ({
           behavior: "smooth",
         });
       }
-    }, 150); // Un mic delay ca să aibă timp componenta card să apară în DOM
+    }, 150);
   }, []);
 
-  // ── Totals ─────────────────────────────────────────────────────────────────
   const totals = useMemo(() => {
-    // MODIFICAT AICI: Protejăm metoda reduce
     const base =
       (cartItems || []).reduce(
-        (acc, item) => acc + parseFloat(item.price) * (item.quantity || 1),
+        (acc: number, item: any) =>
+          acc + parseFloat(item.price) * (item.quantity || 1),
         0,
       ) ||
       parseFloat(String(propSubtotal || 0)) ||
@@ -619,7 +584,6 @@ const CheckoutPopup = ({
     const disc = appliedVoucher?.amount || 0;
     const subtotalAfterDiscount = Math.max(base - disc, 0);
 
-    // Calculăm costul de livrare pe baza pragului
     let shippingCost = 0;
     if (
       subtotalAfterDiscount > 0 &&
@@ -639,7 +603,6 @@ const CheckoutPopup = ({
     };
   }, [cartItems, propSubtotal, appliedVoucher, shippingMethod, shippingConfig]);
 
-  // ── Validare ───────────────────────────────────────────────────────────────
   const validateStep1 = () => {
     const e: Record<string, string> = {};
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
@@ -652,6 +615,7 @@ const CheckoutPopup = ({
       if (!formData.county) e.county = "Alegeți județul";
       if (!formData.city) e.city = "Alegeți localitatea";
       if (formData.street.trim().length < 6) e.street = "Adresă prea scurtă";
+      if (formData.postalCode.trim().length < 4) e.postalCode = "Cod invalid";
     } else if (!selectedLocker) {
       toast({
         variant: "destructive",
@@ -664,7 +628,6 @@ const CheckoutPopup = ({
     return Object.keys(e).length === 0;
   };
 
-  // ── Finalizare comandă ─────────────────────────────────────────────────────
   const handleCompleteOrder = async () => {
     if (!validateStep1()) {
       toast({
@@ -677,8 +640,7 @@ const CheckoutPopup = ({
     setLoading(true);
     try {
       const payload = {
-        // MODIFICAT AICI: Protejăm metoda map
-        items: (cartItems || []).map((i) => ({
+        items: (cartItems || []).map((i: any) => ({
           sku: (i.sku || i.product_sku).toUpperCase().trim(),
           quantity: parseInt(i.quantity),
         })),
@@ -687,18 +649,24 @@ const CheckoutPopup = ({
           lastName: formData.lastName.trim(),
           phone: formData.phone.replace(/\s+/g, ""),
           email: formData.email.toLowerCase().trim(),
+          delivery_type: shippingMethod,
           address:
             shippingMethod === "courier"
               ? {
                   street: formData.street.trim(),
                   city: formData.city.trim(),
                   county: formData.county.trim(),
+                  postalCode: formData.postalCode.trim(),
                 }
               : {
                   locker_id: selectedLocker?.id,
                   locker_name: selectedLocker?.name,
                   city: selectedLocker?.city,
                 },
+          ...(shippingMethod === "locker" && {
+            locker_id: selectedLocker?.matchcode || selectedLocker?.id,
+            locker_address: `${selectedLocker?.street || ""} ${selectedLocker?.house_number || ""}, ${selectedLocker?.city || ""}`,
+          }),
         },
         payment_method: paymentMethod,
         shipping_method: shippingMethod,
@@ -708,7 +676,7 @@ const CheckoutPopup = ({
 
       const token =
         localStorage.getItem("token") || localStorage.getItem("access_token");
-      const headers = {
+      const headers: any = {
         "Content-Type": "application/json",
         "Idempotency-Key": idempotencyKey,
       };
@@ -727,11 +695,11 @@ const CheckoutPopup = ({
       if (!res.ok)
         throw new Error(
           Array.isArray(data.detail)
-            ? data.detail.map((d) => d.msg).join(", ")
+            ? data.detail.map((d: any) => d.msg).join(", ")
             : data.detail || "Eroare server",
         );
       if (data.url) window.location.href = data.url;
-    } catch (err) {
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Eroare",
@@ -742,12 +710,10 @@ const CheckoutPopup = ({
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[1000] flex justify-end items-stretch overflow-hidden font-sans">
-          {/* Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -755,8 +721,6 @@ const CheckoutPopup = ({
             className="absolute inset-0 bg-zinc-950/50 backdrop-blur-sm"
             onClick={onClose}
           />
-
-          {/* Panel */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -764,12 +728,10 @@ const CheckoutPopup = ({
             transition={{ type: "spring", damping: 36, stiffness: 255 }}
             className="relative z-[1001] w-full max-w-[1160px] bg-white flex flex-col lg:flex-row shadow-2xl h-full overflow-hidden"
           >
-            {/* ─────────────── LEFT: Form ─────────────── */}
             <div
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6 md:px-9 lg:px-11 bg-white custom-scrollbar"
             >
-              {/* Header */}
               <header className="flex justify-between items-center mb-5 pb-4 border-b border-zinc-100">
                 <div>
                   <h2 className="text-2xl font-black tracking-tight text-zinc-900">
@@ -818,7 +780,6 @@ const CheckoutPopup = ({
                 </button>
               </header>
 
-              {/* ─── Mobile: Order Summary Accordion ─── */}
               <div className="lg:hidden mb-4 rounded-xl border border-zinc-200 overflow-hidden">
                 <button
                   onClick={() => setSummaryOpen(!summaryOpen)}
@@ -860,7 +821,6 @@ const CheckoutPopup = ({
                 </AnimatePresence>
               </div>
 
-              {/* ─── Steps ─── */}
               <AnimatePresence mode="wait">
                 {step === 1 ? (
                   <motion.div
@@ -871,7 +831,6 @@ const CheckoutPopup = ({
                     transition={{ duration: 0.18 }}
                     className="space-y-5"
                   >
-                    {/* Shipping method toggle */}
                     <div className="grid grid-cols-2 gap-2.5">
                       {[
                         {
@@ -924,7 +883,6 @@ const CheckoutPopup = ({
                       ))}
                     </div>
 
-                    {/* Saved addresses */}
                     {user?.addresses?.length > 0 &&
                       shippingMethod === "courier" && (
                         <div className="space-y-2">
@@ -933,7 +891,7 @@ const CheckoutPopup = ({
                             Adrese Salvate
                           </p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {user.addresses.map((addr) => (
+                            {user.addresses.map((addr: any) => (
                               <button
                                 key={addr.id}
                                 type="button"
@@ -973,6 +931,7 @@ const CheckoutPopup = ({
                                   street: "",
                                   city: "",
                                   county: "",
+                                  postalCode: "",
                                 }));
                               }}
                               className={`p-3 border-2 border-dashed rounded-xl flex items-center justify-center gap-1.5 transition-all ${
@@ -990,7 +949,6 @@ const CheckoutPopup = ({
                         </div>
                       )}
 
-                    {/* Contact fields */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <PremiumInput
                         label="Email"
@@ -999,7 +957,7 @@ const CheckoutPopup = ({
                         placeholder="nume@exemplu.com"
                         autoComplete="email"
                         helperText="Confirmare comandă și factură"
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleInputChange("email", e.target.value)
                         }
                         onBlur={() => handleFieldBlur("email")}
@@ -1011,7 +969,7 @@ const CheckoutPopup = ({
                         placeholder="07xxxxxxxx"
                         autoComplete="tel"
                         helperText="Necesar curierului"
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleInputChange("phone", e.target.value)
                         }
                         onBlur={() => handleFieldBlur("phone")}
@@ -1022,7 +980,7 @@ const CheckoutPopup = ({
                         error={errors.firstName}
                         placeholder="Ex: Andrei"
                         autoComplete="given-name"
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleInputChange("firstName", e.target.value)
                         }
                         onBlur={() => handleFieldBlur("firstName")}
@@ -1033,14 +991,13 @@ const CheckoutPopup = ({
                         error={errors.lastName}
                         placeholder="Ex: Popescu"
                         autoComplete="family-name"
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleInputChange("lastName", e.target.value)
                         }
                         onBlur={() => handleFieldBlur("lastName")}
                       />
                     </div>
 
-                    {/* Delivery address section */}
                     <AnimatePresence mode="wait">
                       {shippingMethod === "courier" ? (
                         <motion.div
@@ -1063,7 +1020,7 @@ const CheckoutPopup = ({
                             <PremiumSelect
                               label="Localitate"
                               value={formData.city}
-                              onChange={(e) =>
+                              onChange={(e: any) =>
                                 handleInputChange("city", e.target.value)
                               }
                               options={cities}
@@ -1076,23 +1033,48 @@ const CheckoutPopup = ({
                               }
                             />
                           </div>
-                          <PremiumInput
-                            label="Stradă, Număr, Bloc, Ap."
-                            value={formData.street}
-                            error={errors.street}
-                            autoComplete="street-address"
-                            placeholder="Ex: Str. Mihai Viteazul, Nr. 12, Bl. A, Ap. 4"
-                            onChange={(e) =>
-                              handleInputChange("street", e.target.value)
-                            }
-                            onBlur={() => handleFieldBlur("street")}
-                          />
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="sm:col-span-2">
+                              <PremiumInput
+                                label="Stradă, Număr, Bloc, Ap."
+                                value={formData.street}
+                                error={errors.street}
+                                autoComplete="street-address"
+                                placeholder="Ex: Str. Mihai Viteazul, Nr. 12"
+                                onChange={(e: any) =>
+                                  handleInputChange("street", e.target.value)
+                                }
+                                onBlur={() => handleFieldBlur("street")}
+                              />
+                            </div>
+                            <div className="sm:col-span-1">
+                              {/* INPUT NOU PENTRU COD POȘTAL */}
+                              <PremiumInput
+                                label="Cod poștal"
+                                value={formData.postalCode}
+                                error={errors.postalCode}
+                                autoComplete="postal-code"
+                                placeholder="Ex: 012345"
+                                onChange={(e: any) =>
+                                  handleInputChange(
+                                    "postalCode",
+                                    e.target.value,
+                                  )
+                                }
+                                onBlur={() => handleFieldBlur("postalCode")}
+                              />
+                            </div>
+                          </div>
+
                           {addressMode === "new" && user && (
                             <div className="flex items-center gap-2.5 bg-zinc-50 px-3 py-2.5 rounded-lg border border-zinc-100">
                               <Checkbox
                                 id="save-addr"
                                 checked={shouldSaveAddress}
-                                onCheckedChange={(v) => setShouldSaveAddress(!!v)}
+                                onCheckedChange={(v) =>
+                                  setShouldSaveAddress(!!v)
+                                }
                               />
                               <label
                                 htmlFor="save-addr"
@@ -1112,7 +1094,6 @@ const CheckoutPopup = ({
                           transition={{ duration: 0.15 }}
                           className="space-y-3 pt-3 border-t border-zinc-100"
                         >
-                          {/* Search input */}
                           <div className="relative">
                             <Search
                               size={14}
@@ -1135,8 +1116,6 @@ const CheckoutPopup = ({
                               placeholder="Caută locker după oraș sau stradă..."
                               className="h-10 w-full bg-zinc-50 border border-zinc-200 rounded-lg pl-9 pr-3 text-[13px] outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-50 transition-all placeholder:text-zinc-300"
                             />
-
-                            {/* Dropdown Rezultate */}
                             <AnimatePresence>
                               {showLockerDropdown &&
                                 lockerSearch.trim() &&
@@ -1182,7 +1161,6 @@ const CheckoutPopup = ({
                             </AnimatePresence>
                           </div>
 
-                          {/* Map container */}
                           <div
                             className={`rounded-xl overflow-hidden border transition-all duration-300 ${
                               lockerJustSelected
@@ -1210,7 +1188,6 @@ const CheckoutPopup = ({
                             </Suspense>
                           </div>
 
-                          {/* Points count hint */}
                           {deliveryPoints.length > 0 && (
                             <p className="text-[9px] text-zinc-400 text-center">
                               {filteredLockers.length < deliveryPoints.length
@@ -1222,7 +1199,6 @@ const CheckoutPopup = ({
                             </p>
                           )}
 
-                          {/* Selected locker card / hint */}
                           <AnimatePresence mode="wait">
                             {selectedLocker ? (
                               <LockerConfirmCard
@@ -1249,7 +1225,6 @@ const CheckoutPopup = ({
                       )}
                     </AnimatePresence>
 
-                    {/* Continue button */}
                     <Button
                       onClick={() => {
                         if (validateStep1()) setStep(2);
@@ -1271,7 +1246,6 @@ const CheckoutPopup = ({
                     </Button>
                   </motion.div>
                 ) : (
-                  /* ─── Step 2: Payment ─── */
                   <motion.div
                     key="step2"
                     initial={{ opacity: 0, x: 14 }}
@@ -1288,7 +1262,6 @@ const CheckoutPopup = ({
                       Înapoi la livrare
                     </button>
 
-                    {/* Delivery recap card */}
                     <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-100 space-y-0.5">
                       <p className="text-[8px] font-black uppercase tracking-widest text-zinc-400 mb-1.5 flex items-center gap-1">
                         {shippingMethod === "courier" ? (
@@ -1311,7 +1284,6 @@ const CheckoutPopup = ({
                       </p>
                     </div>
 
-                    {/* Payment methods */}
                     <div className="space-y-2.5">
                       <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
                         Modalitate de Plată
@@ -1409,7 +1381,6 @@ const CheckoutPopup = ({
               </AnimatePresence>
             </div>
 
-            {/* ─────────────── RIGHT: Order Summary (desktop only) ─────────────── */}
             <div className="hidden lg:flex w-[360px] xl:w-[400px] bg-zinc-50/60 border-l border-zinc-100 flex-col p-7 xl:p-9 overflow-hidden">
               <OrderSummary cartItems={cartItems} totals={totals} />
             </div>
