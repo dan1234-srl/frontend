@@ -234,6 +234,15 @@ export const OrderReviewModal = ({
       if (!order.locker_id) {
         issues.push("Lipsește locker-ul GLS");
       }
+      // ---> ADAUGĂ ASTA PENTRU A BLOCA APROBAREA FĂRĂ ZIP <---
+      if (
+        !shipping.postalCode &&
+        !shipping.postal_code &&
+        !shipping.zip &&
+        !shipping.Zip
+      ) {
+        issues.push("Lipsește codul poștal (necesar și pentru locker)");
+      }
     }
 
     if (!order.phone) issues.push("Lipsește telefonul de contact");
@@ -528,49 +537,60 @@ export const OrderReviewModal = ({
                     }
                   >
                     {order.delivery_type === "locker" ? (
-                    <InfoBlock title="Livrare — Locker GLS" icon={<Package size={14} />}>
-                      <Row label="Locker" value={order.locker_id || "—"} />
-                      <Row
-                        label="Adresă"
-                        value={order.locker_address || "—"}
-                      />
-                    </InfoBlock>
-                  ) : (
-                    <InfoBlock
-                      title="Livrare — Curier"
-                      icon={<Truck size={14} />}
-                    >
-                      {[
-                        { label: "Stradă", field: "street" as const, value: `${shipping.street || ""} ${shipping.house_number || ""}` },
-                        { label: "Oraș", field: "city" as const, value: shipping.city },
-                        { label: "Județ", field: "county" as const, value: shipping.county },
-                        { label: "Cod poștal", field: "postal_code" as const, value: shipping.postalCode || shipping.postal_code },
-                      ].map(({ label, field, value }) => (
-                        <div key={field} className="flex items-center justify-between gap-2 text-xs">
-                          <span className="text-zinc-400 font-medium shrink-0">{label}</span>
+                      <>
+                        <Row label="Locker" value={order.locker_id || "—"} />
+                        <Row
+                          label="Adresă"
+                          value={order.locker_address || "—"}
+                        />
+                        {/* Input editabil pentru Cod Poștal (Locker) */}
+                        <div className="flex items-center justify-between gap-2 text-xs mt-3 pt-3 border-t border-zinc-100">
+                          <span className="text-zinc-400 font-medium shrink-0">Cod poștal</span>
                           <input
-                            defaultValue={value || ""}
+                            defaultValue={shipping.postalCode || shipping.postal_code || ""}
                             onChange={(e) =>
-                              setShippingEdits((prev) => ({ ...prev, [field]: e.target.value }))
+                              setShippingEdits((prev) => ({ ...prev, postal_code: e.target.value }))
                             }
                             className="text-right font-bold text-[var(--dark-amethyst)] bg-transparent border-b border-dashed border-zinc-200 focus:border-[var(--royal-violet)] outline-none min-w-0 w-32"
+                            placeholder="ex. 012345"
                           />
                         </div>
-                      ))}
-                      {Object.keys(shippingEdits).length > 0 && (
-                        <button
-                          onClick={saveShippingAddress}
-                          disabled={savingShipping}
-                          className="mt-3 w-full h-8 rounded-xl text-white text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
-                          style={{ background: "var(--primary-gradient)" }}
-                        >
-                          {savingShipping ? <Loader2 className="animate-spin" size={11} /> : <Save size={11} />}
-                          Salvează adresa
-                        </button>
-                      )}
-                    </InfoBlock>
-                  )}
-                </div>
+                      </>
+                    ) : (
+                      <>
+                        {[
+                          { label: "Stradă", field: "street" as const, value: `${shipping.street || ""} ${shipping.house_number || ""}` },
+                          { label: "Oraș", field: "city" as const, value: shipping.city },
+                          { label: "Județ", field: "county" as const, value: shipping.county },
+                          { label: "Cod poștal", field: "postal_code" as const, value: shipping.postalCode || shipping.postal_code },
+                        ].map(({ label, field, value }) => (
+                          <div key={field} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-zinc-400 font-medium shrink-0">{label}</span>
+                            <input
+                              defaultValue={value || ""}
+                              onChange={(e) =>
+                                setShippingEdits((prev) => ({ ...prev, [field]: e.target.value }))
+                              }
+                              className="text-right font-bold text-[var(--dark-amethyst)] bg-transparent border-b border-dashed border-zinc-200 focus:border-[var(--royal-violet)] outline-none min-w-0 w-32"
+                            />
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* Butonul de Salvare este comun pentru ambele tipuri (apare dacă există modificări) */}
+                    {Object.keys(shippingEdits).length > 0 && (
+                      <button
+                        onClick={saveShippingAddress}
+                        disabled={savingShipping}
+                        className="mt-3 w-full h-8 rounded-xl text-white text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
+                        style={{ background: "var(--primary-gradient)" }}
+                      >
+                        {savingShipping ? <Loader2 className="animate-spin" size={11} /> : <Save size={11} />}
+                        Salvează adresa
+                      </button>
+                    )}
+                  </InfoBlock>
 
                 {/* ITEMS */}
                 <div className="space-y-3">
@@ -600,7 +620,7 @@ export const OrderReviewModal = ({
                       // --- FIX PENTRU NaN RON ---
                       // Convertim în număr și oferim 0 ca valoare implicită dacă sunt undefined/null
                       const unitPrice = Number(
-                        it.unit_price_at_purchase ?? it.price_at_purchase ?? 0,
+                        it.unit_price_at_purchase ?? it.unit_price_at_purchase ?? 0,
                       );
                       const totalPrice = Number(
                         it.total_item_price ?? unitPrice * (it.quantity || 1),
