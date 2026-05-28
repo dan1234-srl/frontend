@@ -65,20 +65,28 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
 
   const stats = useMemo(() => {
     const mainImg = parseImage(product.image_url);
+
+    // 1. PRETUL FINAL DE VÂNZARE (Cel pe care îl plătește clientul)
+    // În Meilisearch ai mapat prețul cu markup în 'price'. În DB direct el este în 'sale_price'.
+    const finalPrice = Number(product.sale_price || product.price || 0);
+
+    // 2. PREȚUL DE BAZĂ / TĂIAT (Dacă vrei să afișezi o reducere)
+    // Folosim original_price dacă vine din Meili, altfel fallback pe prețul de listă
     const basePrice = Number(
       product.original_price || product.base_price || product.price || 0,
     );
-    const finalPrice = Number(product.price || 0);
-    const salePrice = product.sale_price ? Number(product.sale_price) : null;
 
+    // 3. LOGICA DE DISCOUNT (Afișăm reducere DOAR dacă prețul de bază este mai mare decât cel final)
     const hasDiscount = !!(
-      salePrice &&
-      salePrice > 0 &&
-      finalPrice < basePrice
+      basePrice > finalPrice &&
+      finalPrice > 0 &&
+      product.original_price
     );
+
     const discountPct = hasDiscount
       ? Math.round(100 - (finalPrice / basePrice) * 100)
       : 0;
+
     const isOutOfStock =
       product.stock_quantity !== undefined
         ? product.stock_quantity <= 0
@@ -93,7 +101,6 @@ export const ProductCard = memo(({ product, eager = false }: any) => {
       isOutOfStock,
     };
   }, [product]);
-
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
