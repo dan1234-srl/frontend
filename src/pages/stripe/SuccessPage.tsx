@@ -56,6 +56,30 @@ const getItemDetails = (item: any) => {
   return { name, price, brand, quantity };
 };
 
+const getFormattedAddress = (addrInput: any) => {
+  if (!addrInput) return "Adresă indisponibilă";
+
+  let addr = addrInput;
+
+  // Dacă este string, încercăm să-l parsăm
+  if (typeof addr === "string") {
+    try {
+      addr = JSON.parse(addr);
+    } catch {
+      return addr; // Dacă nu e JSON, returnăm string-ul brut
+    }
+  }
+
+  // Dacă a devenit obiect, extragem câmpurile
+  if (typeof addr === "object" && addr !== null) {
+    if (addr.locker_name) return `${addr.locker_name}, ${addr.city}`;
+    if (addr.street)
+      return `${addr.street}${addr.house_number ? " " + addr.house_number : ""}, ${addr.city}, ${addr.county}`;
+  }
+
+  return "Adresă indisponibilă";
+};
+
 const SuccessPage = () => {
   const [searchParams] = useSearchParams();
   const { clearCart } = useCart();
@@ -321,7 +345,7 @@ const SuccessPage = () => {
                           {order.customer_name}
                         </p>
                         <p className="text-xs text-zinc-600 leading-snug mt-0.5">
-                          {addressText}
+                          {getFormattedAddress(order?.shipping_address)}
                         </p>
                       </div>
                     </div>
