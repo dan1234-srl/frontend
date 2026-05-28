@@ -112,6 +112,39 @@ export const OrderReviewModal = ({
 
   const [edits, setEdits] = useState<Record<string, ProductSpecs>>({});
   const [savingSku, setSavingSku] = useState<string | null>(null);
+  const [shippingEdits, setShippingEdits] = useState<Partial<ShippingAddress>>(
+    {},
+  );
+  const [savingShipping, setSavingShipping] = useState(false);
+  const saveShippingAddress = async () => {
+    if (!order) return;
+    setSavingShipping(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/orders/admin/${order.id}/shipping-address`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(shippingEdits),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Adresă actualizată.");
+        setOrder((o) =>
+          o ? { ...o, shipping_address: data.shipping_address } : o
+        );
+        setShippingEdits({});
+      } else {
+        toast.error(data.detail || "Salvare eșuată.");
+      }
+    } catch {
+      toast.error("Eroare rețea.");
+    } finally {
+      setSavingShipping(false);
+    }
+  };
 
   useEffect(() => {
     if (!orderId) return;
@@ -495,30 +528,48 @@ export const OrderReviewModal = ({
                     }
                   >
                     {order.delivery_type === "locker" ? (
-                      <>
-                        <Row label="Locker" value={order.locker_id || "—"} />
-                        <Row
-                          label="Adresă"
-                          value={order.locker_address || "—"}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <Row
-                          label="Stradă"
-                          value={`${shipping.street || ""} ${shipping.house_number || ""}`}
-                        />
-                        <Row label="Oraș" value={shipping.city || "—"} />
-                        <Row label="Județ" value={shipping.county || "—"} />
-                        <Row
-                          label="Cod poștal"
-                          value={
-                            shipping.postalCode || shipping.postal_code || "—"
-                          }
-                        />
-                      </>
-                    )}
-                  </InfoBlock>
+                    <InfoBlock title="Livrare — Locker GLS" icon={<Package size={14} />}>
+                      <Row label="Locker" value={order.locker_id || "—"} />
+                      <Row
+                        label="Adresă"
+                        value={order.locker_address || "—"}
+                      />
+                    </InfoBlock>
+                  ) : (
+                    <InfoBlock
+                      title="Livrare — Curier"
+                      icon={<Truck size={14} />}
+                    >
+                      {[
+                        { label: "Stradă", field: "street" as const, value: `${shipping.street || ""} ${shipping.house_number || ""}` },
+                        { label: "Oraș", field: "city" as const, value: shipping.city },
+                        { label: "Județ", field: "county" as const, value: shipping.county },
+                        { label: "Cod poștal", field: "postal_code" as const, value: shipping.postalCode || shipping.postal_code },
+                      ].map(({ label, field, value }) => (
+                        <div key={field} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="text-zinc-400 font-medium shrink-0">{label}</span>
+                          <input
+                            defaultValue={value || ""}
+                            onChange={(e) =>
+                              setShippingEdits((prev) => ({ ...prev, [field]: e.target.value }))
+                            }
+                            className="text-right font-bold text-[var(--dark-amethyst)] bg-transparent border-b border-dashed border-zinc-200 focus:border-[var(--royal-violet)] outline-none min-w-0 w-32"
+                          />
+                        </div>
+                      ))}
+                      {Object.keys(shippingEdits).length > 0 && (
+                        <button
+                          onClick={saveShippingAddress}
+                          disabled={savingShipping}
+                          className="mt-3 w-full h-8 rounded-xl text-white text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
+                          style={{ background: "var(--primary-gradient)" }}
+                        >
+                          {savingShipping ? <Loader2 className="animate-spin" size={11} /> : <Save size={11} />}
+                          Salvează adresa
+                        </button>
+                      )}
+                    </InfoBlock>
+                  )}
                 </div>
 
                 {/* ITEMS */}
