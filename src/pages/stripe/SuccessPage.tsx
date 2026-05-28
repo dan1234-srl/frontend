@@ -22,38 +22,45 @@ const API_BASE_URL =
   "https://linea-backend-production.up.railway.app";
 
 // Helper pentru extragerea URL-ului imaginii
-const getItemImage = (item: any) => {
-  const source =
-    item.product_image || item.product?.image_url || item.product_image_url;
-  if (!source) return "/placeholder.png";
-  if (typeof source === "string") {
-    if (source.startsWith("http")) return source;
-    try {
-      const parsed = JSON.parse(source);
-      return (
-        parsed?.main?.medium ||
-        parsed?.url ||
-        parsed?.medium ||
-        "/placeholder.png"
-      );
-    } catch {
-      return "/placeholder.png";
-    }
-  }
-  return (
-    source?.main?.medium || source?.url || source?.medium || "/placeholder.png"
-  );
-};
-
-// Helper pentru preluarea datelor standardizate ale produsului
 const getItemDetails = (item: any) => {
-  // Aici preluăm exact câmpurile pe care backend-ul le livrează prin OrderItemOut
-  const name = item.product_name || "Produs EVEM";
-  const price = Number(item.price_at_purchase || 0);
-  const brand = "EVEM"; // Poți extrage de pe item dacă backend-ul expune brand-ul
+  // Să ne asigurăm că citim corect din modelul OrderItemOut
+  // În SQL-ul tău din orders.py, item este de tip models.OrderItem
+  const name =
+    item.product_name_at_purchase || item.product?.name || "Produs EVEM";
+
+  // Asigură-te că folosești prețul salvat la checkout, nu prețul curent al produsului
+  const price = Number(
+    item.unit_price_at_purchase || item.price_at_purchase || 0,
+  );
+
+  const brand = "EVEM";
   const quantity = Number(item.quantity || 1);
 
   return { name, price, brand, quantity };
+};
+
+// Helper pentru imagine
+const getItemImage = (item: any) => {
+  // item.product_image este coloana setată în orders.py la checkout
+  const source = item.product_image || item.product?.image_url;
+
+  if (!source) return "/placeholder.png";
+
+  // Dacă e deja un URL simplu
+  if (typeof source === "string" && source.startsWith("http")) return source;
+
+  // Dacă e JSON (cum vine din DB)
+  try {
+    const parsed = typeof source === "string" ? JSON.parse(source) : source;
+    return (
+      parsed?.main?.medium ||
+      parsed?.url ||
+      parsed?.medium ||
+      "/placeholder.png"
+    );
+  } catch {
+    return "/placeholder.png";
+  }
 };
 
 const getFormattedAddress = (addrInput: any) => {
