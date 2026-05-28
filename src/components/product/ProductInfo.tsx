@@ -44,13 +44,22 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
 
   // --- LOGICĂ CALCUL PREȚ ---
   const priceStats = useMemo(() => {
-    const rawPrice = Number(product.price || 0);
-    const rawSalePrice = product.sale_price ? Number(product.sale_price) : 0;
-    const hasDiscount = rawSalePrice > 0 && rawSalePrice < rawPrice;
+    // 1. Prețul final cu adaos comercial pe care îl achită clientul
+    const finalPrice = Number(product.sale_price || product.price || 0);
+
+    // 2. Prețul de referință (original_price din Meilisearch dacă există o reducere reală)
+    const basePrice = Number(product.original_price || product.price || 0);
+
+    // 3. Este reducere doar dacă prețul tăiat e mai mare decât prețul final calculat
+    const hasDiscount = !!(
+      product.original_price &&
+      basePrice > finalPrice &&
+      finalPrice > 0
+    );
 
     return {
-      basePrice: rawPrice,
-      finalPrice: hasDiscount ? rawSalePrice : rawPrice,
+      basePrice,
+      finalPrice,
       hasDiscount,
     };
   }, [product]);
