@@ -35,15 +35,77 @@ const ShoppingBag = ({
     voucher_id: string;
   } | null>(null);
 
-  const { cart, totalPrice, updateQuantity, removeFromCart } = useCart();
+  const { cart, totalPrice, updateQuantity, removeFromCart, syncCart }: any =
+    useCart();
 
-  const FREE_SHIPPING = 250;
-  const remainingForFreeShipping = Math.max(FREE_SHIPPING - totalPrice, 0);
-  const shippingProgress = Math.min((totalPrice / FREE_SHIPPING) * 100, 100);
+  // 🚀 1. STARE PENTRU PRAGUL DINAMIC DE TRANSPORT GRATUIT (Fallback 250)
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(250);
+
+  // 🚀 2. FETCH PRAG TRANSPORT GRATUIT DIN BACKEND
+  useEffect(() => {
+    const fetchShippingConfig = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/orders/shipping/config`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.free_threshold) {
+            setFreeShippingThreshold(Number(data.free_threshold));
+          }
+        }
+      } catch (error) {
+        console.error(
+          "❌ Eroare la preluarea config-ului de transport:",
+          error,
+        );
+      }
+    };
+    fetchShippingConfig();
+  }, []);
+
+  // 🚀 3. SINCRONIZARE PREȚURI ȘI STOCURI LA DESCHIDEREA COȘULUI
+  useEffect(() => {
+    const synchronizeCartPrices = async () => {
+      if (!isOpen || cart.length === 0) return;
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/orders/validate-stock`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cart.map((item: any) => ({ sku: item.sku }))),
+          },
+        );
+
+        if (response.ok) {
+          const freshData = await response.json();
+          // Actualizăm contextul global cu datele proaspete (Preț cu adaos și Stoc)
+          if (typeof syncCart === "function") {
+            syncCart(freshData);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Eroare la sincronizarea live a coșului:", error);
+      }
+    };
+
+    synchronizeCartPrices();
+  }, [isOpen]); // Se execută de fiecare dată când isOpen devine true
+
+  // Calcule pentru bara de transport gratuit bazate pe valoarea dinamică din backend
+  const remainingForFreeShipping = Math.max(
+    freeShippingThreshold - totalPrice,
+    0,
+  );
+  const shippingProgress = Math.min(
+    (totalPrice / freeShippingThreshold) * 100,
+    100,
+  );
 
   /**
-   * 1. Validare Voucher prin API
-   * Sincronizat cu backend-ul pentru a evita erorile de tip 422 (category_id missing)
+   * Validare Voucher prin API
    */
   const handleApplyVoucher = async () => {
     if (!promoCode.trim() || cart.length === 0) return;
@@ -55,11 +117,11 @@ const ShoppingBag = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: promoCode.trim().toUpperCase(),
-          items: cart.map((item) => ({
-            product_id: item.id, // Backend-ul se așteaptă la ID-ul bazei de date
-            category_id: item.category_id, // TRIMITE ID-ul REAL salvat în context
+          items: cart.map((item: any) => ({
+            product_id: item.id,
+            category_id: item.category_id,
             brand_name: item.brand_name || "",
-            price: Number(item.price),
+            price: Number(item.price), // Acum trimite mereu prețul corect sincronizat
             quantity: Number(item.quantity),
           })),
         }),
@@ -76,7 +138,6 @@ const ShoppingBag = ({
         toast.success(`Reducere aplicată: -${data.discount_amount} RON`);
         setPromoCode("");
       } else {
-        // Preluăm mesajul de eroare setat profesional pe backend
         const errorMsg =
           typeof data.detail === "string"
             ? data.detail
@@ -100,8 +161,7 @@ const ShoppingBag = ({
   };
 
   /**
-   * 2. Imagine URL Helper
-   * Procesare avansată pentru a asigura randarea pozelor din orice format (S3/CloudFront)
+   * Imagine URL Helper
    */
   const getImageUrl = (imageInput: any) => {
     if (!imageInput) return "";
@@ -123,7 +183,6 @@ const ShoppingBag = ({
       (typeof source === "string" ? source : "");
     if (!rawUrl) return "";
 
-    // S3 deja livrează variante optimizate (small/medium/large)
     return rawUrl;
   };
 
@@ -209,7 +268,7 @@ const ShoppingBag = ({
                           </p>
                         </div>
                       ) : (
-                        cart.map((item) => (
+                        cart.map((item: any) => (
                           <motion.div
                             layout
                             key={item.sku}
