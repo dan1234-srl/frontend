@@ -491,7 +491,8 @@ const CheckoutPopup = ({
         street: addr.street || "",
         city: addr.city || "",
         county: addr.county || "",
-        postalCode: addr.postal_code || "",
+        postalCode:
+          addr.postalCode || addr.postal_code || addr.zip || addr.Zip || "",
       }));
       setAddressMode("select");
       setErrors({});
@@ -690,7 +691,7 @@ const CheckoutPopup = ({
                   street: formData.street.trim(),
                   city: formData.city.trim(),
                   county: formData.county.trim(),
-                  postalCode: formData.postalCode.trim(), // Asigură-te că trimite codul poștal
+                  postal_code: formData.postalCode.trim(), // Asigură-te că trimite codul poștal
                 }
               : {
                   locker_id: selectedLocker?.id,
