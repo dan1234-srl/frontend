@@ -121,7 +121,6 @@ const AdminLayout = () => {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
-
   const menuGroups = [
     {
       group: "Administrare",
@@ -172,7 +171,6 @@ const AdminLayout = () => {
       ],
     },
   ];
-
 
   return (
     <div className="fixed inset-0 flex bg-white font-sans overflow-hidden w-full h-screen">
@@ -248,14 +246,16 @@ const AdminLayout = () => {
           <div className="size-10" />
         </header>
 
-        <main className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="popLayout" initial={false}>
+        <main className="flex-1 overflow-y-auto w-full">
+          <AnimatePresence mode="wait">
+            {" "}
+            {/* Am schimbat popLayout în wait pentru stabilitate mai bună */}
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="p-4 sm:p-6 lg:p-10"
             >
               <Outlet />
@@ -268,4 +268,3 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
-

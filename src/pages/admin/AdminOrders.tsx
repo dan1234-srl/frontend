@@ -336,7 +336,8 @@ const AdminOrders = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right px-10">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                    {/* Am schimbat opacity-0 cu opacity-100 pe mobil și am adăugat lg: pentru hover pe desktop */}
+                    <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all translate-x-0 lg:translate-x-4 lg:group-hover:translate-x-0">
                       <button
                         className="p-3 bg-white border border-zinc-100 rounded-xl transition-all shadow-sm flex items-center justify-center text-[var(--dark-amethyst)] hover:bg-[var(--dark-amethyst)] hover:text-white"
                         onClick={() => order?.id && setReviewOrderId(order.id)}
