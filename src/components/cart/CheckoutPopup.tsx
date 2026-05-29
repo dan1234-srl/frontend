@@ -691,12 +691,20 @@ const CheckoutPopup = ({
                   street: formData.street.trim(),
                   city: formData.city.trim(),
                   county: formData.county.trim(),
-                  postal_code: formData.postalCode.trim(), // Asigură-te că trimite codul poștal
+                  postal_code: formData.postalCode.trim(),
                 }
               : {
+                  // AICI SALVĂM TOT CE VINE DIN JSON-UL DE LOCKER
                   locker_id: selectedLocker?.id,
                   locker_name: selectedLocker?.name,
                   city: selectedLocker?.city,
+                  street: selectedLocker?.street || "",
+                  house_number: selectedLocker?.house_number || "",
+                  postal_code:
+                    selectedLocker?.zip || selectedLocker?.postal_code || "",
+                  lat: selectedLocker?.lat,
+                  lng: selectedLocker?.lng,
+                  matchcode: selectedLocker?.matchcode,
                 },
           ...(shippingMethod === "locker" && {
             locker_id: selectedLocker?.matchcode || selectedLocker?.id,
