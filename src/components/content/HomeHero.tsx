@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -7,16 +7,34 @@ import {
   ChevronLeft,
   LayoutGrid,
   ShoppingBag,
+  Search, // Adăugat pentru iconiță
 } from "lucide-react";
 import heroBanner from "@/assets/evem-hero-banner.jpg";
+import Fuse from "fuse.js"; // 1. Importul bibliotecii
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 const HomeHero = () => {
   const [categories, setCategories] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeParent, setActiveParent] = useState<any>(null);
   const navigate = useNavigate();
+
+  // 2. Logica de filtrare și sortare
+  const filteredCategories = useMemo(() => {
+    const sorted = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
+    if (!searchQuery) return sorted;
+
+    const fuse = new Fuse(sorted, {
+      keys: ["name"],
+      threshold: 0.3,
+      shouldSort: true,
+    });
+
+    return fuse.search(searchQuery).map((result) => result.item);
+  }, [categories, searchQuery]);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
@@ -26,9 +44,8 @@ const HomeHero = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // 🚀 Funcție premium pentru Smooth Scroll direct către produse în loc de redirecționare rute
   const handleScrollToProducts = () => {
-    const productsSection = document.getElementById("products-grid"); // Asigură-te că adaugi id="products-grid" pe secțiunea ta de produse din pagină
+    const productsSection = document.getElementById("products-grid");
     if (productsSection) {
       productsSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -37,7 +54,7 @@ const HomeHero = () => {
   return (
     <section className="w-full px-4 md:px-6 pt-0 pb-0 md:pb-6 text-left">
       <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px]">
-        {/* SIDEBAR CATEGORII */}
+        {/* SIDEBAR */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0 mt-2 lg:mt-0">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -51,6 +68,24 @@ const HomeHero = () => {
                   Navigare
                 </span>
               </div>
+
+              {/* 3. Searchbar-ul apare doar când nu suntem în subcategorii */}
+              {!activeParent && (
+                <div className="relative mb-3">
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Caută categorie..."
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-100/50 rounded-xl outline-none focus:ring-2 focus:ring-zinc-200 transition-all border border-transparent focus:border-zinc-200"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              )}
+
               <AnimatePresence mode="wait">
                 {!activeParent ? (
                   <motion.h3
@@ -97,7 +132,8 @@ const HomeHero = () => {
                       animate={{ opacity: 1 }}
                       className="space-y-1"
                     >
-                      {(categories || []).map((cat) => (
+                      {/* 4. Folosim filteredCategories aici */}
+                      {filteredCategories.map((cat) => (
                         <button
                           key={cat.id}
                           onClick={() =>
@@ -164,8 +200,6 @@ const HomeHero = () => {
                   REDEFINIT.
                 </span>
               </h1>
-
-              {/* 🚀 REPARAT: Schimbat din Link în Button cu handler controlat pentru smooth scroll */}
               <button
                 onClick={handleScrollToProducts}
                 className="inline-flex items-center gap-3 bg-white text-zinc-900 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full text-[10px] font-black uppercase tracking-widest w-fit shadow-xl hover:bg-zinc-50 transition-colors duration-300"
