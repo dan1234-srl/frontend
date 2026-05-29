@@ -38,10 +38,8 @@ const ShoppingBag = ({
   const { cart, totalPrice, updateQuantity, removeFromCart, syncCart }: any =
     useCart();
 
-  // 🚀 1. STARE PENTRU PRAGUL DINAMIC DE TRANSPORT GRATUIT (Fallback 250)
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(250);
 
-  // 🚀 2. FETCH PRAG TRANSPORT GRATUIT DIN BACKEND
   useEffect(() => {
     const fetchShippingConfig = async () => {
       try {
@@ -50,25 +48,19 @@ const ShoppingBag = ({
         );
         if (response.ok) {
           const data = await response.json();
-          if (data.free_threshold) {
+          if (data.free_threshold)
             setFreeShippingThreshold(Number(data.free_threshold));
-          }
         }
       } catch (error) {
-        console.error(
-          "❌ Eroare la preluarea config-ului de transport:",
-          error,
-        );
+        console.error("Eroare la preluarea config-ului:", error);
       }
     };
     fetchShippingConfig();
   }, []);
 
-  // 🚀 3. SINCRONIZARE PREȚURI ȘI STOCURI LA DESCHIDEREA COȘULUI
   useEffect(() => {
     const synchronizeCartPrices = async () => {
       if (!isOpen || cart.length === 0) return;
-
       try {
         const response = await fetch(
           `${API_BASE_URL}/api/v1/orders/validate-stock`,
@@ -78,23 +70,17 @@ const ShoppingBag = ({
             body: JSON.stringify(cart.map((item: any) => ({ sku: item.sku }))),
           },
         );
-
         if (response.ok) {
           const freshData = await response.json();
-          // Actualizăm contextul global cu datele proaspete (Preț cu adaos și Stoc)
-          if (typeof syncCart === "function") {
-            syncCart(freshData);
-          }
+          if (typeof syncCart === "function") syncCart(freshData);
         }
       } catch (error) {
-        console.error("❌ Eroare la sincronizarea live a coșului:", error);
+        console.error("Eroare la sincronizare:", error);
       }
     };
-
     synchronizeCartPrices();
-  }, [isOpen]); // Se execută de fiecare dată când isOpen devine true
+  }, [isOpen]);
 
-  // Calcule pentru bara de transport gratuit bazate pe valoarea dinamică din backend
   const remainingForFreeShipping = Math.max(
     freeShippingThreshold - totalPrice,
     0,
@@ -104,12 +90,8 @@ const ShoppingBag = ({
     100,
   );
 
-  /**
-   * Validare Voucher prin API
-   */
   const handleApplyVoucher = async () => {
     if (!promoCode.trim() || cart.length === 0) return;
-
     setIsValidating(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/vouchers/validate`, {
@@ -121,14 +103,12 @@ const ShoppingBag = ({
             product_id: item.id,
             category_id: item.category_id,
             brand_name: item.brand_name || "",
-            price: Number(item.price), // Acum trimite mereu prețul corect sincronizat
+            price: Number(item.price),
             quantity: Number(item.quantity),
           })),
         }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setAppliedDiscount({
           code: data.code,
@@ -138,57 +118,37 @@ const ShoppingBag = ({
         toast.success(`Reducere aplicată: -${data.discount_amount} RON`);
         setPromoCode("");
       } else {
-        const errorMsg =
-          typeof data.detail === "string"
-            ? data.detail
-            : "Voucherul nu poate fi aplicat acestui coș";
-        toast.error(errorMsg);
+        toast.error(
+          typeof data.detail === "string" ? data.detail : "Cod invalid",
+        );
       }
-    } catch (error) {
-      toast.error("Eroare de conexiune la server");
+    } catch {
+      toast.error("Eroare de conexiune");
     } finally {
       setIsValidating(false);
     }
   };
 
-  const finalTotal = useMemo(() => {
-    return Math.max(totalPrice - (appliedDiscount?.amount || 0), 0);
-  }, [totalPrice, appliedDiscount]);
+  const finalTotal = useMemo(
+    () => Math.max(totalPrice - (appliedDiscount?.amount || 0), 0),
+    [totalPrice, appliedDiscount],
+  );
+  const removeVoucher = () => setAppliedDiscount(null);
 
-  const removeVoucher = () => {
-    setAppliedDiscount(null);
-    toast.info("Voucher eliminat");
-  };
-
-  /**
-   * Imagine URL Helper
-   */
   const getImageUrl = (imageInput: any) => {
     if (!imageInput) return "";
-    let data = imageInput;
-    if (typeof data === "string") {
-      if (data.startsWith("http")) return data;
-      try {
-        data = JSON.parse(data);
-        if (typeof data === "string") data = JSON.parse(data);
-      } catch (e) {
-        return "";
-      }
+    try {
+      const data =
+        typeof imageInput === "string" ? JSON.parse(imageInput) : imageInput;
+      const source = data?.main || (Array.isArray(data) ? data[0] : data);
+      return source?.medium || source?.small || source || "";
+    } catch {
+      return "";
     }
-    const source = data?.main || (Array.isArray(data) ? data[0] : data);
-    let rawUrl =
-      source?.medium ||
-      source?.small ||
-      source?.large ||
-      (typeof source === "string" ? source : "");
-    if (!rawUrl) return "";
-
-    return rawUrl;
   };
 
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "unset";
+    document.body.style.overflow = isOpen ? "hidden" : "unset";
   }, [isOpen]);
 
   return (
@@ -201,169 +161,142 @@ const ShoppingBag = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
             />
 
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 200 }}
-              className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[460px] flex-col bg-white shadow-2xl"
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[420px] flex-col bg-white shadow-2xl"
             >
-              <header className="flex items-center justify-between px-8 py-8 border-b border-zinc-100 bg-white">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]">
-                    Coșul tău
-                  </p>
-                  <p className="heading-serif text-3xl tracking-tighter text-[var(--dark-amethyst)]">
-                    Shopping Bag
-                  </p>
-                </div>
+              {/* Header */}
+              <header className="flex items-center justify-between px-6 py-6 bg-white">
+                <h2 className="text-sm font-semibold text-zinc-900 tracking-wide">
+                  Coșul tău
+                </h2>
                 <button
                   onClick={onClose}
-                  className="h-10 w-10 flex items-center justify-center rounded-full border border-zinc-100 hover:bg-[var(--dark-amethyst)] hover:text-white transition-all text-[var(--dark-amethyst)]"
+                  className="p-2 rounded-full hover:bg-zinc-100 transition-colors text-zinc-500"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </header>
 
+              {/* Progress Bar Transport */}
               {cart.length > 0 && (
-                <div className="bg-zinc-50/50 px-8 py-5 border-b border-zinc-100">
-                  <div className="mb-3 flex items-center justify-between font-bold uppercase tracking-widest text-[10px]">
-                    <span className="flex items-center gap-2">
-                      <Truck size={14} className="text-[var(--royal-violet)]" />{" "}
+                <div className="px-6 pb-6">
+                  <div className="flex justify-between text-[11px] font-medium text-zinc-500 mb-2">
+                    <span>
                       {remainingForFreeShipping === 0
-                        ? "Livrare Gratuită"
-                        : "Livrare Standard"}
+                        ? "Livrare gratuită activată"
+                        : "Livrare gratuită"}
                     </span>
-                    <span className="text-[var(--royal-violet)] font-black">
+                    <span className="text-zinc-900">
                       {remainingForFreeShipping > 0
-                        ? `${remainingForFreeShipping.toFixed(2)} RON rămași`
-                        : "ACTIV"}
+                        ? `${remainingForFreeShipping.toFixed(0)} RON rămași`
+                        : "GRATUIT"}
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-zinc-200 rounded-full overflow-hidden shadow-inner">
+                  <div className="h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${shippingProgress}%` }}
-                      className="h-full bg-[var(--royal-violet)]"
+                      className="h-full bg-zinc-900"
                     />
                   </div>
                 </div>
               )}
 
-              <div className="flex-1 overflow-y-auto px-8 py-6 luxury-scrollbar">
+              {/* Lista Produse */}
+              <div className="flex-1 overflow-y-auto px-6 py-2">
                 <LayoutGroup>
-                  <motion.div layout className="space-y-8">
-                    <AnimatePresence mode="popLayout">
-                      {cart.length === 0 ? (
-                        <div className="h-64 flex flex-col items-center justify-center text-center gap-4 opacity-40">
-                          <BagIcon
-                            size={40}
-                            className="text-[var(--dark-amethyst)]"
-                          />
-                          <p className="text-xs font-bold uppercase tracking-widest text-[var(--dark-amethyst)]">
-                            Coșul este gol
-                          </p>
-                        </div>
-                      ) : (
-                        cart.map((item: any) => (
-                          <motion.div
-                            layout
-                            key={item.sku}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="flex gap-6 items-center border-b border-zinc-50 pb-6 last:border-none"
-                          >
-                            <div className="aspect-[3/4] w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-50 border border-zinc-100 shadow-sm">
-                              <img
-                                src={getImageUrl(item.image_url)}
-                                className="h-full w-full object-cover"
-                                alt={item.name}
-                                loading="lazy"
-                              />
+                  <motion.div layout className="space-y-6">
+                    {cart.length === 0 ? (
+                      <div className="h-64 flex flex-col items-center justify-center text-zinc-400">
+                        <BagIcon size={48} strokeWidth={1} />
+                        <p className="mt-4 text-xs font-medium uppercase tracking-widest">
+                          Coșul este gol
+                        </p>
+                      </div>
+                    ) : (
+                      cart.map((item: any) => (
+                        <motion.div
+                          layout
+                          key={item.sku}
+                          className="flex gap-4 items-center"
+                        >
+                          <div className="h-20 w-16 bg-zinc-100 rounded-md overflow-hidden shrink-0">
+                            <img
+                              src={getImageUrl(item.image_url)}
+                              className="h-full w-full object-cover"
+                              alt={item.name}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <h4 className="text-xs font-semibold text-zinc-900 line-clamp-1">
+                                {item.name}
+                              </h4>
+                              <button
+                                onClick={() => removeFromCart(item.sku)}
+                                className="text-zinc-300 hover:text-zinc-900"
+                              >
+                                <X size={14} />
+                              </button>
                             </div>
-                            <div className="flex-1 space-y-2">
-                              <div className="flex justify-between items-start gap-2 text-left">
-                                <h4 className="text-[11px] font-black uppercase tracking-tight line-clamp-2 text-[var(--dark-amethyst)]">
-                                  {item.name}
-                                </h4>
+                            <div className="flex justify-between items-center mt-3">
+                              <div className="flex items-center gap-2 border rounded-full px-2 py-0.5">
                                 <button
-                                  onClick={() => removeFromCart(item.sku)}
-                                  className="text-zinc-300 hover:text-red-500 transition-colors"
+                                  onClick={() =>
+                                    updateQuantity(item.sku, item.quantity - 1)
+                                  }
+                                  disabled={item.quantity <= 1}
+                                  className="p-1 disabled:opacity-30"
                                 >
-                                  <Trash2 size={14} />
+                                  <Minus size={10} />
+                                </button>
+                                <span className="text-[10px] font-medium w-4 text-center">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    updateQuantity(item.sku, item.quantity + 1)
+                                  }
+                                  className="p-1"
+                                >
+                                  <Plus size={10} />
                                 </button>
                               </div>
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-3 bg-zinc-50 rounded-full px-2 py-1 border border-zinc-100 shadow-sm">
-                                  <button
-                                    onClick={() =>
-                                      updateQuantity(
-                                        item.sku,
-                                        item.quantity - 1,
-                                      )
-                                    }
-                                    disabled={item.quantity <= 1}
-                                    className="p-1 disabled:opacity-20 text-[var(--dark-amethyst)] hover:scale-110 transition-transform"
-                                  >
-                                    <Minus size={10} />
-                                  </button>
-                                  <span className="text-[11px] font-black w-4 text-center text-[var(--dark-amethyst)]">
-                                    {item.quantity}
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      updateQuantity(
-                                        item.sku,
-                                        item.quantity + 1,
-                                      )
-                                    }
-                                    className="p-1 text-[var(--dark-amethyst)] hover:scale-110 transition-transform"
-                                  >
-                                    <Plus size={10} />
-                                  </button>
-                                </div>
-                                <p className="text-xs font-black text-[var(--dark-amethyst)] tracking-tighter">
-                                  {(item.price * item.quantity).toLocaleString(
-                                    "ro-RO",
-                                    { minimumFractionDigits: 2 },
-                                  )}{" "}
-                                  RON
-                                </p>
-                              </div>
+                              <span className="text-xs font-semibold">
+                                {(item.price * item.quantity).toFixed(2)} RON
+                              </span>
                             </div>
-                          </motion.div>
-                        ))
-                      )}
-                    </AnimatePresence>
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
                   </motion.div>
                 </LayoutGroup>
               </div>
 
+              {/* Footer */}
               {cart.length > 0 && (
-                <div className="p-8 border-t border-zinc-100 space-y-6 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+                <div className="p-6 border-t border-zinc-100 bg-zinc-50/50 space-y-4">
                   {!appliedDiscount ? (
                     <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Tag
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-                          size={14}
-                        />
-                        <input
-                          type="text"
-                          value={promoCode}
-                          onChange={(e) => setPromoCode(e.target.value)}
-                          placeholder="COD PROMOȚIONAL"
-                          className="w-full h-12 pl-10 pr-4 bg-zinc-50 border border-zinc-100 rounded-xl text-[10px] font-black tracking-[0.2em] focus:outline-none focus:border-[var(--royal-violet)] focus:bg-white transition-all uppercase text-[var(--dark-amethyst)]"
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        placeholder="Cod promoțional"
+                        className="flex-1 h-10 px-4 text-xs bg-white border border-zinc-200 rounded-lg focus:ring-1 focus:ring-zinc-900 outline-none uppercase tracking-wide"
+                      />
                       <button
                         onClick={handleApplyVoucher}
-                        disabled={isValidating || !promoCode.trim()}
-                        className="px-6 h-12 bg-[var(--dark-amethyst)] text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 shadow-lg shadow-indigo-900/10"
+                        disabled={isValidating || !promoCode}
+                        className="px-4 h-10 bg-zinc-900 text-white text-xs font-medium rounded-lg hover:bg-black transition-colors"
                       >
                         {isValidating ? (
                           <Loader2 size={16} className="animate-spin" />
@@ -373,44 +306,24 @@ const ShoppingBag = ({
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between p-4 bg-indigo-50/50 border border-[var(--royal-violet)]/10 rounded-xl animate-in fade-in zoom-in duration-500">
-                      <div className="flex items-center gap-3">
-                        <Tag size={14} className="text-[var(--royal-violet)]" />
-                        <span className="text-[10px] font-black uppercase text-[var(--royal-violet)] tracking-widest">
-                          {appliedDiscount.code} (-{appliedDiscount.amount} RON)
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-between px-4 py-2 bg-white border border-zinc-200 rounded-lg">
+                      <span className="text-xs font-medium text-zinc-900">
+                        {appliedDiscount.code}
+                      </span>
                       <button
                         onClick={removeVoucher}
-                        className="h-8 w-8 flex items-center justify-center rounded-full bg-white text-zinc-400 hover:text-red-500 transition-colors shadow-sm"
+                        className="text-zinc-500 hover:text-red-500"
                       >
                         <X size={14} />
                       </button>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-end border-b border-zinc-50 pb-4">
-                    <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
-                      Total de plată
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-xs text-zinc-500">Total</span>
+                    <span className="text-xl font-semibold text-zinc-900">
+                      {finalTotal.toFixed(2)} RON
                     </span>
-                    <div className="text-right">
-                      {appliedDiscount && (
-                        <p className="text-[10px] font-bold text-zinc-300 line-through mb-[-2px]">
-                          {totalPrice.toLocaleString("ro-RO", {
-                            minimumFractionDigits: 2,
-                          })}{" "}
-                          RON
-                        </p>
-                      )}
-                      <p className="text-4xl heading-serif font-medium text-[var(--dark-amethyst)] tracking-tighter">
-                        {finalTotal.toLocaleString("ro-RO", {
-                          minimumFractionDigits: 2,
-                        })}{" "}
-                        <span className="text-xs font-sans not-italic font-black">
-                          RON
-                        </span>
-                      </p>
-                    </div>
                   </div>
 
                   <button
@@ -418,17 +331,9 @@ const ShoppingBag = ({
                       onClose();
                       setTimeout(() => setCheckoutOpen(true), 300);
                     }}
-                    className="relative h-16 w-full text-white rounded-2xl overflow-hidden transition-all shadow-2xl group active:scale-[0.98] border-none outline-none"
-                    style={{ background: "var(--primary-gradient)" }}
+                    className="w-full h-12 bg-zinc-900 text-white text-xs font-semibold rounded-lg hover:bg-zinc-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                   >
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative flex items-center justify-center gap-4 font-black uppercase text-[11px] tracking-[0.5em]">
-                      Checkout{" "}
-                      <ArrowRight
-                        size={18}
-                        className="group-hover:translate-x-2 transition-transform duration-300"
-                      />
-                    </div>
+                    Finalizează Comanda <ArrowRight size={14} />
                   </button>
                 </div>
               )}
