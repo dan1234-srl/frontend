@@ -120,22 +120,26 @@ const CollectionsAdmin = () => {
   }, [searchQuery]);
 
   // 🚀 LOGICĂ NOUĂ: REORDONARE COLECȚII (Categorii)
+  // 🚀 REORDONARE COLECȚII (MUTĂ CATEGORIILE ÎNTRE ELE)
   const handleReorderCollections = async (
     index: number,
     direction: "up" | "down",
   ) => {
     const newCollections = [...collections];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    // Verificăm limitele
     if (targetIndex < 0 || targetIndex >= newCollections.length) return;
 
-    // Swap rapid in UI
+    // Interschimbăm elementele vizual instantaneu
     [newCollections[index], newCollections[targetIndex]] = [
       newCollections[targetIndex],
       newCollections[index],
     ];
+
     setCollections(newCollections);
 
-    // Save on backend
+    // Trimitem noua ordine la backend
     try {
       await fetch(`${API_BASE_URL}/api/v1/collections/reorder-collections`, {
         method: "PUT",
@@ -143,7 +147,8 @@ const CollectionsAdmin = () => {
         body: JSON.stringify({ ordered_collections: newCollections }),
         credentials: "include",
       });
-    } catch {
+      toast({ title: "Ordine salvată!" });
+    } catch (err) {
       toast({ variant: "destructive", title: "Eroare la salvarea ordinii" });
     }
   };
@@ -274,15 +279,15 @@ const CollectionsAdmin = () => {
                 onClick={() => setSelectedCollection(type)}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {/* Săgeți Sus/Jos pentru Colecții */}
-                  <div className="flex flex-col gap-0.5 shrink-0">
+                  {/* SĂGEȚI SUS/JOS PENTRU COLECȚII */}
+                  <div className="flex flex-col gap-0.5 shrink-0 mr-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleReorderCollections(idx, "up");
                       }}
                       disabled={idx === 0}
-                      className="p-1 rounded bg-white/50 text-current opacity-60 hover:opacity-100 disabled:opacity-20"
+                      className="p-1 rounded bg-black/5 text-current opacity-60 hover:opacity-100 disabled:opacity-20"
                     >
                       <ArrowUp size={10} />
                     </button>
@@ -292,11 +297,12 @@ const CollectionsAdmin = () => {
                         handleReorderCollections(idx, "down");
                       }}
                       disabled={idx === collections.length - 1}
-                      className="p-1 rounded bg-white/50 text-current opacity-60 hover:opacity-100 disabled:opacity-20"
+                      className="p-1 rounded bg-black/5 text-current opacity-60 hover:opacity-100 disabled:opacity-20"
                     >
                       <ArrowDown size={10} />
                     </button>
                   </div>
+
                   <span className="font-bold text-sm tracking-wide truncate">
                     {type}
                   </span>
@@ -307,7 +313,11 @@ const CollectionsAdmin = () => {
                     e.stopPropagation();
                     handleDeleteCollection(type);
                   }}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ml-2 ${selectedCollection === type ? "hover:bg-white/20 text-white" : "hover:bg-red-100 text-zinc-400 hover:text-red-500"}`}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ml-2 ${
+                    selectedCollection === type
+                      ? "hover:bg-white/20 text-white"
+                      : "hover:bg-red-100 text-zinc-400 hover:text-red-500"
+                  }`}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -315,7 +325,7 @@ const CollectionsAdmin = () => {
             ))}
             {collections.length === 0 && (
               <p className="text-xs text-zinc-400 text-center py-4 italic">
-                Nu există colecții.
+                Nu există nicio colecție.
               </p>
             )}
           </div>
