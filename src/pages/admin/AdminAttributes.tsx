@@ -56,6 +56,12 @@ const AdminAttributes = () => {
   const [usageData, setUsageData] = useState<any>(null);
   const [isUsageModalOpen, setIsUsageModalOpen] = useState(false);
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   const fetchAttributes = useCallback(async () => {
     try {
       setLoading(true);
@@ -361,45 +367,57 @@ const AdminAttributes = () => {
         </div>
 
         {/* PAGINATION FOOTER */}
-        {!loading && totalPages > 1 && (
-          <footer className="p-8 bg-zinc-50 border-t flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase text-zinc-400">
-              Total {totalItems} atribute detectate
+        {totalPages > 1 && (
+          <footer className="p-8 bg-zinc-50/50 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
+              Afișate {(currentPage - 1) * itemsPerPage + 1}-
+              {Math.min(currentPage * itemsPerPage, totalItems)} din{" "}
+              {totalItems} atribute
             </span>
+
             <div className="flex items-center gap-2">
               <button
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="p-3 bg-white rounded-xl border hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all"
+                onClick={() => handlePageChange(currentPage - 1)}
+                className="p-3 bg-white rounded-xl border border-zinc-200 hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all shadow-sm"
               >
                 <ChevronLeft size={16} />
               </button>
+
               <div className="flex gap-1">
-                {[...Array(totalPages)]
-                  .map((_, i) => (
+                {/* Generăm butoane pentru pagini ( maxim 5 butoane vizibile ) */}
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  // Afișăm paginile din vecinătatea paginii curente
+                  if (pageNum < currentPage - 2 || pageNum > currentPage + 2)
+                    return null;
+
+                  return (
                     <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${currentPage === i + 1 ? "text-white shadow-lg" : "text-zinc-400 bg-white hover:bg-zinc-100"}`}
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
+                        currentPage === pageNum
+                          ? "text-white shadow-lg"
+                          : "text-zinc-400 bg-white hover:bg-zinc-100 border border-zinc-100"
+                      }`}
                       style={{
                         background:
-                          currentPage === i + 1
+                          currentPage === pageNum
                             ? "var(--primary-gradient)"
                             : undefined,
                       }}
                     >
-                      {i + 1}
+                      {pageNum}
                     </button>
-                  ))
-                  .slice(
-                    Math.max(0, currentPage - 3),
-                    Math.min(totalPages, currentPage + 2),
-                  )}
+                  );
+                })}
               </div>
+
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="p-3 bg-white rounded-xl border hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all"
+                onClick={() => handlePageChange(currentPage + 1)}
+                className="p-3 bg-white rounded-xl border border-zinc-200 hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all shadow-sm"
               >
                 <ChevronRight size={16} />
               </button>
