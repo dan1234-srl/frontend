@@ -76,8 +76,6 @@ const Index = () => {
 
         {/* Toate produsele - accordion */}
         <AllProductsAccordion />
-
-        <CategoryShowcase />
       </main>
 
       <NewsletterPopup />
