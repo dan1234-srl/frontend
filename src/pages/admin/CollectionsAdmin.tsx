@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   PackageOpen,
-  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,7 +26,7 @@ const CollectionsAdmin = () => {
   );
   const [products, setProducts] = useState<any[]>([]);
 
-  // 🚀 Paginare (Client-side pe lista returnată de backend)
+  // Paginare
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const totalPages = Math.ceil(products.length / itemsPerPage);
@@ -41,7 +40,7 @@ const CollectionsAdmin = () => {
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
 
-  // Căutare Inteligentă
+  // Stări Căutare
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -81,7 +80,7 @@ const CollectionsAdmin = () => {
       );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
-      setCurrentPage(1); // Reset paginare la schimbare colecție
+      setCurrentPage(1);
     } catch {
       toast({
         variant: "destructive",
@@ -98,7 +97,7 @@ const CollectionsAdmin = () => {
     if (selectedCollection) fetchProducts(selectedCollection);
   }, [selectedCollection]);
 
-  // Căutare Debounced
+  // 🚀 Căutare Inteligentă via Meilisearch Endpoint
   useEffect(() => {
     const handler = setTimeout(async () => {
       if (searchQuery.length < 2) {
@@ -107,12 +106,15 @@ const CollectionsAdmin = () => {
       }
       setIsSearching(true);
       try {
+        // Endpoint-ul Meilisearch actualizat cu parametrii tăi
         const res = await fetch(
-          `${API_BASE_URL}/api/v1/products/?search=${encodeURIComponent(searchQuery)}&limit=5`,
+          `${API_BASE_URL}/api/v1/products/search/live?q=${encodeURIComponent(searchQuery)}&limit=5&is_admin_view=true`,
           { credentials: "include" },
         );
         const data = await res.json();
-        setSearchResults(data.items || (Array.isArray(data) ? data : []));
+        setSearchResults(data.items || []);
+      } catch (err) {
+        console.error("Search error", err);
       } finally {
         setIsSearching(false);
       }
@@ -120,7 +122,7 @@ const CollectionsAdmin = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // --- ACȚIUNI API ---
+  // --- ACȚIUNI ---
   const handleAddProduct = async (product: any) => {
     const targetCollection = selectedCollection || newCollectionName.trim();
     if (!targetCollection) return;
@@ -136,25 +138,32 @@ const CollectionsAdmin = () => {
           }),
         },
       );
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Eroare la adăugare");
+
       toast({
         title: "Adăugat",
         description: `${product.name} inclus în ${targetCollection}`,
       });
       setSearchQuery("");
       setSearchResults([]);
+
       if (!collections.includes(targetCollection)) {
         await fetchCollections();
         setSelectedCollection(targetCollection);
       } else {
         await fetchProducts(targetCollection);
       }
-    } catch {
-      toast({ variant: "destructive", title: "Eroare la adăugare" });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: err.message,
+      });
     }
   };
 
   const handleRename = async () => {
+    if (!selectedCollection || !renameValue.trim()) return;
     try {
       await fetch(
         `${API_BASE_URL}/api/v1/collections/${selectedCollection}/rename`,
