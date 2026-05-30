@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Header from "../components/header/Header";
 import Footer from "../components/footer/Footer";
 import HomeHero from "../components/content/HomeHero";
@@ -6,7 +7,37 @@ import CategoryShowcase from "../components/content/CategoryShowcase";
 import AllProductsAccordion from "../components/content/AllProductsAccordion";
 import NewsletterPopup from "../components/marketing/NewsletterPopup";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
+
 const Index = () => {
+  const [collections, setCollections] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 1. Preluăm lista de colecții dinamice de la backend
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/v1/collections/`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCollections(Array.isArray(data) ? data : []);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Eroare la preluarea colecțiilor:", err);
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Helper pentru a transforma slug-ul (ex: "top-sales") în titlu frumos ("Top Sales")
+  const formatTitle = (slug: string) => {
+    const parts = slug.replace(/-/g, " ").split(" ");
+    return {
+      first: parts[0].charAt(0).toUpperCase() + parts[0].slice(1),
+      rest: parts.slice(1).join(" "),
+    };
+  };
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden flex flex-col">
       <Header />
@@ -19,32 +50,47 @@ const Index = () => {
       <main className="flex-1 w-full relative">
         <HomeHero />
 
-        {/* Favorite */}
+        {/* 2. SECȚIUNI STATICE (Dacă mai ai nevoie de ele - le poți muta în backend sau șterge) */}
         <div className="relative z-10 w-full pt-1 md:pt-4 pb-4 md:pb-8">
           <ProductCarousel
             title={
-              <>
-                Favoritele <span className="italic font-light text-zinc-500">comunității</span>
-              </> as any
+              (
+                <>
+                  Favoritele{" "}
+                  <span className="italic font-light text-zinc-500">
+                    comunității
+                  </span>
+                </>
+              ) as any
             }
             subtitle="Top Wishlist EVEM"
             sort="favorites"
           />
         </div>
 
-        {/* Bestsellers */}
-        <div className="relative z-10 w-full pb-8 md:pb-12">
-          <ProductCarousel
-            title={
-              <>
-                Cele mai{" "}
-                <span className="italic font-light text-zinc-500">vândute</span>
-              </> as any
-            }
-            subtitle="Bestsellers EVEM"
-            sort="best-sales"
-          />
-        </div>
+        {/* 3. SECȚIUNI DINAMICE (Generate automat) */}
+        {!isLoading &&
+          collections.map((colType) => {
+            const titleParts = formatTitle(colType);
+            return (
+              <div key={colType} className="relative z-10 w-full pb-8 md:pb-12">
+                <ProductCarousel
+                  title={
+                    (
+                      <>
+                        {titleParts.first}{" "}
+                        <span className="italic font-light text-zinc-500">
+                          {titleParts.rest}
+                        </span>
+                      </>
+                    ) as any
+                  }
+                  subtitle={`${titleParts.first} ${titleParts.rest} EVEM`}
+                  collectionType={colType} // Trimit tipul către componentă
+                />
+              </div>
+            );
+          })}
 
         {/* Toate produsele - accordion */}
         <AllProductsAccordion />

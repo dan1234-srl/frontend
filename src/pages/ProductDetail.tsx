@@ -85,8 +85,6 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-white relative">
-      {/* 🚀 BUTON BACK "ATOMIC" - Trebuie să apară acum */}
-
       <Navbar />
 
       {loading ? (
@@ -128,10 +126,14 @@ const ProductDetail = () => {
           <div className="mt-24 border-t border-zinc-100 pt-16">
             <ProductReviews reviews={product.reviews || []} />
           </div>
+
           <div className="mt-20">
+            {/* 🚀 AICI SE APELEAZĂ MODUL VECHI AL CARUSELULUI */}
+            {/* Fiindcă îi trimitem 'categorySlug' și NU 'collectionType', el va afișa perfect produsele similare */}
             <ProductCarousel
               categorySlug={product.category?.slug}
               title="Produse Similare"
+              subtitle="Recomandări din aceeași categorie"
             />
           </div>
         </main>

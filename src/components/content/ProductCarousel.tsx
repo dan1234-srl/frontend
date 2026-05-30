@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Star, Info, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -20,8 +20,8 @@ interface ProductCarouselProps {
   title?: React.ReactNode;
   subtitle?: string;
   sort?: string;
-
   limit?: number;
+  collectionType?: string; // 🚀 NOU: Prop pentru colecțiile dinamice
 }
 
 const ProductCarousel = ({
@@ -30,6 +30,7 @@ const ProductCarousel = ({
   subtitle,
   sort,
   limit = 20,
+  collectionType,
 }: ProductCarouselProps) => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +39,25 @@ const ProductCarousel = ({
     const fetchCarouselProducts = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
-        params.set("limit", String(limit));
-        if (categorySlug) params.set("category_slug", categorySlug);
-        if (sort) params.set("sort", sort);
-        const url = `${API_BASE_URL}/api/v1/products/?${params.toString()}`;
+        let url = "";
+
+        // 🚀 LOGICĂ SMART DE FETCH
+        if (collectionType) {
+          // 1. Dacă vine din Index.tsx -> Fetch din tabela `product_collections`
+          url = `${API_BASE_URL}/api/v1/collections/${collectionType}/products`;
+        } else {
+          // 2. Dacă vine din ProductDetail.tsx -> Fetch produse din aceeași categorie
+          const params = new URLSearchParams();
+          params.set("limit", String(limit));
+          if (categorySlug) params.set("category_slug", categorySlug);
+          if (sort) params.set("sort", sort);
+          url = `${API_BASE_URL}/api/v1/products/?${params.toString()}`;
+        }
+
         const res = await fetch(url, { credentials: "include" });
         const data = await res.json();
+
+        // Asigurare că setăm un array
         const productList = data.items || (Array.isArray(data) ? data : []);
         setProducts(productList);
       } catch (err) {
@@ -55,8 +68,7 @@ const ProductCarousel = ({
     };
 
     fetchCarouselProducts();
-  }, [categorySlug, sort, limit]);
-
+  }, [categorySlug, sort, limit, collectionType]);
 
   const getImageUrl = (p: any) => {
     const imgData = p.image_url;
@@ -84,7 +96,6 @@ const ProductCarousel = ({
 
   return (
     <section className="w-full py-16 px-4 md:px-10 max-w-[1920px] mx-auto overflow-hidden text-left">
-      {/* HEADER CARUSEL */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         <div className="space-y-2">
           <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400 block">
@@ -103,7 +114,7 @@ const ProductCarousel = ({
         </div>
 
         <Link
-          to="/shop"
+          to={categorySlug ? `/category/${categorySlug}` : "/shop"}
           className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-zinc-900 hover:text-zinc-500 transition-colors"
         >
           Explorează Tot
@@ -127,7 +138,6 @@ const ProductCarousel = ({
             return (
               <CarouselItem
                 key={p.id || p.sku}
-                // XL: 12.5% = 8 produse | LG: 16.6% = 6 produse | MD: 25% = 4 produse | Mobile: 50% = 2 produse
                 className="basis-1/2 md:basis-1/4 lg:basis-1/6 xl:basis-[12.5%] pl-3"
               >
                 <motion.div
@@ -148,8 +158,6 @@ const ProductCarousel = ({
                       if (imgMedium) prefetchImage(imgMedium);
                     }}
                   >
-
-                    {/* Media Container - Aspect ratio mai strâns pentru a permite 8 pe rând */}
                     <div className="relative aspect-[3/4] bg-zinc-50 overflow-hidden mb-4 border border-zinc-100 transition-all duration-500 group-hover/card:shadow-md">
                       <SmartImage
                         src={imgMedium}
@@ -159,7 +167,6 @@ const ProductCarousel = ({
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
                       />
 
-                      {/* Stock Badges */}
                       {p.stock_quantity <= 0 ? (
                         <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-10">
                           <span className="bg-zinc-900 text-white text-[7px] font-black uppercase tracking-widest px-3 py-2">
@@ -175,7 +182,6 @@ const ProductCarousel = ({
                       ) : null}
                     </div>
 
-                    {/* Content Container */}
                     <div className="space-y-3 px-1">
                       <div className="space-y-1">
                         <span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest block truncate">
@@ -210,7 +216,6 @@ const ProductCarousel = ({
           })}
         </CarouselContent>
 
-        {/* SAGETI NAVIGARE - Repoziționate mai discret pentru a nu bloca vizibilitatea celor 8 produse */}
         <div className="hidden xl:block">
           <CarouselPrevious className="absolute -left-5 top-1/2 -translate-y-1/2 h-10 w-10 border-zinc-100 opacity-0 group-hover:opacity-100 transition-all hover:bg-zinc-900 hover:text-white" />
           <CarouselNext className="absolute -right-5 top-1/2 -translate-y-1/2 h-10 w-10 border-zinc-100 opacity-0 group-hover:opacity-100 transition-all hover:bg-zinc-900 hover:text-white" />
