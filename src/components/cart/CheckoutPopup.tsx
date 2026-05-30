@@ -1080,7 +1080,8 @@ const CheckoutPopup = ({
                           </div>
 
                           <div className="grid grid-cols-4 gap-3">
-                            <div className="col-span-3">
+                            {/* Stradă pe 2 coloane */}
+                            <div className="col-span-2">
                               <PremiumInput
                                 label="Stradă (fără număr)"
                                 value={formData.street}
@@ -1092,6 +1093,7 @@ const CheckoutPopup = ({
                                 onBlur={() => handleFieldBlur("street")}
                               />
                             </div>
+                            {/* Număr pe 1 coloană */}
                             <div className="col-span-1">
                               <PremiumInput
                                 label="Nr."
@@ -1107,14 +1109,13 @@ const CheckoutPopup = ({
                                 onBlur={() => handleFieldBlur("houseNumber")}
                               />
                             </div>
-                            <div className="sm:col-span-1">
-                              {/* INPUT NOU PENTRU COD POȘTAL */}
+                            {/* Cod poștal pe 1 coloană */}
+                            <div className="col-span-1">
                               <PremiumInput
                                 label="Cod poștal"
                                 value={formData.postalCode}
                                 error={errors.postalCode}
-                                autoComplete="postal-code"
-                                placeholder="Ex: 012345"
+                                placeholder="012345"
                                 onChange={(e: any) =>
                                   handleInputChange(
                                     "postalCode",
@@ -1125,7 +1126,6 @@ const CheckoutPopup = ({
                               />
                             </div>
                           </div>
-
                           {addressMode === "new" && user && (
                             <div className="flex items-center gap-2.5 bg-zinc-50 px-3 py-2.5 rounded-lg border border-zinc-100">
                               <Checkbox
