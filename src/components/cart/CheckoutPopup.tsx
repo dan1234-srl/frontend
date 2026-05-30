@@ -383,9 +383,10 @@ const CheckoutPopup = ({
     lastName: "",
     phone: "",
     street: "",
+    houseNumber: "", // <--- Adaugă asta
     city: "",
     county: "",
-    postalCode: "", // Câmp nou adăugat
+    postalCode: "",
   });
 
   const debouncedSearch = useDebounce(lockerSearch, 280);
@@ -553,7 +554,7 @@ const CheckoutPopup = ({
       msg = "Min. 2 caractere";
     else if (field === "street" && val.length < 6) msg = "Adresă prea scurtă";
     else if (field === "postalCode" && val.length < 4) msg = "Cod invalid";
-
+    else if (field === "houseNumber" && !val) msg = "Obligatoriu";
     setErrors((prev) =>
       msg
         ? { ...prev, [field]: msg }
@@ -689,6 +690,7 @@ const CheckoutPopup = ({
             shippingMethod === "courier"
               ? {
                   street: formData.street.trim(),
+                  house_number: formData.houseNumber.trim(), // <--- Trimite-l aici
                   city: formData.city.trim(),
                   county: formData.county.trim(),
                   postal_code: formData.postalCode.trim(),
@@ -1077,18 +1079,32 @@ const CheckoutPopup = ({
                             />
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="sm:col-span-2">
+                          <div className="grid grid-cols-4 gap-3">
+                            <div className="col-span-3">
                               <PremiumInput
-                                label="Stradă, Număr, Bloc, Ap."
+                                label="Stradă (fără număr)"
                                 value={formData.street}
                                 error={errors.street}
-                                autoComplete="street-address"
-                                placeholder="Ex: Str. Mihai Viteazul, Nr. 12"
+                                placeholder="Ex: Str. Mihai Viteazul"
                                 onChange={(e: any) =>
                                   handleInputChange("street", e.target.value)
                                 }
                                 onBlur={() => handleFieldBlur("street")}
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <PremiumInput
+                                label="Nr."
+                                value={formData.houseNumber}
+                                error={errors.houseNumber}
+                                placeholder="12"
+                                onChange={(e: any) =>
+                                  handleInputChange(
+                                    "houseNumber",
+                                    e.target.value,
+                                  )
+                                }
+                                onBlur={() => handleFieldBlur("houseNumber")}
                               />
                             </div>
                             <div className="sm:col-span-1">
