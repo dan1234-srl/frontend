@@ -490,10 +490,11 @@ const CheckoutPopup = ({
       setFormData((prev) => ({
         ...prev,
         street: addr.street || "",
+        // ✅ AICI ESTE FIX-UL: Adaugă houseNumber și postalCode
+        houseNumber: addr.house_number || "",
+        postalCode: addr.postal_code || addr.zip || "",
         city: addr.city || "",
         county: addr.county || "",
-        postalCode:
-          addr.postalCode || addr.postal_code || addr.zip || addr.Zip || "",
       }));
       setAddressMode("select");
       setErrors({});
