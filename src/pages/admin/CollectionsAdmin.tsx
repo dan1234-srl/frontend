@@ -34,9 +34,17 @@ const CollectionsAdmin = () => {
       const res = await fetch(`${API_BASE_URL}/api/v1/collections/`, {
         credentials: "include",
       });
+
+      // Verificăm dacă răspunsul este OK înainte să facem .json()
+      if (!res.ok) {
+        throw new Error("Eroare server");
+      }
+
       const data = await res.json();
-      setCollections(data);
+      // 🚀 REPARAT: Ne asigurăm că setăm un array, chiar dacă data e invalid
+      setCollections(Array.isArray(data) ? data : []);
     } catch (err) {
+      setCollections([]); // Resetăm la gol ca să nu crape aplicația
       toast({
         variant: "destructive",
         title: "Eroare",
