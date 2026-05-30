@@ -4,10 +4,10 @@ import {
   FolderTree,
   Trash2,
   Edit2,
-  Plus,
   ArrowUp,
   ArrowDown,
   Search,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,7 +27,28 @@ const CollectionsAdmin = () => {
   const [newCollectionName, setNewCollectionName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
-  const [newProductId, setNewProductId] = useState("");
+
+  // Stări pentru Căutarea Inteligentă
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Funcție utilitară pentru extragerea corectă a imaginii
+  const getImageUrl = (p: any) => {
+    try {
+      let media = p.image_url;
+      if (typeof media === "string" && media.trim().startsWith("{")) {
+        media = JSON.parse(media);
+      }
+      return (
+        media?.main?.small ||
+        media?.main?.medium ||
+        (typeof media === "string" ? media : null)
+      );
+    } catch {
+      return null;
+    }
+  };
 
   const fetchCollections = async () => {
     try {
@@ -35,16 +56,12 @@ const CollectionsAdmin = () => {
         credentials: "include",
       });
 
-      // Verificăm dacă răspunsul este OK înainte să facem .json()
-      if (!res.ok) {
-        throw new Error("Eroare server");
-      }
+      if (!res.ok) throw new Error("Eroare server");
 
       const data = await res.json();
-      // 🚀 REPARAT: Ne asigurăm că setăm un array, chiar dacă data e invalid
       setCollections(Array.isArray(data) ? data : []);
     } catch (err) {
-      setCollections([]); // Resetăm la gol ca să nu crape aplicația
+      setCollections([]);
       toast({
         variant: "destructive",
         title: "Eroare",
@@ -60,12 +77,12 @@ const CollectionsAdmin = () => {
         { credentials: "include" },
       );
       const data = await res.json();
-      setProducts(data);
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu s-au putut încărca produsele.",
+        description: "Nu s-au putut încărca produsele din colecție.",
       });
     }
   };
@@ -83,6 +100,31 @@ const CollectionsAdmin = () => {
       setProducts([]);
     }
   }, [selectedCollection]);
+
+  // 🚀 Căutare Inteligentă (Debounced)
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/products/?search=${searchQuery}&limit=5`,
+          { credentials: "include" },
+        );
+        const data = await res.json();
+        setSearchResults(data.items || (Array.isArray(data) ? data : []));
+      } catch (err) {
+        console.error("Search error", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   // --- ACȚIUNI ---
 
@@ -134,11 +176,7 @@ const CollectionsAdmin = () => {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProductId.trim()) return;
-
-    // Dacă utilizatorul creează o colecție "din zbor" tastând un nume nou la care adaugă primul produs
+  const selectProductToAdd = async (product: any) => {
     const targetCollection = selectedCollection || newCollectionName.trim();
     if (!targetCollection) {
       toast({
@@ -156,7 +194,7 @@ const CollectionsAdmin = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            product_id: newProductId.trim(),
+            product_id: product.id,
             position: products.length,
           }),
         },
@@ -167,8 +205,13 @@ const CollectionsAdmin = () => {
         throw new Error(errorData.detail || "Eroare la adăugare");
       }
 
-      toast({ title: "Produs Adăugat" });
-      setNewProductId("");
+      toast({
+        title: "Produs Adăugat",
+        description: `${product.name} a fost adăugat.`,
+      });
+      setSearchQuery("");
+      setSearchResults([]);
+
       if (!collections.includes(targetCollection)) {
         fetchCollections();
         setSelectedCollection(targetCollection);
@@ -221,7 +264,7 @@ const CollectionsAdmin = () => {
           body: JSON.stringify({ position: newPos }),
         },
       );
-      fetchProducts(selectedCollection); // Refresh ca să vedem noua ordine
+      fetchProducts(selectedCollection);
     } catch (err) {
       toast({ variant: "destructive", title: "Eroare la reordonare" });
     }
@@ -357,12 +400,13 @@ const CollectionsAdmin = () => {
                   </div>
                 </div>
 
-                {/* Adăugare Produs */}
-                <div className="bg-zinc-50 border border-zinc-100 rounded-2xl p-5">
+                {/* Adăugare Produs cu SEARCH */}
+                <div className="bg-zinc-50 border border-zinc-100 rounded-2xl p-5 relative z-20">
                   <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">
-                    Adaugă Produs în Colecție
+                    Caută și Adaugă Produs
                   </p>
-                  <form onSubmit={handleAddProduct} className="flex gap-3">
+
+                  <div className="relative">
                     <div className="relative flex-1">
                       <Search
                         size={14}
@@ -370,79 +414,130 @@ const CollectionsAdmin = () => {
                       />
                       <input
                         type="text"
-                        value={newProductId}
-                        onChange={(e) => setNewProductId(e.target.value)}
-                        placeholder="Introdu ID-ul UUID al produsului..."
-                        className="w-full bg-white border border-zinc-200 rounded-xl py-3 pl-9 pr-4 text-xs font-semibold outline-none focus:border-[var(--royal-violet)] transition-colors"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Caută după nume sau SKU..."
+                        className="w-full bg-white border border-zinc-200 rounded-xl py-3 pl-9 pr-10 text-xs font-semibold outline-none focus:border-[var(--royal-violet)] transition-colors"
                       />
+                      {isSearching && (
+                        <Loader2
+                          size={14}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--royal-violet)] animate-spin"
+                        />
+                      )}
                     </div>
-                    <button
-                      type="submit"
-                      disabled={!newProductId}
-                      className="px-6 rounded-xl bg-[var(--royal-violet)] text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
-                    >
-                      <Plus size={14} /> Adaugă
-                    </button>
-                  </form>
+
+                    {/* REZULTATE CĂUTARE DROPDOWN */}
+                    {searchResults.length > 0 && searchQuery.length >= 2 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                        {searchResults.map((p) => {
+                          const img = getImageUrl(p);
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => selectProductToAdd(p)}
+                              className="flex items-center gap-3 p-3 hover:bg-zinc-50 cursor-pointer transition-colors border-b border-zinc-50 last:border-0"
+                            >
+                              <div className="size-10 bg-zinc-100 rounded-lg overflow-hidden shrink-0 flex items-center justify-center text-[8px] text-zinc-400">
+                                {img ? (
+                                  <img
+                                    src={img}
+                                    className="w-full h-full object-cover"
+                                    alt=""
+                                  />
+                                ) : (
+                                  "IMG"
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-zinc-900 truncate">
+                                  {p.name}
+                                </p>
+                                <p className="text-[9px] text-zinc-400 font-mono">
+                                  {p.sku}
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-black text-zinc-900 px-2 py-1 bg-zinc-100 rounded-md">
+                                {p.price.toLocaleString()} RON
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Lista de Produse */}
+                {/* Lista de Produse Selectate */}
                 {selectedCollection && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 relative z-10">
                     <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pl-1">
                       Produse în {selectedCollection} ({products.length})
                     </p>
                     <div className="space-y-2">
-                      {products.map((p, idx) => (
-                        <div
-                          key={p.id}
-                          className="flex items-center gap-4 p-3 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-300 transition-all shadow-sm"
-                        >
-                          {/* Poze si Info */}
-                          <div className="size-12 rounded-lg bg-zinc-50 overflow-hidden border border-zinc-100 shrink-0 flex items-center justify-center text-[8px] text-zinc-400">
-                            {/* Ideal aici pui o imagine daca ai: <img src={p.image_url} /> */}
-                            IMG
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-zinc-900 truncate">
-                              {p.name}
-                            </h4>
-                            <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">
-                              {p.id}
-                            </p>
-                          </div>
+                      {products.map((p, idx) => {
+                        const img = getImageUrl(p);
+                        return (
+                          <div
+                            key={p.id}
+                            className="flex items-center gap-4 p-3 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-300 transition-all shadow-sm"
+                          >
+                            {/* Poze si Info */}
+                            <div className="size-12 rounded-lg bg-zinc-50 overflow-hidden border border-zinc-100 shrink-0 flex items-center justify-center text-[8px] text-zinc-400">
+                              {img ? (
+                                <img
+                                  src={img}
+                                  className="w-full h-full object-cover"
+                                  alt=""
+                                />
+                              ) : (
+                                "IMG"
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-zinc-900 truncate">
+                                {p.name}
+                              </h4>
+                              <p className="text-[10px] font-mono text-zinc-500 truncate mt-0.5">
+                                {p.sku}
+                              </p>
+                            </div>
 
-                          {/* Actiuni (Order & Delete) */}
-                          <div className="flex items-center gap-1.5 mr-2">
-                            <div className="flex flex-col gap-0.5">
+                            {/* Actiuni (Order & Delete) */}
+                            <div className="flex items-center gap-1.5 mr-2">
+                              <div className="flex flex-col gap-0.5">
+                                <button
+                                  onClick={() => handleReorder(p.id, idx, "up")}
+                                  disabled={idx === 0}
+                                  className="p-1 rounded-md bg-zinc-50 text-zinc-400 hover:text-zinc-900 disabled:opacity-30"
+                                >
+                                  <ArrowUp size={12} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleReorder(p.id, idx, "down")
+                                  }
+                                  disabled={idx === products.length - 1}
+                                  className="p-1 rounded-md bg-zinc-50 text-zinc-400 hover:text-zinc-900 disabled:opacity-30"
+                                >
+                                  <ArrowDown size={12} />
+                                </button>
+                              </div>
+                              <div className="w-px h-8 bg-zinc-100 mx-2" />
                               <button
-                                onClick={() => handleReorder(p.id, idx, "up")}
-                                disabled={idx === 0}
-                                className="p-1 rounded-md bg-zinc-50 text-zinc-400 hover:text-zinc-900 disabled:opacity-30"
+                                onClick={() => handleRemoveProduct(p.id)}
+                                className="size-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
                               >
-                                <ArrowUp size={12} />
-                              </button>
-                              <button
-                                onClick={() => handleReorder(p.id, idx, "down")}
-                                disabled={idx === products.length - 1}
-                                className="p-1 rounded-md bg-zinc-50 text-zinc-400 hover:text-zinc-900 disabled:opacity-30"
-                              >
-                                <ArrowDown size={12} />
+                                <Trash2 size={14} />
                               </button>
                             </div>
-                            <div className="w-px h-8 bg-zinc-100 mx-2" />
-                            <button
-                              onClick={() => handleRemoveProduct(p.id)}
-                              className="size-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       {products.length === 0 && (
                         <p className="text-center py-8 text-xs font-semibold text-zinc-400 italic bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                          Această colecție nu are niciun produs.
+                          Această colecție nu are niciun produs. Căutați un
+                          produs mai sus pentru a-l adăuga.
                         </p>
                       )}
                     </div>
