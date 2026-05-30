@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   PackageOpen,
+  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,32 +27,30 @@ const CollectionsAdmin = () => {
   );
   const [products, setProducts] = useState<any[]>([]);
 
-  // 🚀 Paginare
+  // 🚀 Paginare (Client-side pe lista returnată de backend)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; // Numărul de produse pe pagină
+  const itemsPerPage = 8;
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const paginatedProducts = products.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
 
-  // Stări pentru UI/Formulare
+  // Stări UI
   const [newCollectionName, setNewCollectionName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
 
-  // Stări pentru Căutarea Inteligentă
+  // Căutare Inteligentă
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Funcție utilitară pentru extragerea corectă a imaginii
   const getImageUrl = (p: any) => {
     try {
       let media = p.image_url;
-      if (typeof media === "string" && media.trim().startsWith("{")) {
+      if (typeof media === "string" && media.trim().startsWith("{"))
         media = JSON.parse(media);
-      }
       return (
         media?.main?.small ||
         media?.main?.medium ||
@@ -67,16 +66,10 @@ const CollectionsAdmin = () => {
       const res = await fetch(`${API_BASE_URL}/api/v1/collections/`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Eroare server");
       const data = await res.json();
       setCollections(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setCollections([]);
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-au putut încărca colecțiile.",
-      });
     }
   };
 
@@ -88,11 +81,12 @@ const CollectionsAdmin = () => {
       );
       const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
-    } catch (err) {
+      setCurrentPage(1); // Reset paginare la schimbare colecție
+    } catch {
       toast({
         variant: "destructive",
         title: "Eroare",
-        description: "Nu s-au putut încărca produsele din colecție.",
+        description: "Nu s-au putut încărca produsele.",
       });
     }
   };
@@ -100,21 +94,13 @@ const CollectionsAdmin = () => {
   useEffect(() => {
     fetchCollections();
   }, []);
-
   useEffect(() => {
-    if (selectedCollection) {
-      fetchProducts(selectedCollection);
-      setRenameValue(selectedCollection);
-      setIsRenaming(false);
-      setCurrentPage(1); // Resetăm pagina când schimbăm colecția
-    } else {
-      setProducts([]);
-    }
+    if (selectedCollection) fetchProducts(selectedCollection);
   }, [selectedCollection]);
 
-  // 🚀 Căutare Inteligentă (Debounced) spre Backend
+  // Căutare Debounced
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
+    const handler = setTimeout(async () => {
       if (searchQuery.length < 2) {
         setSearchResults([]);
         return;
@@ -127,77 +113,17 @@ const CollectionsAdmin = () => {
         );
         const data = await res.json();
         setSearchResults(data.items || (Array.isArray(data) ? data : []));
-      } catch (err) {
-        console.error("Search error", err);
       } finally {
         setIsSearching(false);
       }
     }, 500);
-
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // --- ACȚIUNI ---
-
-  const handleRename = async () => {
-    if (!selectedCollection || !renameValue.trim()) return;
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/collections/${selectedCollection}/rename`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ new_type: renameValue.trim() }),
-        },
-      );
-      if (!res.ok) throw new Error();
-
-      toast({ title: "Succes", description: "Colecția a fost redenumită." });
-      setSelectedCollection(renameValue.trim());
-      fetchCollections();
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-a putut redenumi.",
-      });
-    }
-  };
-
-  const handleDeleteCollection = async (type: string) => {
-    if (
-      !window.confirm(
-        `Sigur ștergi colecția "${type}"? Toate asocierile vor fi pierdute.`,
-      )
-    )
-      return;
-    try {
-      await fetch(`${API_BASE_URL}/api/v1/collections/${type}`, {
-        method: "DELETE",
-      });
-      toast({ title: "Colecție ștearsă" });
-      if (selectedCollection === type) setSelectedCollection(null);
-      fetchCollections();
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Nu s-a putut șterge colecția.",
-      });
-    }
-  };
-
-  const selectProductToAdd = async (product: any) => {
+  // --- ACȚIUNI API ---
+  const handleAddProduct = async (product: any) => {
     const targetCollection = selectedCollection || newCollectionName.trim();
-    if (!targetCollection) {
-      toast({
-        variant: "destructive",
-        title: "Atenție",
-        description: "Selectați sau scrieți un nume de colecție.",
-      });
-      return;
-    }
-
+    if (!targetCollection) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/collections/${targetCollection}/add`,
@@ -210,81 +136,75 @@ const CollectionsAdmin = () => {
           }),
         },
       );
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || "Eroare la adăugare");
-      }
-
+      if (!res.ok) throw new Error();
       toast({
-        title: "Produs Adăugat",
-        description: `${product.name} a fost adăugat.`,
+        title: "Adăugat",
+        description: `${product.name} inclus în ${targetCollection}`,
       });
       setSearchQuery("");
       setSearchResults([]);
-
       if (!collections.includes(targetCollection)) {
         await fetchCollections();
         setSelectedCollection(targetCollection);
       } else {
         await fetchProducts(targetCollection);
-        // Mergem la ultima pagină ca să vedem produsul adăugat
-        setCurrentPage(Math.ceil((products.length + 1) / itemsPerPage));
       }
-    } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: err.message,
-      });
+    } catch {
+      toast({ variant: "destructive", title: "Eroare la adăugare" });
     }
   };
 
-  const handleRemoveProduct = async (productId: string) => {
-    if (!selectedCollection) return;
+  const handleRename = async () => {
     try {
       await fetch(
-        `${API_BASE_URL}/api/v1/collections/${selectedCollection}/remove/${productId}`,
-        { method: "DELETE" },
+        `${API_BASE_URL}/api/v1/collections/${selectedCollection}/rename`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ new_type: renameValue.trim() }),
+        },
       );
-      await fetchProducts(selectedCollection);
-      toast({ title: "Produs eliminat din colecție" });
-
-      // Ajustăm paginația dacă am șters ultimul element de pe o pagină
-      if (paginatedProducts.length === 1 && currentPage > 1) {
-        setCurrentPage((p) => p - 1);
-      }
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "A apărut o problemă.",
-      });
+      setSelectedCollection(renameValue.trim());
+      fetchCollections();
+      setIsRenaming(false);
+    } catch {
+      toast({ variant: "destructive", title: "Eroare redenumire" });
     }
+  };
+
+  const handleDeleteCollection = async (type: string) => {
+    if (!window.confirm("Ștergi colecția?")) return;
+    await fetch(`${API_BASE_URL}/api/v1/collections/${type}`, {
+      method: "DELETE",
+    });
+    if (selectedCollection === type) setSelectedCollection(null);
+    fetchCollections();
+  };
+
+  const handleRemoveProduct = async (productId: string) => {
+    await fetch(
+      `${API_BASE_URL}/api/v1/collections/${selectedCollection}/remove/${productId}`,
+      { method: "DELETE" },
+    );
+    fetchProducts(selectedCollection!);
   };
 
   const handleReorder = async (
     productId: string,
-    globalIndex: number,
+    currentPos: number,
     direction: "up" | "down",
   ) => {
-    if (!selectedCollection) return;
-    const newPos = direction === "up" ? globalIndex - 1 : globalIndex + 1;
+    const newPos = direction === "up" ? currentPos - 1 : currentPos + 1;
     if (newPos < 0 || newPos >= products.length) return;
-
-    try {
-      await fetch(
-        `${API_BASE_URL}/api/v1/collections/${selectedCollection}/reorder/${productId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ position: newPos }),
-        },
-      );
-      fetchProducts(selectedCollection);
-    } catch (err) {
-      toast({ variant: "destructive", title: "Eroare la reordonare" });
-    }
+    await fetch(
+      `${API_BASE_URL}/api/v1/collections/${selectedCollection}/reorder/${productId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ position: newPos }),
+      },
+    );
+    fetchProducts(selectedCollection!);
   };
 
   return (
