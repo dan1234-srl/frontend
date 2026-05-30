@@ -35,7 +35,6 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 
-
 // ─── Auth & Account (lazy) ───
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const Account = lazy(() => import("./pages/main/Account"));
@@ -59,6 +58,7 @@ const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
+const CollectionsAdmin = lazy(() => import("./pages/admin/CollectionsAdmin"));
 const AdminWishlistAnalytics = lazy(
   () => import("./pages/admin/AdminWishlistAnalytics"),
 );
@@ -138,6 +138,7 @@ const AnimatedRoutes = () => {
             <Route path="users" element={<AdminUsers />} />
             <Route path="reviews" element={<AdminReviews />} />
             <Route path="messages" element={<AdminMessages />} />
+            <Route path="collections" element={<CollectionsAdmin />} />
             <Route path="newsletter" element={<AdminNewsletter />} />
             <Route path="pages" element={<AdminPages />} />
             <Route path="email-templates" element={<AdminEmailTemplates />} />

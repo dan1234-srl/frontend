@@ -21,11 +21,11 @@ import {
   Mail,
   Heart,
   Users,
+  FolderTree, // <-- ICONIȚĂ NOUĂ
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 
-// SidebarContent rămâne neschimbat, este deja eficient
 const SidebarContent = memo(
   ({ isSidebarOpen, mobile, user, menuGroups, navigate }: any) => {
     const location = useLocation();
@@ -86,7 +86,6 @@ const SidebarContent = memo(
             </div>
           ))}
         </div>
-        {/* Footer Sidebar */}
         <div className="mt-auto pt-4 px-3 border-t border-zinc-50">
           <button
             onClick={() => navigate("/")}
@@ -116,7 +115,6 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Close mobile drawer on route change
   useEffect(() => {
     setIsMobileOpen(false);
   }, [location.pathname]);
@@ -133,6 +131,7 @@ const AdminLayout = () => {
       items: [
         { name: "Produse", icon: ShoppingBag, path: "/admin/products" },
         { name: "Categorii", icon: Layers, path: "/admin/categories" },
+        { name: "Colecții", icon: FolderTree, path: "/admin/collections" }, // <-- ADĂUGAT AICI
         { name: "Branduri", icon: Tag, path: "/admin/brands" },
         { name: "Atribute", icon: ListTree, path: "/admin/attributes" },
       ],
@@ -174,7 +173,6 @@ const AdminLayout = () => {
 
   return (
     <div className="fixed inset-0 flex bg-white font-sans overflow-hidden w-full h-screen">
-      {/* SIDEBAR DESKTOP */}
       <aside
         className="hidden lg:flex flex-col bg-white border-r border-zinc-100 h-full shrink-0 relative z-50 transition-all duration-300"
         style={{ width: isSidebarOpen ? 240 : 80 }}
@@ -193,7 +191,6 @@ const AdminLayout = () => {
         </button>
       </aside>
 
-      {/* SIDEBAR MOBIL — drawer */}
       <AnimatePresence>
         {isMobileOpen && (
           <>
@@ -221,7 +218,6 @@ const AdminLayout = () => {
               />
               <button
                 onClick={() => setIsMobileOpen(false)}
-                aria-label="Închide meniul"
                 className="absolute top-4 right-4 size-8 rounded-full border border-zinc-100 flex items-center justify-center bg-white hover:bg-zinc-900 hover:text-white transition-all"
               >
                 <X size={14} />
@@ -231,13 +227,10 @@ const AdminLayout = () => {
         )}
       </AnimatePresence>
 
-      {/* CONȚINUT */}
       <div className="flex-1 flex flex-col h-full bg-[var(--background)] overflow-hidden">
-        {/* Mobile topbar */}
         <header className="lg:hidden h-14 flex items-center justify-between px-4 border-b border-zinc-100 bg-white shrink-0">
           <button
             onClick={() => setIsMobileOpen(true)}
-            aria-label="Deschide meniul"
             className="size-10 rounded-xl border border-zinc-100 flex items-center justify-center hover:bg-zinc-50 transition-all"
           >
             <Menu size={16} />
@@ -248,8 +241,6 @@ const AdminLayout = () => {
 
         <main className="flex-1 overflow-y-auto w-full">
           <AnimatePresence mode="wait">
-            {" "}
-            {/* Am schimbat popLayout în wait pentru stabilitate mai bună */}
             <motion.div
               key={location.pathname}
               initial={{ opacity: 0, x: 10 }}
