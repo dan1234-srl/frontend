@@ -215,7 +215,52 @@ const CollectionsAdmin = () => {
     );
     fetchProducts(selectedCollection!);
   };
+  const selectProductToAdd = async (product: any) => {
+    const targetCollection = selectedCollection || newCollectionName.trim();
+    if (!targetCollection) {
+      toast({
+        variant: "destructive",
+        title: "Atenție",
+        description: "Selectați sau scrieți numele colecției.",
+      });
+      return;
+    }
 
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/collections/${targetCollection}/add`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: product.id,
+            position: products.length,
+          }),
+        },
+      );
+      if (!res.ok) throw new Error("Produsul este deja în colecție");
+
+      toast({
+        title: "Adăugat",
+        description: `${product.name} inclus în ${targetCollection}`,
+      });
+      setSearchQuery("");
+      setSearchResults([]);
+
+      if (!collections.includes(targetCollection)) {
+        await fetchCollections();
+        setSelectedCollection(targetCollection);
+      } else {
+        await fetchProducts(targetCollection);
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: err.message,
+      });
+    }
+  };
   return (
     <div className="space-y-6 md:space-y-8 pb-10">
       {/* HEADER PAGE */}
@@ -389,12 +434,13 @@ const CollectionsAdmin = () => {
 
                     {/* DROPDOWN REZULTATE */}
                     {searchResults.length > 0 && searchQuery.length >= 2 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
                         {searchResults.map((p) => {
                           const img = getImageUrl(p);
                           return (
                             <div
                               key={p.id}
+                              // AICI ESTE EROAREA: am schimbat addProduct(p) cu selectProductToAdd(p)
                               onClick={() => selectProductToAdd(p)}
                               className="flex items-center gap-3 p-3 hover:bg-zinc-50 cursor-pointer transition-colors border-b border-zinc-50 last:border-0"
                             >
@@ -418,7 +464,7 @@ const CollectionsAdmin = () => {
                                 </p>
                               </div>
                               <span className="text-[10px] font-black text-zinc-900 px-2 py-1 bg-zinc-100 rounded-md shrink-0">
-                                {p.price.toLocaleString()} RON
+                                {p.price?.toLocaleString()} RON
                               </span>
                             </div>
                           );
