@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
-import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT ATOMIC: Importăm hook-ul nativ Shadcn UI în loc de sonner
+import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 
 const API_BASE_URL =
@@ -23,7 +23,7 @@ const API_BASE_URL =
 export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const { toast } = useToast(); // 🚀 REPARAT ATOMIC: Inițializăm generatorul de ferestre toast native
+  const { toast } = useToast();
 
   const getValidImageUrl = (item: any) => {
     const source = item.product_image || item.product?.image_url;
@@ -48,26 +48,24 @@ export const OrderItem = ({ order }: any) => {
     return rawUrl || "/placeholder-product.jpg";
   };
 
-  const getSafeAddress = () => {
-    try {
-      if (!order.shipping_address) return "Adresă nespecificată";
-      const a =
-        typeof order.shipping_address === "string"
-          ? JSON.parse(order.shipping_address)
-          : order.shipping_address;
-      if (typeof a !== "object") return String(order.shipping_address);
-      return `${a.street || ""}, ${a.city || ""}, ${a.county || ""}`;
-    } catch {
-      return String(order.shipping_address);
-    }
-  };
+  // 🚀 LOGICĂ NOUĂ PENTRU ADRESĂ (Tratează diferit Curier vs Locker)
+  const isLocker = order.delivery_type === "locker";
+
+  const addressObj = useMemo(() => {
+    if (!order.shipping_address) return {};
+    // Fallback în caz că datele vechi sunt încă string-uri
+    return typeof order.shipping_address === "string"
+      ? JSON.parse(order.shipping_address)
+      : order.shipping_address;
+  }, [order.shipping_address]);
 
   const normalizedStatus = useMemo(() => {
     return order.status?.trim().toUpperCase() || "PENDING";
   }, [order.status]);
 
   const currentStepIndex = (() => {
-    if (normalizedStatus === "DELIVERED") return 5;
+    if (normalizedStatus === "DELIVERED" || normalizedStatus === "RETURNED")
+      return 5;
     if (normalizedStatus === "SHIPPED") return 4;
     if (normalizedStatus === "CONFIRMED") return 3;
     if (["PROCESSING", "PAID"].includes(normalizedStatus)) return 2;
@@ -78,8 +76,8 @@ export const OrderItem = ({ order }: any) => {
     { label: "Preluată", icon: ClipboardList },
     { label: "În procesare", icon: Clock },
     { label: "Confirmată", icon: CheckCircle },
-    { label: "În livrare", icon: Package },
-    { label: "Livrată", icon: Check },
+    { label: "În livrare", icon: isLocker ? Package : Truck },
+    { label: "Finalizată", icon: Check },
   ];
 
   const statusConfig = useMemo(() => {
@@ -95,7 +93,7 @@ export const OrderItem = ({ order }: any) => {
         };
       case "SHIPPED":
         return {
-          text: "În livrare",
+          text: "Expediată",
           border: "border-blue-100 hover:border-blue-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(59,130,246,0.12)]",
           badge: "bg-blue-500 text-white border-blue-400",
@@ -124,8 +122,9 @@ export const OrderItem = ({ order }: any) => {
             "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_12px_#3b82f6]",
         };
       case "CANCELLED":
+      case "RETURNED":
         return {
-          text: "Anulată",
+          text: normalizedStatus === "RETURNED" ? "Returnată" : "Anulată",
           border: "border-rose-100 hover:border-rose-400 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(239,68,68,0.12)]",
           badge: "bg-rose-500 text-white border-rose-400",
@@ -134,7 +133,7 @@ export const OrderItem = ({ order }: any) => {
         };
       default:
         return {
-          text: order.status || "Preluată",
+          text: "În așteptare",
           border: "border-zinc-100 hover:border-zinc-300 bg-white",
           glow: "hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.02)]",
           badge: "bg-zinc-500 text-white border-zinc-400",
@@ -142,7 +141,7 @@ export const OrderItem = ({ order }: any) => {
           progress: "bg-zinc-500",
         };
     }
-  }, [normalizedStatus, order.status]);
+  }, [normalizedStatus]);
 
   const paymentConfig = useMemo(() => {
     const method = order.payment_method?.toLowerCase() || "cod";
@@ -156,28 +155,29 @@ export const OrderItem = ({ order }: any) => {
     return {
       text: "Ramburs (COD)",
       icon: <Truck size={12} className="text-zinc-500" />,
-      bg: "bg-zinc-50 text-zinc-700 border-zinc-150",
+      bg: "bg-zinc-50 text-zinc-700 border-zinc-200",
     };
   }, [order.payment_method]);
 
-  // 🚀 REPARAT ATOMIC: Transformat din structura asincronă sonner.promise în apeluri consecutive sub useToast() native
   const handleDownloadDocs = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
-    const isFinal = ["SHIPPED", "DELIVERED"].includes(normalizedStatus);
+
+    // Statusuri care permit factură finală
+    const isFinal = ["SHIPPED", "DELIVERED", "RETURNED"].includes(
+      normalizedStatus,
+    );
     const docName = isFinal ? "Factura" : "Proforma";
 
     toast({
-      title: `Se pregătește ${docName}`,
-      description: "Generarea fișierului securizat a început...",
+      title: `Se descarcă ${docName}`,
+      description: "Generarea fișierului a început...",
     });
 
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-        {
-          credentials: "include",
-        },
+        { credentials: "include" },
       );
 
       if (!response.ok) throw new Error();
@@ -193,15 +193,14 @@ export const OrderItem = ({ order }: any) => {
       window.URL.revokeObjectURL(url);
 
       toast({
-        title: "Descărcare reușită",
-        description: `${docName} pentru comanda ${order.order_number} a fost salvată.`,
+        title: "Succes",
+        description: `${docName} a fost salvată pe dispozitivul dvs.`,
       });
     } catch (err) {
       toast({
         variant: "destructive",
         title: "Eroare descărcare",
-        description:
-          "Documentul nu este disponibil momentan sau sesiunea a expirat.",
+        description: "Documentul nu a fost încă generat sau este indisponibil.",
       });
     } finally {
       setIsDownloading(false);
@@ -221,15 +220,19 @@ export const OrderItem = ({ order }: any) => {
           <header className="flex justify-between items-center mb-6">
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5">
-                <Sparkles size={10} className="text-amber-500 animate-pulse" />
-                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-300">
-                  REF: {order.order_number?.split("-").pop()}
+                <Sparkles
+                  size={10}
+                  className="text-[var(--royal-violet)] animate-pulse"
+                />
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400">
+                  {order.order_number}
                 </p>
               </div>
               <h3 className="heading-serif text-2xl italic text-zinc-900 font-bold tracking-tight">
                 {new Date(order.created_at).toLocaleDateString("ro-RO", {
                   day: "numeric",
                   month: "long",
+                  year: "numeric",
                 })}
               </h3>
             </div>
@@ -248,11 +251,11 @@ export const OrderItem = ({ order }: any) => {
               >
                 <img
                   src={getValidImageUrl(item)}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   alt=""
                 />
                 {item.quantity > 1 && (
-                  <span className="absolute bottom-1 right-1 bg-zinc-950 text-white text-[8px] font-black h-4 px-1.5 rounded-md flex items-center justify-center">
+                  <span className="absolute bottom-1 right-1 bg-zinc-950/80 backdrop-blur-md text-white text-[8px] font-black h-4 px-1.5 rounded-md flex items-center justify-center">
                     x{item.quantity}
                   </span>
                 )}
@@ -273,7 +276,6 @@ export const OrderItem = ({ order }: any) => {
                 const stepNum = idx + 1;
                 const isCurrentOrPast = stepNum <= currentStepIndex;
                 const StepIcon = stepObj.icon;
-
                 return (
                   <div key={idx} className="flex flex-col items-center gap-1">
                     <StepIcon
@@ -285,9 +287,7 @@ export const OrderItem = ({ order }: any) => {
                       }`}
                     />
                     <span
-                      className={`text-[8px] font-black uppercase tracking-tighter block transition-colors ${
-                        isCurrentOrPast ? "text-zinc-800" : "text-zinc-300"
-                      }`}
+                      className={`text-[8px] font-black uppercase tracking-tighter block transition-colors ${isCurrentOrPast ? "text-zinc-800" : "text-zinc-300"}`}
                     >
                       {stepObj.label}
                     </span>
@@ -313,7 +313,7 @@ export const OrderItem = ({ order }: any) => {
 
           <div className="pt-5 border-t border-zinc-100 flex items-center justify-between mb-4">
             <div className="flex flex-col gap-1">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">
                 Metodă Plată
               </span>
               <div
@@ -324,11 +324,13 @@ export const OrderItem = ({ order }: any) => {
               </div>
             </div>
             <div className="text-right">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300 block">
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 block">
                 Total Final
               </span>
               <p className="font-black text-2xl text-zinc-950 mt-0.5 tracking-tight">
-                {order.total_amount?.toLocaleString()}{" "}
+                {order.total_amount?.toLocaleString("ro-RO", {
+                  minimumFractionDigits: 2,
+                })}{" "}
                 <span className="text-[10px] font-bold text-zinc-400">RON</span>
               </p>
             </div>
@@ -337,10 +339,9 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl text-white text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-950/5 hover:brightness-110 active:scale-[0.99]"
-          style={{ background: "var(--primary-gradient)" }}
+          className="w-full h-14 rounded-2xl text-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.2] border border-[var(--royal-violet)]/20 text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 hover:bg-[var(--royal-violet)] hover:text-white transition-all shadow-sm active:scale-[0.99]"
         >
-          Gestionare Comandă{" "}
+          Detalii Comandă{" "}
           <ArrowUpRight
             size={14}
             className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
@@ -352,40 +353,88 @@ export const OrderItem = ({ order }: any) => {
         open={showFullDetails}
         onClose={() => setShowFullDetails(false)}
         title="Arhiva Comandă"
-        description={order.order_number}
+        description={`REF: ${order.order_number}`}
       >
-        <div className="space-y-10 py-4 bg-white text-left w-full font-sans">
+        <div className="space-y-8 py-2 bg-white text-left w-full font-sans">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100">
-              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-1.5">
-                <MapPin size={12} className={statusConfig.colorClass} /> Adresa
-                Livrare
+            {/* BOX: ADRESĂ (Curier sau Locker) */}
+            <div className="p-7 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center">
+              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3 flex items-center gap-1.5">
+                {isLocker ? (
+                  <Package size={12} className="text-violet-500" />
+                ) : (
+                  <MapPin size={12} className="text-blue-500" />
+                )}
+                {isLocker ? "Locație Locker GLS" : "Adresă Livrare"}
               </p>
+
               <div className="space-y-1">
-                <p className="font-black text-base text-zinc-900">
+                <p className="font-black text-[15px] text-zinc-900">
                   {order.customer_name}
                 </p>
-                <p className="text-xs text-zinc-500 font-medium leading-relaxed italic">
-                  {getSafeAddress()}
-                </p>
+                {isLocker ? (
+                  <div className="text-xs text-zinc-500 font-medium leading-relaxed mt-1">
+                    <span className="block font-bold text-violet-600 mb-0.5">
+                      {addressObj.locker_name ||
+                        order.locker_address ||
+                        "GLS Locker"}
+                    </span>
+                    {addressObj.street || ""} {addressObj.house_number || ""}
+                    <br />
+                    {addressObj.city || ""}{" "}
+                    {addressObj.postal_code
+                      ? `- ${addressObj.postal_code}`
+                      : ""}
+                  </div>
+                ) : (
+                  <div className="text-xs text-zinc-500 font-medium leading-relaxed mt-1">
+                    {addressObj.street || "Strada lipsă"}{" "}
+                    {addressObj.house_number
+                      ? `Nr. ${addressObj.house_number}`
+                      : ""}
+                    <br />
+                    {addressObj.city || ""}, {addressObj.county || ""}
+                    <br />
+                    {addressObj.postal_code
+                      ? `Cod poștal: ${addressObj.postal_code}`
+                      : ""}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="p-8 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
-              <div className="flex justify-between items-center text-xs">
+            {/* BOX: DETALII GENERALE */}
+            <div className="p-7 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
+              <div className="flex justify-between items-center">
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
-                  Data înregistrării
+                  Data Plasării
                 </span>
-                <span className="font-bold text-zinc-800">
-                  {new Date(order.created_at).toLocaleDateString("ro-RO")}
+                <span className="font-bold text-zinc-800 text-xs">
+                  {new Date(order.created_at).toLocaleDateString("ro-RO", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
+                  Status Actual
+                </span>
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider ${statusConfig.colorClass}`}
+                >
+                  {statusConfig.text}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
                   Metodă Plată
                 </span>
                 <span
-                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${paymentConfig.bg}`}
+                  className={`text-[9px] font-black uppercase flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${paymentConfig.bg}`}
                 >
                   {paymentConfig.icon} {paymentConfig.text}
                 </span>
@@ -393,43 +442,19 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          <div className="space-y-4 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100">
-            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-              Stadiu fizic colet
+          <div className="space-y-4">
+            <p className="text-[9px] font-black uppercase text-zinc-400 ml-2 tracking-widest">
+              Produse Comandate
             </p>
-            <div className="grid grid-cols-5 gap-1 text-center">
-              {steps.map((stepObj, idx) => {
-                const stepNum = idx + 1;
-                const active = stepNum <= currentStepIndex;
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div
-                      className={`mx-auto size-2 rounded-full ${active ? statusConfig.progress.split(" ")[0] : "bg-zinc-200"}`}
-                    />
-                    <span
-                      className={`text-[9px] font-black uppercase tracking-tighter block ${active ? "text-zinc-800" : "text-zinc-300"}`}
-                    >
-                      {stepObj.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <p className="text-[9px] font-black uppercase text-zinc-400 ml-1 tracking-widest">
-              Conținut Colet
-            </p>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-5 p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-200 transition-all shadow-sm"
+                  className="flex items-center gap-4 p-3 bg-white border border-zinc-100 rounded-2xl shadow-sm"
                 >
                   <img
                     src={getValidImageUrl(item)}
-                    className="size-14 rounded-xl object-cover shadow-sm shrink-0"
+                    className="size-16 rounded-xl object-cover border border-zinc-50 shrink-0"
                     alt=""
                   />
                   <div className="flex-1 min-w-0">
@@ -438,38 +463,45 @@ export const OrderItem = ({ order }: any) => {
                         item.product_name_at_purchase ||
                         "Articol Evem"}
                     </h4>
-                    <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
+                    <p className="text-[10px] font-bold text-zinc-400 mt-1">
                       Bucăți: {item.quantity}
                     </p>
                   </div>
-                  <p className="font-black text-sm text-zinc-900">
-                    {(
-                      item.price_at_purchase || item.unit_price_at_purchase
-                    )?.toLocaleString()}{" "}
-                    RON
-                  </p>
+                  <div className="text-right">
+                    <p className="font-black text-[13px] text-zinc-900">
+                      {(
+                        item.price_at_purchase || item.unit_price_at_purchase
+                      )?.toLocaleString("ro-RO", {
+                        minimumFractionDigits: 2,
+                      })}{" "}
+                      RON
+                    </p>
+                    <p className="text-[9px] font-bold text-zinc-400">/ buc</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="pt-8 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-8 bg-white">
+          <div className="pt-6 border-t border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-6 bg-white">
             <button
               onClick={handleDownloadDocs}
               disabled={isDownloading}
-              className="w-full sm:w-auto h-14 px-8 rounded-xl border-2 border-zinc-950 text-zinc-950 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-950 hover:text-white transition-all disabled:opacity-50"
+              className="w-full sm:w-auto h-12 px-6 rounded-xl bg-zinc-900 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all disabled:opacity-50"
             >
               <Receipt size={14} />
-              {["SHIPPED", "DELIVERED"].includes(normalizedStatus)
+              {["SHIPPED", "DELIVERED", "RETURNED"].includes(normalizedStatus)
                 ? "Descarcă Factura"
                 : "Proforma Digitală"}
             </button>
             <div className="text-center sm:text-right">
-              <p className="text-[10px] font-black uppercase text-zinc-300 tracking-widest mb-0.5">
+              <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-0.5">
                 Total Achitat
               </p>
-              <p className="heading-serif text-4xl font-bold text-zinc-950 leading-none">
-                {order.total_amount?.toLocaleString()}{" "}
+              <p className="heading-serif text-3xl font-bold text-zinc-950 leading-none">
+                {order.total_amount?.toLocaleString("ro-RO", {
+                  minimumFractionDigits: 2,
+                })}{" "}
                 <span className="text-sm font-black text-zinc-400">RON</span>
               </p>
             </div>
