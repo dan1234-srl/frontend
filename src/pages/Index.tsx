@@ -50,24 +50,6 @@ const Index = () => {
       <main className="flex-1 w-full relative">
         <HomeHero />
 
-        {/* 2. SECȚIUNI STATICE (Dacă mai ai nevoie de ele - le poți muta în backend sau șterge) */}
-        <div className="relative z-10 w-full pt-1 md:pt-4 pb-4 md:pb-8">
-          <ProductCarousel
-            title={
-              (
-                <>
-                  Favoritele{" "}
-                  <span className="italic font-light text-zinc-500">
-                    comunității
-                  </span>
-                </>
-              ) as any
-            }
-            subtitle="Top Wishlist EVEM"
-            sort="favorites"
-          />
-        </div>
-
         {/* 3. SECȚIUNI DINAMICE (Generate automat) */}
         {!isLoading &&
           collections.map((colType) => {
