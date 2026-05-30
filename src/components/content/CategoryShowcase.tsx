@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Loader2, Grid2X2, SlidersHorizontal, LayoutGrid } from "lucide-react";
+import {
+  Loader2,
+  Grid2X2,
+  SlidersHorizontal,
+  LayoutGrid,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { ProductCard } from "../shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { SortDropdown } from "../shop/SortDropdown";
@@ -12,6 +19,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -29,16 +37,16 @@ const CategoryShowcase = () => {
   const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
   const [filtersData, setFiltersData] = useState<any>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null); // Stare pentru Acordeon
 
   // ─── Referințe Infinite Scroll ───
   const pageToLoadRef = useRef(2);
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // currentPage din URL (folosit doar la initial load/filter change)
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  // 1. Fetch Arbore Categorii (pentru Sidebar)
+  // 1. Fetch Arbore Categorii
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
@@ -49,12 +57,10 @@ const CategoryShowcase = () => {
   // 2. Fetch Date Filtre (Global pentru toate produsele)
   useEffect(() => {
     setFiltersData(null);
-    // Presupunem că backend-ul acceptă "all" sau ruta de bază pentru global
     fetch(
       `${API_BASE_URL}/api/v1/products/filters/all?${searchParams.toString()}`,
     )
       .then((res) => {
-        // Fallback dacă backend-ul nu are endpoint pentru "all"
         if (!res.ok)
           return fetch(
             `${API_BASE_URL}/api/v1/products/filters?${searchParams.toString()}`,
@@ -75,7 +81,6 @@ const CategoryShowcase = () => {
         const params = new URLSearchParams();
         params.set("page", page.toString());
 
-        // Preluăm toate filtrele din URL
         searchParams.forEach((value, key) => {
           if (!["page", "sort", "sort_by", "sort_order"].includes(key)) {
             params.append(key, value);
@@ -113,7 +118,6 @@ const CategoryShowcase = () => {
   // 4. Infinite Scroll Observer
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();
-
     const target = observerTarget.current;
     if (!target) return;
 
@@ -132,15 +136,10 @@ const CategoryShowcase = () => {
       },
       { rootMargin: "300px" },
     );
-
     observerRef.current.observe(target);
-
-    return () => {
-      observerRef.current?.disconnect();
-    };
+    return () => observerRef.current?.disconnect();
   }, [totalPages, loadingMore, loading, fetchProducts]);
 
-  // Numărăm filtrele active pentru bulina roșie
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     searchParams.forEach((val, key) => {
@@ -167,6 +166,27 @@ const CategoryShowcase = () => {
             {loading && products.length === 0 ? "—" : totalProducts} Articole
             Disponibile
           </p>
+        </div>
+      </div>
+
+      {/* ─── Meniu Categorii pe Mobil (Pills) ─── */}
+      <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
+        <div className="flex gap-2 shrink-0">
+          <Link
+            to="/shop"
+            className="whitespace-nowrap px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all bg-zinc-100 text-black border-zinc-200 shadow-sm"
+          >
+            Toate Produsele
+          </Link>
+          {categoriesTree.map((cat) => (
+            <Link
+              key={cat.id}
+              to={`/category/${cat.slug}`}
+              className="whitespace-nowrap px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"
+            >
+              {cat.name}
+            </Link>
+          ))}
         </div>
       </div>
 
@@ -222,25 +242,68 @@ const CategoryShowcase = () => {
 
       {/* ─── Main Layout: Sidebar Categorii + Grid Produse ─── */}
       <div className="flex gap-8 xl:gap-12 items-start">
-        {/* Sidebar Categorii Desktop */}
+        {/* Sidebar Categorii Desktop (Acordeon) */}
         <aside className="hidden lg:block w-[220px] xl:w-[250px] shrink-0 sticky top-44">
           <div className="flex items-center gap-2 mb-6 pl-2">
             <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
-              Categorii
+              Structură Categorii
             </span>
           </div>
           <nav className="flex flex-col gap-1.5 max-h-[60vh] overflow-y-auto luxury-scrollbar pr-3">
-            {categoriesTree.map((cat) => (
-              <div key={cat.id} className="flex flex-col gap-1">
-                <Link
-                  to={`/category/${cat.slug}`}
-                  className="py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 text-zinc-400 hover:text-black hover:bg-zinc-50/50"
-                >
-                  {cat.name}
-                </Link>
-              </div>
-            ))}
+            {categoriesTree.map((cat) => {
+              const isExpanded = expandedCat === cat.slug;
+
+              return (
+                <div key={cat.id} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between group">
+                    <Link
+                      to={`/category/${cat.slug}`}
+                      className="py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 text-zinc-400 hover:text-black hover:bg-zinc-50/50 flex-1"
+                    >
+                      {cat.name}
+                    </Link>
+                    {/* Buton de expandare/colapsare pentru subcategorii */}
+                    {cat.subcategories?.length > 0 && (
+                      <button
+                        onClick={() =>
+                          setExpandedCat(isExpanded ? null : cat.slug)
+                        }
+                        className="p-2 text-zinc-400 hover:text-black transition-colors rounded-lg hover:bg-zinc-50"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp size={14} />
+                        ) : (
+                          <ChevronDown size={14} />
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Randarea animată a subcategoriilor */}
+                  <AnimatePresence>
+                    {isExpanded && cat.subcategories?.length > 0 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="flex flex-col gap-1 ml-5 border-l border-zinc-100 pl-4 py-1.5 space-y-1 overflow-hidden"
+                      >
+                        {cat.subcategories.map((sub: any) => (
+                          <Link
+                            key={sub.id}
+                            to={`/category/${sub.slug}`}
+                            className="text-[10px] font-bold uppercase tracking-tight transition-colors text-zinc-400 hover:text-black py-1"
+                          >
+                            {sub.name}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </nav>
         </aside>
 
