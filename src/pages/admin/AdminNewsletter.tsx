@@ -252,21 +252,6 @@ const AdminNewsletter = () => {
                       abonați.
                     </div>
                   </button>
-
-                  <button
-                    onClick={() =>
-                      setCampaign({ ...campaign, segment: "wishlist_product" })
-                    }
-                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "wishlist_product" ? "border-red-500 bg-red-50/30" : "border-zinc-100 hover:border-zinc-200"}`}
-                  >
-                    <Heart size={18} className="mb-2 text-red-500" />
-                    <div className="font-bold text-xs uppercase tracking-widest">
-                      Cei cu Wishlist
-                    </div>
-                    <div className="text-[9px] text-zinc-400 mt-1">
-                      Doar celor care și-au salvat un produs specific.
-                    </div>
-                  </button>
                 </div>
               </div>
 
