@@ -151,3 +151,13 @@ html {
   z-index: 99999 !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1) !important;
 }
+
+.glass-overlay {
+  /* Fundal foarte subtil, nu negru opac */
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  /* Blur-ul propriu-zis */
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  /* Animație pentru a intra lin */
+  transition: all 0.3s ease;
+}
