@@ -175,7 +175,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full mt-40 relative bg-transparent selection:bg-zinc-900 selection:text-white">
+    <footer className="w-full mt-16 relative bg-transparent selection:bg-zinc-900 selection:text-white">
       {/* 1. HIGH-END NEWSLETTER (Minimal & Floating Above) */}
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-20 mb-[-4rem]">
         <div className="bg-white rounded-[3rem] border border-zinc-100 p-10 md:p-16 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.05)] overflow-hidden relative">
@@ -266,7 +266,7 @@ const Footer = () => {
 
       {/* 2. THE GEOMETRIC CHASM & MAIN INTERIOR */}
       <div
-        className="pt-4 pb-12 px-6 md:px-12 relative z-10"
+        className="pt-36 pb-12 px-6 md:px-12 relative z-10"
         style={{
           backgroundColor: "var(--dark-amethyst)",
           clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
