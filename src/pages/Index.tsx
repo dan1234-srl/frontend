@@ -44,10 +44,10 @@ const Index = () => {
 
       <Header />
 
-      {/* Main cu pt-28 (reglează acest număr dacă vrei mai mult/puțin spațiu sub Header) */}
-      <main className="flex-1 w-full relative pt-28 lg:pt-32">
-        {/* CONTAINER 90% (max 1700px) */}
-        <div className="w-[90%] max-w-[1700px] mx-auto flex flex-col gap-12 md:gap-20 pb-20">
+      {/* Spațiu controlat prin padding pe main, fără elemente spacer inutile */}
+      <main className="flex-1 w-full relative pt-36 lg:pt-44">
+        {/* CONTAINER 90% (max 1700px), gap redus la 8-12 pentru densitate */}
+        <div className="w-[90%] max-w-[1700px] mx-auto flex flex-col gap-8 md:gap-12 pb-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
