@@ -39,19 +39,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#fcfbfe] overflow-x-hidden flex flex-col relative">
-      {/* Glow-uri ambientale subtile pentru design premium */}
+      {/* Glow-uri ambientale pentru aspect premium */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-[var(--royal-violet)] opacity-[0.02] rounded-full blur-[120px] pointer-events-none -mt-40 -mr-40" />
 
       <Header />
 
-      {/* Spațiu sub header */}
-      <div
-        className="w-full h-[6rem] lg:h-[7rem] shrink-0"
-        aria-hidden="true"
-      />
-
-      <main className="flex-1 w-full relative">
-        {/* 🚀 LAYOUT CONTAINER: 90% din lățime, centrat, max 1700px pentru monitoare mari */}
+      {/* Main cu pt-28 (reglează acest număr dacă vrei mai mult/puțin spațiu sub Header) */}
+      <main className="flex-1 w-full relative pt-28 lg:pt-32">
+        {/* CONTAINER 90% (max 1700px) */}
         <div className="w-[90%] max-w-[1700px] mx-auto flex flex-col gap-12 md:gap-20 pb-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
