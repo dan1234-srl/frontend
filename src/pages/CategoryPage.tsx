@@ -367,7 +367,8 @@ const CategoryPage = () => {
           }
         });
 
-        params.set("sort", searchParams.get("sort") || "pret-desc");
+        // FIX: Folosim "pret-descrescator" pentru a se alinia cu backend-ul
+        params.set("sort", searchParams.get("sort") || "pret-descrescator");
 
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
