@@ -134,3 +134,15 @@ html {
 [data-radix-toast-viewport] {
   z-index: 99999 !important;
 }
+/* --- FIX GLOBAL RADIX OVERLAY PENTRU BLUR --- */
+/* Targetăm orice overlay de la Radix UI (Sheet, Dialog, etc) */
+[data-radix-portal] div[role="presentation"] {
+  background-color: transparent !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Dacă există un overlay care forțează culoarea neagră */
+div[data-state="open"] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}

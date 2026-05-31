@@ -695,36 +695,16 @@ const CategoryPage = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            html { scrollbar-gutter: stable !important; }
-            body[data-scroll-locked] {
-              padding-right: 0px !important;
-              margin-right: 0px !important;
-              overflow: hidden !important;
-            }
-            .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            .luxury-scrollbar::-webkit-scrollbar { width: 3px; height: 3px; }
-            .luxury-scrollbar::-webkit-scrollbar-thumb {
-              background: rgba(0,0,0,0.1);
-              border-radius: 10px;
-            }
-            
-            /* ✅ FIX PENTRU BLUR GLOBAL (Fara intunecare) */
-            /* Tintim overlay-ul Radix portal si aplicam blur, transparenta ridicata */
-            [data-radix-portal] > div[class*="fixed inset-0"],
-            [data-radix-portal] [data-state="open"] {
-              z-index: 99990 !important;
-              backdrop-filter: blur(12px) !important;
-              -webkit-backdrop-filter: blur(12px) !important;
-              background-color: rgba(255, 255, 255, 0.15) !important;
-              transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            }
-            
-            /* Ne asiguram ca Sheet-ul in sine este peste overlay-ul de blur */
-            [data-radix-portal] [role="dialog"] {
-              z-index: 99999 !important;
-            }
-          `,
+      /* Asigură-te că Sheet-ul în sine este deasupra blur-ului */
+      [data-radix-portal] [role="dialog"] {
+        z-index: 99999 !important;
+      }
+      
+      /* Prevenim scroll-ul dublu */
+      body[data-scroll-locked] {
+        padding-right: 0px !important;
+      }
+    `,
         }}
       />
     </div>
