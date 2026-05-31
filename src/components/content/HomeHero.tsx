@@ -52,8 +52,8 @@ const HomeHero = () => {
   };
 
   return (
-    <section className="w-full px-4 md:px-6 pt-0 pb-0 md:pb-6 text-left">
-      <div className="mx-auto max-w-[1920px] flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px] px-4 md:px-10">
+    <section className="w-full pb-0 md:pb-6 text-left">
+      <div className="w-full flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px]">
         {" "}
         {/* SIDEBAR */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0 mt-2 lg:mt-0">

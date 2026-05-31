@@ -97,13 +97,17 @@ const ProductCarousel = ({
   if (products.length === 0) return null;
 
   return (
-    <section className="w-full py-16 px-4 md:px-10 max-w-[1920px] mx-auto overflow-hidden text-left">
+    <section className="w-full py-0 md:py-8 overflow-hidden text-left">
+      {" "}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+        {" "}
         <div className="space-y-2">
           <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400 block">
+            {" "}
             {subtitle || "Curated Excellence"}
           </span>
           <h2 className="heading-serif text-3xl md:text-4xl text-zinc-900 leading-tight">
+            {" "}
             {title || (
               <>
                 Produse{" "}
@@ -114,7 +118,6 @@ const ProductCarousel = ({
             )}
           </h2>
         </div>
-
         {!hideExploreLink && (
           <Link
             to={categorySlug ? `/category/${categorySlug}` : "/shop"}
@@ -128,7 +131,6 @@ const ProductCarousel = ({
           </Link>
         )}
       </div>
-
       <Carousel
         opts={{ align: "start", loop: true }}
         className="w-full relative group"

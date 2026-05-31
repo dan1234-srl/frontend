@@ -16,7 +16,9 @@ const getImg = (p: any) => {
   const d = p.image_url;
   if (!d) return "/placeholder.png";
   if (typeof d === "object")
-    return d.main?.medium || d.main?.large || d.main?.small || "/placeholder.png";
+    return (
+      d.main?.medium || d.main?.large || d.main?.small || "/placeholder.png"
+    );
   return d;
 };
 
@@ -68,7 +70,7 @@ const AllProductsAccordion = () => {
   }, [open, loading, page, pages]);
 
   return (
-    <section className="w-full px-4 md:px-10 max-w-[1920px] mx-auto pb-16">
+    <section className="w-full pb-16">
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full group flex items-center justify-between px-6 md:px-10 py-8 border-y border-zinc-200 hover:border-zinc-900 transition-all bg-white"
@@ -146,7 +148,9 @@ const AllProductsAccordion = () => {
                 );
               })}
               {loading &&
-                [...Array(8)].map((_, i) => <ProductCardSkeleton key={`s${i}`} />)}
+                [...Array(8)].map((_, i) => (
+                  <ProductCardSkeleton key={`s${i}`} />
+                ))}
             </div>
             <div ref={sentinel} className="h-10" />
             {page >= pages && items.length > 0 && (
