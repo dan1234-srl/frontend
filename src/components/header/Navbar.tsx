@@ -187,7 +187,6 @@ const Navbar = () => {
   const { totalItems } = useCart();
   const navigate = useNavigate();
 
-  const [vouchers, setVouchers] = useState<any[]>([]);
   const [bagOpen, setBagOpen] = useState(false);
   const [wishOpen, setWishOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -254,14 +253,6 @@ const Navbar = () => {
           err,
         );
       });
-  }, []);
-
-  // Fetch Vouchers
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/vouchers/active-ticker`)
-      .then((res) => res.json())
-      .then(setVouchers)
-      .catch(() => {});
   }, []);
 
   // Închide user menu la click outside
