@@ -213,11 +213,11 @@ const ShoppingBag = ({
                       style={{ background: "var(--primary-gradient)" }}
                     />
                     <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                      Coșul tău
+                      Selecția ta
                     </p>
                   </div>
                   <h2 className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)]">
-                    Shopping Bag{" "}
+                    Coșul de cumpărături{" "}
                     <span className="text-zinc-300 font-sans text-lg ml-1">
                       ({cart.length})
                     </span>
