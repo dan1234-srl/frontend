@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom"; // Asigură-te că este importat
 
 const AdminDashboard = () => {
   const [statsData, setStatsData] = useState<any>(null);
@@ -23,7 +24,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-
+  const navigate = useNavigate();
   const [isSyncingFilters, setIsSyncingFilters] = useState(false);
   const [isRecoveringOrders, setIsRecoveringOrders] = useState(false);
   const [isMasterActivating, setIsMasterActivating] = useState(false);
@@ -472,7 +473,12 @@ const AdminDashboard = () => {
                       {/* Elegant Action Circle Button */}
                       <td className="px-12 py-6 text-right">
                         <div className="flex justify-end">
-                          <button className="size-10 bg-zinc-50 border border-zinc-100 text-zinc-500 rounded-full flex items-center justify-center group-hover:bg-[var(--dark-amethyst)] group-hover:text-white group-hover:border-transparent group-hover:rotate-45 transition-all duration-300 ease-out shadow-sm">
+                          <button
+                            onClick={() =>
+                              navigate(`/admin/orders/${order.id}`)
+                            } // 🚀 AICI ESTE MAGIA
+                            className="size-10 bg-zinc-50 border border-zinc-100 text-zinc-500 rounded-full flex items-center justify-center group-hover:bg-[var(--dark-amethyst)] group-hover:text-white group-hover:border-transparent group-hover:rotate-45 transition-all duration-300 ease-out shadow-sm"
+                          >
                             <ArrowUpRight size={15} strokeWidth={2.5} />
                           </button>
                         </div>
