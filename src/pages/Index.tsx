@@ -49,9 +49,7 @@ const Index = () => {
 
       <main className="flex-1 w-full relative">
         {/* 🚀 Wrapper-ul care aliniază Hero cu restul secțiunilor */}
-        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-10">
-          <HomeHero />
-        </div>
+        <HomeHero />
 
         {/* 3. SECȚIUNI DINAMICE (Generate automat) */}
         {!isLoading &&
