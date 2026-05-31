@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Instagram, Mail, ArrowUpRight, Globe } from "lucide-react";
+import {
+  ArrowRight,
+  Instagram,
+  Mail,
+  ArrowUpRight,
+  Globe,
+  Loader2,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -30,9 +38,54 @@ const getValidImageUrl = (imageSource: string | null | undefined): string => {
 const Footer = () => {
   const langContext = useLanguage();
   const language = langContext?.language || "ro";
+
+  // State-uri pentru Newsletter
   const [inputFocused, setInputFocused] = useState(false);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const t = (ro: string, en: string) => (language === "en" ? en : ro);
+
+  // Funcția de abonare
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/newsletter/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        setIsSubscribed(true);
+        toast.success(
+          t("Te-ai abonat cu succes!", "Subscribed successfully!"),
+          {
+            description: t(
+              "Bun venit în comunitatea Evem.",
+              "Welcome to the Evem community.",
+            ),
+          },
+        );
+      } else {
+        toast.error(
+          t(
+            "Ceva nu a funcționat. Reîncearcă.",
+            "Something went wrong. Try again.",
+          ),
+        );
+      }
+    } catch {
+      toast.error(t("Eroare de rețea.", "Network error."));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Preia și aplică tema activă independent
   useEffect(() => {
@@ -125,46 +178,88 @@ const Footer = () => {
     <footer className="w-full mt-40 relative bg-transparent selection:bg-zinc-900 selection:text-white">
       {/* 1. HIGH-END NEWSLETTER (Minimal & Floating Above) */}
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-20 mb-[-4rem]">
-        <div className="bg-white rounded-[3rem] border border-zinc-100 p-10 md:p-16 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.04)] grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-7 space-y-3">
-            <div className="flex items-center gap-2">
-              <span
-                className="w-6 h-[2px]"
-                style={{ background: "var(--primary-gradient)" }}
-              />
-              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
-                Newsletter Collective
-              </span>
-            </div>
-            <h2 className="heading-serif text-3xl md:text-5xl font-medium tracking-tighter text-zinc-900 leading-[1.05]">
-              {t(
-                "Rămâi în avangarda designului.",
-                "Stay ahead of the design vanguard.",
-              )}
-            </h2>
-          </div>
+        <div className="bg-white rounded-[3rem] border border-zinc-100 p-10 md:p-16 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.05)] overflow-hidden relative">
+          {/* Ambient Glow pentru un aspect mai premium */}
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--royal-violet)] opacity-[0.03] rounded-full blur-[80px] -mr-40 -mt-40 pointer-events-none" />
 
-          <div className="lg:col-span-5 w-full flex justify-start lg:justify-end">
-            <motion.form
-              className="w-full max-w-md relative"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <input
-                type="email"
-                required
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-                placeholder={t("Adresa ta de email", "Your email address")}
-                className="w-full bg-zinc-50 border border-zinc-200/60 rounded-2xl py-4.5 pl-6 pr-16 text-xs font-semibold outline-none transition-all duration-500 text-zinc-900 focus:bg-white focus:border-zinc-900 focus:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 size-11 text-white rounded-xl flex items-center justify-center transition-all duration-300 shadow-md active:scale-95"
-                style={{ background: "var(--primary-gradient)" }}
-              >
-                <ArrowRight size={15} strokeWidth={2.5} />
-              </button>
-            </motion.form>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
+            <div className="lg:col-span-7 space-y-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-6 h-[2px]"
+                  style={{ background: "var(--primary-gradient)" }}
+                />
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
+                  Newsletter Collective
+                </span>
+              </div>
+              <h2 className="heading-serif text-3xl md:text-5xl font-medium tracking-tighter text-zinc-900 leading-[1.05]">
+                {isSubscribed
+                  ? t("Mulțumim pentru încredere.", "Thank you for joining.")
+                  : t(
+                      "Rămâi în avangarda designului.",
+                      "Stay ahead of the design vanguard.",
+                    )}
+              </h2>
+            </div>
+
+            <div className="lg:col-span-5 w-full flex justify-start lg:justify-end">
+              <AnimatePresence mode="wait">
+                {!isSubscribed ? (
+                  <motion.form
+                    key="form"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-full max-w-md relative"
+                    onSubmit={handleNewsletterSubmit}
+                  >
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setInputFocused(true)}
+                      onBlur={() => setInputFocused(false)}
+                      placeholder={t(
+                        "Adresa ta de email",
+                        "Your email address",
+                      )}
+                      className="w-full h-14 bg-zinc-50 border border-zinc-200/60 rounded-2xl pl-6 pr-16 text-xs font-semibold outline-none transition-all duration-500 text-zinc-900 focus:bg-white focus:border-[var(--royal-violet)] focus:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 size-10 text-white rounded-xl flex items-center justify-center transition-all duration-300 shadow-md active:scale-95 disabled:opacity-50 hover:brightness-110"
+                      style={{ background: "var(--primary-gradient)" }}
+                    >
+                      {loading ? (
+                        <Loader2
+                          className="animate-spin text-white"
+                          size={15}
+                        />
+                      ) : (
+                        <ArrowRight size={15} strokeWidth={2.5} />
+                      )}
+                    </button>
+                  </motion.form>
+                ) : (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, type: "spring" }}
+                    className="flex items-center gap-3 text-zinc-900 font-bold text-xs uppercase tracking-widest p-4 px-6 border border-zinc-100 rounded-2xl bg-zinc-50/80 backdrop-blur-sm shadow-sm w-full max-w-md lg:w-max"
+                  >
+                    <span className="flex items-center justify-center size-6 rounded-full bg-emerald-100 text-emerald-600">
+                      ✓
+                    </span>
+                    {t("Te-ai abonat cu succes!", "Successfully subscribed!")}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
