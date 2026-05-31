@@ -288,33 +288,6 @@ const AdminOrderDetail = () => {
               </p>
             </div>
           </div>
-
-          {/* Status Controls */}
-          <div className="flex flex-col items-end gap-2">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">
-              Modifică Status
-            </p>
-            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-zinc-200/60 shadow-sm">
-              <select
-                value={order.status?.toLowerCase()}
-                onChange={(e) => handleStatusUpdate(e.target.value)}
-                disabled={updatingStatus}
-                className="h-12 bg-zinc-50 border border-zinc-100 rounded-xl px-4 text-xs font-bold text-[var(--dark-amethyst)] outline-none focus:border-[var(--royal-violet)] min-w-[180px] cursor-pointer disabled:opacity-50 transition-all hover:bg-zinc-100"
-              >
-                <option value="pending">În așteptare</option>
-                <option value="processing">În procesare</option>
-                <option value="shipped">Expediată</option>
-                <option value="delivered">Livrată</option>
-                <option value="canceled">Anulată</option>
-              </select>
-              {updatingStatus && (
-                <RefreshCw
-                  size={18}
-                  className="animate-spin text-[var(--royal-violet)] mr-2"
-                />
-              )}
-            </div>
-          </div>
         </header>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">

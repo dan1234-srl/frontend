@@ -2,9 +2,7 @@ import { useState } from "react";
 import {
   DownloadCloud,
   Copy,
-  CheckCircle2,
   ShieldCheck,
-  Search,
   RefreshCw,
   Send,
   Globe,
@@ -12,9 +10,7 @@ import {
   Activity,
   Database,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
@@ -28,12 +24,31 @@ const AdminExportFeed = () => {
     toast.success("Endpoint URL copiat în clipboard!");
   };
 
-  const pingSearchConsole = () => {
+  const pingSearchConsole = async () => {
     setLoadingGoogle(true);
-    setTimeout(() => {
+    try {
+      const token =
+        localStorage.getItem("token") || localStorage.getItem("access_token");
+      const res = await fetch(`${API_BASE}/api/v1/export/ping-google`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        toast.success(
+          "Sitemap transmis cu succes către Google Search Console!",
+        );
+      } else {
+        toast.error("Eroare la transmiterea cererii.");
+      }
+    } catch (error) {
+      toast.error("Eroare de conexiune la server.");
+    } finally {
       setLoadingGoogle(false);
-      toast.success("Sitemap transmis cu succes către Google Search Console!");
-    }, 1500);
+    }
   };
 
   return (
@@ -85,7 +100,7 @@ const AdminExportFeed = () => {
               </h3>
               <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
                 Feed XML optimizat cu atribute extinse pentru campaniile Google
-                Shopping Ads.
+                Shopping Ads. Mapare dinamică stoc și prețuri reduse.
               </p>
             </div>
           </div>
@@ -122,7 +137,7 @@ const AdminExportFeed = () => {
               </h3>
               <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
                 Harta completă a site-ului pentru indexarea prioritară în Google
-                Search Console.
+                Search Console. Notificare automată crawler.
               </p>
             </div>
           </div>
@@ -146,7 +161,7 @@ const AdminExportFeed = () => {
             <button
               onClick={pingSearchConsole}
               disabled={loadingGoogle}
-              className="w-full h-11 mt-2 rounded-xl border border-blue-100 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+              className="w-full h-11 mt-2 rounded-xl border border-blue-100 bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             >
               {loadingGoogle ? (
                 <RefreshCw className="animate-spin" size={14} />
@@ -259,7 +274,8 @@ const AdminExportFeed = () => {
             Automated Distribution
           </h4>
           <p className="text-sm opacity-80 font-medium">
-            Feed-urile sunt generate dinamic folosind cache-ul serverului Evem.
+            Feed-urile sunt generate dinamic folosind datele direct din serverul
+            Evem, fără cache învechit.
           </p>
         </div>
         <div className="relative z-10 flex gap-4">
@@ -267,12 +283,9 @@ const AdminExportFeed = () => {
             <p className="text-[10px] uppercase font-black opacity-60">
               Last Global Sync
             </p>
-            <p className="text-xs font-bold uppercase tracking-widest">
-              Aproape Instantaneu
-            </p>
+            <p className="text-xs font-bold uppercase tracking-widest">Live</p>
           </div>
         </div>
-        {/* Decorator subtil */}
         <div className="absolute top-0 right-0 size-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl" />
       </footer>
     </div>
