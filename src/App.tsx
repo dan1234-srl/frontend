@@ -65,6 +65,8 @@ const AdminWishlistAnalytics = lazy(
 const AdminEmailTemplates = lazy(
   () => import("./pages/admin/AdminEmailTemplates"),
 );
+const AdminOrderDetail = lazy(() => import("./pages/admin/AdminOrderDetail")); // 🚀 ADĂUGAȚI ASTA
+
 const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminPages = lazy(() => import("./pages/admin/AdminPages"));
@@ -134,6 +136,7 @@ const AnimatedRoutes = () => {
             <Route path="brands" element={<AdminBrands />} />
             <Route path="attributes" element={<AdminAttributes />} />
             <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:orderId" element={<AdminOrderDetail />} />
             <Route path="coupons" element={<AdminCoupons />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="reviews" element={<AdminReviews />} />
