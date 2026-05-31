@@ -233,7 +233,7 @@ const CategoryShowcase = () => {
           }
         });
 
-        params.set("sort", searchParams.get("sort") || "cele-mai-noi");
+        params.set("sort", searchParams.get("sort") || "price_desc");
 
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
