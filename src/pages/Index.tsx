@@ -68,7 +68,8 @@ const Index = () => {
                     ) as any
                   }
                   subtitle={`${titleParts.first} ${titleParts.rest} EVEM`}
-                  collectionType={colType} // Trimit tipul către componentă
+                  collectionType={colType}
+                  hideExploreLink={true} // Adaugă aici
                 />
               </div>
             );

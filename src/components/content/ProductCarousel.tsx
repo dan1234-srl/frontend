@@ -21,7 +21,8 @@ interface ProductCarouselProps {
   subtitle?: string;
   sort?: string;
   limit?: number;
-  collectionType?: string; // 🚀 NOU: Prop pentru colecțiile dinamice
+  collectionType?: string;
+  hideExploreLink?: boolean; // Adaugă linia asta
 }
 
 const ProductCarousel = ({
@@ -31,6 +32,7 @@ const ProductCarousel = ({
   sort,
   limit = 20,
   collectionType,
+  hideExploreLink = false,
 }: ProductCarouselProps) => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,16 +115,18 @@ const ProductCarousel = ({
           </h2>
         </div>
 
-        <Link
-          to={categorySlug ? `/category/${categorySlug}` : "/shop"}
-          className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-zinc-900 hover:text-zinc-500 transition-colors"
-        >
-          Explorează Tot
-          <ArrowRight
-            size={14}
-            className="transition-transform group-hover:translate-x-1"
-          />
-        </Link>
+        {!hideExploreLink && (
+          <Link
+            to={categorySlug ? `/category/${categorySlug}` : "/shop"}
+            className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-zinc-900 hover:text-zinc-500 transition-colors"
+          >
+            Explorează Tot
+            <ArrowRight
+              size={14}
+              className="transition-transform group-hover:translate-x-1"
+            />
+          </Link>
+        )}
       </div>
 
       <Carousel
