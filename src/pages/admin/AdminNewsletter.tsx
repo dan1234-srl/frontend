@@ -42,10 +42,11 @@ const AdminNewsletter = () => {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/admin/marketing/subscribers-count`,
         {
+          // FĂRĂ HEADER-UL DE AUTHORIZATION
           headers: {
             "Content-Type": "application/json",
           },
-          // Aceasta este setarea crucială care trimite cookie-urile automat
+          // DOAR ACESTA ESTE NECESAR PENTRU COOKIES
           credentials: "include",
         },
       );
