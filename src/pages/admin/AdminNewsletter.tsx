@@ -96,15 +96,17 @@ const AdminNewsletter = () => {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      // 🚀 Am eliminat citirea token-ului din localStorage
       const res = await fetch(
         `${API_BASE_URL}/api/v1/admin/marketing/send-campaign`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            // 🚀 Am eliminat header-ul Authorization
           },
+          // 🚀 credentials: "include" este suficient pentru a trimite cookie-ul automat
+          credentials: "include",
           body: JSON.stringify(campaign),
         },
       );
@@ -125,7 +127,6 @@ const AdminNewsletter = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans animate-in fade-in duration-700">
       {/* HEADER */}
