@@ -24,18 +24,26 @@ const Addresses = () => {
   const fetchAddresses = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/addresses/`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      // Adăugăm un timestamp la URL pentru a forța browserul să facă cererea nouă
+      const timestamp = Date.now();
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/addresses/?_t=${timestamp}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache, no-store, must-revalidate", // 🚀 Adăugă asta
+          },
+          credentials: "include",
+        },
+      );
+
       if (response.ok) {
         const data = await response.json();
         setAddresses(data);
       }
     } catch (error) {
       console.error("Network error:", error);
-      toast.error("Eroare de conexiune la server.");
     } finally {
       setIsLoading(false);
     }
