@@ -53,7 +53,8 @@ const HomeHero = () => {
 
   return (
     <section className="w-full px-4 md:px-6 pt-0 pb-0 md:pb-6 text-left">
-      <div className="mx-auto max-w-[1750px] flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px]">
+      <div className="mx-auto max-w-[1920px] flex flex-col-reverse lg:flex-row gap-4 items-start lg:items-stretch h-auto lg:h-[460px] px-4 md:px-10">
+        {" "}
         {/* SIDEBAR */}
         <aside className="w-full lg:w-[300px] flex flex-col shrink-0 mt-2 lg:mt-0">
           <motion.div
@@ -179,7 +180,6 @@ const HomeHero = () => {
             </div>
           </motion.div>
         </aside>
-
         {/* BANNER PRINCIPAL */}
         <div className="w-full flex-1 min-h-[180px] sm:min-h-[260px] lg:min-h-0">
           <motion.div
