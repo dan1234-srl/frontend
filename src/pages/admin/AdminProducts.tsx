@@ -1093,7 +1093,7 @@ const AdminProducts = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
                       <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Preț Listă
+                        Preț Original
                       </Label>
                       <input
                         type="number"
@@ -1109,7 +1109,7 @@ const AdminProducts = () => {
                     </div>
                     <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
                       <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
-                        Preț Promo
+                        Preț Vanzare
                       </Label>
                       <input
                         type="number"

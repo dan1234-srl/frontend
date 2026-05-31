@@ -133,8 +133,11 @@ const ProductCarousel = ({
           {products.map((p, idx) => {
             const imgMedium = getImageUrl(p);
             const imgSmall = p.image_url?.main?.small;
-            const lowPrice = p.lowest_price_30d || 0;
 
+            // 🚀 LOGICA NOUĂ: Prioritizăm sale_price dacă există și este valid
+            const hasValidSale = p.sale_price && p.sale_price > 0;
+            const finalPrice = hasValidSale ? p.sale_price : p.price;
+            const isDiscounted = hasValidSale && p.sale_price < p.price;
             return (
               <CarouselItem
                 key={p.id || p.sku}
@@ -195,11 +198,11 @@ const ProductCarousel = ({
                       <div className="pt-2 border-t border-zinc-50 flex items-center justify-between">
                         <div className="flex flex-col">
                           <span className="text-[11px] font-black text-zinc-950">
-                            {p.price.toLocaleString()} RON
+                            {p.sale_price.toLocaleString()} RON
                           </span>
-                          {lowPrice > 0 && lowPrice !== p.price && (
+                          {isDiscounted && (
                             <p className="text-[6px] text-zinc-400 uppercase font-medium">
-                              Min. 30z: {lowPrice.toLocaleString()}
+                              Min. 30z: {p.sale_price.toLocaleString()}
                             </p>
                           )}
                         </div>
