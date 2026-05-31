@@ -464,44 +464,6 @@ const Navbar = () => {
             </motion.button>
           </div>
         </motion.nav>
-
-        {/* VOUCHERS TICKER */}
-        <AnimatePresence>
-          {vouchers.length > 0 && (
-            <motion.section
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="w-full bg-zinc-950 border-t border-zinc-900 relative overflow-hidden shrink-0"
-            >
-              <div className="flex whitespace-nowrap py-3">
-                <motion.div
-                  animate={{ x: ["0%", "-50%"] }}
-                  transition={{
-                    duration: 40,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="flex gap-24 items-center px-10"
-                >
-                  {[...vouchers, ...vouchers].map((v, idx) => (
-                    <div
-                      key={`${v.id}-${idx}`}
-                      className="flex items-center gap-6"
-                    >
-                      <span className="text-[#9bdda2] text-sm font-black tracking-wide">
-                        {v.discount_value}
-                      </span>
-                      <span className="text-zinc-500 text-[9px] uppercase font-bold tracking-[0.3em]">
-                        {v.code}
-                      </span>
-                    </div>
-                  ))}
-                </motion.div>
-              </div>
-            </motion.section>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* ── MODALS & OVERLAYS ── */}
