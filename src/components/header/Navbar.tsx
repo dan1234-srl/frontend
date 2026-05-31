@@ -15,7 +15,7 @@ import {
   SlidersHorizontal,
   Loader2,
   RotateCcw,
-  Check,
+  ArrowRight,
 } from "lucide-react";
 import {
   motion,
@@ -38,7 +38,7 @@ import { FilterSidebar } from "../shop/FilterSidebar";
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
 /* ─────────────────────────────────────────────────────────────
-   FILTER DRAWER — standalone, montat în Navbar ca ShoppingBag
+   FILTER DRAWER — Modern, Luminous Glassmorphism
 ───────────────────────────────────────────────────────────── */
 const FilterDrawer = () => {
   const { filtersOpen, filtersData, closeFilters, onReset } = useFilters();
@@ -55,60 +55,71 @@ const FilterDrawer = () => {
   return (
     <AnimatePresence>
       {filtersOpen && (
-        <div className="fixed inset-0 z-[700] flex justify-end">
-          {/* Backdrop blur */}
+        <div className="fixed inset-0 z-[700] flex justify-end font-sans">
+          {/* Luminous Colorful Blur Backdrop */}
           <motion.div
             key="filter-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
             onClick={closeFilters}
-            className="absolute inset-0 bg-zinc-900/20 backdrop-blur-sm"
-          />
+            className="absolute inset-0 bg-white/20 backdrop-blur-2xl overflow-hidden"
+          >
+            {/* Ambient Colorful Orbs */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.15 }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[var(--royal-violet)] rounded-full blur-[100px] pointer-events-none"
+            />
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 0.12 }}
+              transition={{ duration: 1.5, delay: 0.2, ease: "easeOut" }}
+              className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-blue-500 rounded-full blur-[100px] pointer-events-none"
+            />
+          </motion.div>
 
-          {/* Panel */}
+          {/* Filter Panel (Micuț și elegant) */}
           <motion.div
             key="filter-panel"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 200 }}
-            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[440px] flex-col bg-white shadow-2xl"
+            transition={{ type: "spring", damping: 32, stiffness: 280 }}
+            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[400px] flex-col bg-white shadow-2xl"
           >
             {/* Header */}
-            <header className="flex items-start justify-between px-8 pt-8 pb-7 border-b border-zinc-100 shrink-0">
+            <header className="flex items-center justify-between px-6 py-6 border-b border-zinc-100 shrink-0">
               <div className="space-y-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-1 h-1 rounded-full bg-[var(--royal-violet)]" />
-                  <p className="text-[9px] font-black uppercase tracking-[0.45em] text-[var(--royal-violet)]">
-                    Selection
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: "var(--primary-gradient)" }}
+                  />
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                    Selecția ta
                   </p>
                 </div>
-                <p className="heading-serif text-[2rem] leading-none tracking-tighter text-[var(--dark-amethyst)]">
-                  Filtrare
-                </p>
-                <p className="text-[10px] font-medium text-zinc-400 tracking-wide">
-                  Rafinează portofoliul de produse
-                </p>
+                <h2 className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)]">
+                  Filtrare Produse
+                </h2>
               </div>
               <button
                 onClick={closeFilters}
                 aria-label="Închide filtrele"
-                className="mt-1 h-9 w-9 flex items-center justify-center rounded-full border border-zinc-100 text-zinc-400 hover:bg-[var(--dark-amethyst)] hover:text-white hover:border-transparent transition-all duration-200"
+                className="h-9 w-9 flex items-center justify-center rounded-full border border-zinc-100 hover:bg-zinc-50 transition-all text-zinc-400 hover:text-zinc-900 group"
               >
-                <X size={15} strokeWidth={2.5} />
+                <X
+                  size={16}
+                  className="group-hover:rotate-90 transition-transform duration-300"
+                />
               </button>
             </header>
 
-            {/* Decorative accent line */}
-            <div
-              className="h-[2px] w-full shrink-0"
-              style={{ background: "var(--primary-gradient)" }}
-            />
-
             {/* Content */}
-            <div className="flex-1 overflow-y-auto luxury-scrollbar">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               {filtersData &&
               filtersData.brands !== undefined &&
               filtersData.attributes !== undefined ? (
@@ -116,59 +127,45 @@ const FilterDrawer = () => {
                   <FilterSidebar filtersData={filtersData} />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-4 py-32">
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-full border border-zinc-100 flex items-center justify-center">
+                <div className="flex flex-col items-center justify-center h-full gap-5">
+                  <div className="relative flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-zinc-50 flex items-center justify-center z-10">
                       <Loader2
                         size={20}
                         className="animate-spin text-[var(--royal-violet)]"
                       />
                     </div>
-                    <div className="absolute inset-0 rounded-full bg-[var(--royal-violet)]/5 animate-ping" />
+                    <div className="absolute inset-0 rounded-full bg-[var(--royal-violet)]/10 animate-ping" />
                   </div>
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-300">
-                    Se încarcă parametrii...
+                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                    Se procesează parametrii...
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Footer CTA */}
-            <div className="shrink-0 px-6 pb-8 pt-5 border-t border-zinc-100 bg-white space-y-3">
-              {/* Active filters hint */}
-              <div className="flex items-center gap-2 px-1 mb-1">
-                <SlidersHorizontal
-                  size={11}
-                  className="text-[var(--royal-violet)]"
-                />
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400">
-                  Selectează parametrii și aplică
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            {/* Footer CTA - Design Modern */}
+            <div className="shrink-0 px-6 py-6 border-t border-zinc-100 bg-white">
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => {
-                    onReset?.();
-                  }}
-                  className="group relative h-12 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] border border-zinc-200 rounded-xl overflow-hidden hover:border-zinc-800 transition-all duration-300 text-[var(--dark-amethyst)]"
+                  onClick={() => onReset?.()}
+                  className="h-14 px-6 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 hover:border-zinc-300 transition-all"
                 >
-                  <span className="absolute inset-0 bg-zinc-950 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                  <RotateCcw
-                    size={11}
-                    className="relative z-10 group-hover:text-white transition-colors duration-300"
-                  />
-                  <span className="relative z-10 group-hover:text-white transition-colors duration-300">
-                    Resetare
-                  </span>
+                  <RotateCcw size={14} />
                 </button>
                 <button
                   onClick={closeFilters}
-                  className="group relative h-12 flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] rounded-xl overflow-hidden text-white shadow-lg shadow-indigo-900/20 active:scale-[0.98] transition-transform duration-150"
+                  className="flex-1 relative h-14 w-full text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
                   style={{ background: "var(--primary-gradient)" }}
                 >
-                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <Check size={12} strokeWidth={3} className="relative z-10" />
-                  <span className="relative z-10">Aplică Filtrele</span>
+                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                  <div className="relative flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em]">
+                    Aplică Filtrele
+                    <ArrowRight
+                      size={14}
+                      className="group-hover:translate-x-1.5 transition-transform duration-300"
+                    />
+                  </div>
                 </button>
               </div>
             </div>
@@ -224,7 +221,6 @@ const Navbar = () => {
         if (!theme) return;
         const root = document.documentElement;
 
-        // Mapăm culorile din modelul de backend pe variabilele CSS
         if (theme.dark_amethyst)
           root.style.setProperty("--dark-amethyst", theme.dark_amethyst);
         if (theme.dark_amethyst_2)
