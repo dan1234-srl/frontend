@@ -1,89 +1,45 @@
-import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-  X,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Loader2,
+  ArrowLeft,
   Package,
-  Truck,
-  MapPin,
   User,
+  MapPin,
+  CreditCard,
+  Truck,
+  Calendar,
+  RefreshCw,
+  AlertCircle,
+  Receipt,
   Mail,
   Phone,
-  Save,
   ShieldCheck,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
-export type ProductSpecs = {
-  weight?: number | null;
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
+// --- Utilitare ---
+const formatCurrency = (val: number) =>
+  new Intl.NumberFormat("ro-RO", {
+    style: "decimal",
+    minimumFractionDigits: 2,
+  }).format(val || 0) + " RON";
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return "---";
+  return new Date(dateString).toLocaleString("ro-RO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
-
-export type OrderItem = {
-  id: string;
-  product_id?: string;
-  product_name_at_purchase: string;
-  product_sku_at_purchase: string;
-  product_image?: string | null;
-  quantity: number;
-  unit_price_at_purchase: number; // Folosim number, nu opțional, pentru a evita NaN
-  total_item_price: number; // Folosim number
-  product?: ProductSpecs;
-};
-
-export type ShippingAddress = {
-  street?: string;
-  house_number?: string;
-  houseNumber?: string; // Fallback pentru consistență
-  city?: string;
-  county?: string;
-  sector?: string; // Fallback pentru București
-  postalCode?: string;
-  postal_code?: string;
-  zip?: string;
-  locker_id?: string;
-  locker_name?: string;
-};
-
-export type Order = {
-  id: string;
-  order_number: string;
-  created_at: string; // ISO Date string
-  status: string;
-  customer_name: string;
-  email: string;
-  phone: string;
-  shipping_address: ShippingAddress; // Acum este obiect, nu string
-  payment_method: string;
-
-  // Finanțe
-  subtotal_amount: number;
-  discount_amount: number;
-  shipping_fee: number;
-  total_amount: number;
-
-  // Livrare
-  delivery_type?: string;
-  locker_id?: string | null;
-  locker_address?: string | null;
-
-  items: OrderItem[];
-};
-
-interface Props {
-  orderId: string | null;
-  onClose: () => void;
-  onActionComplete: () => void;
-}
 
 const getImage = (raw: any): string => {
   if (!raw) return "/placeholder.png";
@@ -99,815 +55,43 @@ const getImage = (raw: any): string => {
   return raw?.main?.medium || raw?.url || "/placeholder.png";
 };
 
-export const OrderReviewModal = ({
-  orderId,
-  onClose,
-  onActionComplete,
-}: Props) => {
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
-  const [showRejectForm, setShowRejectForm] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-
-  const [edits, setEdits] = useState<Record<string, ProductSpecs>>({});
-  const [savingSku, setSavingSku] = useState<string | null>(null);
-  const [shippingEdits, setShippingEdits] = useState<Partial<ShippingAddress>>(
-    {},
-  );
-  const [savingShipping, setSavingShipping] = useState(false);
-  const saveShippingAddress = async () => {
-    if (!order) return;
-    setSavingShipping(true);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/orders/admin/${order.id}/shipping-address`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(shippingEdits),
-        },
-      );
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Adresă actualizată.");
-        setOrder((o) =>
-          o ? { ...o, shipping_address: data.shipping_address } : o,
-        );
-        setShippingEdits({});
-      } else {
-        toast.error(data.detail || "Salvare eșuată.");
-      }
-    } catch {
-      toast.error("Eroare rețea.");
-    } finally {
-      setSavingShipping(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!orderId) return;
-    let cancel = false;
-    (async () => {
-      setLoading(true);
-      setOrder(null);
-      setEdits({});
-      setShowRejectForm(false);
-      setRejectReason("");
-
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/v1/orders/admin/${orderId}`,
-          { credentials: "include" },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (!cancel) setOrder(data);
-        } else if (res.status === 404) {
-          const fb = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
-            credentials: "include",
-          });
-          if (fb.ok) {
-            const d = await fb.json();
-            if (!cancel) setOrder(d);
-          } else {
-            toast.error("Comanda nu a putut fi încărcată.");
-          }
-        } else {
-          toast.error("Eroare la încărcarea comenzii.");
-        }
-      } catch {
-        toast.error("Eroare rețea la încărcarea comenzii.");
-      } finally {
-        if (!cancel) setLoading(false);
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [orderId]);
-
-  // Transformă string-ul din DB (JSON) într-un obiect
-  const shipping = useMemo(() => {
-    if (!order?.shipping_address) return {};
-
-    // Backend-ul trimite acum direct obiectul (datorită schimbării din Pydantic)
-    // Dar lăsăm un fallback în caz că vine string
-    return typeof order.shipping_address === "string"
-      ? JSON.parse(order.shipping_address)
-      : order.shipping_address;
-  }, [order]);
-
-  // VALIDATION
-  // VALIDATION
-  // VALIDATION
-  const validation = useMemo(() => {
-    if (!order) return { ok: true, issues: [] as string[] };
-    const issues: string[] = [];
-
-    // Validare specifică pentru CURIER (strictă)
-    if (order.delivery_type !== "locker") {
-      if (!shipping.city && !shipping.City) issues.push("Lipsește orașul");
-      if (
-        !shipping.county &&
-        !shipping.County &&
-        !shipping.sector &&
-        !shipping.Sector
-      ) {
-        issues.push("Lipsește județul/sectorul");
-      }
-      if (
-        !shipping.postalCode &&
-        !shipping.postal_code &&
-        !shipping.zip &&
-        !shipping.Zip
-      ) {
-        issues.push("Lipsește codul poștal");
-      }
-      if (!shipping.street && !shipping.Street) {
-        issues.push("Lipsește strada");
-      }
-    }
-    // Validare pentru LOCKER (mai permisivă)
-    else {
-      if (!order.locker_id) {
-        issues.push("Lipsește locker-ul GLS");
-      }
-      // ---> ADAUGĂ ASTA PENTRU A BLOCA APROBAREA FĂRĂ ZIP <---
-      if (
-        !shipping.postalCode &&
-        !shipping.postal_code &&
-        !shipping.zip &&
-        !shipping.Zip
-      ) {
-        issues.push("Lipsește codul poștal (necesar și pentru locker)");
-      }
-    }
-
-    if (!order.phone) issues.push("Lipsește telefonul de contact");
-    if (!order.email) issues.push("Lipsește email-ul de contact");
-
-    // Validare produse (specificații logistice)
-    order.items?.forEach((it) => {
-      const p = it.product || {};
-      const eff: ProductSpecs = {
-        weight: edits[it.product_id || ""]?.weight ?? p.weight,
-        length: edits[it.product_id || ""]?.length ?? p.length,
-        width: edits[it.product_id || ""]?.width ?? p.width,
-        height: edits[it.product_id || ""]?.height ?? p.height,
-      };
-      if (!eff.weight || Number(eff.weight) <= 0)
-        issues.push(`Greutate lipsă: ${it.product_sku_at_purchase}`);
-      if (!eff.length || !eff.width || !eff.height)
-        issues.push(`Dimensiuni incomplete: ${it.product_sku_at_purchase}`);
-    });
-
-    return { ok: issues.length === 0, issues };
-  }, [order, shipping, edits]);
-
-  const updateEdit = (
-    pid: string,
-    field: keyof ProductSpecs,
-    value: string,
-  ) => {
-    setEdits((prev) => ({
-      ...prev,
-      [pid]: { ...prev[pid], [field]: value === "" ? null : Number(value) },
-    }));
-  };
-
-  const saveProductSpecs = async (item: OrderItem) => {
-    if (!item.product_id) {
-      toast.error("Produs fără ID — nu poate fi salvat.");
-      return;
-    }
-    const patch = edits[item.product_id];
-    if (!patch || Object.keys(patch).length === 0) {
-      toast.info("Nicio modificare de salvat.");
-      return;
-    }
-    setSavingSku(item.product_sku_at_purchase);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/orders/admin/products/${item.product_id}/specs`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(patch),
-        },
-      );
-      if (res.ok) {
-        toast.success(
-          `Specs actualizate pentru ${item.product_sku_at_purchase}`,
-        );
-        setOrder((o) =>
-          o
-            ? {
-                ...o,
-                items: o.items.map((it) =>
-                  it.id === item.id
-                    ? { ...it, product: { ...(it.product || {}), ...patch } }
-                    : it,
-                ),
-              }
-            : o,
-        );
-        setEdits((prev) => {
-          const n = { ...prev };
-          delete n[item.product_id!];
-          return n;
-        });
-      } else {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.detail || "Salvare eșuată.");
-      }
-    } catch {
-      toast.error("Eroare rețea la salvare.");
-    } finally {
-      setSavingSku(null);
-    }
-  };
-
-  const handleApprove = async () => {
-    if (!order) return;
-    if (!validation.ok) {
-      toast.error(
-        `Nu se poate aproba: ${validation.issues.length} problemă(e) detectate.`,
-      );
-      return;
-    }
-    setBusy("approve");
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/orders/admin/${order.id}/process`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ action: "approve" }),
-        },
-      );
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(data.message || "Comandă aprobată cu succes.");
-        onActionComplete();
-        onClose();
-      } else {
-        toast.error(data.detail || "Aprobarea a eșuat.");
-      }
-    } catch {
-      toast.error("Eroare rețea la aprobare.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!order) return;
-    if (!rejectReason.trim()) {
-      toast.error("Introduceți un motiv pentru respingere.");
-      return;
-    }
-    setBusy("reject");
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/orders/admin/${order.id}/process`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ action: "reject", reason: rejectReason }),
-        },
-      );
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success("Comandă respinsă. Stocul a fost restaurat.");
-        onActionComplete();
-        onClose();
-      } else {
-        toast.error(data.detail || "Respingere eșuată.");
-      }
-    } catch {
-      toast.error("Eroare rețea.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  if (!orderId) return null;
-
-  return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-zinc-950/50 backdrop-blur-md"
-        />
-        <motion.div
-          initial={{ y: 40, opacity: 0, scale: 0.98 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 40, opacity: 0 }}
-          className="relative w-full max-w-5xl bg-white sm:rounded-[2.5rem] rounded-t-[2rem] shadow-2xl overflow-hidden max-h-[95vh] flex flex-col"
-        >
-          {/* HEADER */}
-          <header className="flex items-start justify-between p-5 sm:p-8 border-b border-zinc-100 shrink-0">
-            <div className="space-y-1">
-              <span
-                className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em]"
-                style={{ color: "var(--royal-violet)" }}
-              >
-                Review & Aprobare Comandă
-              </span>
-              <h2 className="heading-serif text-2xl sm:text-4xl italic text-[var(--dark-amethyst)]">
-                {order?.order_number || "Se încarcă..."}
-              </h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="size-10 sm:size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-zinc-100 transition-colors shrink-0"
-            >
-              <X size={18} />
-            </button>
-          </header>
-
-          {/* BODY */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-32 gap-3 text-zinc-400">
-                <Loader2 className="animate-spin" size={28} />
-                <span className="text-[10px] uppercase tracking-widest font-bold">
-                  Sincronizare detalii comandă...
-                </span>
-              </div>
-            ) : !order ? (
-              <div className="flex flex-col items-center justify-center py-32 text-zinc-400 gap-2">
-                <AlertTriangle size={32} />
-                <span className="text-sm font-bold">Comandă indisponibilă</span>
-              </div>
-            ) : (
-              <div className="p-5 sm:p-8 space-y-8">
-                {/* VALIDATION BANNER */}
-                <div
-                  className={`rounded-2xl border p-5 ${
-                    validation.ok
-                      ? "border-emerald-200 bg-emerald-50/50"
-                      : "border-amber-200 bg-amber-50/50"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    {validation.ok ? (
-                      <ShieldCheck
-                        className="text-emerald-600 shrink-0"
-                        size={20}
-                      />
-                    ) : (
-                      <AlertTriangle
-                        className="text-amber-600 shrink-0"
-                        size={20}
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-xs font-black uppercase tracking-widest ${
-                          validation.ok ? "text-emerald-700" : "text-amber-700"
-                        }`}
-                      >
-                        {validation.ok
-                          ? "Toate datele sunt valide — gata pentru AWB"
-                          : `${validation.issues.length} problemă(e) detectate`}
-                      </p>
-                      {!validation.ok && (
-                        <ul className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                          {validation.issues.map((iss, i) => (
-                            <li
-                              key={i}
-                              className="text-[11px] text-amber-900/80 flex items-start gap-2"
-                            >
-                              <span className="size-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                              {iss}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* CUSTOMER + SHIPPING */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <InfoBlock title="Client" icon={<User size={14} />}>
-                    <Row label="Nume" value={order.customer_name} />
-                    <Row
-                      label="Email"
-                      value={order.email}
-                      icon={<Mail size={11} />}
-                    />
-                    <Row
-                      label="Telefon"
-                      value={order.phone}
-                      icon={<Phone size={11} />}
-                    />
-                    <Row
-                      label="Plată"
-                      value={
-                        order.payment_method === "cod"
-                          ? "Ramburs (COD)"
-                          : "Card online"
-                      }
-                    />
-                  </InfoBlock>
-
-                  <InfoBlock
-                    title={
-                      order.delivery_type === "locker"
-                        ? "Livrare — Locker GLS"
-                        : "Livrare — Curier"
-                    }
-                    icon={
-                      order.delivery_type === "locker" ? (
-                        <Package size={14} />
-                      ) : (
-                        <Truck size={14} />
-                      )
-                    }
-                  >
-                    {order.delivery_type === "locker" ? (
-                      <>
-                        <Row label="Locker" value={order.locker_id || "—"} />
-                        <Row
-                          label="Adresă"
-                          value={order.locker_address || "—"}
-                        />
-
-                        <div className="flex items-center justify-between gap-2 text-xs mt-3 pt-3 border-t border-zinc-100">
-                          <span className="text-zinc-400 font-medium shrink-0">
-                            Cod poștal
-                          </span>
-                          <input
-                            defaultValue={
-                              shipping.postalCode || shipping.postal_code || ""
-                            }
-                            onChange={(e) =>
-                              setShippingEdits((prev) => ({
-                                ...prev,
-                                postal_code: e.target.value,
-                              }))
-                            }
-                            className="text-right font-bold text-[var(--dark-amethyst)] bg-transparent border-b border-dashed border-zinc-200 focus:border-[var(--royal-violet)] outline-none min-w-0 w-32"
-                            placeholder="ex. 012345"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        {[
-                          {
-                            label: "Stradă",
-                            field: "street" as const,
-                            value: `${shipping.street || ""} ${shipping.house_number || ""}`,
-                          },
-                          {
-                            label: "Oraș",
-                            field: "city" as const,
-                            value: shipping.city,
-                          },
-                          {
-                            label: "Județ",
-                            field: "county" as const,
-                            value: shipping.county,
-                          },
-                          {
-                            label: "Cod poștal",
-                            field: "postal_code" as const,
-                            value: shipping.postalCode || shipping.postal_code,
-                          },
-                        ].map(({ label, field, value }) => (
-                          <div
-                            key={field}
-                            className="flex items-center justify-between gap-2 text-xs"
-                          >
-                            <span className="text-zinc-400 font-medium shrink-0">
-                              {label}
-                            </span>
-                            <input
-                              defaultValue={value || ""}
-                              onChange={(e) =>
-                                setShippingEdits((prev) => ({
-                                  ...prev,
-                                  [field]: e.target.value,
-                                }))
-                              }
-                              className="text-right font-bold text-[var(--dark-amethyst)] bg-transparent border-b border-dashed border-zinc-200 focus:border-[var(--royal-violet)] outline-none min-w-0 w-32"
-                            />
-                          </div>
-                        ))}
-                      </>
-                    )}
-
-                    {Object.keys(shippingEdits).length > 0 && (
-                      <button
-                        onClick={saveShippingAddress}
-                        disabled={savingShipping}
-                        className="mt-3 w-full h-8 rounded-xl text-white text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5"
-                        style={{ background: "var(--primary-gradient)" }}
-                      >
-                        {savingShipping ? (
-                          <Loader2 className="animate-spin" size={11} />
-                        ) : (
-                          <Save size={11} />
-                        )}
-                        Salvează adresa
-                      </button>
-                    )}
-                  </InfoBlock>
-                </div>
-
-                {/* ITEMS */}
-                <div className="space-y-3">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">
-                    Produse ({order.items?.length || 0})
-                  </h3>
-                  <div className="space-y-3">
-                    {order.items?.map((it) => {
-                      const p = it.product || {};
-
-                      // Calcul logistica (există deja în codul tău)
-                      const eff: ProductSpecs = {
-                        weight: edits[it.product_id || ""]?.weight ?? p.weight,
-                        length: edits[it.product_id || ""]?.length ?? p.length,
-                        width: edits[it.product_id || ""]?.width ?? p.width,
-                        height: edits[it.product_id || ""]?.height ?? p.height,
-                      };
-                      const missingWeight =
-                        !eff.weight || Number(eff.weight) <= 0;
-                      const missingDims =
-                        !eff.length || !eff.width || !eff.height;
-                      const hasEdits =
-                        it.product_id &&
-                        edits[it.product_id] &&
-                        Object.keys(edits[it.product_id]).length > 0;
-
-                      // --- FIX PENTRU NaN RON ---
-                      // Convertim în număr și oferim 0 ca valoare implicită dacă sunt undefined/null
-                      const unitPrice = Number(
-                        it.unit_price_at_purchase ??
-                          it.unit_price_at_purchase ??
-                          0,
-                      );
-                      const totalPrice = Number(
-                        it.total_item_price ?? unitPrice * (it.quantity || 1),
-                      );
-
-                      return (
-                        <div
-                          key={it.id}
-                          className="rounded-2xl border border-zinc-100 bg-white overflow-hidden"
-                        >
-                          <div className="flex flex-col sm:flex-row gap-4 p-4">
-                            {/* Imaginea produsului */}
-                            <div className="size-20 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden shrink-0">
-                              <img
-                                src={getImage(it.product_image)}
-                                alt={it.product_name_at_purchase}
-                                className="w-full h-full object-cover"
-                                onError={(e) =>
-                                  ((e.target as HTMLImageElement).src =
-                                    "/placeholder.png")
-                                }
-                              />
-                            </div>
-
-                            {/* Detalii produs */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
-                                SKU {it.product_sku_at_purchase}
-                              </p>
-                              <p className="text-sm font-black text-[var(--dark-amethyst)] line-clamp-2">
-                                {it.product_name_at_purchase}
-                              </p>
-
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-500 mt-1.5">
-                                <span>
-                                  Cant: <b>{it.quantity}</b>
-                                </span>
-                                <span>
-                                  Preț:{" "}
-                                  <b>{unitPrice.toLocaleString("ro-RO")} RON</b>
-                                </span>
-                                <span>
-                                  Total:{" "}
-                                  <b className="text-[var(--dark-amethyst)]">
-                                    {totalPrice.toLocaleString("ro-RO")} RON
-                                  </b>
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* SPECS EDIT */}
-                          <div className="bg-zinc-50/60 border-t border-zinc-100 p-4">
-                            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-                              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                                Specificații logistice
-                              </p>
-                              {(missingWeight || missingDims) && (
-                                <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-100/60 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <AlertTriangle size={10} /> Date lipsă
-                                </span>
-                              )}
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
-                              <SpecInput
-                                label="Greutate (kg)"
-                                value={eff.weight}
-                                missing={missingWeight}
-                                onChange={(v) =>
-                                  it.product_id &&
-                                  updateEdit(it.product_id, "weight", v)
-                                }
-                              />
-                              <SpecInput
-                                label="L (cm)"
-                                value={eff.length}
-                                missing={!eff.length}
-                                onChange={(v) =>
-                                  it.product_id &&
-                                  updateEdit(it.product_id, "length", v)
-                                }
-                              />
-                              <SpecInput
-                                label="l (cm)"
-                                value={eff.width}
-                                missing={!eff.width}
-                                onChange={(v) =>
-                                  it.product_id &&
-                                  updateEdit(it.product_id, "width", v)
-                                }
-                              />
-                              <SpecInput
-                                label="H (cm)"
-                                value={eff.height}
-                                missing={!eff.height}
-                                onChange={(v) =>
-                                  it.product_id &&
-                                  updateEdit(it.product_id, "height", v)
-                                }
-                              />
-                              <button
-                                disabled={
-                                  !hasEdits ||
-                                  savingSku === it.product_sku_at_purchase
-                                }
-                                onClick={() => saveProductSpecs(it)}
-                                className="h-10 px-3 rounded-xl text-white text-[9px] font-black uppercase tracking-widest shadow-sm disabled:opacity-30 transition-all flex items-center justify-center gap-1.5 self-end"
-                                style={{
-                                  background: "var(--primary-gradient)",
-                                }}
-                              >
-                                {savingSku === it.product_sku_at_purchase ? (
-                                  <Loader2 className="animate-spin" size={12} />
-                                ) : (
-                                  <Save size={12} />
-                                )}
-                                Salvează
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* TOTALS */}
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 p-5 space-y-2">
-                  <RowTotal
-                    label="Subtotal"
-                    value={Number(order.subtotal_amount || 0).toLocaleString(
-                      "ro-RO",
-                    )}
-                  />
-                  {Number(order.discount_amount) > 0 && (
-                    <RowTotal
-                      label="Reducere"
-                      value={`−${Number(order.discount_amount).toLocaleString("ro-RO")}`}
-                      accent="text-emerald-600"
-                    />
-                  )}
-                  <RowTotal
-                    label="Livrare"
-                    value={
-                      Number(order.shipping_fee) > 0
-                        ? Number(order.shipping_fee).toLocaleString("ro-RO")
-                        : "Gratuit"
-                    }
-                  />
-                  <div className="pt-2 mt-2 border-t border-zinc-200 flex justify-between items-center">
-                    <span className="text-[10px] uppercase tracking-[0.3em] font-black text-[var(--dark-amethyst)]">
-                      Total final
-                    </span>
-                    <span className="heading-serif text-2xl italic text-[var(--dark-amethyst)]">
-                      {Number(order.total_amount || 0).toLocaleString("ro-RO")}{" "}
-                      RON
-                    </span>
-                  </div>
-                </div>
-
-                {/* REJECT FORM */}
-                <AnimatePresence>
-                  {showRejectForm && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 space-y-3">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-rose-700">
-                          Motiv respingere (vizibil clientului)
-                        </label>
-                        <textarea
-                          value={rejectReason}
-                          onChange={(e) => setRejectReason(e.target.value)}
-                          rows={3}
-                          className="w-full bg-white border-2 border-rose-100 rounded-xl px-4 py-3 text-sm outline-none focus:border-rose-400 resize-none"
-                          placeholder="ex. Produsul nu mai este pe stoc."
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-
-          {/* FOOTER ACTIONS */}
-          {order && (
-            <footer className="p-5 sm:p-6 border-t border-zinc-100 bg-zinc-50/40 shrink-0 flex flex-col sm:flex-row gap-3">
-              {!showRejectForm ? (
-                <>
-                  <button
-                    onClick={() => setShowRejectForm(true)}
-                    disabled={!!busy}
-                    className="sm:flex-1 h-12 rounded-xl border border-rose-200 text-rose-600 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <XCircle size={14} /> Respinge
-                  </button>
-                  <button
-                    onClick={handleApprove}
-                    disabled={!!busy || !validation.ok}
-                    className="sm:flex-[2] h-12 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
-                    style={{ background: "var(--primary-gradient)" }}
-                  >
-                    {busy === "approve" ? (
-                      <Loader2 className="animate-spin" size={14} />
-                    ) : (
-                      <CheckCircle2 size={14} />
-                    )}
-                    {validation.ok
-                      ? "Aprobă & Generează AWB"
-                      : "Completează datele lipsă"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      setShowRejectForm(false);
-                      setRejectReason("");
-                    }}
-                    disabled={!!busy}
-                    className="sm:flex-1 h-12 rounded-xl bg-white border border-zinc-200 text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-zinc-50 transition-all"
-                  >
-                    Anulează
-                  </button>
-                  <button
-                    onClick={handleReject}
-                    disabled={!!busy || !rejectReason.trim()}
-                    className="sm:flex-[2] h-12 rounded-xl bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-30 flex items-center justify-center gap-2 hover:bg-rose-700"
-                  >
-                    {busy === "reject" ? (
-                      <Loader2 className="animate-spin" size={14} />
-                    ) : (
-                      <XCircle size={14} />
-                    )}
-                    Confirmă respingere
-                  </button>
-                </>
-              )}
-            </footer>
-          )}
-        </motion.div>
-      </div>
-    </AnimatePresence>
-  );
+const STATUS_MAP: Record<
+  string,
+  { label: string; color: string; border: string; bg: string }
+> = {
+  pending: {
+    label: "În așteptare",
+    color: "#b45309",
+    bg: "#fffbeb",
+    border: "#fde68a",
+  },
+  processing: {
+    label: "În procesare",
+    color: "var(--royal-violet)",
+    bg: "rgba(123, 44, 191, 0.05)",
+    border: "rgba(123, 44, 191, 0.15)",
+  },
+  shipped: {
+    label: "Expediată",
+    color: "#0369a1",
+    bg: "#f0fdf4",
+    border: "#bbf7d0",
+  },
+  delivered: {
+    label: "Livrată",
+    color: "#15803d",
+    bg: "#dcfce7",
+    border: "#86efac",
+  },
+  canceled: {
+    label: "Anulată",
+    color: "#b91c1c",
+    bg: "#fef2f2",
+    border: "#fecaca",
+  },
 };
 
+// --- Componente UI (Portate din OrderReviewModal) ---
 const InfoBlock = ({
   title,
   icon,
@@ -917,10 +101,10 @@ const InfoBlock = ({
   icon: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-2xl border border-zinc-100 bg-white p-5">
-    <div className="flex items-center gap-2 mb-3">
+  <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+    <div className="flex items-center gap-2 mb-4 border-b border-zinc-50 pb-3">
       <div
-        className="size-7 rounded-lg text-white flex items-center justify-center"
+        className="size-8 rounded-lg text-white flex items-center justify-center shadow-sm"
         style={{ background: "var(--primary-gradient)" }}
       >
         {icon}
@@ -929,7 +113,7 @@ const InfoBlock = ({
         {title}
       </h4>
     </div>
-    <div className="space-y-1.5">{children}</div>
+    <div className="space-y-2">{children}</div>
   </div>
 );
 
@@ -942,7 +126,7 @@ const Row = ({
   value: string;
   icon?: React.ReactNode;
 }) => (
-  <div className="flex items-start justify-between gap-3 text-xs">
+  <div className="flex items-start justify-between gap-3 text-xs py-1">
     <span className="text-zinc-400 font-medium flex items-center gap-1.5 shrink-0">
       {icon} {label}
     </span>
@@ -961,47 +145,400 @@ const RowTotal = ({
   value: string | React.ReactNode;
   accent?: string;
 }) => (
-  <div className="flex justify-between items-center text-xs">
-    <span className="text-zinc-500">{label}</span>
-    <span className={`font-bold ${accent || "text-zinc-800"}`}>
-      {value} {accent?.includes("emerald") ? "RON" : "RON"}
+  <div className="flex justify-between items-center text-xs py-1">
+    <span className="text-zinc-500 font-medium">{label}</span>
+    <span className={`font-bold ${accent || "text-[var(--dark-amethyst)]"}`}>
+      {value}
     </span>
   </div>
 );
 
-const SpecInput = ({
-  label,
-  value,
-  missing,
-  onChange,
-}: {
-  label: string;
-  value: any;
-  missing: boolean;
-  onChange: (v: string) => void;
-}) => (
-  <div className="space-y-1">
-    <label
-      className={`text-[8px] font-black uppercase tracking-widest block ${
-        missing ? "text-amber-600" : "text-zinc-400"
-      }`}
-    >
-      {label}
-    </label>
-    <input
-      type="number"
-      step="0.01"
-      min="0"
-      defaultValue={value ?? ""}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder="—"
-      className={`w-full h-10 rounded-xl px-3 text-xs font-bold outline-none transition-all ${
-        missing
-          ? "bg-amber-50 border-2 border-amber-200 focus:border-amber-400"
-          : "bg-white border-2 border-zinc-100 focus:border-[var(--royal-violet)]"
-      }`}
-    />
-  </div>
-);
+// --- Componenta Principală ---
+const AdminOrderDetail = () => {
+  const { orderId } = useParams();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
-export default OrderReviewModal;
+  const fetchOrder = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/orders/admin/${orderId}`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!res.ok) throw new Error("Comanda nu a putut fi găsită.");
+      const data = await res.json();
+      setOrder(data);
+    } catch (err: any) {
+      toast.error(err.message || "Eroare la încărcarea comenzii.");
+      navigate("/admin");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (orderId) fetchOrder();
+  }, [orderId]);
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      setUpdatingStatus(true);
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/orders/admin/${orderId}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+      if (res.ok) {
+        toast.success(
+          `Status actualizat la: ${STATUS_MAP[newStatus]?.label || newStatus}`,
+        );
+        fetchOrder();
+      } else {
+        toast.error("Eroare la actualizarea statusului.");
+      }
+    } catch {
+      toast.error("Eroare de rețea.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const shipping = useMemo(() => {
+    if (!order?.shipping_address) return {};
+    return typeof order.shipping_address === "string"
+      ? JSON.parse(order.shipping_address)
+      : order.shipping_address;
+  }, [order]);
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-pulse bg-[#fcfbfe] min-h-screen">
+        <Skeleton className="h-10 w-48 rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Skeleton className="lg:col-span-2 h-[500px] rounded-[2.5rem]" />
+          <Skeleton className="h-[500px] rounded-[2.5rem]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) return null;
+
+  const currentStatusObj = STATUS_MAP[order.status?.toLowerCase()] || {
+    label: order.status,
+    color: "#71717a",
+    bg: "#f4f4f5",
+    border: "#e4e4e7",
+  };
+  const isLocker = order.delivery_type === "locker";
+
+  return (
+    <div className="min-h-screen bg-[#fcfbfe] font-sans text-left pb-24">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 sm:p-8 max-w-[1400px] mx-auto space-y-8"
+      >
+        {/* ─── HEADER ─── */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 border-b border-zinc-100/80 pb-8">
+          <div className="space-y-4">
+            <button
+              onClick={() => navigate("/admin/orders")}
+              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[var(--royal-violet)] transition-colors group bg-white border border-zinc-200/60 px-4 py-2 rounded-full shadow-sm w-max"
+            >
+              <ArrowLeft
+                size={13}
+                className="group-hover:-translate-x-1 transition-transform"
+              />
+              Înapoi la Comenzi
+            </button>
+            <div>
+              <div className="flex items-center gap-4 mb-2 flex-wrap">
+                <h1 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-[var(--dark-amethyst)]">
+                  Comanda{" "}
+                  <span className="text-zinc-300 font-sans not-italic font-medium text-3xl sm:text-4xl">
+                    #
+                    {order.order_number?.split("-").pop() ||
+                      order.id?.split("-")[0]}
+                  </span>
+                </h1>
+                <span
+                  className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border shadow-sm"
+                  style={{
+                    backgroundColor: currentStatusObj.bg,
+                    color: currentStatusObj.color,
+                    borderColor: currentStatusObj.border,
+                  }}
+                >
+                  {currentStatusObj.label}
+                </span>
+              </div>
+              <p className="text-xs font-bold text-zinc-400 flex items-center gap-2">
+                <Calendar size={13} /> Înregistrată:{" "}
+                {formatDate(order.created_at)}
+              </p>
+            </div>
+          </div>
+
+          {/* Status Controls */}
+          <div className="flex flex-col items-end gap-2">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">
+              Modifică Status
+            </p>
+            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-zinc-200/60 shadow-sm">
+              <select
+                value={order.status?.toLowerCase()}
+                onChange={(e) => handleStatusUpdate(e.target.value)}
+                disabled={updatingStatus}
+                className="h-12 bg-zinc-50 border border-zinc-100 rounded-xl px-4 text-xs font-bold text-[var(--dark-amethyst)] outline-none focus:border-[var(--royal-violet)] min-w-[180px] cursor-pointer disabled:opacity-50 transition-all hover:bg-zinc-100"
+              >
+                <option value="pending">În așteptare</option>
+                <option value="processing">În procesare</option>
+                <option value="shipped">Expediată</option>
+                <option value="delivered">Livrată</option>
+                <option value="canceled">Anulată</option>
+              </select>
+              {updatingStatus && (
+                <RefreshCw
+                  size={18}
+                  className="animate-spin text-[var(--royal-violet)] mr-2"
+                />
+              )}
+            </div>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+          {/* ─── COLOANA STÂNGĂ (Produse) ─── */}
+          <div className="xl:col-span-2 space-y-6">
+            <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm overflow-hidden p-2">
+              <div className="p-6 bg-zinc-50/50 rounded-t-[2rem] border-b border-zinc-100 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-white shadow-sm rounded-xl text-[var(--royal-violet)]">
+                    <Package size={18} />
+                  </div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)]">
+                    Coș de Cumpărături ({order.items?.length || 0})
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-6 space-y-4">
+                {order.items?.map((item: any) => {
+                  // Fix pentru pret unitar si total NaN
+                  const unitPrice = Number(item.unit_price_at_purchase ?? 0);
+                  const totalPrice = Number(
+                    item.total_item_price ?? unitPrice * (item.quantity || 1),
+                  );
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-col sm:flex-row gap-5 p-5 rounded-[1.5rem] border border-zinc-100 bg-zinc-50/40 hover:bg-white hover:shadow-md transition-all items-center"
+                    >
+                      <div className="size-24 bg-white rounded-2xl border border-zinc-100 overflow-hidden shrink-0 shadow-sm p-1 group">
+                        <img
+                          src={getImage(item.product_image)}
+                          alt={item.product_name_at_purchase}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) =>
+                            ((e.target as HTMLImageElement).src =
+                              "/placeholder.png")
+                          }
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0 text-center sm:text-left">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">
+                          SKU {item.product_sku_at_purchase}
+                        </p>
+                        <h4 className="font-bold text-sm text-[var(--dark-amethyst)] leading-tight">
+                          {item.product_name_at_purchase}
+                        </h4>
+
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3">
+                          <span className="text-[11px] font-bold text-[var(--royal-violet)] bg-[var(--royal-violet)]/10 px-3 py-1 rounded-lg">
+                            Cantitate: {item.quantity}
+                          </span>
+                          <span className="text-[11px] font-black text-zinc-500">
+                            {formatCurrency(unitPrice)} / buc
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-center sm:text-right shrink-0 bg-white sm:bg-transparent p-4 sm:p-0 rounded-2xl w-full sm:w-auto border sm:border-none border-zinc-100">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1">
+                          Total Produs
+                        </p>
+                        <p className="text-lg font-black text-[var(--dark-amethyst)]">
+                          {formatCurrency(totalPrice)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ─── COLOANA DREAPTĂ (Detalii Client, Livrare, Financiare) ─── */}
+          <div className="space-y-6">
+            {/* Client Info */}
+            <InfoBlock title="Profil Client" icon={<User size={16} />}>
+              <div className="pb-3 mb-3 border-b border-zinc-100 flex justify-between items-center">
+                <p className="text-sm font-black text-zinc-900">
+                  {order.customer_name ||
+                    `${shipping.first_name || shipping.firstName || ""} ${shipping.last_name || shipping.lastName || ""}`}
+                </p>
+                {order.user_id && (
+                  <ShieldCheck
+                    size={16}
+                    className="text-emerald-500"
+                    title="Cont Înregistrat"
+                  />
+                )}
+              </div>
+              <Row
+                label="Email"
+                value={order.email}
+                icon={<Mail size={12} />}
+              />
+              <Row
+                label="Telefon"
+                value={order.phone}
+                icon={<Phone size={12} />}
+              />
+            </InfoBlock>
+
+            {/* Livrare */}
+            <InfoBlock
+              title={isLocker ? "Livrare — GLS Locker" : "Livrare — Curier"}
+              icon={isLocker ? <Package size={16} /> : <Truck size={16} />}
+            >
+              <div className="p-4 rounded-xl border border-zinc-100 bg-zinc-50/50 space-y-2 relative overflow-hidden">
+                <div
+                  className={`absolute top-0 left-0 w-1 h-full ${isLocker ? "bg-yellow-400" : "bg-[var(--royal-violet)]"}`}
+                />
+                {isLocker ? (
+                  <>
+                    <p className="text-sm font-bold text-[var(--dark-amethyst)] pl-2">
+                      {order.locker_name ||
+                        shipping.locker_name ||
+                        "Locker GLS"}
+                    </p>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed font-medium pl-2">
+                      {order.locker_address ||
+                        shipping.street ||
+                        shipping.address}
+                      <br />
+                      {shipping.city},{" "}
+                      {shipping.county ||
+                        shipping.zip ||
+                        shipping.postalCode ||
+                        shipping.postal_code}
+                    </p>
+                    <p className="text-[9px] font-mono text-zinc-400 pl-2 mt-2">
+                      ID: {order.locker_id || "N/A"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold text-[var(--dark-amethyst)] pl-2">
+                      {shipping.first_name || shipping.firstName}{" "}
+                      {shipping.last_name || shipping.lastName}
+                    </p>
+                    <p className="text-[11px] text-zinc-500 leading-relaxed font-medium pl-2">
+                      {shipping.street}{" "}
+                      {shipping.house_number || shipping.houseNumber}
+                      <br />
+                      {shipping.city}, {shipping.county}
+                      <br />
+                      {shipping.postalCode || shipping.postal_code
+                        ? `Cod: ${shipping.postalCode || shipping.postal_code}`
+                        : ""}
+                    </p>
+                  </>
+                )}
+              </div>
+            </InfoBlock>
+
+            {/* Rezumat Financiar */}
+            <InfoBlock title="Decontare" icon={<Receipt size={16} />}>
+              <div className="space-y-1 mb-4">
+                <RowTotal
+                  label="Subtotal produse"
+                  value={formatCurrency(Number(order.subtotal_amount || 0))}
+                />
+                <RowTotal
+                  label="Taxă livrare"
+                  value={
+                    Number(order.shipping_fee) > 0
+                      ? formatCurrency(Number(order.shipping_fee))
+                      : "Gratuit"
+                  }
+                />
+                {Number(order.discount_amount) > 0 && (
+                  <RowTotal
+                    label="Reducere (Voucher)"
+                    value={`-${formatCurrency(Number(order.discount_amount))}`}
+                    accent="text-rose-500"
+                  />
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 flex justify-between items-center mb-4">
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                  Suma Totală
+                </span>
+                <span className="text-2xl font-black italic tracking-tighter text-[var(--royal-violet)]">
+                  {formatCurrency(Number(order.total_amount || 0))}
+                </span>
+              </div>
+
+              <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CreditCard
+                    size={14}
+                    className={
+                      order.payment_method === "card"
+                        ? "text-[var(--royal-violet)]"
+                        : "text-zinc-500"
+                    }
+                  />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-700">
+                    {order.payment_method === "card"
+                      ? "Card (Stripe)"
+                      : "Ramburs (C.O.D)"}
+                  </span>
+                </div>
+                {order.payment_method === "card" && (
+                  <span className="text-[8px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded uppercase">
+                    Achitat
+                  </span>
+                )}
+              </div>
+
+              {order.stripe_payment_id && (
+                <p className="text-[9px] text-zinc-400 flex items-center gap-1 font-mono mt-2 justify-center">
+                  <AlertCircle size={10} /> ID Tranzacție:{" "}
+                  {order.stripe_payment_id}
+                </p>
+              )}
+            </InfoBlock>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default AdminOrderDetail;
