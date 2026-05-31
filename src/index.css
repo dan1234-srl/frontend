@@ -136,15 +136,6 @@ html {
 }
 /* --- FIX GLOBAL RADIX OVERLAY PENTRU BLUR --- */
 /* Targetăm orice overlay de la Radix UI (Sheet, Dialog, etc) */
-[data-radix-portal] div[role="presentation"] {
-  /* Blur intens */
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-
-  /* Fundal foarte subtil pentru a crea efectul de sticlă mată */
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
 /* 2. Asigură-te că Sheet-ul (popup-ul) este opac pe interior */
 [data-radix-portal] [role="dialog"] {
   background-color: #ffffff !important; /* Acesta trebuie să fie solid pentru a fi citibil */
@@ -160,4 +151,17 @@ html {
   -webkit-backdrop-filter: blur(12px) !important;
   /* Animație pentru a intra lin */
   transition: all 0.3s ease;
+}
+/* Asigură-te că overlay-ul Radix este setat să acopere totul */
+[data-radix-portal] {
+  z-index: 999999 !important; /* Un z-index extrem de mare */
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+[data-radix-portal] div[role="presentation"] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  z-index: 999998 !important;
 }

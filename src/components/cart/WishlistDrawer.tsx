@@ -122,7 +122,7 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="absolute inset-0 bg-black/20 backdrop-blur-[8px]"
+              className="absolute inset-0 glass-overlay"
             />
 
             <motion.div
