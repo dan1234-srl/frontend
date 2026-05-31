@@ -39,19 +39,25 @@ const AdminNewsletter = () => {
   // Fetch Statistici
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(
         `${API_BASE_URL}/api/v1/admin/marketing/subscribers-count`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Aceasta este setarea crucială care trimite cookie-urile automat
+          credentials: "include",
         },
       );
+
       if (res.ok) {
         const data = await res.json();
         setStats(data);
+      } else if (res.status === 401) {
+        toast.error("Sesiunea a expirat sau nu ai drepturi de admin.");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching stats:", error);
     }
   };
 
