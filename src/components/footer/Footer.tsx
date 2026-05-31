@@ -266,7 +266,7 @@ const Footer = () => {
 
       {/* 2. THE GEOMETRIC CHASM & MAIN INTERIOR */}
       <div
-        className="pt-16 pb-12 px-6 md:px-12 relative z-10"
+        className="pt-4 pb-12 px-6 md:px-12 relative z-10"
         style={{
           backgroundColor: "var(--dark-amethyst)",
           clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
