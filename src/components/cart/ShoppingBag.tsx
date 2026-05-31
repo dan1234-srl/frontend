@@ -193,7 +193,8 @@ const ShoppingBag = ({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               onClick={onClose}
-              className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
+              // Înlocuiește "absolute inset-0 bg-zinc-950/40 backdrop-blur-sm" cu clasa noastră:
+              className="absolute inset-0 glass-overlay"
             />
 
             {/* Main Drawer - Mai micuț (max-w-[400px]) pentru o senzație mai finuță */}
