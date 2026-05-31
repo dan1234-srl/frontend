@@ -6,7 +6,7 @@ import {
   Grid2X2,
   SlidersHorizontal,
   X,
-  Search, // Adăugat
+  Search,
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
-import Fuse from "fuse.js"; // Adăugat pentru căutarea categoriilor
+import Fuse from "fuse.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -306,12 +306,10 @@ const CategoryPage = () => {
       .catch(() => {});
   }, []);
 
-  // Memorează și sortează categoriile crescător (A-Z)
   const sortedCategories = useMemo(() => {
     return [...categoriesTree].sort((a, b) => a.name.localeCompare(b.name));
   }, [categoriesTree]);
 
-  // Filtrare categorii cu Fuse.js pe baza sortedCategories
   const filteredCategories = useMemo(() => {
     if (!categorySearchQuery) return sortedCategories;
 
@@ -369,7 +367,6 @@ const CategoryPage = () => {
           }
         });
 
-        // Setăm default de la "mare la mic" (ajustează 'pret-desc' conform API-ului tău)
         params.set("sort", searchParams.get("sort") || "pret-desc");
 
         const res = await fetch(
@@ -473,7 +470,21 @@ const CategoryPage = () => {
   const hasMore = pageToLoadRef.current <= totalPages && !loading;
 
   return (
-    <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
+    <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased relative">
+      {/* ✅ OVERLAY MANUAL LA RĂDĂCINĂ (ROOT) PENTRU A IGNORA TOATE CONTEXTELE Z-INDEX ✅ */}
+      <AnimatePresence>
+        {filtersOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setFiltersOpen(false)}
+            className="fixed inset-0 z-[99990] glass-overlay"
+          />
+        )}
+      </AnimatePresence>
+
       <Navbar />
 
       <div
@@ -695,16 +706,16 @@ const CategoryPage = () => {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-      /* Asigură-te că Sheet-ul în sine este deasupra blur-ului */
-      [data-radix-portal] [role="dialog"] {
-        z-index: 99999 !important;
-      }
-      
-      /* Prevenim scroll-ul dublu */
-      body[data-scroll-locked] {
-        padding-right: 0px !important;
-      }
-    `,
+            /* Asigură-te că Sheet-ul în sine este deasupra blur-ului */
+            [data-radix-portal] [role="dialog"] {
+              z-index: 99999 !important;
+            }
+            
+            /* Prevenim scroll-ul dublu */
+            body[data-scroll-locked] {
+              padding-right: 0px !important;
+            }
+          `,
         }}
       />
     </div>

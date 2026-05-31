@@ -1,3 +1,149 @@
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+const Sheet = SheetPrimitive.Root;
+const SheetTrigger = SheetPrimitive.Trigger;
+const SheetClose = SheetPrimitive.Close;
+const SheetPortal = SheetPrimitive.Portal;
+
+// Overlay-ul nu mai este folosit automat în SheetContent, dar îl păstrăm disponibil dacă vrei să-l folosești manual altundeva.
+const SheetOverlay = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Overlay
+    className={cn(
+      "fixed inset-0 z-50 glass-overlay data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className,
+    )}
+    {...props}
+    ref={ref}
+  />
+));
+SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
+
+const sheetVariants = cva(
+  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  {
+    variants: {
+      side: {
+        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        bottom:
+          "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        right:
+          "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+      },
+    },
+    defaultVariants: {
+      side: "right",
+    },
+  },
+);
+
+interface SheetContentProps
+  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
+    VariantProps<typeof sheetVariants> {}
+
+const SheetContent = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Content>,
+  SheetContentProps
+>(({ side = "right", className, children, ...props }, ref) => (
+  <SheetPortal>
+    {/* ⚠️ FĂRĂ OVERLAY AICI PENTRU A EVITA BLOCAJUL ÎN PORTAL ⚠️ */}
+    <SheetPrimitive.Content
+      ref={ref}
+      className={cn(sheetVariants({ side }), className)}
+      {...props}
+    >
+      {children}
+      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-secondary hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </SheetPrimitive.Close>
+    </SheetPrimitive.Content>
+  </SheetPortal>
+));
+SheetContent.displayName = SheetPrimitive.Content.displayName;
+
+const SheetHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-2 text-center sm:text-left",
+      className,
+    )}
+    {...props}
+  />
+);
+SheetHeader.displayName = "SheetHeader";
+
+const SheetFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className,
+    )}
+    {...props}
+  />
+);
+SheetFooter.displayName = "SheetFooter";
+
+const SheetTitle = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Title
+    ref={ref}
+    className={cn("text-lg font-semibold text-foreground", className)}
+    {...props}
+  />
+));
+SheetTitle.displayName = SheetPrimitive.Title.displayName;
+
+const SheetDescription = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+SheetDescription.displayName = SheetPrimitive.Description.displayName;
+
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetOverlay,
+  SheetPortal,
+  SheetTitle,
+  SheetTrigger,
+};
+
+```
+
+---
+
+### 2. `CategoryShowcase.tsx`
+
+Aici am implementat logica de overlay manual cu `AnimatePresence` folosind clasa ta globală `glass-overlay`. Aceasta forțează blur-ul să fie deasupra tuturor elementelor din pagină (inclusiv Navbar).
+
+```tsx
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -37,7 +183,7 @@ const CategoryShowcase = () => {
   const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
   const [filtersData, setFiltersData] = useState<any>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [expandedCat, setExpandedCat] = useState<string | null>(null); // Stare pentru Acordeon
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
   // ─── Referințe Infinite Scroll ───
   const pageToLoadRef = useRef(2);
@@ -54,7 +200,7 @@ const CategoryShowcase = () => {
       .catch(() => {});
   }, []);
 
-  // 2. Fetch Date Filtre (Global pentru toate produsele)
+  // 2. Fetch Date Filtre
   useEffect(() => {
     setFiltersData(null);
     fetch(
@@ -194,28 +340,52 @@ const CategoryShowcase = () => {
       <div className="flex items-center justify-between py-4 sm:py-5 mb-8 sm:mb-12 border-y border-zinc-100 sticky top-20 bg-white/95 backdrop-blur-md z-40 gap-3">
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetTrigger asChild>
-            <button className="flex items-center gap-2 sm:gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group">
-              <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
-                <SlidersHorizontal size={14} />
+            <button
+              className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
+              aria-label="Deschide filtre"
+            >
+              <div className="relative p-2 bg-zinc-100/80 rounded-full group-hover:bg-zinc-900 group-hover:text-white transition-all duration-300 shadow-sm border border-zinc-200 group-hover:border-transparent">
+                <SlidersHorizontal size={13} />
                 {activeFiltersCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black border border-white">
+                  <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[7px] font-black border border-white">
                     {activeFiltersCount}
                   </span>
                 )}
               </div>
-              <span className="hidden sm:inline">Rafinează Portofoliul</span>
+              <span className="hidden sm:inline">Filtrează Produsele</span>
               <span className="sm:hidden">Filtre</span>
             </button>
           </SheetTrigger>
 
+          {/* ✅ OVERLAY MANUAL CU Z-INDEX IMENS PENTRU A ACOPERI NAVBAR-UL ✅ */}
+          <AnimatePresence>
+            {filtersOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => setFiltersOpen(false)}
+                className="fixed inset-0 z-[99990] glass-overlay"
+              />
+            )}
+          </AnimatePresence>
+
           <SheetContent
             side="right"
+            hideClose
             className="w-[92%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
           >
             <SheetHeader className="p-6 sm:p-8 border-b border-zinc-100 shrink-0">
               <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
                 Filtre Produse
               </SheetTitle>
+              <button
+                onClick={() => setFiltersOpen(false)}
+                className="absolute right-6 top-6 h-8 w-8 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </SheetHeader>
             <div className="flex-1 overflow-y-auto p-6 sm:p-8 luxury-scrollbar">
               {filtersData ? (
