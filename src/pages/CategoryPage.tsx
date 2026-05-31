@@ -46,7 +46,7 @@ const formatFallbackName = (str: string | undefined) => {
 };
 
 // ─────────────────────────────────────────────
-// Hero Carousel
+// Hero Carousel (Dimensiuni Reduse & Moderne)
 // ─────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
@@ -77,7 +77,8 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
       : currentBanner.image_desktop;
 
   return (
-    <div className="relative w-full aspect-[21/9] sm:aspect-[21/7] md:aspect-[32/10] rounded-[2.5rem] overflow-hidden mb-16 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] border border-zinc-100 group bg-zinc-950 select-none">
+    // Am înlocuit aspect-ratio cu o înălțime fixă (h-[...]) pentru a fi o "bandă" elegantă
+    <div className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[300px] rounded-3xl overflow-hidden mb-10 shadow-sm border border-zinc-100 group bg-zinc-950 select-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
@@ -106,23 +107,24 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent z-10" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent z-10" />
 
-          <div className="absolute inset-y-0 left-0 p-6 sm:p-12 md:p-20 flex flex-col justify-center items-start text-left text-white max-w-[90%] sm:max-w-md md:max-w-2xl z-20 space-y-3 sm:space-y-4">
+          <div className="absolute inset-y-0 left-0 p-6 sm:p-10 md:p-14 flex flex-col justify-center items-start text-left text-white max-w-[90%] sm:max-w-md md:max-w-2xl z-20 space-y-2 sm:space-y-3">
             <div className="flex items-center gap-3">
-              <span className="h-[1px] w-8 bg-white/60 block" />
-              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-300">
+              <span className="h-[1px] w-6 bg-white/60 block" />
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.4em] text-zinc-300">
                 Campanie Exclusivă
               </span>
             </div>
-            <h2 className="text-xl sm:text-4xl md:text-5xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
+            {/* Titlu mai mic și rafinat */}
+            <h2 className="text-xl sm:text-3xl md:text-4xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
               {currentBanner.title}
             </h2>
             {currentBanner.subtitle && (
-              <p className="hidden sm:block text-[10px] md:text-xs font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
+              <p className="hidden sm:block text-[9px] md:text-[10px] font-medium text-zinc-300 uppercase tracking-widest leading-relaxed max-w-xs md:max-w-md drop-shadow-sm">
                 {currentBanner.subtitle}
               </p>
             )}
-            <div className="pt-1 sm:pt-2">
-              <button className="px-6 sm:px-8 py-3 sm:py-4 bg-white text-zinc-950 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-2xl active:scale-95 duration-300">
+            <div className="pt-2">
+              <button className="px-5 sm:px-6 py-2.5 sm:py-3 bg-white text-zinc-950 text-[8px] sm:text-[9px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-xl active:scale-95 duration-300">
                 {currentBanner.button_text || "DESCOPERĂ COLECȚIA"}
               </button>
             </div>
@@ -131,7 +133,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
       </AnimatePresence>
 
       {banners.length > 1 && (
-        <div className="absolute bottom-4 sm:bottom-6 right-6 sm:right-10 flex gap-2.5 z-30">
+        <div className="absolute bottom-4 right-6 flex gap-2 z-30">
           {banners.map((_, i) => (
             <button
               key={i}
@@ -139,8 +141,8 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
               aria-label={`Slide ${i + 1}`}
               className={`h-1 rounded-full transition-all duration-500 ${
                 current === i
-                  ? "w-8 bg-white"
-                  : "w-2 bg-white/30 hover:bg-white/60"
+                  ? "w-6 bg-white"
+                  : "w-1.5 bg-white/30 hover:bg-white/60"
               }`}
             />
           ))}
@@ -157,18 +159,15 @@ const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Products state
   const [products, setProducts] = useState<any[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // ✅ FIX PRINCIPAL: pageToLoad în ref ca să nu cauzeze re-renders în observer
   const pageToLoadRef = useRef(2);
-  const [pageToLoadState, setPageToLoadState] = useState(2); // doar pentru a re-declanșa observer-ul
+  const [pageToLoadState, setPageToLoadState] = useState(2);
 
-  // Other state
   const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
   const [filtersData, setFiltersData] = useState<any>(null);
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
@@ -177,10 +176,8 @@ const CategoryPage = () => {
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // currentPage din URL — folosit DOAR pentru primul fetch la load/filter change
   const currentPage = parseInt(searchParams.get("page") || "1");
 
-  // ─── Fetch categories tree ────────────────────
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/categories/tree`)
       .then((res) => res.json())
@@ -188,7 +185,6 @@ const CategoryPage = () => {
       .catch(() => {});
   }, []);
 
-  // ─── Fetch filters ───────────────────────────
   useEffect(() => {
     if (!slug) return;
     setFiltersData(null);
@@ -200,7 +196,6 @@ const CategoryPage = () => {
       .catch(() => {});
   }, [slug, searchParams.toString()]);
 
-  // ─── Fetch banners ───────────────────────────
   useEffect(() => {
     if (!slug) return;
     fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
@@ -211,7 +206,6 @@ const CategoryPage = () => {
       .catch(() => setCampaignBanners([]));
   }, [slug]);
 
-  // ─── Fetch products ──────────────────────────
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
       if (append) setLoadingMore(true);
@@ -249,7 +243,6 @@ const CategoryPage = () => {
         setTotalPages(data.pages || 1);
         setTotalProducts(data.total || 0);
       } catch {
-        // silently fail
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -258,24 +251,19 @@ const CategoryPage = () => {
     [slug, searchParams.toString()],
   );
 
-  // ─── Reset + fetch la schimbare slug/filtre ──
   useEffect(() => {
-    // ✅ Reset pageToLoad la fiecare schimbare de categorie / filtre
     pageToLoadRef.current = currentPage + 1;
     setPageToLoadState(currentPage + 1);
     fetchProducts(currentPage, false);
   }, [slug, searchParams.toString()]);
 
-  // ─── Preload LCP ─────────────────────────────
   useEffect(() => {
     if (!products.length) return;
     const url = extractLcpUrl(products[0]);
     if (url) preloadLcp(url);
   }, [products]);
 
-  // ─── Infinite scroll observer ────────────────
   useEffect(() => {
-    // Disconnect previous observer
     if (observerRef.current) {
       observerRef.current.disconnect();
     }
@@ -292,8 +280,8 @@ const CategoryPage = () => {
           pageToLoadRef.current <= totalPages
         ) {
           const nextPage = pageToLoadRef.current;
-          pageToLoadRef.current += 1; // ✅ incrementăm imediat în ref (fără re-render)
-          setPageToLoadState(pageToLoadRef.current); // optional: pentru debugging
+          pageToLoadRef.current += 1;
+          setPageToLoadState(pageToLoadRef.current);
           fetchProducts(nextPage, true);
         }
       },
@@ -307,7 +295,6 @@ const CategoryPage = () => {
     };
   }, [totalPages, loadingMore, loading, fetchProducts]);
 
-  // ─── Active filters count ────────────────────
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     searchParams.forEach((val, key) => {
@@ -322,7 +309,6 @@ const CategoryPage = () => {
     return count;
   }, [searchParams]);
 
-  // ─── Category title ──────────────────────────
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) return filtersData.category_name;
     if (!slug) return "";
@@ -336,28 +322,31 @@ const CategoryPage = () => {
     return formatFallbackName(slug);
   }, [slug, filtersData, categoriesTree]);
 
-  // ─── Has more pages? (for sentinel visibility) ─
   const hasMore = pageToLoadRef.current <= totalPages && !loading;
 
   return (
-    <div className="bg-white min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
+    <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased">
       <Navbar />
 
-      {/* Navbar spacer */}
-      <div className="w-full h-[9.25rem] shrink-0" aria-hidden="true" />
+      <div
+        className="w-full h-[7rem] md:h-[8.5rem] shrink-0"
+        aria-hidden="true"
+      />
 
-      <main className="flex-grow w-full max-w-[1800px] mx-auto px-4 sm:px-6 md:px-12 py-6 sm:py-8">
+      {/* Am redus max-w de la 1800px la 1600px pentru un look mai închegat */}
+      <main className="flex-grow w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-10 py-6">
         {/* ── Page Header ── */}
-        <div className="mb-8 md:mb-14">
+        <div className="mb-6 md:mb-10">
           <div className="flex items-baseline gap-4 flex-wrap">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
+            {/* Titlu mai mic și compact */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
               {categoryTitle || (
                 <span className="inline-block w-48 h-10 bg-zinc-100 rounded-xl animate-pulse" />
               )}
             </h1>
           </div>
-          <div className="flex items-center gap-3 mt-3">
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-3 mt-2">
+            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
               {loading && products.length === 0 ? "—" : totalProducts} Articole
               Disponibile
             </p>
@@ -374,10 +363,10 @@ const CategoryPage = () => {
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className={`whitespace-nowrap px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
                   slug === cat.slug
-                    ? "bg-zinc-100 text-black border-zinc-200 shadow-sm"
-                    : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"
+                    ? "bg-zinc-900 text-white border-zinc-900 shadow-sm"
+                    : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300"
                 }`}
               >
                 {cat.name}
@@ -387,46 +376,46 @@ const CategoryPage = () => {
         </div>
 
         {/* ── Toolbar: Filters + Sort ── */}
-        <div className="flex items-center justify-between py-4 sm:py-5 mb-8 sm:mb-12 border-y border-zinc-100 sticky top-36 bg-white/95 backdrop-blur-md z-40 gap-3">
+        <div className="flex items-center justify-between py-3 mb-6 border-y border-zinc-100 sticky top-[7rem] md:top-[8.5rem] bg-[#fcfbfe]/95 backdrop-blur-md z-40 gap-3">
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
               <button
-                className="flex items-center gap-2 sm:gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
+                className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
                 aria-label="Deschide filtre"
               >
-                <div className="relative p-2.5 bg-zinc-50 rounded-full group-hover:bg-zinc-950 group-hover:text-white transition-all duration-300 shadow-sm">
-                  <SlidersHorizontal size={14} />
+                <div className="relative p-2 bg-zinc-100/80 rounded-full group-hover:bg-zinc-900 group-hover:text-white transition-all duration-300 shadow-sm border border-zinc-200 group-hover:border-transparent">
+                  <SlidersHorizontal size={13} />
                   {activeFiltersCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black border border-white">
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[7px] font-black border border-white">
                       {activeFiltersCount}
                     </span>
                   )}
                 </div>
-                <span className="hidden sm:inline">Rafinează Portofoliul</span>
+                <span className="hidden sm:inline">Filtrează Produsele</span>
                 <span className="sm:hidden">Filtre</span>
               </button>
             </SheetTrigger>
 
             <SheetContent
               side="right"
-              className="w-[92%] sm:w-[450px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
+              className="w-[92%] sm:w-[400px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
             >
-              <SheetHeader className="p-6 sm:p-8 border-b border-zinc-100 shrink-0">
-                <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
-                  Filtre categorii
+              <SheetHeader className="p-6 border-b border-zinc-100 shrink-0">
+                <SheetTitle className="text-lg font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
+                  Filtre
                 </SheetTitle>
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto p-6 sm:p-8 luxury-scrollbar">
+              <div className="flex-1 overflow-y-auto p-6 luxury-scrollbar">
                 {filtersData ? (
                   <FilterSidebar filtersData={filtersData} />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <Loader2
                       className="animate-spin text-[var(--royal-violet)]"
-                      size={24}
+                      size={20}
                     />
                     <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                      Se încarcă matricea...
+                      Se încarcă filtrele...
                     </span>
                   </div>
                 )}
@@ -434,48 +423,48 @@ const CategoryPage = () => {
             </SheetContent>
           </Sheet>
 
-          <div className="w-36 sm:w-44 md:w-60 shrink-0">
+          <div className="w-36 sm:w-48 shrink-0">
             <SortDropdown />
           </div>
         </div>
 
         {/* ── Main layout: Sidebar + Grid ── */}
-        <div className="flex gap-8 xl:gap-12 items-start">
+        <div className="flex gap-8 items-start">
           {/* Desktop category sidebar */}
-          <aside className="hidden lg:block w-[220px] xl:w-[250px] shrink-0 sticky top-52">
-            <div className="flex items-center gap-2 mb-6 pl-2">
-              <LayoutGrid size={13} className="text-[var(--royal-violet)]" />
+          <aside className="hidden lg:block w-[200px] xl:w-[220px] shrink-0 sticky top-[12rem]">
+            <div className="flex items-center gap-2 mb-5 pl-2">
+              <LayoutGrid size={12} className="text-[var(--royal-violet)]" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
-                Navigare Structură
+                Categorii
               </span>
             </div>
-            <nav className="flex flex-col gap-1.5 max-h-[500px] overflow-y-auto luxury-scrollbar pr-3">
+            <nav className="flex flex-col gap-1 max-h-[600px] overflow-y-auto luxury-scrollbar pr-2">
               {categoriesTree.map((cat) => {
                 const isParentActive =
                   slug === cat.slug ||
                   cat.subcategories?.some((s: any) => s.slug === slug);
                 return (
-                  <div key={cat.id} className="flex flex-col gap-1">
+                  <div key={cat.id} className="flex flex-col gap-0.5">
                     <Link
                       to={`/category/${cat.slug}`}
-                      className={`py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-tight transition-all duration-300 ${
+                      className={`py-2.5 px-3 rounded-lg text-[10px] font-black uppercase tracking-tight transition-all duration-200 ${
                         isParentActive
-                          ? "bg-zinc-50 text-[var(--royal-violet)] shadow-sm"
-                          : "text-zinc-400 hover:text-black hover:bg-zinc-50/50"
+                          ? "bg-zinc-100/80 text-[var(--dark-amethyst)]"
+                          : "text-zinc-500 hover:text-black hover:bg-zinc-50"
                       }`}
                     >
                       {cat.name}
                     </Link>
                     {isParentActive && cat.subcategories?.length > 0 && (
-                      <div className="flex flex-col gap-1 ml-5 border-l border-zinc-100 pl-4 py-1.5 space-y-1">
+                      <div className="flex flex-col gap-0.5 ml-4 border-l border-zinc-200 pl-3 py-1 mb-2">
                         {cat.subcategories.map((sub: any) => (
                           <Link
                             key={sub.id}
                             to={`/category/${sub.slug}`}
-                            className={`text-[10px] font-bold uppercase tracking-tight transition-colors ${
+                            className={`py-1 text-[9px] font-bold uppercase tracking-tight transition-colors ${
                               slug === sub.slug
-                                ? "text-[var(--royal-violet)] font-black"
-                                : "text-zinc-300 hover:text-zinc-700"
+                                ? "text-[var(--royal-violet)]"
+                                : "text-zinc-400 hover:text-zinc-800"
                             }`}
                           >
                             {sub.name}
@@ -492,24 +481,25 @@ const CategoryPage = () => {
           {/* Product grid */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
-              <ProductGridSkeleton count={10} />
+              <ProductGridSkeleton count={12} />
             ) : products.length === 0 ? (
-              <div className="text-center py-32 sm:py-40 border border-zinc-100 rounded-[2rem] bg-zinc-50/30 flex flex-col items-center justify-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
-                  <Grid2X2 size={16} className="text-zinc-300" />
+              <div className="text-center py-20 border border-zinc-100 rounded-3xl bg-white flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center">
+                  <Grid2X2 size={14} className="text-zinc-300" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
                     Niciun rezultat găsit
                   </p>
-                  <p className="text-[10px] text-zinc-400">
+                  <p className="text-[9px] text-zinc-400 uppercase tracking-wider">
                     Încearcă să ajustezi filtrele
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-12 sm:gap-16">
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
+              <div className="flex flex-col gap-10">
+                {/* ✅ SECRETUL AICI: Am adăugat mai multe coloane (xl:grid-cols-5 2xl:grid-cols-6) pentru ca pozele să se randeze mai mici! */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-4 gap-y-8 sm:gap-y-10">
                   {products.map((p, i) => (
                     <ProductCard
                       key={`${p.id}-${i}`}
@@ -519,33 +509,31 @@ const CategoryPage = () => {
                   ))}
                 </div>
 
-                {/* ✅ Sentinel: vizibil doar dacă mai sunt pagini de încărcat */}
                 {hasMore && (
                   <div
                     ref={observerTarget}
-                    className="flex flex-col items-center justify-center py-10 sm:py-12 gap-3"
+                    className="flex flex-col items-center justify-center py-8 gap-2"
                     aria-live="polite"
                   >
                     {loadingMore && (
                       <>
                         <Loader2
-                          className="animate-spin text-zinc-400"
-                          size={24}
+                          className="animate-spin text-zinc-300"
+                          size={20}
                         />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                          Se încarcă mai multe produse...
+                        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">
+                          Se încarcă produse...
                         </span>
                       </>
                     )}
                   </div>
                 )}
 
-                {/* End of results message */}
                 {!hasMore && products.length > 0 && !loading && (
-                  <div className="flex flex-col items-center justify-center py-8 gap-2">
-                    <span className="h-[1px] w-16 bg-zinc-100 block" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">
-                      Toate produsele au fost afișate
+                  <div className="flex flex-col items-center justify-center py-6 gap-2">
+                    <span className="h-[1px] w-12 bg-zinc-200 block" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                      Ai ajuns la final
                     </span>
                   </div>
                 )}
@@ -568,19 +556,10 @@ const CategoryPage = () => {
             }
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+            .luxury-scrollbar::-webkit-scrollbar { width: 3px; height: 3px; }
             .luxury-scrollbar::-webkit-scrollbar-thumb {
-              background: rgba(0,0,0,0.05);
-              border-radius: 20px;
-            }
-            [data-radix-focus-trap] ~ div[class*="bg-black/"],
-            div[class*="fixed inset-0 bg-black"],
-            div[data-state="open"][class*="fixed inset-0"] {
-              z-index: 99990 !important;
-              backdrop-filter: blur(12px) !important;
-              -webkit-backdrop-filter: blur(12px) !important;
-              background-color: rgba(9, 9, 11, 0.4) !important;
-              transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+              background: rgba(0,0,0,0.1);
+              border-radius: 10px;
             }
           `,
         }}
