@@ -48,7 +48,10 @@ const Index = () => {
       />
 
       <main className="flex-1 w-full relative">
-        <HomeHero />
+        {/* 🚀 Wrapper-ul care aliniază Hero cu restul secțiunilor */}
+        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-10">
+          <HomeHero />
+        </div>
 
         {/* 3. SECȚIUNI DINAMICE (Generate automat) */}
         {!isLoading &&
@@ -69,7 +72,7 @@ const Index = () => {
                   }
                   subtitle={`${titleParts.first} ${titleParts.rest} EVEM`}
                   collectionType={colType}
-                  hideExploreLink={true} // Adaugă aici
+                  hideExploreLink={true}
                 />
               </div>
             );
