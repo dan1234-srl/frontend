@@ -475,12 +475,6 @@ export const AddressModal = ({ isOpen, onClose, onSave, initialData }: any) => {
                   icon: Truck,
                   sub: "Acasă / Birou",
                 },
-                {
-                  id: "locker",
-                  label: "Locker GLS",
-                  icon: Package,
-                  sub: "Ridicare personală",
-                },
               ].map((opt) => {
                 const Icon = opt.icon;
                 const isSel = deliveryType === opt.id;
