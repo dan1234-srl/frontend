@@ -134,17 +134,6 @@ const Addresses = () => {
 
       <main className="flex-1 pt-32 pb-24 px-6 md:px-12 lg:px-24 text-left">
         <div className="max-w-7xl mx-auto">
-          <button
-            onClick={() => navigate("/account/profile")}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-[var(--french-blue)] transition-colors mb-12 group"
-          >
-            <ArrowLeft
-              size={14}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
-            Înapoi la Profil
-          </button>
-
           <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16">
             <div className="space-y-4 text-left">
               <span
