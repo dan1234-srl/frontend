@@ -3,30 +3,15 @@ import {
   Send,
   Users,
   MailOpen,
-  MousePointer2,
-  Search,
-  Download,
-  UserMinus,
-  Mail,
-  ChevronLeft,
-  ChevronRight,
   Activity,
   Heart,
   Layout,
-  Info,
   Sparkles,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -40,22 +25,23 @@ const AdminNewsletter = () => {
   );
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ total_active_users: 0 });
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // State pentru campanie
+  // Stocăm template-urile create în Unlayer
+  const [templates, setTemplates] = useState<any[]>([]);
+
+  // Structura nouă a campaniei folosește ID-ul template-ului
   const [campaign, setCampaign] = useState({
-    subject: "",
-    content_html: "",
+    template_id: "",
     segment: "all",
     product_id: "",
   });
 
-  // 1. Fetch Statistici de la API
+  // Fetch Statistici
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `${API_BASE_URL}/api/v1/marketing/subscribers-count`,
+        `${API_BASE_URL}/api/v1/admin/marketing/subscribers-count`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -65,18 +51,36 @@ const AdminNewsletter = () => {
         setStats(data);
       }
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      console.error(error);
+    }
+  };
+
+  // Fetch Template-uri din baza de date
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/admin/email-templates`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Filtrăm doar template-urile active
+        setTemplates(data.filter((t: any) => t.is_active));
+      }
+    } catch (error) {
+      toast.error("Eroare la încărcarea template-urilor.");
     }
   };
 
   useEffect(() => {
     fetchStats();
+    fetchTemplates();
   }, []);
 
-  // 2. Apelare API pentru Trimitere Campanie
   const handleSendCampaign = async () => {
-    if (!campaign.subject || !campaign.content_html) {
-      return toast.error("Completează subiectul și conținutul email-ului.");
+    if (!campaign.template_id) {
+      return toast.error(
+        "Te rugăm să selectezi un design (Template) pentru email.",
+      );
     }
 
     if (campaign.segment === "wishlist_product" && !campaign.product_id) {
@@ -87,7 +91,7 @@ const AdminNewsletter = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `${API_BASE_URL}/api/v1/marketing/send-campaign`,
+        `${API_BASE_URL}/api/v1/admin/marketing/send-campaign`,
         {
           method: "POST",
           headers: {
@@ -102,9 +106,9 @@ const AdminNewsletter = () => {
 
       if (res.ok) {
         toast.success(
-          `Succes! Campania a fost programată pentru ${data.recipients_count} persoane.`,
+          `Succes! Campania se trimite către ${data.recipients_count} abonați.`,
         );
-        setActiveTab("subscribers"); // Reset tab
+        setActiveTab("subscribers");
       } else {
         toast.error(data.detail || "Eroare la trimiterea campaniei.");
       }
@@ -117,14 +121,14 @@ const AdminNewsletter = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans animate-in fade-in duration-700">
-      {/* HEADER DINAMIC */}
+      {/* HEADER */}
       <div className="flex flex-col gap-3 border-b border-zinc-100 pb-10">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg text-white bg-black">
             <Activity size={14} />
           </div>
           <span className="text-[10px] uppercase tracking-[0.4em] font-black text-zinc-400">
-            Marketing Automation v2.0
+            Marketing Automation
           </span>
         </div>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -145,7 +149,7 @@ const AdminNewsletter = () => {
               onClick={() => setActiveTab("campaign")}
               className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "campaign" ? "bg-white shadow-sm text-black" : "text-zinc-400 hover:text-zinc-600"}`}
             >
-              Configurare Email
+              Lansează Campanie
             </button>
           </div>
         </div>
@@ -160,7 +164,6 @@ const AdminNewsletter = () => {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-8"
           >
-            {/* STATS REAL-TIME */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white border border-zinc-100 p-8 rounded-[2.5rem] shadow-sm group">
                 <div className="flex justify-between items-start mb-4">
@@ -173,32 +176,16 @@ const AdminNewsletter = () => {
                   {stats.total_active_users}
                 </h4>
                 <p className="text-[8px] uppercase text-emerald-500 mt-2 font-bold tracking-widest">
-                  Utilizatori activi
-                </p>
-              </div>
-
-              <div className="bg-white border border-zinc-100 p-8 rounded-[2.5rem] shadow-sm">
-                <div className="flex justify-between items-start mb-4">
-                  <span className="text-[9px] uppercase tracking-widest text-zinc-400 font-black">
-                    Rată Deschidere
-                  </span>
-                  <MailOpen size={18} className="text-[var(--royal-violet)]" />
-                </div>
-                <h4 className="text-3xl font-serif italic tracking-tighter">
-                  24.8%
-                </h4>
-                <p className="text-[8px] uppercase text-zinc-300 mt-2 font-bold tracking-widest">
-                  Ultima campanie
+                  Abonați Activi
                 </p>
               </div>
             </div>
 
-            {/* TABEL PLACEHOLDER - Aici poți implementa listarea utilizatorilor real-time */}
             <div className="bg-zinc-50/50 p-20 rounded-[3rem] border border-dashed border-zinc-200 text-center">
               <Mail size={40} className="mx-auto text-zinc-200 mb-4" />
               <p className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                Selectează "Configurare Email" pentru a lansa o campanie către
-                cei {stats.total_active_users} abonați.
+                Alege template-ul creat în Unlayer și trimite oferte către cei{" "}
+                {stats.total_active_users} abonați.
               </p>
             </div>
           </motion.div>
@@ -211,23 +198,50 @@ const AdminNewsletter = () => {
             className="max-w-4xl mx-auto"
           >
             <div className="bg-white border border-zinc-100 p-10 rounded-[3rem] shadow-xl space-y-8">
-              {/* SELECTOR SEGMENT */}
+              {/* SELECTOR TEMPLATE UNLAYER */}
               <div className="space-y-4 text-left">
                 <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
-                  <Layout size={12} /> Segmentare Audiență
+                  <Sparkles size={12} /> 1. Selectează Design-ul (Unlayer)
+                </label>
+                <select
+                  value={campaign.template_id}
+                  onChange={(e) =>
+                    setCampaign({ ...campaign, template_id: e.target.value })
+                  }
+                  className="w-full h-14 bg-zinc-50 border border-zinc-100 rounded-2xl px-4 text-sm font-bold outline-none focus:border-[var(--royal-violet)]"
+                >
+                  <option value="" disabled>
+                    Alege un template salvat...
+                  </option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title} (Subiect: {t.subject})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-zinc-400">
+                  Dacă lista este goală, creează un design în secțiunea Email
+                  Engine.
+                </p>
+              </div>
+
+              {/* SELECTOR SEGMENT */}
+              <div className="space-y-4 text-left pt-6 border-t border-zinc-100">
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-2">
+                  <Layout size={12} /> 2. Segmentare Audiență
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     onClick={() => setCampaign({ ...campaign, segment: "all" })}
-                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "all" ? "border-black bg-zinc-50" : "border-zinc-100"}`}
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "all" ? "border-[var(--royal-violet)] bg-purple-50/30" : "border-zinc-100 hover:border-zinc-200"}`}
                   >
                     <Users size={18} className="mb-2" />
                     <div className="font-bold text-xs uppercase tracking-widest">
                       Toți Utilizatorii
                     </div>
                     <div className="text-[9px] text-zinc-400 mt-1">
-                      Se trimite către întreaga listă (
-                      {stats.total_active_users})
+                      Se trimite către toți cei {stats.total_active_users}{" "}
+                      abonați.
                     </div>
                   </button>
 
@@ -235,20 +249,20 @@ const AdminNewsletter = () => {
                     onClick={() =>
                       setCampaign({ ...campaign, segment: "wishlist_product" })
                     }
-                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "wishlist_product" ? "border-black bg-zinc-50" : "border-zinc-100"}`}
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${campaign.segment === "wishlist_product" ? "border-red-500 bg-red-50/30" : "border-zinc-100 hover:border-zinc-200"}`}
                   >
                     <Heart size={18} className="mb-2 text-red-500" />
                     <div className="font-bold text-xs uppercase tracking-widest">
-                      Targetare Wishlist
+                      Cei cu Wishlist
                     </div>
                     <div className="text-[9px] text-zinc-400 mt-1">
-                      Doar celor care au produsul X salvat
+                      Doar celor care și-au salvat un produs specific.
                     </div>
                   </button>
                 </div>
               </div>
 
-              {/* PRODUCT ID (DOAR PENTRU WISHLIST) */}
+              {/* WISHLIST PRODUCT ID */}
               {campaign.segment === "wishlist_product" && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -259,8 +273,8 @@ const AdminNewsletter = () => {
                     UUID Produs
                   </label>
                   <Input
-                    placeholder="Introdu ID-ul produsului..."
-                    className="h-14 rounded-2xl bg-red-50/20 border-red-100 font-mono text-xs"
+                    placeholder="ex: 123e4567-e89b-12d3-a456-426614174000"
+                    className="h-14 rounded-2xl font-mono text-xs"
                     value={campaign.product_id}
                     onChange={(e) =>
                       setCampaign({ ...campaign, product_id: e.target.value })
@@ -269,57 +283,24 @@ const AdminNewsletter = () => {
                 </motion.div>
               )}
 
-              {/* COMPOSE EMAIL */}
-              <div className="space-y-6 text-left">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                    Subiect Email
-                  </label>
-                  <Input
-                    placeholder="ex: Reducere flash doar pentru tine..."
-                    className="h-14 rounded-2xl bg-zinc-50 border-none font-bold"
-                    value={campaign.subject}
-                    onChange={(e) =>
-                      setCampaign({ ...campaign, subject: e.target.value })
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 flex justify-between">
-                    Conținut (HTML suportat)
-                    <span className="text-emerald-500 flex items-center gap-1">
-                      <Sparkles size={10} /> CSS Inline recomandat
-                    </span>
-                  </label>
-                  <textarea
-                    placeholder="Scrie conținutul campaniei aici..."
-                    className="w-full h-80 bg-zinc-50 rounded-[2rem] p-6 text-sm font-mono border-none outline-none focus:ring-2 focus:ring-zinc-100 resize-none"
-                    value={campaign.content_html}
-                    onChange={(e) =>
-                      setCampaign({ ...campaign, content_html: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-
               {/* SEND BUTTON */}
               <div className="pt-6 border-t border-zinc-100">
                 <Button
                   disabled={loading}
                   onClick={handleSendCampaign}
                   className="w-full h-16 bg-black text-white rounded-full font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-zinc-800 transition-all shadow-2xl"
+                  style={{ background: "var(--primary-gradient)" }}
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" />
                   ) : (
                     <Send size={18} />
                   )}
-                  Lansează Campania în Worker
+                  Lansează Campania
                 </Button>
                 <p className="text-[9px] text-zinc-400 mt-4 text-center uppercase tracking-widest font-medium italic">
-                  Acțiunea va genera task-uri asincrone în coada Redis pentru
-                  procesare imediată.
+                  Celery va procesa lista în background (cca. 10 email-uri /
+                  secundă).
                 </p>
               </div>
             </div>

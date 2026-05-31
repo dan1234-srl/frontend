@@ -64,6 +64,14 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     description: "Confirmare livrare + invitație review.",
     category: "order",
   },
+  {
+    id: "newsletter",
+    name: "Newsletter Promoțional",
+    event_name: "marketing_newsletter",
+    subject: "Descoperă noua colecție Evem ✨",
+    description: "Template pentru lansări de produse sau oferte speciale.",
+    category: "marketing",
+  },
 ];
 
 /**
@@ -105,6 +113,22 @@ export function buildPresetDesign(
         { paddingBottom: "32px" },
       ),
       buttonBlock("DESCOPERĂ COLECȚIA", "{{shopUrl}}", accent),
+      divider,
+      footer,
+    ],
+
+    newsletter: [
+      headerLogo,
+      textBlock(
+        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Colecția Nouă</h1>`,
+        { paddingTop: "40px", paddingBottom: "24px" },
+      ),
+      imageBlock("https://via.placeholder.com/600x400?text=Imagine+Campanie"), // Poți schimba URL-ul ulterior
+      textBlock(
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Am pregătit ceva special pentru tine. Descoperă piesele noi care definesc luxul și eleganța în acest sezon.</p>`,
+        { paddingTop: "24px", paddingBottom: "32px" },
+      ),
+      buttonBlock("VEZI NOUTĂȚILE", "{{shopUrl}}", accent),
       divider,
       footer,
     ],
@@ -206,7 +230,12 @@ export function buildPresetDesign(
   const contents = presets[presetId] || presets["welcome"];
 
   return {
-    counters: { u_row: contents.length, u_column: contents.length, u_content_text: contents.length, u_content_button: 1 },
+    counters: {
+      u_row: contents.length,
+      u_column: contents.length,
+      u_content_text: contents.length,
+      u_content_button: 1,
+    },
     body: {
       id: "luxury-body",
       rows: contents.map((c, i) => ({
@@ -216,7 +245,9 @@ export function buildPresetDesign(
           {
             id: `col-${i}`,
             contents: [c],
-            values: { _meta: { htmlID: `u_column_${i}`, htmlClassNames: "u_column" } },
+            values: {
+              _meta: { htmlID: `u_column_${i}`, htmlClassNames: "u_column" },
+            },
           },
         ],
         values: {
@@ -224,7 +255,13 @@ export function buildPresetDesign(
           columns: false,
           backgroundColor: "",
           columnsBackgroundColor: "",
-          backgroundImage: { url: "", fullWidth: true, repeat: "no-repeat", size: "custom", position: "center" },
+          backgroundImage: {
+            url: "",
+            fullWidth: true,
+            repeat: "no-repeat",
+            size: "custom",
+            position: "center",
+          },
           padding: "0px",
           anchor: "",
           hideDesktop: false,
@@ -247,18 +284,42 @@ export function buildPresetDesign(
         fontFamily: { label: "Arial", value: "arial,helvetica,sans-serif" },
         textColor: "#000000",
         popupBackgroundColor: bg,
-        popupBackgroundImage: { url: "", fullWidth: true, repeat: "no-repeat", size: "cover", position: "center" },
+        popupBackgroundImage: {
+          url: "",
+          fullWidth: true,
+          repeat: "no-repeat",
+          size: "cover",
+          position: "center",
+        },
         popupOverlay_backgroundColor: "rgba(0, 0, 0, 0.1)",
         popupCloseButton_position: "top-right",
         popupCloseButton_backgroundColor: "#DDDDDD",
         popupCloseButton_iconColor: "#000000",
         popupCloseButton_borderRadius: "0px",
         popupCloseButton_margin: "0px",
-        popupCloseButton_action: { name: "close_popup", attrs: { onClick: "document.querySelector('.u-popup-container').style.display = 'none';" } },
+        popupCloseButton_action: {
+          name: "close_popup",
+          attrs: {
+            onClick:
+              "document.querySelector('.u-popup-container').style.display = 'none';",
+          },
+        },
         backgroundColor: bg,
-        backgroundImage: { url: "", fullWidth: true, repeat: "no-repeat", size: "custom", position: "center" },
+        backgroundImage: {
+          url: "",
+          fullWidth: true,
+          repeat: "no-repeat",
+          size: "custom",
+          position: "center",
+        },
         preheaderText: "",
-        linkStyle: { body: true, linkColor: accent, linkHoverColor: deep, linkUnderline: true, linkHoverUnderline: true },
+        linkStyle: {
+          body: true,
+          linkColor: accent,
+          linkHoverColor: deep,
+          linkUnderline: true,
+          linkHoverUnderline: true,
+        },
         _meta: { htmlID: "u_body", htmlClassNames: "u_body" },
       },
     },
@@ -267,7 +328,10 @@ export function buildPresetDesign(
 }
 
 /* -------- helpers -------- */
-function textBlock(html: string, padding: { paddingTop?: string; paddingBottom?: string } = {}) {
+function textBlock(
+  html: string,
+  padding: { paddingTop?: string; paddingBottom?: string } = {},
+) {
   return {
     type: "text",
     values: {
@@ -278,16 +342,51 @@ function textBlock(html: string, padding: { paddingTop?: string; paddingBottom?:
       fontSize: "14px",
       textAlign: "left",
       lineHeight: "160%",
-      linkStyle: { inherit: true, linkColor: "#0000ee", linkHoverColor: "#0000ee", linkUnderline: true, linkHoverUnderline: true },
+      linkStyle: {
+        inherit: true,
+        linkColor: "#0000ee",
+        linkHoverColor: "#0000ee",
+        linkUnderline: true,
+        linkHoverUnderline: true,
+      },
       hideDesktop: false,
       displayCondition: null,
-      _meta: { htmlID: `u_content_text_${Math.random().toString(36).slice(2, 8)}`, htmlClassNames: "u_content_text" },
+      _meta: {
+        htmlID: `u_content_text_${Math.random().toString(36).slice(2, 8)}`,
+        htmlClassNames: "u_content_text",
+      },
       selectable: true,
       draggable: true,
       duplicatable: true,
       deletable: true,
       hideable: true,
       text: html,
+    },
+  };
+}
+function imageBlock(url: string) {
+  return {
+    type: "image",
+    values: {
+      containerPadding: "10px",
+      anchor: "",
+      src: { url, width: "auto", height: "auto" },
+      textAlign: "center",
+      altText: "Imagine Campanie",
+      action: {
+        name: "web",
+        values: { href: "{{shopUrl}}", target: "_blank" },
+      },
+      hideDesktop: false,
+      _meta: {
+        htmlID: `u_content_image_${Math.random().toString(36).slice(2, 8)}`,
+        htmlClassNames: "u_content_image",
+      },
+      selectable: true,
+      draggable: true,
+      duplicatable: true,
+      deletable: true,
+      hideable: true,
     },
   };
 }
@@ -299,7 +398,12 @@ function buttonBlock(text: string, href: string, color: string) {
       containerPadding: "16px 32px",
       anchor: "",
       href: { name: "web", values: { href, target: "_blank" } },
-      buttonColors: { color: "#FFFFFF", backgroundColor: color, hoverColor: "#FFFFFF", hoverBackgroundColor: color },
+      buttonColors: {
+        color: "#FFFFFF",
+        backgroundColor: color,
+        hoverColor: "#FFFFFF",
+        hoverBackgroundColor: color,
+      },
       size: { autoWidth: false, width: "240px" },
       fontFamily: { label: "Arial", value: "arial,helvetica,sans-serif" },
       fontWeight: 700,
@@ -311,7 +415,10 @@ function buttonBlock(text: string, href: string, color: string) {
       borderRadius: "0px",
       hideDesktop: false,
       displayCondition: null,
-      _meta: { htmlID: `u_content_button_${Math.random().toString(36).slice(2, 8)}`, htmlClassNames: "u_content_button" },
+      _meta: {
+        htmlID: `u_content_button_${Math.random().toString(36).slice(2, 8)}`,
+        htmlClassNames: "u_content_button",
+      },
       selectable: true,
       draggable: true,
       duplicatable: true,
@@ -329,13 +436,20 @@ function dividerBlock(color: string) {
     type: "divider",
     values: {
       width: "100%",
-      border: { borderTopWidth: "1px", borderTopStyle: "solid", borderTopColor: color },
+      border: {
+        borderTopWidth: "1px",
+        borderTopStyle: "solid",
+        borderTopColor: color,
+      },
       textAlign: "center",
       containerPadding: "24px 32px",
       anchor: "",
       hideDesktop: false,
       displayCondition: null,
-      _meta: { htmlID: `u_content_divider_${Math.random().toString(36).slice(2, 8)}`, htmlClassNames: "u_content_divider" },
+      _meta: {
+        htmlID: `u_content_divider_${Math.random().toString(36).slice(2, 8)}`,
+        htmlClassNames: "u_content_divider",
+      },
       selectable: true,
       draggable: true,
       duplicatable: true,
