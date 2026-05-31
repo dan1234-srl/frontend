@@ -6,6 +6,7 @@ import {
   Grid2X2,
   SlidersHorizontal,
   X,
+  Search, // Adăugat
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
+import Fuse from "fuse.js"; // Adăugat pentru căutarea categoriilor
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -158,7 +160,7 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
 };
 
 // ─────────────────────────────────────────────
-// ✅ Sub-component: Meniu Filtrare Experiențial
+// Sub-component: Meniu Filtrare Experiențial
 // ─────────────────────────────────────────────
 const FilterSheetExperience = ({
   filtersData,
@@ -169,20 +171,16 @@ const FilterSheetExperience = ({
   activeSearchParams: URLSearchParams;
   onApply: (pendingParams: URLSearchParams) => void;
 }) => {
-  // Stare locală pentru filtre "în așteptare"
   const [pendingSearchParams, setPendingSearchParams] = useState(
     () => new URLSearchParams(activeSearchParams),
   );
 
-  // Sincronizează starea locală când se deschide sheet-ul cu filtrele actuale din URL
   useEffect(() => {
     setPendingSearchParams(new URLSearchParams(activeSearchParams));
   }, [activeSearchParams]);
 
-  // Funcție pasată sidebar-ului pentru a actualiza starea LOCALĂ, nu URL-ul
   const handlePendingFilterChange = useCallback(
     (newParams: URLSearchParams) => {
-      // Resetăm pagina la 1 când se modifică un filtru în așteptare
       newParams.set("page", "1");
       setPendingSearchParams(newParams);
     },
@@ -195,7 +193,6 @@ const FilterSheetExperience = ({
 
   const clearPending = () => {
     const cleared = new URLSearchParams();
-    // Păstrăm sortarea și categoria, ștergem restul datelor de filtrare
     if (activeSearchParams.has("sort"))
       cleared.set("sort", activeSearchParams.get("sort")!);
     cleared.set("page", "1");
@@ -205,7 +202,6 @@ const FilterSheetExperience = ({
   const hasPendingChanges =
     pendingSearchParams.toString() !== activeSearchParams.toString();
 
-  // Numărăm filtrele active ÎN AȘTEPTARE
   const pendingFiltersCount = useMemo(() => {
     let count = 0;
     pendingSearchParams.forEach((val, key) => {
@@ -243,7 +239,6 @@ const FilterSheetExperience = ({
 
       <div className="flex-1 overflow-y-auto p-6 luxury-scrollbar pb-32">
         {filtersData ? (
-          /* ✅ Pasăm starea locală și funcția de update locală */
           <FilterSidebar
             filtersData={filtersData}
             searchParams={pendingSearchParams}
@@ -262,7 +257,6 @@ const FilterSheetExperience = ({
         )}
       </div>
 
-      {/* ✅ Footer fix modern cu buton de aplicare */}
       <div className="absolute bottom-0 left-0 w-full p-6 bg-white border-t border-zinc-100 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
         <button
           onClick={handleApply}
@@ -297,6 +291,9 @@ const CategoryPage = () => {
   const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Stare pentru căutarea categoriilor (stil HomeHero)
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -308,6 +305,24 @@ const CategoryPage = () => {
       .then(setCategoriesTree)
       .catch(() => {});
   }, []);
+
+  // Memorează și sortează categoriile crescător (A-Z)
+  const sortedCategories = useMemo(() => {
+    return [...categoriesTree].sort((a, b) => a.name.localeCompare(b.name));
+  }, [categoriesTree]);
+
+  // Filtrare categorii cu Fuse.js pe baza sortedCategories
+  const filteredCategories = useMemo(() => {
+    if (!categorySearchQuery) return sortedCategories;
+
+    const fuse = new Fuse(sortedCategories, {
+      keys: ["name"],
+      threshold: 0.3,
+      shouldSort: true,
+    });
+
+    return fuse.search(categorySearchQuery).map((result) => result.item);
+  }, [sortedCategories, categorySearchQuery]);
 
   useEffect(() => {
     if (!slug) return;
@@ -354,7 +369,8 @@ const CategoryPage = () => {
           }
         });
 
-        params.set("sort", searchParams.get("sort") || "cele-mai-noi");
+        // Setăm default de la "mare la mic" (ajustează 'pret-desc' conform API-ului tău)
+        params.set("sort", searchParams.get("sort") || "pret-desc");
 
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
@@ -433,11 +449,10 @@ const CategoryPage = () => {
     return count;
   }, [searchParams]);
 
-  // ✅ Callback apelat când utilizatorul apasă "Aplica Filtrele" în Sheet
   const handleApplyFilters = useCallback(
     (pendingParams: URLSearchParams) => {
-      setSearchParams(pendingParams); // Actualizăm URL-ul real
-      setFiltersOpen(false); // Închidem sheet-ul
+      setSearchParams(pendingParams);
+      setFiltersOpen(false);
     },
     [setSearchParams],
   );
@@ -490,7 +505,7 @@ const CategoryPage = () => {
         {/* ── Mobile category pills ── */}
         <div className="lg:hidden flex items-center gap-2 mb-6 overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
           <div className="flex gap-2 shrink-0">
-            {categoriesTree.map((cat) => (
+            {sortedCategories.map((cat) => (
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
@@ -529,11 +544,9 @@ const CategoryPage = () => {
 
             <SheetContent
               side="right"
-              // ✅ Am eliminat header-ul standard Radix (care includea butonul X implicit) pentru a folosi designul custom din FilterSheetExperience
               hideClose
               className="w-[94%] sm:w-[420px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full"
             >
-              {/* ✅ Folosim experiența custom cu stări pending */}
               <FilterSheetExperience
                 filtersData={filtersData}
                 activeSearchParams={searchParams}
@@ -551,14 +564,30 @@ const CategoryPage = () => {
         <div className="flex gap-8 items-start">
           {/* Desktop category sidebar */}
           <aside className="hidden lg:block w-[200px] xl:w-[220px] shrink-0 sticky top-[12rem]">
-            <div className="flex items-center gap-2 mb-5 pl-2">
+            <div className="flex items-center gap-2 mb-4 pl-2">
               <LayoutGrid size={12} className="text-[var(--royal-violet)]" />
               <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--royal-violet)]">
                 Categorii
               </span>
             </div>
+
+            {/* Bara de cautare elastica */}
+            <div className="relative mb-4">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+              />
+              <input
+                type="text"
+                placeholder="Caută categorie..."
+                className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-100/50 rounded-xl outline-none focus:ring-2 focus:ring-zinc-200 transition-all border border-transparent focus:border-zinc-200"
+                value={categorySearchQuery}
+                onChange={(e) => setCategorySearchQuery(e.target.value)}
+              />
+            </div>
+
             <nav className="flex flex-col gap-1 max-h-[600px] overflow-y-auto luxury-scrollbar pr-2">
-              {categoriesTree.map((cat) => {
+              {filteredCategories.map((cat) => {
                 const isParentActive =
                   slug === cat.slug ||
                   cat.subcategories?.some((s: any) => s.slug === slug);
@@ -680,13 +709,14 @@ const CategoryPage = () => {
               border-radius: 10px;
             }
             
-            /* ✅ FIX PENTRU BLUR GLOBAL (Inclusiv Navbar) */
-            /* Tintim overlay-ul Radix portal si aplicam blur si z-index imens */
-            [data-radix-portal] div[data-state="open"] {
+            /* ✅ FIX PENTRU BLUR GLOBAL (Fara intunecare) */
+            /* Tintim overlay-ul Radix portal si aplicam blur, transparenta ridicata */
+            [data-radix-portal] > div[class*="fixed inset-0"],
+            [data-radix-portal] [data-state="open"] {
               z-index: 99990 !important;
-              backdrop-filter: blur(15px) !important;
-              -webkit-backdrop-filter: blur(15px) !important;
-              background-color: rgba(9, 9, 11, 0.4) !important; /* zinc-950/40 */
+              backdrop-filter: blur(12px) !important;
+              -webkit-backdrop-filter: blur(12px) !important;
+              background-color: rgba(255, 255, 255, 0.15) !important;
               transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
             }
             
