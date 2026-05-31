@@ -164,7 +164,6 @@ const AdminLayout = () => {
       color: "var(--royal-violet)",
       items: [
         { name: "Utilizatori", icon: Users, path: "/admin/users" },
-        { name: "Setări", icon: Settings, path: "/admin/settings" },
         { name: "Theme Studio", icon: Palette, path: "/admin/theme" },
         { name: "Email", icon: FileCode, path: "/admin/email-templates" },
       ],
