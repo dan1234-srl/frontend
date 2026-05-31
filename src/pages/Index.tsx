@@ -45,8 +45,7 @@ const Index = () => {
       <Header />
 
       {/* Spațiu controlat prin padding pe main, fără elemente spacer inutile */}
-      <main className="flex-1 w-full relative pt-24 lg:pt-28">
-        {" "}
+      <main className="flex-1 w-full relative pt-36 lg:pt-44">
         {/* CONTAINER 90% (max 1700px), gap redus la 8-12 pentru densitate */}
         <div className="w-[90%] max-w-[1700px] mx-auto flex flex-col gap-8 md:gap-12 pb-20">
           <motion.div
