@@ -193,42 +193,42 @@ const ShoppingBag = ({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               onClick={onClose}
-              className="absolute inset-0 bg-zinc-950/30 backdrop-blur-sm"
+              className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm"
             />
 
-            {/* Main Drawer */}
+            {/* Main Drawer - Mai micuț (max-w-[400px]) pentru o senzație mai finuță */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 250 }}
-              className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[480px] flex-col bg-white shadow-2xl"
+              transition={{ type: "spring", damping: 32, stiffness: 280 }}
+              className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[400px] flex-col bg-white shadow-2xl"
             >
               {/* Header */}
-              <header className="flex items-center justify-between px-6 sm:px-10 py-8 shrink-0">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
+              <header className="flex items-center justify-between px-6 py-6 shrink-0 border-b border-zinc-100">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
                     <span
                       className="w-1.5 h-1.5 rounded-full"
                       style={{ background: "var(--primary-gradient)" }}
                     />
-                    <p className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
+                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400">
                       Coșul tău
                     </p>
                   </div>
-                  <h2 className="heading-serif text-3xl tracking-tighter text-[var(--dark-amethyst)]">
+                  <h2 className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)]">
                     Shopping Bag{" "}
-                    <span className="text-zinc-300 font-sans text-xl ml-1">
+                    <span className="text-zinc-300 font-sans text-lg ml-1">
                       ({cart.length})
                     </span>
                   </h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="h-12 w-12 flex items-center justify-center rounded-full border border-zinc-100 hover:border-transparent hover:bg-zinc-100 transition-all text-zinc-400 hover:text-zinc-900 group"
+                  className="h-9 w-9 flex items-center justify-center rounded-full border border-zinc-100 hover:bg-zinc-50 transition-all text-zinc-400 hover:text-zinc-900 group"
                 >
                   <X
-                    size={18}
+                    size={16}
                     className="group-hover:rotate-90 transition-transform duration-300"
                   />
                 </button>
@@ -236,25 +236,25 @@ const ShoppingBag = ({
 
               {/* Progress Bar Livrare Gratuită */}
               {cart.length > 0 && (
-                <div className="px-6 sm:px-10 pb-6 shrink-0">
-                  <div className="p-5 bg-zinc-50 rounded-2xl border border-zinc-100/50">
-                    <div className="mb-3 flex items-center justify-between font-bold uppercase tracking-widest text-[9px] sm:text-[10px]">
-                      <span className="flex items-center gap-2 text-zinc-600">
+                <div className="px-6 pt-5 shrink-0">
+                  <div className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100">
+                    <div className="mb-2.5 flex items-center justify-between font-black uppercase tracking-widest text-[8px] sm:text-[9px]">
+                      <span className="flex items-center gap-1.5 text-zinc-500">
                         <Truck
-                          size={14}
+                          size={12}
                           className="text-[var(--royal-violet)]"
                         />
                         {remainingForFreeShipping === 0
                           ? "Livrare Gratuită"
                           : "Livrare Standard"}
                       </span>
-                      <span className="text-[var(--royal-violet)] font-black">
+                      <span className="text-[var(--royal-violet)]">
                         {remainingForFreeShipping > 0
                           ? `Mai adaugă ${formatCurrency(remainingForFreeShipping)} RON`
                           : "ACTIV"}
                       </span>
                     </div>
-                    <div className="h-1 w-full bg-zinc-200/60 rounded-full overflow-hidden">
+                    <div className="h-1 w-full bg-zinc-200/50 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${shippingProgress}%` }}
@@ -268,32 +268,32 @@ const ShoppingBag = ({
               )}
 
               {/* Lista Produse */}
-              <div className="flex-1 overflow-y-auto px-6 sm:px-10 pb-10 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
                 <LayoutGroup>
-                  <motion.div layout className="space-y-6">
+                  <motion.div layout className="space-y-5">
                     <AnimatePresence mode="popLayout">
                       {cart.length === 0 ? (
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="h-[50vh] flex flex-col items-center justify-center text-center gap-6"
+                          className="h-[50vh] flex flex-col items-center justify-center text-center gap-5"
                         >
-                          <div className="h-24 w-24 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-200 mb-2">
-                            <BagIcon size={40} strokeWidth={1.5} />
+                          <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-300 mb-2">
+                            <BagIcon size={32} strokeWidth={1.5} />
                           </div>
                           <div>
-                            <p className="text-xl heading-serif text-[var(--dark-amethyst)] mb-2">
+                            <p className="text-xl heading-serif text-[var(--dark-amethyst)] mb-1.5">
                               Coșul tău este gol
                             </p>
-                            <p className="text-xs text-zinc-400 font-medium">
-                              Explorează colecțiile noastre și adaugă
+                            <p className="text-[11px] text-zinc-400 font-medium">
+                              Explorează colecțiile noastre și
                               <br />
-                              produsele dorite aici.
+                              adaugă produsele dorite aici.
                             </p>
                           </div>
                           <button
                             onClick={onClose}
-                            className="mt-4 px-8 py-3 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:bg-zinc-800 transition-colors"
+                            className="mt-3 px-6 h-10 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg hover:bg-zinc-800 transition-colors"
                           >
                             Înapoi la magazin
                           </button>
@@ -303,18 +303,18 @@ const ShoppingBag = ({
                           <motion.div
                             layout
                             key={item.sku}
-                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{
                               opacity: 0,
                               scale: 0.95,
-                              filter: "blur(4px)",
+                              filter: "blur(2px)",
                             }}
-                            transition={{ duration: 0.3 }}
-                            className="flex gap-5 items-center group/item"
+                            transition={{ duration: 0.25 }}
+                            className="flex gap-4 items-center group/item pb-5 border-b border-zinc-50 last:border-0 last:pb-0"
                           >
-                            {/* Imagine */}
-                            <div className="aspect-[3/4] w-24 sm:w-28 shrink-0 overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100">
+                            {/* Imagine mai micuță */}
+                            <div className="aspect-[3/4] w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100">
                               <img
                                 src={getImageUrl(item.image_url)}
                                 className="h-full w-full object-cover mix-blend-multiply transition-transform duration-700 group-hover/item:scale-105"
@@ -323,28 +323,28 @@ const ShoppingBag = ({
                             </div>
 
                             {/* Detalii */}
-                            <div className="flex-1 flex flex-col justify-between h-full py-1">
+                            <div className="flex-1 flex flex-col justify-between h-full py-0.5">
                               <div className="space-y-1">
                                 <div className="flex justify-between items-start gap-2">
-                                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest truncate">
+                                  <p className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] truncate">
                                     {item.brand_name || "Evem"}
                                   </p>
                                   <button
                                     onClick={() => removeFromCart(item.sku)}
-                                    className="text-zinc-300 hover:text-red-500 transition-colors p-1"
+                                    className="text-zinc-300 hover:text-rose-500 transition-colors"
                                     aria-label="Șterge produs"
                                   >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={13} />
                                   </button>
                                 </div>
-                                <h4 className="text-xs sm:text-sm font-bold text-[var(--dark-amethyst)] leading-tight line-clamp-2 pr-4">
+                                <h4 className="text-[12px] font-bold text-[var(--dark-amethyst)] leading-tight line-clamp-2 pr-2">
                                   {item.name}
                                 </h4>
                               </div>
 
-                              <div className="flex justify-between items-end mt-4">
-                                {/* Selector Cantitate */}
-                                <div className="flex items-center gap-4 bg-zinc-50/80 rounded-full px-3 py-1.5 border border-zinc-200/50">
+                              <div className="flex justify-between items-end mt-3">
+                                {/* Selector Cantitate Compact */}
+                                <div className="flex items-center gap-3 bg-zinc-50/80 rounded-lg px-2.5 py-1.5 border border-zinc-200/60">
                                   <button
                                     onClick={() =>
                                       updateQuantity(
@@ -353,11 +353,11 @@ const ShoppingBag = ({
                                       )
                                     }
                                     disabled={item.quantity <= 1}
-                                    className="p-1 disabled:opacity-20 text-zinc-500 hover:text-black transition-colors"
+                                    className="p-0.5 disabled:opacity-20 text-zinc-500 hover:text-black transition-colors"
                                   >
-                                    <Minus size={12} />
+                                    <Minus size={10} />
                                   </button>
-                                  <span className="text-xs font-black w-4 text-center text-zinc-900">
+                                  <span className="text-[11px] font-black w-3 text-center text-zinc-900">
                                     {item.quantity}
                                   </span>
                                   <button
@@ -367,16 +367,16 @@ const ShoppingBag = ({
                                         item.quantity + 1,
                                       )
                                     }
-                                    className="p-1 text-zinc-500 hover:text-black transition-colors"
+                                    className="p-0.5 text-zinc-500 hover:text-black transition-colors"
                                   >
-                                    <Plus size={12} />
+                                    <Plus size={10} />
                                   </button>
                                 </div>
 
-                                {/* Preț per linie */}
-                                <p className="text-sm font-black text-[var(--dark-amethyst)]">
+                                {/* Preț */}
+                                <p className="text-[13px] font-black text-[var(--dark-amethyst)]">
                                   {formatCurrency(item.price * item.quantity)}{" "}
-                                  <span className="text-[10px]">RON</span>
+                                  <span className="text-[9px]">RON</span>
                                 </p>
                               </div>
                             </div>
@@ -392,45 +392,45 @@ const ShoppingBag = ({
               {cart.length > 0 && (
                 <div className="shrink-0 border-t border-zinc-100 bg-white">
                   {/* Zona Voucher */}
-                  <div className="px-6 sm:px-10 py-5 border-b border-zinc-50">
+                  <div className="px-6 py-4 border-b border-zinc-50">
                     {!appliedDiscount ? (
                       <div className="flex gap-2">
                         <div className="relative flex-1 group">
                           <Tag
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
-                            size={14}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
+                            size={12}
                           />
                           <input
                             type="text"
                             value={promoCode}
                             onChange={(e) => setPromoCode(e.target.value)}
                             placeholder="COD VOUCHER"
-                            className="w-full h-12 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl text-[10px] font-black tracking-[0.2em] focus:outline-none focus:border-[var(--royal-violet)] focus:bg-white transition-all uppercase placeholder:text-zinc-400 text-zinc-900"
+                            className="w-full h-10 pl-8 pr-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-[9px] font-black tracking-[0.2em] focus:outline-none focus:border-[var(--royal-violet)] focus:ring-2 focus:ring-[var(--royal-violet)]/10 focus:bg-white transition-all uppercase placeholder:text-zinc-400 text-zinc-900"
                           />
                         </div>
                         <button
                           onClick={handleApplyVoucher}
                           disabled={isValidating || !promoCode.trim()}
-                          className="px-6 h-12 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all hover:bg-zinc-800 disabled:opacity-50"
+                          className="px-5 h-10 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-xl transition-all hover:bg-zinc-800 disabled:opacity-50"
                         >
                           {isValidating ? (
-                            <Loader2 size={16} className="animate-spin" />
+                            <Loader2 size={14} className="animate-spin" />
                           ) : (
                             "Aplică"
                           )}
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl">
+                        <div className="flex items-center gap-2.5">
                           <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                            <Tag size={12} className="text-emerald-600" />
+                            <Tag size={10} className="text-emerald-600" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-black uppercase text-emerald-700 tracking-widest">
+                            <p className="text-[8px] font-black uppercase text-emerald-700 tracking-[0.2em]">
                               Voucher Activat
                             </p>
-                            <p className="text-xs font-bold text-emerald-900 mt-0.5">
+                            <p className="text-[11px] font-bold text-emerald-900 mt-0.5">
                               {appliedDiscount.code} (-
                               {formatCurrency(appliedDiscount.amount)} RON)
                             </p>
@@ -438,34 +438,34 @@ const ShoppingBag = ({
                         </div>
                         <button
                           onClick={removeVoucher}
-                          className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
+                          className="p-1.5 text-zinc-400 hover:text-rose-500 transition-colors"
                         >
-                          <X size={16} />
+                          <X size={14} />
                         </button>
                       </div>
                     )}
                   </div>
 
                   {/* Zona de Checkout */}
-                  <div className="px-6 sm:px-10 py-6 sm:py-8 bg-zinc-50/30">
-                    <div className="flex justify-between items-end mb-6">
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em]">
+                  <div className="px-6 py-6 bg-zinc-50/50">
+                    <div className="flex justify-between items-end mb-5">
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] font-black uppercase text-zinc-400 tracking-[0.2em]">
                           Suma totală
                         </span>
-                        <p className="text-[10px] text-zinc-500 font-medium">
+                        <p className="text-[9px] text-zinc-500 font-medium">
                           TVA inclus
                         </p>
                       </div>
                       <div className="text-right">
                         {appliedDiscount && (
-                          <p className="text-xs font-bold text-zinc-400 line-through mb-1">
+                          <p className="text-[11px] font-bold text-zinc-400 line-through mb-0.5">
                             {formatCurrency(totalPrice)} RON
                           </p>
                         )}
-                        <p className="text-4xl heading-serif font-medium text-[var(--dark-amethyst)] tracking-tighter">
+                        <p className="text-3xl heading-serif font-medium text-[var(--dark-amethyst)] tracking-tight">
                           {formatCurrency(finalTotal)}{" "}
-                          <span className="text-sm font-sans font-black">
+                          <span className="text-xs font-sans font-black">
                             RON
                           </span>
                         </p>
@@ -477,15 +477,15 @@ const ShoppingBag = ({
                         onClose();
                         setTimeout(() => setCheckoutOpen(true), 300);
                       }}
-                      className="relative h-16 w-full text-white rounded-[1.2rem] overflow-hidden transition-all shadow-xl hover:shadow-2xl group active:scale-[0.98]"
+                      className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
                       style={{ background: "var(--primary-gradient)" }}
                     >
                       <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                      <div className="relative flex items-center justify-center gap-4 font-black uppercase text-xs tracking-[0.3em]">
-                        Finalizează Comanda
+                      <div className="relative flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em]">
+                        Spre Checkout
                         <ArrowRight
-                          size={16}
-                          className="group-hover:translate-x-2 transition-transform duration-300"
+                          size={14}
+                          className="group-hover:translate-x-1.5 transition-transform duration-300"
                         />
                       </div>
                     </button>
