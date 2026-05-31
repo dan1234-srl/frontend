@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
-import { Loader2, LayoutGrid, Grid2X2, SlidersHorizontal } from "lucide-react";
+import {
+  Loader2,
+  LayoutGrid,
+  Grid2X2,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
 import { SortDropdown } from "../components/shop/SortDropdown";
@@ -13,6 +19,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
@@ -46,7 +53,7 @@ const formatFallbackName = (str: string | undefined) => {
 };
 
 // ─────────────────────────────────────────────
-// Hero Carousel (Dimensiuni Reduse & Moderne)
+// Hero Carousel
 // ─────────────────────────────────────────────
 const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
   const [current, setCurrent] = useState(0);
@@ -77,7 +84,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
       : currentBanner.image_desktop;
 
   return (
-    // Am înlocuit aspect-ratio cu o înălțime fixă (h-[...]) pentru a fi o "bandă" elegantă
     <div className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[300px] rounded-3xl overflow-hidden mb-10 shadow-sm border border-zinc-100 group bg-zinc-950 select-none">
       <AnimatePresence mode="wait">
         <motion.div
@@ -114,7 +120,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
                 Campanie Exclusivă
               </span>
             </div>
-            {/* Titlu mai mic și rafinat */}
             <h2 className="text-xl sm:text-3xl md:text-4xl font-serif italic tracking-tighter leading-tight drop-shadow-sm">
               {currentBanner.title}
             </h2>
@@ -148,6 +153,125 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// ✅ Sub-component: Meniu Filtrare Experiențial
+// ─────────────────────────────────────────────
+const FilterSheetExperience = ({
+  filtersData,
+  activeSearchParams,
+  onApply,
+}: {
+  filtersData: any;
+  activeSearchParams: URLSearchParams;
+  onApply: (pendingParams: URLSearchParams) => void;
+}) => {
+  // Stare locală pentru filtre "în așteptare"
+  const [pendingSearchParams, setPendingSearchParams] = useState(
+    () => new URLSearchParams(activeSearchParams),
+  );
+
+  // Sincronizează starea locală când se deschide sheet-ul cu filtrele actuale din URL
+  useEffect(() => {
+    setPendingSearchParams(new URLSearchParams(activeSearchParams));
+  }, [activeSearchParams]);
+
+  // Funcție pasată sidebar-ului pentru a actualiza starea LOCALĂ, nu URL-ul
+  const handlePendingFilterChange = useCallback(
+    (newParams: URLSearchParams) => {
+      // Resetăm pagina la 1 când se modifică un filtru în așteptare
+      newParams.set("page", "1");
+      setPendingSearchParams(newParams);
+    },
+    [],
+  );
+
+  const handleApply = () => {
+    onApply(pendingSearchParams);
+  };
+
+  const clearPending = () => {
+    const cleared = new URLSearchParams();
+    // Păstrăm sortarea și categoria, ștergem restul datelor de filtrare
+    if (activeSearchParams.has("sort"))
+      cleared.set("sort", activeSearchParams.get("sort")!);
+    cleared.set("page", "1");
+    setPendingSearchParams(cleared);
+  };
+
+  const hasPendingChanges =
+    pendingSearchParams.toString() !== activeSearchParams.toString();
+
+  // Numărăm filtrele active ÎN AȘTEPTARE
+  const pendingFiltersCount = useMemo(() => {
+    let count = 0;
+    pendingSearchParams.forEach((val, key) => {
+      if (
+        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
+          key,
+        ) &&
+        val
+      )
+        count++;
+    });
+    return count;
+  }, [pendingSearchParams]);
+
+  return (
+    <div className="flex flex-col h-full text-left">
+      <SheetHeader className="px-6 py-5 border-b border-zinc-100 shrink-0 flex flex-row items-center justify-between gap-4 space-y-0">
+        <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
+          Rafinează Selecția
+        </SheetTitle>
+        <div className="flex items-center gap-2">
+          {pendingFiltersCount > 0 && (
+            <button
+              onClick={clearPending}
+              className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-rose-500 transition-colors"
+            >
+              Resetează ({pendingFiltersCount})
+            </button>
+          )}
+          <SheetClose className="rounded-full h-8 w-8 flex items-center justify-center bg-zinc-50 hover:bg-zinc-100 border border-zinc-100 text-zinc-400 hover:text-zinc-900 transition-colors">
+            <X size={16} />
+          </SheetClose>
+        </div>
+      </SheetHeader>
+
+      <div className="flex-1 overflow-y-auto p-6 luxury-scrollbar pb-32">
+        {filtersData ? (
+          /* ✅ Pasăm starea locală și funcția de update locală */
+          <FilterSidebar
+            filtersData={filtersData}
+            searchParams={pendingSearchParams}
+            setSearchParams={handlePendingFilterChange}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2
+              className="animate-spin text-[var(--royal-violet)]"
+              size={20}
+            />
+            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+              Se încarcă matricea...
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ✅ Footer fix modern cu buton de aplicare */}
+      <div className="absolute bottom-0 left-0 w-full p-6 bg-white border-t border-zinc-100 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
+        <button
+          onClick={handleApply}
+          disabled={!hasPendingChanges}
+          className="w-full h-14 bg-zinc-950 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:bg-zinc-200 disabled:cursor-not-allowed active:scale-[0.98]"
+        >
+          Aplica Filtrele
+        </button>
+      </div>
     </div>
   );
 };
@@ -309,6 +433,15 @@ const CategoryPage = () => {
     return count;
   }, [searchParams]);
 
+  // ✅ Callback apelat când utilizatorul apasă "Aplica Filtrele" în Sheet
+  const handleApplyFilters = useCallback(
+    (pendingParams: URLSearchParams) => {
+      setSearchParams(pendingParams); // Actualizăm URL-ul real
+      setFiltersOpen(false); // Închidem sheet-ul
+    },
+    [setSearchParams],
+  );
+
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) return filtersData.category_name;
     if (!slug) return "";
@@ -333,12 +466,10 @@ const CategoryPage = () => {
         aria-hidden="true"
       />
 
-      {/* Am redus max-w de la 1800px la 1600px pentru un look mai închegat */}
       <main className="flex-grow w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-10 py-6">
         {/* ── Page Header ── */}
         <div className="mb-6 md:mb-10">
           <div className="flex items-baseline gap-4 flex-wrap">
-            {/* Titlu mai mic și compact */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
               {categoryTitle || (
                 <span className="inline-block w-48 h-10 bg-zinc-100 rounded-xl animate-pulse" />
@@ -398,28 +529,16 @@ const CategoryPage = () => {
 
             <SheetContent
               side="right"
-              className="w-[92%] sm:w-[400px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full text-left"
+              // ✅ Am eliminat header-ul standard Radix (care includea butonul X implicit) pentru a folosi designul custom din FilterSheetExperience
+              hideClose
+              className="w-[94%] sm:w-[420px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full"
             >
-              <SheetHeader className="p-6 border-b border-zinc-100 shrink-0">
-                <SheetTitle className="text-lg font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
-                  Filtre
-                </SheetTitle>
-              </SheetHeader>
-              <div className="flex-1 overflow-y-auto p-6 luxury-scrollbar">
-                {filtersData ? (
-                  <FilterSidebar filtersData={filtersData} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2
-                      className="animate-spin text-[var(--royal-violet)]"
-                      size={20}
-                    />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                      Se încarcă filtrele...
-                    </span>
-                  </div>
-                )}
-              </div>
+              {/* ✅ Folosim experiența custom cu stări pending */}
+              <FilterSheetExperience
+                filtersData={filtersData}
+                activeSearchParams={searchParams}
+                onApply={handleApplyFilters}
+              />
             </SheetContent>
           </Sheet>
 
@@ -498,7 +617,6 @@ const CategoryPage = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-10">
-                {/* ✅ SECRETUL AICI: Am adăugat mai multe coloane (xl:grid-cols-5 2xl:grid-cols-6) pentru ca pozele să se randeze mai mici! */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-x-3 sm:gap-x-4 gap-y-8 sm:gap-y-10">
                   {products.map((p, i) => (
                     <ProductCard
@@ -560,6 +678,21 @@ const CategoryPage = () => {
             .luxury-scrollbar::-webkit-scrollbar-thumb {
               background: rgba(0,0,0,0.1);
               border-radius: 10px;
+            }
+            
+            /* ✅ FIX PENTRU BLUR GLOBAL (Inclusiv Navbar) */
+            /* Tintim overlay-ul Radix portal si aplicam blur si z-index imens */
+            [data-radix-portal] div[data-state="open"] {
+              z-index: 99990 !important;
+              backdrop-filter: blur(15px) !important;
+              -webkit-backdrop-filter: blur(15px) !important;
+              background-color: rgba(9, 9, 11, 0.4) !important; /* zinc-950/40 */
+              transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            }
+            
+            /* Ne asiguram ca Sheet-ul in sine este peste overlay-ul de blur */
+            [data-radix-portal] [role="dialog"] {
+              z-index: 99999 !important;
             }
           `,
         }}
