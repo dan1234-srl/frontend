@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
+import { OrderTracking } from "@/components/account/OrderTracking";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
