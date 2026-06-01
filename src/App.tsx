@@ -14,9 +14,10 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { FiltersProvider } from "@/contexts/FiltersContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ScrollToTop from "./components/ScrollToTop";
+import { prefetchCriticalRoutes } from "@/lib/route-prefetch";
 
 // ─── Public (lazy) ───
 const Index = lazy(() => import("./pages/Index"));
