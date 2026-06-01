@@ -128,10 +128,15 @@ const ProductDetail = () => {
           </div>
 
           <div className="mt-20">
-            {/* 🚀 AICI SE APELEAZĂ MODUL VECHI AL CARUSELULUI */}
-            {/* Fiindcă îi trimitem 'categorySlug' și NU 'collectionType', el va afișa perfect produsele similare */}
+            {/* Folosim fallback (||) pentru a ne asigura că prindem slug-ul categoriei
+              indiferent cum e formatat obiectul returnat de backend (din DB sau din Meilisearch)
+            */}
             <ProductCarousel
-              categorySlug={product.category?.slug}
+              categorySlug={
+                product.category?.slug ||
+                product.category_slug ||
+                product._meta_category_slug
+              }
               title="Produse Similare"
               subtitle="Recomandări din aceeași categorie"
             />
