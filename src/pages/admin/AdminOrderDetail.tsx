@@ -376,7 +376,7 @@ const AdminOrderDetail = () => {
                   <ShieldCheck
                     size={16}
                     className="text-emerald-500"
-                    title="Cont Înregistrat"
+                    aria-label="Cont Înregistrat"
                   />
                 )}
               </div>
