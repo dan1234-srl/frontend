@@ -86,23 +86,7 @@ const Orders = () => {
   }, [searchTerm, orders]);
 
   return (
-    <div className="relative min-h-screen text-zinc-900 font-sans antialiased selection:bg-zinc-100 overflow-hidden">
-      {/* AMBIENT LUXURY BACKDROP — subtle gradient orbs */}
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#FBFAFD]">
-        <div
-          className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full opacity-[0.18] blur-[120px]"
-          style={{ background: "var(--royal-violet)" }}
-        />
-        <div
-          className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.12] blur-[140px]"
-          style={{ background: "var(--french-blue, var(--indigo-velvet))" }}
-        />
-        <div
-          className="absolute bottom-0 left-1/4 w-[480px] h-[480px] rounded-full opacity-[0.10] blur-[140px]"
-          style={{ background: "var(--mauve-magic)" }}
-        />
-      </div>
-
+    <div className="relative min-h-screen bg-white text-zinc-900 font-sans antialiased selection:bg-zinc-100 overflow-hidden">
       <Header />
 
       {/* TOP LOADING PROGRESS BAR — render only while loading to avoid the static blue line */}
@@ -119,7 +103,11 @@ const Orders = () => {
               style={{ background: "var(--primary-gradient)" }}
               initial={{ left: "-40%", width: "40%" }}
               animate={{ left: "100%" }}
-              transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+              transition={{
+                repeat: Infinity,
+                duration: 1.2,
+                ease: "easeInOut",
+              }}
             />
           </motion.div>
         )}
@@ -140,7 +128,6 @@ const Orders = () => {
               Contul meu
             </button>
 
-            {/* 🚀 REPARAT: Schimbat text-purple-500 în style color var pentru a lua dinamic tema backend-ului */}
             <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-zinc-900 leading-none">
               Arhiva{" "}
               <span
@@ -159,7 +146,6 @@ const Orders = () => {
               className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors duration-300"
             />
 
-            {/* 🚀 REPARAT: Înlocuit border-zinc-150 cu o bordură discretă zinc-100, focus:border legat nativ de --royal-violet și shadow fin pentru a elimina complet negrul rigid */}
             <input
               type="text"
               value={searchTerm}
@@ -168,11 +154,13 @@ const Orders = () => {
               className="w-full bg-white/55 backdrop-blur-2xl backdrop-saturate-150 border rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none transition-all duration-300 text-zinc-800 shadow-[0_8px_30px_-12px_rgba(16,0,43,0.12)]"
               style={{ borderColor: "rgba(123,44,191,0.18)" }}
               onFocus={(e) => {
-                e.target.style.boxShadow = "0 0 0 4px rgba(123,44,191,0.10), 0 8px 30px -12px rgba(16,0,43,0.18)";
+                e.target.style.boxShadow =
+                  "0 0 0 4px rgba(123,44,191,0.10), 0 8px 30px -12px rgba(16,0,43,0.18)";
                 e.target.style.borderColor = "var(--royal-violet)";
               }}
               onBlur={(e) => {
-                e.target.style.boxShadow = "0 8px 30px -12px rgba(16,0,43,0.12)";
+                e.target.style.boxShadow =
+                  "0 8px 30px -12px rgba(16,0,43,0.12)";
                 e.target.style.borderColor = "rgba(123,44,191,0.18)";
               }}
             />
@@ -193,7 +181,7 @@ const Orders = () => {
                 {[...Array(3)].map((_, i) => (
                   <Skeleton
                     key={i}
-                    className="h-80 w-full rounded-[2.5rem] bg-white/40 backdrop-blur-xl"
+                    className="h-80 w-full rounded-[2.5rem] bg-zinc-100/50 backdrop-blur-xl"
                   />
                 ))}
               </motion.div>
@@ -217,9 +205,9 @@ const Orders = () => {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="py-32 text-center rounded-[3rem] border border-white/60 bg-white/40 backdrop-blur-2xl backdrop-saturate-150 flex flex-col items-center justify-center px-4 shadow-[0_20px_60px_-20px_rgba(16,0,43,0.10)]"
+                className="py-32 text-center rounded-[3rem] border border-zinc-200 bg-zinc-50/50 backdrop-blur-2xl flex flex-col items-center justify-center px-4 shadow-[0_20px_60px_-20px_rgba(16,0,43,0.05)]"
               >
-                <div className="p-4 bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 mb-6 text-[var(--royal-violet)]">
+                <div className="p-4 bg-white backdrop-blur-xl rounded-2xl shadow-sm border border-zinc-100 mb-6 text-[var(--royal-violet)]">
                   <ShoppingBag size={32} strokeWidth={1.5} />
                 </div>
                 <h3 className="heading-serif text-3xl italic text-zinc-800 mb-1">
@@ -235,21 +223,21 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
-        {/* PAGINARE — glass aesthetic */}
+        {/* PAGINARE */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
-          <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-white/60">
+          <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
             <button
               disabled={currentPage === 1 || isLoading}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="size-12 rounded-full border border-white/60 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white/55 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(16,0,43,0.15)] disabled:opacity-25"
+              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm disabled:opacity-25"
             >
               <ChevronLeft size={16} />
             </button>
 
             <span
-              className="text-xl font-black px-5 py-2 rounded-xl border backdrop-blur-xl"
+              className="text-xl font-black px-5 py-2 rounded-xl border"
               style={{
-                backgroundColor: "rgba(255,255,255,0.55)",
+                backgroundColor: "rgba(255,255,255,1)",
                 borderColor: "rgba(123,44,191,0.25)",
                 color: "var(--royal-violet)",
               }}
@@ -260,7 +248,7 @@ const Orders = () => {
             <button
               disabled={orders.length < ordersPerPage || isLoading}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="size-12 rounded-full border border-white/60 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white/55 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(16,0,43,0.15)] disabled:opacity-25"
+              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm disabled:opacity-25"
             >
               <ChevronRight size={16} />
             </button>
