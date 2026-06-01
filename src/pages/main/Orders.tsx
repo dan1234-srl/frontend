@@ -193,7 +193,7 @@ const Orders = () => {
                 {[...Array(3)].map((_, i) => (
                   <Skeleton
                     key={i}
-                    className="h-80 w-full rounded-[2.5rem] bg-zinc-50"
+                    className="h-80 w-full rounded-[2.5rem] bg-white/40 backdrop-blur-xl"
                   />
                 ))}
               </motion.div>
@@ -217,9 +217,9 @@ const Orders = () => {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="py-32 text-center rounded-[3rem] border border-dashed border-zinc-200 bg-zinc-50/10 flex flex-col items-center justify-center px-4"
+                className="py-32 text-center rounded-[3rem] border border-white/60 bg-white/40 backdrop-blur-2xl backdrop-saturate-150 flex flex-col items-center justify-center px-4 shadow-[0_20px_60px_-20px_rgba(16,0,43,0.10)]"
               >
-                <div className="p-4 bg-white rounded-2xl shadow-sm border border-zinc-100 mb-6 text-zinc-400">
+                <div className="p-4 bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 mb-6 text-[var(--royal-violet)]">
                   <ShoppingBag size={32} strokeWidth={1.5} />
                 </div>
                 <h3 className="heading-serif text-3xl italic text-zinc-800 mb-1">
@@ -235,24 +235,23 @@ const Orders = () => {
           </AnimatePresence>
         </div>
 
-        {/* 🚀 REPARAT: PAGINARE COMPLET ALINIATĂ PE CULORILE DIN BACKEND (Fără mov/violet hardcodat sau fix) */}
+        {/* PAGINARE — glass aesthetic */}
         {(orders.length >= ordersPerPage || currentPage > 1) && (
-          <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-zinc-100">
+          <div className="flex justify-center items-center gap-10 pt-16 mt-12 border-t border-white/60">
             <button
               disabled={currentPage === 1 || isLoading}
               onClick={() => setCurrentPage((p) => p - 1)}
-              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm disabled:opacity-25"
+              className="size-12 rounded-full border border-white/60 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white/55 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(16,0,43,0.15)] disabled:opacity-25"
             >
               <ChevronLeft size={16} />
             </button>
 
             <span
-              className="text-xl font-black px-5 py-2 rounded-xl border"
+              className="text-xl font-black px-5 py-2 rounded-xl border backdrop-blur-xl"
               style={{
-                backgroundColor: "rgba(109, 40, 217, 0.04)",
-                borderColor: "var(--royal-violet)",
+                backgroundColor: "rgba(255,255,255,0.55)",
+                borderColor: "rgba(123,44,191,0.25)",
                 color: "var(--royal-violet)",
-                opacity: 0.9,
               }}
             >
               {currentPage}
@@ -261,7 +260,7 @@ const Orders = () => {
             <button
               disabled={orders.length < ordersPerPage || isLoading}
               onClick={() => setCurrentPage((p) => p + 1)}
-              className="size-12 rounded-full border border-zinc-200 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white shadow-sm disabled:opacity-25"
+              className="size-12 rounded-full border border-white/60 flex items-center justify-center hover:bg-zinc-950 hover:text-white transition-all bg-white/55 backdrop-blur-xl shadow-[0_8px_24px_-12px_rgba(16,0,43,0.15)] disabled:opacity-25"
             >
               <ChevronRight size={16} />
             </button>
