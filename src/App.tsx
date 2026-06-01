@@ -332,7 +332,7 @@ const App = () => (
             <FiltersProvider>
               <TooltipProvider>
                 <Toaster />
-                <Sonner position="top-center" expand={false} richColors />
+                <Sonner />
                 <BrowserRouter>
                   <ScrollToTop />
                   <AnimatedRoutes />
