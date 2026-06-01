@@ -86,21 +86,44 @@ const Orders = () => {
   }, [searchTerm, orders]);
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 font-sans antialiased selection:bg-zinc-100">
+    <div className="relative min-h-screen text-zinc-900 font-sans antialiased selection:bg-zinc-100 overflow-hidden">
+      {/* AMBIENT LUXURY BACKDROP — subtle gradient orbs */}
+      <div className="pointer-events-none fixed inset-0 -z-10 bg-[#FBFAFD]">
+        <div
+          className="absolute -top-40 -left-32 w-[520px] h-[520px] rounded-full opacity-[0.18] blur-[120px]"
+          style={{ background: "var(--royal-violet)" }}
+        />
+        <div
+          className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.12] blur-[140px]"
+          style={{ background: "var(--french-blue, var(--indigo-velvet))" }}
+        />
+        <div
+          className="absolute bottom-0 left-1/4 w-[480px] h-[480px] rounded-full opacity-[0.10] blur-[140px]"
+          style={{ background: "var(--mauve-magic)" }}
+        />
+      </div>
+
       <Header />
 
-      {/* TOP LOADING PROGRESS BAR */}
-      <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-100/50 z-[1100] overflow-hidden">
+      {/* TOP LOADING PROGRESS BAR — render only while loading to avoid the static blue line */}
+      <AnimatePresence>
         {isLoading && (
           <motion.div
-            className="h-full"
-            style={{ background: "var(--primary-gradient)" }}
-            initial={{ left: "-100%", width: "100%", position: "absolute" }}
-            animate={{ left: "100%" }}
-            transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
-          />
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed top-0 left-0 right-0 h-[2px] z-[1100] overflow-hidden pointer-events-none"
+          >
+            <motion.div
+              className="h-full absolute"
+              style={{ background: "var(--primary-gradient)" }}
+              initial={{ left: "-40%", width: "40%" }}
+              animate={{ left: "100%" }}
+              transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+            />
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
       <main className="flex-1 pt-36 md:pt-44 pb-24 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto w-full">
         {/* HEADER CONTROLS */}
