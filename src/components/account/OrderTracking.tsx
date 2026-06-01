@@ -101,7 +101,7 @@ export function OrderTracking({
     setError(null);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/v1/post_sale/${orderId}/tracking`,
+        `${API_BASE_URL}/api/v1/post_sale/orders/${orderId}/tracking`,
         { credentials: "include", signal: ctrl.signal },
       );
       if (!res.ok) {
