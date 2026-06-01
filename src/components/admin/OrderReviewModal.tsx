@@ -202,6 +202,11 @@ export const OrderReviewModal = ({
         const res = await fetch(
           `${API_BASE_URL}/api/v1/orders/admin/pickup-locations`,
           {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
             credentials: "include",
           },
         );
