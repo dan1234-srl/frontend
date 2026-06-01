@@ -13,15 +13,20 @@ interface FilterSidebarProps {
     attributes: Record<string, { label: string; values: string[] }>;
   };
   // ✅ PRIMIM PROPS PENTRU A GESTIONA STAREA LOCALĂ
-  searchParams: URLSearchParams;
-  setSearchParams: (params: URLSearchParams) => void;
+  searchParams?: URLSearchParams;
+  setSearchParams?: (params: URLSearchParams) => void;
 }
 
 export const FilterSidebar = ({
   filtersData,
-  searchParams,
-  setSearchParams,
+  searchParams: searchParamsProp,
+  setSearchParams: setSearchParamsProp,
 }: FilterSidebarProps) => {
+  const [internalParams, setInternalParams] = useState<URLSearchParams>(
+    () => new URLSearchParams(),
+  );
+  const searchParams = searchParamsProp ?? internalParams;
+  const setSearchParams = setSearchParamsProp ?? setInternalParams;
   const [brandSearch, setBrandSearch] = useState("");
   const [attrSearch, setAttrSearch] = useState<Record<string, string>>({});
 
