@@ -97,7 +97,7 @@ const ProductCarousel = ({
   if (products.length === 0) return null;
 
   return (
-    <section className="w-full py-0 md:py-8 overflow-hidden text-left">
+    <section className="w-full py-0 md:py-8 text-left relative">
       {" "}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
         {" "}
