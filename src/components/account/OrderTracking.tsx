@@ -58,7 +58,7 @@ function normalizeHistory(payload: TrackingPayload | null): GlsHistoryEvent[] {
   return [];
 }
 
-const CATEGORY_ICON: Record<GlsCategory, React.ComponentType<{ size?: number; className?: string }>> = {
+const CATEGORY_ICON: Record<GlsCategory, typeof Truck> = {
   created: Sparkles,
   transit: Truck,
   out_delivery: Truck,
