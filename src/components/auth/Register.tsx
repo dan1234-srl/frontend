@@ -71,13 +71,32 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
   // Validări per câmp
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
-    const { firstName, lastName, email, password, confirmPassword, birthday, phone } = formData;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+      birthday,
+      phone,
+    } = formData;
 
-    if (firstName && (firstName.length < 3 || firstName.length > 50 || !NAME_REGEX.test(firstName)))
+    if (
+      firstName &&
+      (firstName.length < 3 ||
+        firstName.length > 50 ||
+        !NAME_REGEX.test(firstName))
+    )
       e.firstName = "Doar litere, între 3 și 50 caractere.";
-    if (lastName && (lastName.length < 3 || lastName.length > 50 || !NAME_REGEX.test(lastName)))
+    if (
+      lastName &&
+      (lastName.length < 3 ||
+        lastName.length > 50 ||
+        !NAME_REGEX.test(lastName))
+    )
       e.lastName = "Doar litere, între 3 și 50 caractere.";
-    if (email && !EMAIL_REGEX.test(email)) e.email = "Adresă de email invalidă.";
+    if (email && !EMAIL_REGEX.test(email))
+      e.email = "Adresă de email invalidă.";
     if (password && (password.length < 8 || password.length > 20))
       e.password = "Parola trebuie să aibă între 8 și 20 caractere.";
     if (confirmPassword && confirmPassword !== password)
@@ -85,7 +104,8 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
     if (birthday) {
       const d = new Date(birthday);
       const now = new Date();
-      const age = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
+      const age =
+        (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
       if (isNaN(d.getTime())) e.birthday = "Dată invalidă.";
       else if (age < 16) e.birthday = "Trebuie să ai cel puțin 16 ani.";
       else if (age > 120) e.birthday = "Dată invalidă.";
@@ -110,7 +130,13 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
     return s;
   }, [formData.password]);
 
-  const strengthLabel = ["Foarte slabă", "Slabă", "Acceptabilă", "Bună", "Excelentă"][pwdStrength];
+  const strengthLabel = [
+    "Foarte slabă",
+    "Slabă",
+    "Acceptabilă",
+    "Bună",
+    "Excelentă",
+  ][pwdStrength];
   const strengthColor = [
     "bg-zinc-200",
     "bg-red-400",
@@ -138,8 +164,13 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({
-      firstName: true, lastName: true, email: true, password: true,
-      confirmPassword: true, birthday: true, phone: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+      birthday: true,
+      phone: true,
     });
 
     if (!isValid) {
@@ -153,7 +184,8 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
 
     setLoading(true);
     let finalPhone = formData.phone.replace(/\s+/g, "");
-    if (finalPhone.startsWith("07")) finalPhone = "+40" + finalPhone.substring(1);
+    if (finalPhone.startsWith("07"))
+      finalPhone = "+40" + finalPhone.substring(1);
     else if (finalPhone.startsWith("407")) finalPhone = "+" + finalPhone;
 
     try {
@@ -261,7 +293,9 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                       onBlur={() => blur("firstName")}
                       className={`${inputBase} ${inputState("firstName")}`}
                     />
-                    <label htmlFor="firstName" className={labelBase}>Prenume</label>
+                    <label htmlFor="firstName" className={labelBase}>
+                      Prenume
+                    </label>
                     {touched.firstName && errors.firstName && (
                       <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-500">
                         <AlertCircle size={11} /> {errors.firstName}
@@ -279,7 +313,9 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                       onBlur={() => blur("lastName")}
                       className={`${inputBase} ${inputState("lastName")}`}
                     />
-                    <label htmlFor="lastName" className={labelBase}>Nume</label>
+                    <label htmlFor="lastName" className={labelBase}>
+                      Nume
+                    </label>
                     {touched.lastName && errors.lastName && (
                       <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-500">
                         <AlertCircle size={11} /> {errors.lastName}
@@ -301,7 +337,9 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                     onBlur={() => blur("email")}
                     className={`${inputBase} ${inputState("email")}`}
                   />
-                  <label htmlFor="email" className={labelBase}>Adresă email</label>
+                  <label htmlFor="email" className={labelBase}>
+                    Adresă email
+                  </label>
                   {touched.email && errors.email && (
                     <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-500">
                       <AlertCircle size={11} /> {errors.email}
@@ -325,7 +363,9 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                       onBlur={() => blur("phone")}
                       className={`${inputBase} ${inputState("phone")}`}
                     />
-                    <label htmlFor="phone" className={labelBase}>Telefon</label>
+                    <label htmlFor="phone" className={labelBase}>
+                      Telefon
+                    </label>
                     {touched.phone && errors.phone && (
                       <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-500">
                         <AlertCircle size={11} /> {errors.phone}
@@ -345,7 +385,9 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                       onBlur={() => blur("birthday")}
                       className={`${inputBase} ${inputState("birthday")} cursor-pointer ${!formData.birthday ? "text-transparent" : ""}`}
                     />
-                    <label htmlFor="birthday" className={labelBase}>Data nașterii</label>
+                    <label htmlFor="birthday" className={labelBase}>
+                      Data nașterii
+                    </label>
                     {touched.birthday && errors.birthday && (
                       <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-500">
                         <AlertCircle size={11} /> {errors.birthday}
@@ -360,12 +402,14 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                     Gen
                   </label>
                   <div className="grid grid-cols-4 gap-2">
-                    {([
-                      { v: "female", l: "Feminin" },
-                      { v: "male", l: "Masculin" },
-                      { v: "other", l: "Altul" },
-                      { v: "unspecified", l: "Neprecizat" },
-                    ] as { v: Gender; l: string }[]).map((opt) => (
+                    {(
+                      [
+                        { v: "female", l: "Feminin" },
+                        { v: "male", l: "Masculin" },
+                        { v: "other", l: "Altul" },
+                        { v: "unspecified", l: "Neprecizat" },
+                      ] as { v: Gender; l: string }[]
+                    ).map((opt) => (
                       <button
                         key={opt.v}
                         type="button"
@@ -395,7 +439,9 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                     onBlur={() => blur("password")}
                     className={`${inputBase} ${inputState("password")} pr-10`}
                   />
-                  <label htmlFor="password" className={labelBase}>Parolă</label>
+                  <label htmlFor="password" className={labelBase}>
+                    Parolă
+                  </label>
                   <button
                     type="button"
                     onClick={() => setShowPwd((s) => !s)}
@@ -483,15 +529,25 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                         : "border-zinc-300"
                     }`}
                   >
-                    {acceptTerms && <Check size={12} className="text-white" strokeWidth={3} />}
+                    {acceptTerms && (
+                      <Check size={12} className="text-white" strokeWidth={3} />
+                    )}
                   </span>
                   <span className="text-[12px] font-light text-zinc-500 leading-relaxed">
                     Sunt de acord cu{" "}
-                    <a href="/terms" target="_blank" className="underline text-[var(--dark-amethyst)]">
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      className="underline text-[var(--dark-amethyst)]"
+                    >
                       Termenii și condițiile
                     </a>{" "}
                     și{" "}
-                    <a href="/privacy" target="_blank" className="underline text-[var(--dark-amethyst)]">
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      className="underline text-[var(--dark-amethyst)]"
+                    >
                       Politica de confidențialitate
                     </a>
                     .
@@ -515,19 +571,6 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
                     )}
                   </span>
                 </button>
-
-                <div className="text-center pt-2">
-                  <p className="text-xs font-medium text-zinc-400">
-                    Ai deja un cont?
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onSwitchToLogin}
-                    className="mt-2 border-b border-[var(--dark-amethyst)]/20 text-sm font-black italic text-[var(--dark-amethyst)] hover:border-[var(--dark-amethyst)]"
-                  >
-                    Autentificare
-                  </button>
-                </div>
               </form>
             </div>
 
