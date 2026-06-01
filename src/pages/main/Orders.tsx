@@ -165,19 +165,15 @@ const Orders = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Caută număr comandă, status sau metodă..."
-              className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none focus:bg-white transition-all duration-300 text-zinc-800 shadow-sm"
-              style={{
-                borderColor: "var(--royal-violet)",
-                borderWidth: "1px",
-                opacity: 0.85,
-              }}
+              className="w-full bg-white/55 backdrop-blur-2xl backdrop-saturate-150 border rounded-2xl py-4 pl-11 pr-14 text-[10px] font-black uppercase tracking-widest outline-none transition-all duration-300 text-zinc-800 shadow-[0_8px_30px_-12px_rgba(16,0,43,0.12)]"
+              style={{ borderColor: "rgba(123,44,191,0.18)" }}
               onFocus={(e) => {
-                e.target.style.opacity = "1";
-                e.target.style.boxShadow = "0 0 0 4px rgba(109, 40, 217, 0.08)";
+                e.target.style.boxShadow = "0 0 0 4px rgba(123,44,191,0.10), 0 8px 30px -12px rgba(16,0,43,0.18)";
+                e.target.style.borderColor = "var(--royal-violet)";
               }}
               onBlur={(e) => {
-                e.target.style.opacity = "0.85";
-                e.target.style.boxShadow = "none";
+                e.target.style.boxShadow = "0 8px 30px -12px rgba(16,0,43,0.12)";
+                e.target.style.borderColor = "rgba(123,44,191,0.18)";
               }}
             />
           </div>
