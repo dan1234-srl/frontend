@@ -324,7 +324,12 @@ const AnimatedRoutes = () => {
   );
 };
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    prefetchCriticalRoutes();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <LanguageProvider>
