@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react";
 import { ProductCard } from "../shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
