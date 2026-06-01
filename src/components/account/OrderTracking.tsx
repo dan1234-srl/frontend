@@ -45,7 +45,8 @@ interface TrackingPayload {
 
 function normalizeHistory(payload: TrackingPayload | null): GlsHistoryEvent[] {
   if (!payload) return [];
-  if (Array.isArray(payload.history) && payload.history.length) return payload.history;
+  if (Array.isArray(payload.history) && payload.history.length)
+    return payload.history;
   if (Array.isArray(payload.ParcelStatusList)) {
     return payload.ParcelStatusList.map((s: any) => ({
       code: s.StatusCode ?? s.code,
@@ -100,7 +101,7 @@ export function OrderTracking({
     setError(null);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/v1/orders/${orderId}/tracking`,
+        `${API_BASE_URL}/api/v1/post_sale/${orderId}/tracking`,
         { credentials: "include", signal: ctrl.signal },
       );
       if (!res.ok) {
@@ -154,8 +155,7 @@ export function OrderTracking({
 
   const history = useMemo(() => normalizeHistory(data), [data]);
   const awbValue = data?.awb || data?.ParcelNumber || awb || null;
-  const currentCode =
-    data?.current_code ?? history[0]?.code ?? null;
+  const currentCode = data?.current_code ?? history[0]?.code ?? null;
   const current = resolveGlsStatus(currentCode);
 
   const handleCopy = async () => {
@@ -182,9 +182,7 @@ export function OrderTracking({
             Tracking în timp real
           </p>
           <h4 className="heading-serif text-2xl italic text-zinc-900 leading-tight">
-            {hasNothing
-              ? "În pregătire"
-              : current.meta.text}
+            {hasNothing ? "În pregătire" : current.meta.text}
           </h4>
           {awbValue && (
             <button
@@ -193,7 +191,11 @@ export function OrderTracking({
               title="Copiază AWB"
             >
               <span>AWB · {awbValue}</span>
-              {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+              {copied ? (
+                <Check size={11} className="text-emerald-500" />
+              ) : (
+                <Copy size={11} />
+              )}
             </button>
           )}
         </div>
