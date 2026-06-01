@@ -14,6 +14,7 @@ import {
   Phone,
   Save,
   ShieldCheck,
+  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,18 +36,18 @@ export type OrderItem = {
   product_sku_at_purchase: string;
   product_image?: string | null;
   quantity: number;
-  unit_price_at_purchase: number; // Folosim number, nu opțional, pentru a evita NaN
-  total_item_price: number; // Folosim number
+  unit_price_at_purchase: number;
+  total_item_price: number;
   product?: ProductSpecs;
 };
 
 export type ShippingAddress = {
   street?: string;
   house_number?: string;
-  houseNumber?: string; // Fallback pentru consistență
+  houseNumber?: string;
   city?: string;
   county?: string;
-  sector?: string; // Fallback pentru București
+  sector?: string;
   postalCode?: string;
   postal_code?: string;
   zip?: string;
@@ -57,21 +58,19 @@ export type ShippingAddress = {
 export type Order = {
   id: string;
   order_number: string;
-  created_at: string; // ISO Date string
+  created_at: string;
   status: string;
   customer_name: string;
   email: string;
   phone: string;
-  shipping_address: ShippingAddress; // Acum este obiect, nu string
+  shipping_address: ShippingAddress;
   payment_method: string;
 
-  // Finanțe
   subtotal_amount: number;
   discount_amount: number;
   shipping_fee: number;
   total_amount: number;
 
-  // Livrare
   delivery_type?: string;
   locker_id?: string | null;
   locker_address?: string | null;
@@ -109,6 +108,9 @@ export const OrderReviewModal = ({
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+
+  // NOUL STATE: Adresa de la care ridică GLS coletul
+  const [pickupLocationKey, setPickupLocationKey] = useState("suceava");
 
   const [edits, setEdits] = useState<Record<string, ProductSpecs>>({});
   const [savingSku, setSavingSku] = useState<string | null>(null);
@@ -188,25 +190,18 @@ export const OrderReviewModal = ({
     };
   }, [orderId]);
 
-  // Transformă string-ul din DB (JSON) într-un obiect
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {};
 
-    // Backend-ul trimite acum direct obiectul (datorită schimbării din Pydantic)
-    // Dar lăsăm un fallback în caz că vine string
     return typeof order.shipping_address === "string"
       ? JSON.parse(order.shipping_address)
       : order.shipping_address;
   }, [order]);
 
-  // VALIDATION
-  // VALIDATION
-  // VALIDATION
   const validation = useMemo(() => {
     if (!order) return { ok: true, issues: [] as string[] };
     const issues: string[] = [];
 
-    // Validare specifică pentru CURIER (strictă)
     if (order.delivery_type !== "locker") {
       if (!shipping.city && !shipping.City) issues.push("Lipsește orașul");
       if (
@@ -228,13 +223,10 @@ export const OrderReviewModal = ({
       if (!shipping.street && !shipping.Street) {
         issues.push("Lipsește strada");
       }
-    }
-    // Validare pentru LOCKER (mai permisivă)
-    else {
+    } else {
       if (!order.locker_id) {
         issues.push("Lipsește locker-ul GLS");
       }
-      // ---> ADAUGĂ ASTA PENTRU A BLOCA APROBAREA FĂRĂ ZIP <---
       if (
         !shipping.postalCode &&
         !shipping.postal_code &&
@@ -248,7 +240,6 @@ export const OrderReviewModal = ({
     if (!order.phone) issues.push("Lipsește telefonul de contact");
     if (!order.email) issues.push("Lipsește email-ul de contact");
 
-    // Validare produse (specificații logistice)
     order.items?.forEach((it) => {
       const p = it.product || {};
       const eff: ProductSpecs = {
@@ -346,7 +337,11 @@ export const OrderReviewModal = ({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ action: "approve" }),
+          // SE TRIMITE CHEIA LOCAȚIEI SELECTATE CĂTRE BACKEND
+          body: JSON.stringify({
+            action: "approve",
+            pickup_location_key: pickupLocationKey,
+          }),
         },
       );
       const data = await res.json().catch(() => ({}));
@@ -498,8 +493,36 @@ export const OrderReviewModal = ({
                   </div>
                 </div>
 
-                {/* CUSTOMER + SHIPPING */}
+                {/* CUSTOMER + SHIPPING + PICKUP LOCATION */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Punct de ridicare AWB (Nou) */}
+                  <div className="lg:col-span-2">
+                    <InfoBlock
+                      title="Locație Ridicare Colet (Depozit)"
+                      icon={<Store size={14} />}
+                    >
+                      <div className="space-y-2 mt-1">
+                        <select
+                          value={pickupLocationKey}
+                          onChange={(e) => setPickupLocationKey(e.target.value)}
+                          className="w-full h-11 rounded-xl border-2 border-zinc-100 px-4 text-xs font-bold text-[var(--dark-amethyst)] outline-none focus:border-[var(--royal-violet)] transition-colors cursor-pointer appearance-none bg-zinc-50 hover:bg-zinc-100/80"
+                        >
+                          <option value="suceava">
+                            Depozit Suceava (Str. Calea Obcinilor 15, Suceava)
+                          </option>
+                          <option value="botosani">
+                            Depozit Botoșani (Str. Marchian 22, Botoșani)
+                          </option>
+                        </select>
+                        <p className="text-[10px] text-zinc-400 font-medium px-1">
+                          Curierul GLS va fi trimis la această adresă pentru a
+                          ridica comanda. Această adresă va fi setată automat ca
+                          "Expeditor" pe AWB.
+                        </p>
+                      </div>
+                    </InfoBlock>
+                  </div>
+
                   <InfoBlock title="Client" icon={<User size={14} />}>
                     <Row label="Nume" value={order.customer_name} />
                     <Row
@@ -636,7 +659,6 @@ export const OrderReviewModal = ({
                     {order.items?.map((it) => {
                       const p = it.product || {};
 
-                      // Calcul logistica (există deja în codul tău)
                       const eff: ProductSpecs = {
                         weight: edits[it.product_id || ""]?.weight ?? p.weight,
                         length: edits[it.product_id || ""]?.length ?? p.length,
@@ -652,8 +674,6 @@ export const OrderReviewModal = ({
                         edits[it.product_id] &&
                         Object.keys(edits[it.product_id]).length > 0;
 
-                      // --- FIX PENTRU NaN RON ---
-                      // Convertim în număr și oferim 0 ca valoare implicită dacă sunt undefined/null
                       const unitPrice = Number(
                         it.unit_price_at_purchase ??
                           it.unit_price_at_purchase ??
@@ -669,7 +689,6 @@ export const OrderReviewModal = ({
                           className="rounded-2xl border border-zinc-100 bg-white overflow-hidden"
                         >
                           <div className="flex flex-col sm:flex-row gap-4 p-4">
-                            {/* Imaginea produsului */}
                             <div className="size-20 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden shrink-0">
                               <img
                                 src={getImage(it.product_image)}
@@ -682,7 +701,6 @@ export const OrderReviewModal = ({
                               />
                             </div>
 
-                            {/* Detalii produs */}
                             <div className="flex-1 min-w-0">
                               <p className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold">
                                 SKU {it.product_sku_at_purchase}
@@ -709,7 +727,6 @@ export const OrderReviewModal = ({
                             </div>
                           </div>
 
-                          {/* SPECS EDIT */}
                           <div className="bg-zinc-50/60 border-t border-zinc-100 p-4">
                             <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
@@ -917,10 +934,10 @@ const InfoBlock = ({
   icon: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <div className="rounded-2xl border border-zinc-100 bg-white p-5">
+  <div className="rounded-2xl border border-zinc-100 bg-white p-5 h-full">
     <div className="flex items-center gap-2 mb-3">
       <div
-        className="size-7 rounded-lg text-white flex items-center justify-center"
+        className="size-7 rounded-lg text-white flex items-center justify-center shrink-0"
         style={{ background: "var(--primary-gradient)" }}
       >
         {icon}
