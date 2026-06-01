@@ -155,75 +155,37 @@ export const OrderReviewModal = ({
   // EFFECT PENTRU FETCH ORDER DETAILS
   useEffect(() => {
     if (!orderId) return;
-    let cancel = false;
-    (async () => {
-      setLoading(true);
-      setOrder(null);
-      setEdits({});
-      setShowRejectForm(false);
-      setRejectReason("");
 
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(
+        // 1. Încarcă comanda
+        const orderRes = await fetch(
           `${API_BASE_URL}/api/v1/orders/admin/${orderId}`,
           { credentials: "include" },
         );
-        if (res.ok) {
-          const data = await res.json();
-          if (!cancel) setOrder(data);
-        } else if (res.status === 404) {
-          const fb = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
-            credentials: "include",
-          });
-          if (fb.ok) {
-            const d = await fb.json();
-            if (!cancel) setOrder(d);
-          } else {
-            toast.error("Comanda nu a putut fi încărcată.");
-          }
-        } else {
-          toast.error("Eroare la încărcarea comenzii.");
-        }
-      } catch {
-        toast.error("Eroare rețea la încărcarea comenzii.");
-      } finally {
-        if (!cancel) setLoading(false);
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [orderId]);
+        const orderData = await orderRes.json();
+        setOrder(orderData);
 
-  // EFFECT PENTRU FETCH LOCAȚII DEPZIT (Se execută o singură dată la montarea componentei)
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const res = await fetch(
+        // 2. Încarcă locațiile după ce comanda e gata
+        const locRes = await fetch(
           `${API_BASE_URL}/api/v1/orders/admin/pickup-locations`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            credentials: "include",
-          },
+          { credentials: "include" },
         );
-        if (res.ok) {
-          const data = await res.json();
-          setLocationOptions(data);
-          // Setăm automat prima locație găsită pe backend ca fiind valoarea default
-          if (data && data.length > 0) {
-            setPickupLocationKey(data[0].key);
-          }
+        const locData = await locRes.json();
+        setLocationOptions(locData);
+        if (locData && locData.length > 0) {
+          setPickupLocationKey(locData[0].key);
         }
       } catch (err) {
-        console.error("Failed to load pickup locations");
+        toast.error("Eroare la încărcarea datelor.");
+      } finally {
+        setLoading(false);
       }
     };
-    fetchLocations();
-  }, []);
+
+    fetchData();
+  }, [orderId]);
 
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {};
