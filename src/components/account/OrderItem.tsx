@@ -443,6 +443,22 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
+          {/* TRACKING ÎN TIMP REAL — GLS */}
+          <OrderTracking
+            orderId={order.id}
+            awb={order.tracking?.awb_number || order.awb_number || order.gls_parcel_number}
+            orderStatus={normalizedStatus}
+            placeholderStatus={
+              normalizedStatus === "PENDING"
+                ? "Comanda așteaptă confirmare. AWB-ul va fi generat după procesare."
+                : normalizedStatus === "PROCESSING" || normalizedStatus === "PAID"
+                  ? "Comanda este în pregătire în depozit. AWB-ul va apărea aici imediat ce coletul este predat curierului."
+                  : normalizedStatus === "CONFIRMED"
+                    ? "Comanda a fost confirmată. Urmează generarea AWB-ului."
+                    : undefined
+            }
+          />
+
           <div className="space-y-4">
             <p className="text-[9px] font-black uppercase text-zinc-400 ml-2 tracking-widest">
               Produse Comandate
