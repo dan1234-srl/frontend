@@ -349,7 +349,8 @@ const App = () => {
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
