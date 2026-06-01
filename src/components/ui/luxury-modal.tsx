@@ -61,9 +61,8 @@ export const LuxuryModal = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 glass-overlay"
           />
-
           {/* Panel Responsive */}
           <motion.div
             initial={{ opacity: 0, y: "100%" }}
