@@ -214,7 +214,7 @@ export const OrderItem = ({ order }: any) => {
         layout
         whileHover={{ y: -4, scale: 1.002 }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className={`group relative border p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.border} ${statusConfig.glow}`}
+        className={`group relative border p-6 md:p-7 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[460px] transition-all duration-300 ${statusConfig.border} ${statusConfig.glow} !bg-white/55 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_8px_40px_-12px_rgba(16,0,43,0.08)]`}
         style={{ isolation: "isolate" }}
       >
         <div className="text-left flex-1 flex flex-col">
