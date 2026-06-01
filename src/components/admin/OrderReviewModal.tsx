@@ -109,8 +109,11 @@ export const OrderReviewModal = ({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
-  // NOUL STATE: Adresa de la care ridică GLS coletul
-  const [pickupLocationKey, setPickupLocationKey] = useState("suceava");
+  // STATE-URI PENTRU LOCAȚIILE DINAMICE
+  const [pickupLocationKey, setPickupLocationKey] = useState("");
+  const [locationOptions, setLocationOptions] = useState<
+    { key: string; label: string }[]
+  >([]);
 
   const [edits, setEdits] = useState<Record<string, ProductSpecs>>({});
   const [savingSku, setSavingSku] = useState<string | null>(null);
@@ -118,6 +121,7 @@ export const OrderReviewModal = ({
     {},
   );
   const [savingShipping, setSavingShipping] = useState(false);
+
   const saveShippingAddress = async () => {
     if (!order) return;
     setSavingShipping(true);
@@ -148,6 +152,7 @@ export const OrderReviewModal = ({
     }
   };
 
+  // EFFECT PENTRU FETCH ORDER DETAILS
   useEffect(() => {
     if (!orderId) return;
     let cancel = false;
@@ -189,6 +194,31 @@ export const OrderReviewModal = ({
       cancel = true;
     };
   }, [orderId]);
+
+  // EFFECT PENTRU FETCH LOCAȚII DEPZIT (Se execută o singură dată la montarea componentei)
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/orders/admin/pickup-locations`,
+          {
+            credentials: "include",
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setLocationOptions(data);
+          // Setăm automat prima locație găsită pe backend ca fiind valoarea default
+          if (data && data.length > 0) {
+            setPickupLocationKey(data[0].key);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load pickup locations");
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {};
@@ -239,6 +269,8 @@ export const OrderReviewModal = ({
 
     if (!order.phone) issues.push("Lipsește telefonul de contact");
     if (!order.email) issues.push("Lipsește email-ul de contact");
+    if (!pickupLocationKey)
+      issues.push("Selecția depozitului de expediere este obligatorie");
 
     order.items?.forEach((it) => {
       const p = it.product || {};
@@ -255,7 +287,7 @@ export const OrderReviewModal = ({
     });
 
     return { ok: issues.length === 0, issues };
-  }, [order, shipping, edits]);
+  }, [order, shipping, edits, pickupLocationKey]);
 
   const updateEdit = (
     pid: string,
@@ -495,7 +527,7 @@ export const OrderReviewModal = ({
 
                 {/* CUSTOMER + SHIPPING + PICKUP LOCATION */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Punct de ridicare AWB (Nou) */}
+                  {/* Punct de ridicare AWB (Randat Dinamic) */}
                   <div className="lg:col-span-2">
                     <InfoBlock
                       title="Locație Ridicare Colet (Depozit)"
@@ -507,12 +539,15 @@ export const OrderReviewModal = ({
                           onChange={(e) => setPickupLocationKey(e.target.value)}
                           className="w-full h-11 rounded-xl border-2 border-zinc-100 px-4 text-xs font-bold text-[var(--dark-amethyst)] outline-none focus:border-[var(--royal-violet)] transition-colors cursor-pointer appearance-none bg-zinc-50 hover:bg-zinc-100/80"
                         >
-                          <option value="suceava">
-                            Depozit Suceava (Str. Calea Obcinilor 15, Suceava)
-                          </option>
-                          <option value="botosani">
-                            Depozit Botoșani (Str. Marchian 22, Botoșani)
-                          </option>
+                          {locationOptions.length === 0 ? (
+                            <option value="">Se încarcă locațiile...</option>
+                          ) : (
+                            locationOptions.map((loc) => (
+                              <option key={loc.key} value={loc.key}>
+                                {loc.label}
+                              </option>
+                            ))
+                          )}
                         </select>
                         <p className="text-[10px] text-zinc-400 font-medium px-1">
                           Curierul GLS va fi trimis la această adresă pentru a
