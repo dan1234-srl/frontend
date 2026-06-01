@@ -25,13 +25,20 @@ ToastViewport.displayName = ToastViewport.displayName;
    combinate cu text-zinc-900 și text-zinc-100 pentru a elimina complet transparența invizibilă a pop-up-ului 
 */
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-none border p-5 pr-8 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-[2px] border border-zinc-200/80 bg-white p-5 pr-10 shadow-[0_20px_60px_-12px_rgba(16,0,43,0.25)] transition-all before:absolute before:inset-y-0 before:left-0 before:w-[3px] data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
   {
     variants: {
       variant: {
-        default: "bg-white/95 border-zinc-100 text-zinc-900",
+        default:
+          "text-zinc-900 before:bg-[var(--dark-amethyst,#10002b)]",
         destructive:
-          "border-zinc-100 bg-white text-zinc-900 border-l-4 border-l-rose-500",
+          "destructive text-zinc-900 before:bg-rose-500",
+        success:
+          "text-zinc-900 before:bg-emerald-500",
+        warning:
+          "text-zinc-900 before:bg-amber-500",
+        info:
+          "text-zinc-900 before:bg-sky-500",
       },
     },
     defaultVariants: {
