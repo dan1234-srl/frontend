@@ -672,6 +672,13 @@ export const OrderItem = ({ order }: any) => {
           </div>
         </div>
       </LuxuryModal>
+
+      <ReviewDialog
+        open={!!reviewItem}
+        onClose={() => setReviewItem(null)}
+        item={reviewItem}
+        orderId={order.id}
+      />
     </>
   );
 };
