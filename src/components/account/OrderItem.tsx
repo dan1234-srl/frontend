@@ -10,16 +10,151 @@ import {
   CheckCircle,
   Package,
   Check,
+  Star,
+  Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 import { OrderTracking } from "@/components/account/OrderTracking";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
+
+const ReviewDialog = ({
+  open,
+  onClose,
+  item,
+  orderId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  item: any;
+  orderId: any;
+}) => {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const productId = item?.product_id || item?.product?.id;
+  const productName =
+    item?.product_name || item?.product_name_at_purchase || "Articol";
+
+  const submit = async () => {
+    if (rating === 0) {
+      toast({ variant: "destructive", title: "Selectează un rating." });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/products/${productId}/reviews`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rating,
+            comment: comment.trim(),
+            order_id: orderId,
+          }),
+        },
+      );
+      if (!res.ok) throw new Error();
+      toast({
+        title: "Mulțumim pentru recenzie!",
+        description: "Va fi vizibilă după aprobare.",
+      });
+      onClose();
+      setRating(0);
+      setComment("");
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Eroare",
+        description: "Nu am putut trimite recenzia. Reîncearcă.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md bg-white/90 backdrop-blur-2xl border border-white/40 rounded-3xl">
+        <DialogHeader>
+          <DialogTitle className="heading-serif italic text-xl text-zinc-900">
+            Recenzează produsul
+          </DialogTitle>
+          <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{productName}</p>
+        </DialogHeader>
+        <div className="space-y-6 pt-2">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+              Rating
+            </p>
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onMouseEnter={() => setHover(n)}
+                  onMouseLeave={() => setHover(0)}
+                  onClick={() => setRating(n)}
+                  className="transition-transform hover:scale-110"
+                >
+                  <Star
+                    size={28}
+                    className={
+                      n <= (hover || rating)
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-zinc-300"
+                    }
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+              Părerea ta
+            </p>
+            <Textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Spune-ne ce ți-a plăcut..."
+              className="min-h-28 resize-none rounded-2xl border-zinc-200 bg-white/70"
+            />
+          </div>
+          <button
+            onClick={submit}
+            disabled={submitting || rating === 0}
+            className="w-full h-12 rounded-2xl bg-[var(--royal-violet)] text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {submitting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Star size={14} />
+            )}
+            Trimite recenzia
+          </button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
