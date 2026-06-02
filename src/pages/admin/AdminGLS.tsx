@@ -42,12 +42,7 @@ async function apiCall(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-const Section = ({
-  icon: Icon,
-  title,
-  description,
-  children,
-}: any) => (
+const Section = ({ icon: Icon, title, description, children }: any) => (
   <motion.section
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
@@ -128,7 +123,6 @@ const StatusTimeline = ({ statuses }: { statuses: any[] }) => {
         );
       })}
     </ol>
-
   );
 };
 
@@ -484,7 +478,9 @@ const AdminGLS = () => {
               <span className="font-mono">{createResult.parcel_number}</span>
               <button
                 onClick={() =>
-                  navigator.clipboard.writeText(String(createResult.parcel_number))
+                  navigator.clipboard.writeText(
+                    String(createResult.parcel_number),
+                  )
                 }
                 className="ml-2 text-[var(--royal-violet)]"
               >
@@ -621,7 +617,9 @@ const AdminGLS = () => {
                     </span>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(l.Matchcode || l.matchcode);
+                        navigator.clipboard.writeText(
+                          l.Matchcode || l.matchcode,
+                        );
                         toast.success("Matchcode copiat");
                       }}
                       className="text-[var(--royal-violet)]"
