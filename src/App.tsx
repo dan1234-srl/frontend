@@ -156,6 +156,7 @@ const AnimatedRoutes = () => {
             <Route path="export" element={<AdminExportFeed />} />
             <Route path="theme" element={<AdminThemeSettings />} />
             <Route path="settings" element={<AdminGeneralSettings />} />
+            <Route path="gls" element={<AdminGLS />} />
           </Route>
 
           {/* ── Public ── */}
