@@ -66,11 +66,14 @@ const AdminReviews = () => {
     setLoading(true);
     try {
       const url = new URL(`${API_BASE_URL}/api/v1/reviews/admin`);
-      if (statusFilter !== "Toate") url.searchParams.set("status", statusFilter);
+      if (statusFilter !== "Toate")
+        url.searchParams.set("status", statusFilter);
       const res = await fetch(url.toString(), { credentials: "include" });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      const list: AdminReview[] = Array.isArray(data) ? data : data?.items || [];
+      const list: AdminReview[] = Array.isArray(data)
+        ? data
+        : data?.items || [];
       setReviews(list);
     } catch {
       toast.error("Nu am putut încărca recenziile.");
@@ -88,14 +91,21 @@ const AdminReviews = () => {
 
   const updateStatus = async (id: string | number, status: ReviewStatus) => {
     setBusyId(id);
+    // Dacă status-ul este "approved", apelăm /approve, altfel poate fi alta logică
+    const endpoint = status === "approved" ? "approve" : "reject";
+
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/reviews/admin/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/reviews/admin/${id}/${endpoint}`,
+        {
+          method: status === "approved" ? "PATCH" : "DELETE", // Se potrivește cu router-ul
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
       if (!res.ok) throw new Error();
+
       setReviews((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status } : r)),
       );
@@ -115,10 +125,14 @@ const AdminReviews = () => {
     if (!confirm("Sigur ștergi această recenzie?")) return;
     setBusyId(id);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/reviews/admin/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      // Atenție: ruta din backend este /admin/{review_id}/reject
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/reviews/admin/${id}/reject`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
       if (!res.ok) throw new Error();
       setReviews((prev) => prev.filter((r) => r.id !== id));
       toast.success("Recenzia a fost ștearsă.");
@@ -160,7 +174,9 @@ const AdminReviews = () => {
         key={i}
         size={12}
         className={
-          i < count ? "text-[var(--royal-violet)] fill-[var(--royal-violet)]" : "text-zinc-200"
+          i < count
+            ? "text-[var(--royal-violet)] fill-[var(--royal-violet)]"
+            : "text-zinc-200"
         }
       />
     ));
