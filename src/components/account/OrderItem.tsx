@@ -641,8 +641,7 @@ export const OrderItem = ({ order }: any) => {
                       </p>
                     </div>
                   </div>
-                  {normalizedStatus === "DELIVERED" ||
-                  normalizedStatus === "CONFIRMED" ? (
+                  {normalizedStatus === "DELIVERED" ? (
                     <button
                       onClick={() => {
                         console.log(
