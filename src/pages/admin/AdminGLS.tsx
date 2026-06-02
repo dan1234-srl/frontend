@@ -99,30 +99,25 @@ const StatusTimeline = ({ statuses }: { statuses: any[] }) => {
     <ol className="relative border-l-2 border-zinc-100 pl-5 space-y-4">
       {statuses.map((s: any, i: number) => {
         const code = s.StatusCode ?? s.code;
-        const meta = getStatusMeta(code);
-        const Icon = meta.icon;
+        const { meta, style } = resolveGlsStatus(code);
         const ts = s.StatusDate || s.Date || s.timestamp;
         return (
           <li key={i} className="relative">
             <span
-              className="absolute -left-[27px] size-4 rounded-full border-2 border-white shadow flex items-center justify-center"
-              style={{ background: meta.color }}
-            >
-              <Icon size={8} className="text-white" />
-            </span>
+              className={`absolute -left-[27px] size-4 rounded-full border-2 border-white shadow ${style.dot}`}
+            />
             <div className="flex flex-wrap items-center gap-2">
               <span
-                className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md text-white"
-                style={{ background: meta.color }}
+                className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${style.bg} ${style.text}`}
               >
-                {meta.label}
+                {style.label}
               </span>
               <span className="text-[10px] text-zinc-400 font-mono">
                 #{code}
               </span>
             </div>
             <p className="text-xs text-zinc-700 mt-1">
-              {s.StatusDescription || s.description || meta.description}
+              {s.StatusDescription || s.description || meta.text}
             </p>
             {ts && (
               <p className="text-[10px] text-zinc-400 mt-0.5">
@@ -133,6 +128,7 @@ const StatusTimeline = ({ statuses }: { statuses: any[] }) => {
         );
       })}
     </ol>
+
   );
 };
 
