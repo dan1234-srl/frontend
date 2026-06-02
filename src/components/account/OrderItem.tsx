@@ -641,10 +641,24 @@ export const OrderItem = ({ order }: any) => {
                       </p>
                     </div>
                   </div>
-                  {normalizedStatus === "DELIVERED" && (
-                    <button onClick={() => setReviewItem(item)}>
+                  {normalizedStatus === "DELIVERED" ? (
+                    <button
+                      onClick={() => {
+                        console.log(
+                          "Deschidere review pentru:",
+                          item.product_name,
+                        );
+                        setReviewItem(item);
+                      }}
+                      className="sm:ml-2 h-9 px-3 rounded-xl bg-[var(--royal-violet)] text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:opacity-90 transition-all"
+                    >
+                      <Star size={12} />
                       Recenzie
                     </button>
+                  ) : (
+                    <p className="text-[8px] text-zinc-400 uppercase italic">
+                      Status: {normalizedStatus}
+                    </p>
                   )}
                 </div>
               ))}
