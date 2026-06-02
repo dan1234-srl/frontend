@@ -603,34 +603,45 @@ export const OrderItem = ({ order }: any) => {
               {order.items?.map((item: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center gap-4 p-3 bg-white border border-zinc-100 rounded-2xl shadow-sm"
+                  className="flex flex-col sm:flex-row sm:items-center gap-4 p-3 bg-white border border-zinc-100 rounded-2xl shadow-sm"
                 >
-                  <img
-                    src={getValidImageUrl(item)}
-                    className="size-16 rounded-xl object-cover border border-zinc-50 shrink-0"
-                    alt=""
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-zinc-900 truncate">
-                      {item.product_name ||
-                        item.product_name_at_purchase ||
-                        "Articol Evem"}
-                    </h4>
-                    <p className="text-[10px] font-bold text-zinc-400 mt-1">
-                      Bucăți: {item.quantity}
-                    </p>
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <img
+                      src={getValidImageUrl(item)}
+                      className="size-16 rounded-xl object-cover border border-zinc-50 shrink-0"
+                      alt=""
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-zinc-900 truncate">
+                        {item.product_name ||
+                          item.product_name_at_purchase ||
+                          "Articol Evem"}
+                      </h4>
+                      <p className="text-[10px] font-bold text-zinc-400 mt-1">
+                        Bucăți: {item.quantity}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-black text-[13px] text-zinc-900">
+                        {(
+                          item.price_at_purchase || item.unit_price_at_purchase
+                        )?.toLocaleString("ro-RO", {
+                          minimumFractionDigits: 2,
+                        })}{" "}
+                        RON
+                      </p>
+                      <p className="text-[9px] font-bold text-zinc-400">/ buc</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-black text-[13px] text-zinc-900">
-                      {(
-                        item.price_at_purchase || item.unit_price_at_purchase
-                      )?.toLocaleString("ro-RO", {
-                        minimumFractionDigits: 2,
-                      })}{" "}
-                      RON
-                    </p>
-                    <p className="text-[9px] font-bold text-zinc-400">/ buc</p>
-                  </div>
+                  {normalizedStatus === "DELIVERED" && (
+                    <button
+                      onClick={() => setReviewItem(item)}
+                      className="sm:ml-2 h-9 px-3 rounded-xl bg-[var(--royal-violet)]/10 text-[var(--royal-violet)] border border-[var(--royal-violet)]/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-[var(--royal-violet)] hover:text-white transition-all"
+                    >
+                      <Star size={12} />
+                      Recenzie
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
