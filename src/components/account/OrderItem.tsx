@@ -14,16 +14,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence } from "framer-motion";
+import { X, Sparkle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 import { OrderTracking } from "@/components/account/OrderTracking";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 const API_BASE_URL =
