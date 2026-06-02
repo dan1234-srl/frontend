@@ -141,7 +141,10 @@ const AdminLayout = () => {
       color: "var(--royal-violet)",
       items: [
         { name: "Comenzi", icon: ShoppingCart, path: "/admin/orders" },
+        { name: "GLS Curier", icon: Truck, path: "/admin/gls" },
         { name: "Import", icon: UploadCloud, path: "/admin/import" },
+        { name: "Export", icon: DownloadCloud, path: "/admin/export" },
+      ],
         { name: "Export", icon: DownloadCloud, path: "/admin/export" },
       ],
     },
