@@ -78,7 +78,7 @@ const AdminGeneralSettings = lazy(
   () => import("./pages/admin/AdminGeneralSettings"),
 );
 const AdminGLS = lazy(() => import("./pages/admin/AdminGLS"));
-);
+
 
 // Single Query Client + sane defaults (caching, no refetch storm).
 const queryClient = new QueryClient({
