@@ -781,8 +781,10 @@ const CheckoutPopup = ({
               <header className="flex justify-between items-center mb-5 pb-4 border-b border-zinc-100">
                 <div>
                   <h2 className="text-2xl font-black tracking-tight text-zinc-900">
-                    Checkout{" "}
-                    <span className="text-[var(--royal-violet)]">Secure</span>
+                    Plată{" "}
+                    <span className="text-[var(--royal-violet)]">
+                      Securizată
+                    </span>
                   </h2>
                   <div className="flex items-center gap-2 mt-1">
                     {[
