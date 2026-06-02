@@ -97,7 +97,9 @@ const ReviewDialog = ({
           <DialogTitle className="heading-serif italic text-xl text-zinc-900">
             Recenzează produsul
           </DialogTitle>
-          <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{productName}</p>
+          <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+            {productName}
+          </p>
         </DialogHeader>
         <div className="space-y-6 pt-2">
           <div>
@@ -154,7 +156,6 @@ const ReviewDialog = ({
     </Dialog>
   );
 };
-
 
 export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
@@ -582,12 +583,17 @@ export const OrderItem = ({ order }: any) => {
           {/* TRACKING ÎN TIMP REAL — GLS */}
           <OrderTracking
             orderId={order.id}
-            awb={order.tracking?.awb_number || order.awb_number || order.gls_parcel_number}
+            awb={
+              order.tracking?.awb_number ||
+              order.awb_number ||
+              order.gls_parcel_number
+            }
             orderStatus={normalizedStatus}
             placeholderStatus={
               normalizedStatus === "PENDING"
                 ? "Comanda așteaptă confirmare. AWB-ul va fi generat după procesare."
-                : normalizedStatus === "PROCESSING" || normalizedStatus === "PAID"
+                : normalizedStatus === "PROCESSING" ||
+                    normalizedStatus === "PAID"
                   ? "Comanda este în pregătire în depozit. AWB-ul va apărea aici imediat ce coletul este predat curierului."
                   : normalizedStatus === "CONFIRMED"
                     ? "Comanda a fost confirmată. Urmează generarea AWB-ului."
@@ -630,15 +636,13 @@ export const OrderItem = ({ order }: any) => {
                         })}{" "}
                         RON
                       </p>
-                      <p className="text-[9px] font-bold text-zinc-400">/ buc</p>
+                      <p className="text-[9px] font-bold text-zinc-400">
+                        / buc
+                      </p>
                     </div>
                   </div>
                   {normalizedStatus === "DELIVERED" && (
-                    <button
-                      onClick={() => setReviewItem(item)}
-                      className="sm:ml-2 h-9 px-3 rounded-xl bg-[var(--royal-violet)]/10 text-[var(--royal-violet)] border border-[var(--royal-violet)]/20 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-[var(--royal-violet)] hover:text-white transition-all"
-                    >
-                      <Star size={12} />
+                    <button onClick={() => setReviewItem(item)}>
                       Recenzie
                     </button>
                   )}
