@@ -59,7 +59,7 @@ const ReviewDialog = ({
     setSubmitting(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/v1/products/${productId}/reviews`,
+        `${API_BASE_URL}/api/v1/reviews/products/${productId}/reviews`,
         {
           method: "POST",
           credentials: "include",
