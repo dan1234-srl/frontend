@@ -644,10 +644,7 @@ export const OrderItem = ({ order }: any) => {
                   {normalizedStatus === "DELIVERED" ? (
                     <button
                       onClick={() => {
-                        console.log(
-                          "Deschidere review pentru:",
-                          item.product_name,
-                        );
+                        setShowFullDetails(false); // Închide mai întâi modalul parinte
                         setReviewItem(item);
                       }}
                       className="sm:ml-2 h-9 px-3 rounded-xl bg-[var(--royal-violet)] text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:opacity-90 transition-all"
@@ -693,7 +690,10 @@ export const OrderItem = ({ order }: any) => {
 
       <ReviewDialog
         open={!!reviewItem}
-        onClose={() => setReviewItem(null)}
+        onClose={() => {
+          setReviewItem(null);
+          setShowFullDetails(true); // Reapare orderul
+        }}
         item={reviewItem}
         orderId={order.id}
       />
