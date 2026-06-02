@@ -87,70 +87,155 @@ const ReviewDialog = ({
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white/90 backdrop-blur-2xl border border-white/40 rounded-3xl">
-        <DialogHeader>
-          <DialogTitle className="heading-serif italic text-xl text-zinc-900">
-            Recenzează produsul
-          </DialogTitle>
-          <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
-            {productName}
-          </p>
-        </DialogHeader>
-        <div className="space-y-6 pt-2">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
-              Rating
-            </p>
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onMouseEnter={() => setHover(n)}
-                  onMouseLeave={() => setHover(0)}
-                  onClick={() => setRating(n)}
-                  className="transition-transform hover:scale-110"
-                >
-                  <Star
-                    size={28}
-                    className={
-                      n <= (hover || rating)
-                        ? "fill-amber-400 text-amber-400"
-                        : "text-zinc-300"
-                    }
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">
-              Părerea ta
-            </p>
-            <Textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Spune-ne ce ți-a plăcut..."
-              className="min-h-28 resize-none rounded-2xl border-zinc-200 bg-white/70"
-            />
-          </div>
-          <button
-            onClick={submit}
-            disabled={submitting || rating === 0}
-            className="w-full h-12 rounded-2xl bg-[var(--royal-violet)] text-white text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50"
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <div
+          className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-0 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 glass-overlay"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.96 }}
+            transition={{ type: "spring", damping: 26, stiffness: 280 }}
+            className="relative w-full sm:max-w-lg overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.25rem] shadow-[0_30px_80px_-20px_rgba(16,0,43,0.45)]"
+            style={{
+              background:
+                "linear-gradient(155deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.88) 100%)",
+              border: "1px solid rgba(123,44,191,0.18)",
+            }}
           >
-            {submitting ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Star size={14} />
-            )}
-            Trimite recenzia
-          </button>
+            {/* Decorative orbs */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-24 -right-20 w-72 h-72 rounded-full opacity-40 blur-3xl"
+              style={{ background: "var(--mauve-magic)" }}
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-32 -left-16 w-80 h-80 rounded-full opacity-30 blur-3xl"
+              style={{ background: "var(--lavender-purple)" }}
+            />
+
+            <button
+              onClick={onClose}
+              className="absolute top-5 right-5 z-10 size-9 rounded-full bg-white/70 backdrop-blur-md border border-white/60 flex items-center justify-center text-zinc-500 hover:text-[var(--royal-violet)] hover:bg-white transition-all"
+              aria-label="Închide"
+            >
+              <X size={16} strokeWidth={1.75} />
+            </button>
+
+            <div className="relative px-7 sm:px-10 pt-10 pb-9">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkle
+                  size={11}
+                  className="text-[var(--royal-violet)] fill-[var(--royal-violet)]"
+                />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]">
+                  Recenzie verificată
+                </span>
+              </div>
+              <h2 className="heading-serif italic text-3xl sm:text-4xl text-[var(--dark-amethyst)] leading-tight tracking-tight">
+                Spune-ne părerea ta
+              </h2>
+              <p className="text-[11px] mt-2 text-zinc-500 line-clamp-2">
+                {productName}
+              </p>
+
+              <div className="mt-8 space-y-7">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.35em] text-zinc-400 mb-3">
+                    Cât de mulțumit ești?
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((n) => {
+                      const active = n <= (hover || rating);
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onMouseEnter={() => setHover(n)}
+                          onMouseLeave={() => setHover(0)}
+                          onClick={() => setRating(n)}
+                          className="relative group transition-all duration-200 hover:scale-110 active:scale-95"
+                        >
+                          <Star
+                            size={34}
+                            strokeWidth={1.5}
+                            className={`transition-all duration-300 ${
+                              active
+                                ? "fill-[var(--royal-violet)] text-[var(--royal-violet)] drop-shadow-[0_4px_10px_rgba(123,44,191,0.45)]"
+                                : "text-zinc-200"
+                            }`}
+                          />
+                        </button>
+                      );
+                    })}
+                    <span className="ml-3 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      {rating > 0 ? `${rating} / 5` : "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.35em] text-zinc-400 mb-3">
+                    Părerea ta
+                  </p>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Ce ți-a plăcut cel mai mult? Cum a fost calitatea?"
+                    className="min-h-32 resize-none rounded-2xl border-zinc-200/80 bg-white/70 backdrop-blur-md focus-visible:ring-2 focus-visible:ring-[var(--royal-violet)]/30 focus-visible:border-[var(--royal-violet)]/40 text-sm"
+                  />
+                </div>
+
+                <button
+                  onClick={submit}
+                  disabled={submitting || rating === 0}
+                  className="w-full h-13 py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_15px_40px_-10px_rgba(123,44,191,0.55)] active:scale-[0.99]"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  {submitting ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Sparkle size={13} className="fill-white" />
+                  )}
+                  Trimite recenzia
+                </button>
+
+                <p className="text-[9px] text-center text-zinc-400 font-bold uppercase tracking-[0.3em]">
+                  Va fi publicată după aprobare
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </AnimatePresence>,
+    document.body,
   );
 };
 
