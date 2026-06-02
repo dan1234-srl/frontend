@@ -124,7 +124,7 @@ const ProductDetail = () => {
             </div>
           </div>
           <div className="mt-24 border-t border-zinc-100 pt-16">
-            <ProductReviews reviews={product.reviews || []} />
+            <ProductReviews productId={product.id} reviews={product.reviews || []} />
           </div>
 
           <div className="mt-20">
