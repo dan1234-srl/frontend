@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import {
   GLS_STATUS_MAP,
-  getStatusMeta,
+  CATEGORY_STYLE,
+  resolveGlsStatus,
 } from "@/lib/gls-status-codes";
 
 const API_BASE_URL =
