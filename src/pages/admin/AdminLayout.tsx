@@ -3,6 +3,7 @@ import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 
 import {
   LayoutDashboard,
+  Truck,
   ShoppingBag,
   Layers,
   Tag,
