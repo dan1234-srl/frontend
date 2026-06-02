@@ -648,30 +648,28 @@ const AdminGLS = () => {
         description="Maparea oficială GLS folosită în tracking."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {Object.entries(GLS_STATUS_MAP)
-            .slice(0, 36)
-            .map(([code, meta]: any) => {
-              const Icon = meta.icon;
-              return (
-                <div
-                  key={code}
-                  className="flex items-center gap-2 p-2 rounded-lg border border-zinc-100"
+          {Object.entries(GLS_STATUS_MAP).map(([code, meta]) => {
+            const style = CATEGORY_STYLE[meta.category];
+            return (
+              <div
+                key={code}
+                className="flex items-center gap-2 p-2 rounded-lg border border-zinc-100"
+              >
+                <span className={`size-3 rounded-full shrink-0 ${style.dot}`} />
+                <span className="text-[10px] font-mono text-zinc-400 w-6">
+                  {code}
+                </span>
+                <span className="text-[11px] font-bold text-zinc-700 truncate flex-1">
+                  {meta.text}
+                </span>
+                <span
+                  className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${style.bg} ${style.text}`}
                 >
-                  <span
-                    className="size-6 rounded-md flex items-center justify-center text-white shrink-0"
-                    style={{ background: meta.color }}
-                  >
-                    <Icon size={11} />
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 w-6">
-                    {code}
-                  </span>
-                  <span className="text-[11px] font-bold text-zinc-700 truncate">
-                    {meta.label}
-                  </span>
-                </div>
-              );
-            })}
+                  {style.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </Section>
     </div>
