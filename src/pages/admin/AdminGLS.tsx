@@ -375,7 +375,9 @@ const AdminGLS = () => {
             {bulkResult.map((p: any, i: number) => {
               const last =
                 p.ParcelStatusList?.[p.ParcelStatusList.length - 1] || p;
-              const meta = getStatusMeta(last.StatusCode ?? p.status_code);
+              const { style } = resolveGlsStatus(
+                last.StatusCode ?? p.status_code,
+              );
               return (
                 <div
                   key={i}
@@ -385,10 +387,9 @@ const AdminGLS = () => {
                     {p.ParcelNumber || p.parcel_number}
                   </span>
                   <span
-                    className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md text-white"
-                    style={{ background: meta.color }}
+                    className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md ${style.bg} ${style.text}`}
                   >
-                    {meta.label}
+                    {style.label}
                   </span>
                 </div>
               );
