@@ -145,8 +145,6 @@ const AdminLayout = () => {
         { name: "Import", icon: UploadCloud, path: "/admin/import" },
         { name: "Export", icon: DownloadCloud, path: "/admin/export" },
       ],
-        { name: "Export", icon: DownloadCloud, path: "/admin/export" },
-      ],
     },
     {
       group: "Marketing",
