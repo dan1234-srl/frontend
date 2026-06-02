@@ -159,6 +159,7 @@ const ReviewDialog = ({
 export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [reviewItem, setReviewItem] = useState<any>(null);
   const { toast } = useToast();
 
   const getValidImageUrl = (item: any) => {
