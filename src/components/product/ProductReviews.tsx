@@ -21,30 +21,27 @@ interface Review {
   created_at: string;
 }
 
-// Toate culorile trimise de backend
-export interface ThemeConfig {
-  // Paleta principală (violet → mauve)
-  dark_amethyst?: string; // #10002b – cel mai întunecat
-  dark_amethyst_2?: string; // #240046
-  indigo_ink?: string; // #3c096c
-  indigo_velvet?: string; // #5a189a
-  royal_violet?: string; // #7b2cbf – accent primar
-  lavender_purple?: string; // #9d4edd
-  mauve_magic?: string; // #c77dff
-  mauve?: string; // #e0aaff – cel mai deschis
-
-  // UI & Text
-  text_primary?: string; // #10002b
-  text_secondary?: string; // #9d4edd
-  surface_bg?: string; // #FBFBFD
-  surface_card?: string; // #FFFFFF
-}
-
 interface Props {
   productId?: string | number;
   reviews?: Review[];
-  theme?: ThemeConfig;
 }
+
+// Variabile derivate calculate o singură dată — referențiază global CSS vars
+// din :root (injectate de backend). Nu conțin valori hardcodate.
+const DERIVED: React.CSSProperties = {
+  "--rv-gradient":
+    "linear-gradient(135deg, var(--royal-violet) 0%, var(--lavender-purple) 100%)",
+  "--rv-gradient-d":
+    "linear-gradient(135deg, var(--dark-amethyst-2) 0%, var(--indigo-velvet) 100%)",
+  "--rv-border": "color-mix(in srgb, var(--royal-violet) 18%, transparent)",
+  "--rv-border-h": "color-mix(in srgb, var(--mauve-magic) 45%, transparent)",
+  "--rv-border-soft": "color-mix(in srgb, var(--mauve) 30%, transparent)",
+  "--rv-shadow":
+    "0 8px 40px -12px color-mix(in srgb, var(--royal-violet) 18%, transparent)",
+  "--rv-shadow-h":
+    "0 12px 36px -10px color-mix(in srgb, var(--royal-violet) 28%, transparent)",
+  "--rv-tint-mauve": "color-mix(in srgb, var(--mauve) 25%, transparent)",
+} as React.CSSProperties;
 
 const initials = (name?: string) => {
   if (!name) return "L";
@@ -56,60 +53,7 @@ const initials = (name?: string) => {
     .join("");
 };
 
-/** Construiește toate variabilele CSS din paleta backend */
-const buildThemeStyles = (t: ThemeConfig = {}): React.CSSProperties => {
-  const royal = t.royal_violet || "#7b2cbf";
-  const lavender = t.lavender_purple || "#9d4edd";
-  const dark = t.dark_amethyst || "#10002b";
-  const dark2 = t.dark_amethyst_2 || "#240046";
-  const indigoV = t.indigo_velvet || "#5a189a";
-  const mauveM = t.mauve_magic || "#c77dff";
-  const mauve = t.mauve || "#e0aaff";
-
-  return {
-    // ── Culori brute ──────────────────────────────────────────
-    "--c-dark": dark,
-    "--c-dark2": dark2,
-    "--c-indigo": t.indigo_ink || "#3c096c",
-    "--c-indigo-v": indigoV,
-    "--c-royal": royal,
-    "--c-lavender": lavender,
-    "--c-mauve-m": mauveM,
-    "--c-mauve": mauve,
-
-    // ── Text & suprafețe ──────────────────────────────────────
-    "--c-text-p": t.text_primary || dark,
-    "--c-text-s": t.text_secondary || lavender,
-    "--c-surface-bg": t.surface_bg || "#FBFBFD",
-    "--c-surface-card": t.surface_card || "#FFFFFF",
-
-    // ── Gradiente ─────────────────────────────────────────────
-    // Principal: royal → lavender (accent butoane, bare, avatar)
-    "--c-gradient": `linear-gradient(135deg, ${royal} 0%, ${lavender} 100%)`,
-    // Profund: dark2 → indigoV (orb ambiant, fundal decorativ)
-    "--c-gradient-d": `linear-gradient(135deg, ${dark2} 0%, ${indigoV} 100%)`,
-    // Pastel: mauveM → mauve (hover subtil, accente light)
-    "--c-gradient-soft": `linear-gradient(135deg, ${mauveM} 0%, ${mauve} 100%)`,
-
-    // ── Borduri ───────────────────────────────────────────────
-    // Normală: royal la 18% opacitate
-    "--c-border": `color-mix(in srgb, ${royal} 18%, transparent)`,
-    // Hover: mauve_magic la 45% (mai vizibil, dar nu agresiv)
-    "--c-border-h": `color-mix(in srgb, ${mauveM} 45%, transparent)`,
-    // Subtilă: mauve la 30% (card-uri în repaus)
-    "--c-border-soft": `color-mix(in srgb, ${mauve} 30%, transparent)`,
-
-    // ── Umbre ─────────────────────────────────────────────────
-    "--c-shadow": `0 8px 40px -12px color-mix(in srgb, ${royal} 18%, transparent)`,
-    "--c-shadow-h": `0 12px 36px -10px color-mix(in srgb, ${royal} 28%, transparent)`,
-
-    // ── Tint-uri de fundal (pentru badge-uri, tag-uri etc.) ───
-    "--c-tint-royal": `color-mix(in srgb, ${royal} 8%, transparent)`,
-    "--c-tint-mauve": `color-mix(in srgb, ${mauve} 25%, transparent)`,
-  } as React.CSSProperties;
-};
-
-const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
+const ProductReviews = ({ productId, reviews: initial }: Props) => {
   const [reviews, setReviews] = useState<Review[]>(initial || []);
   const [loading, setLoading] = useState(false);
 
@@ -145,127 +89,121 @@ const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
     return { avg: sum / reviews.length, dist };
   }, [reviews]);
 
-  const themeStyles = buildThemeStyles(theme);
-
   return (
+    // ── Fără backgroundColor — fundalul paginii (alb) rămâne vizibil ──
     <section
       className="pt-16 mt-12 border-t relative"
       style={{
-        ...themeStyles,
-        borderTopColor: "var(--c-border-soft)",
-        backgroundColor: "var(--c-surface-bg)",
+        ...DERIVED,
+        borderTopColor: "var(--rv-border-soft)",
       }}
     >
-      {/* ── Orb decorativ ambient (gradient profund) ── */}
+      {/* Orb ambient — gradient profund din tema globală */}
       <div
-        className="pointer-events-none absolute -top-10 right-0 w-[420px] h-[420px] rounded-full opacity-[0.08] blur-3xl"
-        style={{ background: "var(--c-gradient-d)" }}
+        className="pointer-events-none absolute -top-10 right-0 w-[420px] h-[420px] rounded-full opacity-[0.07] blur-3xl"
+        style={{ background: "var(--rv-gradient-d)" }}
       />
 
-      {/* ── Header etichetă ── */}
+      {/* Header etichetă */}
       <div className="flex items-center gap-3 mb-6">
-        <MessageSquareText size={14} style={{ color: "var(--c-royal)" }} />
+        <MessageSquareText size={14} style={{ color: "var(--royal-violet)" }} />
         <span
           className="text-[10px] font-black uppercase tracking-[0.4em]"
-          style={{ color: "var(--c-royal)" }}
+          style={{ color: "var(--royal-violet)" }}
         >
           Testimoniale clienți
         </span>
       </div>
 
-      {/* ── Titlu secțiune ── */}
+      {/* Titlu secțiune */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <h2
           className="text-3xl md:text-4xl font-serif italic tracking-tighter leading-[1.05]"
-          style={{ color: "var(--c-text-p)" }}
+          style={{ color: "var(--dark-amethyst)" }}
         >
           Ce spun cei care
           <br />
-          <span style={{ color: "var(--c-text-s)" }}>poartă Linea</span>
+          <span style={{ color: "var(--lavender-purple)" }}>poartă Linea</span>
         </h2>
         <div
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em]"
-          style={{ color: "var(--c-indigo)" }}
+          style={{ color: "var(--indigo-ink)" }}
         >
-          <ShieldCheck size={14} style={{ color: "var(--c-royal)" }} />
+          <ShieldCheck size={14} style={{ color: "var(--royal-violet)" }} />
           {reviews.length} Recenzii verificate
         </div>
       </div>
 
-      {/* ── State: loading ── */}
+      {/* State: loading */}
       {loading && reviews.length === 0 ? (
         <div
           className="flex items-center justify-center py-20"
-          style={{ color: "var(--c-mauve)" }}
+          style={{ color: "var(--mauve)" }}
         >
           <Loader2 className="animate-spin" size={20} />
         </div>
       ) : reviews.length === 0 ? (
-        /* ── State: gol ── */
+        /* State: gol */
         <div
-          className="relative rounded-2xl py-16 px-8 text-center overflow-hidden backdrop-blur-xl"
+          className="relative rounded-2xl py-16 px-8 text-center overflow-hidden backdrop-blur-xl bg-white"
           style={{
-            border: "1px solid var(--c-border)",
-            backgroundColor: "var(--c-surface-card)",
-            boxShadow: "var(--c-shadow)",
+            border: "1px solid var(--rv-border)",
+            boxShadow: "var(--rv-shadow)",
           }}
         >
           <div
             className="absolute inset-0 opacity-[0.04]"
-            style={{ background: "var(--c-gradient)" }}
+            style={{ background: "var(--rv-gradient)" }}
           />
           <Quote
             size={28}
             className="mx-auto mb-4"
-            style={{ color: "var(--c-lavender)", opacity: 0.7 }}
+            style={{ color: "var(--lavender-purple)", opacity: 0.7 }}
           />
           <p
             className="text-[11px] font-black uppercase tracking-[0.4em]"
-            style={{ color: "var(--c-text-p)" }}
+            style={{ color: "var(--dark-amethyst)" }}
           >
             Încă nicio poveste scrisă
           </p>
           <p
             className="text-sm mt-3 font-light italic max-w-md mx-auto"
-            style={{ color: "var(--c-indigo)" }}
+            style={{ color: "var(--indigo-ink)" }}
           >
             Fii primul care împărtășește experiența cu acest produs și inspiră
             comunitatea.
           </p>
         </div>
       ) : (
-        /* ── State: recenzii ── */
+        /* State: recenzii */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* ── Card sumar rating ── */}
+          {/* Card sumar rating */}
           <aside className="lg:col-span-4">
             <div
-              className="sticky top-40 rounded-2xl p-7 backdrop-blur-xl"
+              className="sticky top-40 rounded-2xl p-7 backdrop-blur-xl bg-white"
               style={{
-                border: "1px solid var(--c-border)",
-                backgroundColor: "var(--c-surface-card)",
-                boxShadow: "var(--c-shadow)",
+                border: "1px solid var(--rv-border)",
+                boxShadow: "var(--rv-shadow)",
               }}
             >
-              {/* Scor mediu */}
               <div className="flex items-baseline gap-2">
                 <span
                   className="text-5xl font-black tracking-tighter"
-                  style={{ color: "var(--c-text-p)" }}
+                  style={{ color: "var(--dark-amethyst)" }}
                 >
                   {stats.avg.toFixed(1)}
                 </span>
                 <span
                   className="text-xs font-bold"
-                  style={{ color: "var(--c-mauve-m)" }}
+                  style={{ color: "var(--mauve-magic)" }}
                 >
                   / 5
                 </span>
               </div>
 
-              {/* Stele medii */}
               <div
                 className="flex gap-0.5 mt-2"
-                style={{ color: "var(--c-royal)" }}
+                style={{ color: "var(--royal-violet)" }}
               >
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -279,12 +217,11 @@ const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
 
               <p
                 className="mt-2 text-[10px] font-black uppercase tracking-[0.3em]"
-                style={{ color: "var(--c-lavender)" }}
+                style={{ color: "var(--lavender-purple)" }}
               >
                 Bazat pe {reviews.length} recenzii
               </p>
 
-              {/* Distribuție stele */}
               <div className="mt-6 space-y-2">
                 {[5, 4, 3, 2, 1].map((star) => {
                   const count = stats.dist[star - 1];
@@ -295,19 +232,18 @@ const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
                     <div key={star} className="flex items-center gap-3">
                       <span
                         className="text-[10px] font-black w-3"
-                        style={{ color: "var(--c-dark2)" }}
+                        style={{ color: "var(--dark-amethyst-2)" }}
                       >
                         {star}
                       </span>
                       <Star
                         size={10}
                         fill="currentColor"
-                        style={{ color: "var(--c-royal)" }}
+                        style={{ color: "var(--royal-violet)" }}
                       />
-                      {/* Track bară */}
                       <div
                         className="flex-1 h-1 rounded-full overflow-hidden"
-                        style={{ backgroundColor: "var(--c-tint-mauve)" }}
+                        style={{ backgroundColor: "var(--rv-tint-mauve)" }}
                       >
                         <motion.div
                           initial={{ width: 0 }}
@@ -317,12 +253,12 @@ const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
                             ease: [0.22, 1, 0.36, 1],
                           }}
                           className="h-full rounded-full"
-                          style={{ background: "var(--c-gradient)" }}
+                          style={{ background: "var(--rv-gradient)" }}
                         />
                       </div>
                       <span
                         className="text-[10px] font-bold w-6 text-right"
-                        style={{ color: "var(--c-mauve-m)" }}
+                        style={{ color: "var(--mauve-magic)" }}
                       >
                         {count}
                       </span>
@@ -333,7 +269,7 @@ const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
             </div>
           </aside>
 
-          {/* ── Listă recenzii ── */}
+          {/* Listă recenzii */}
           <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-5">
             {reviews.map((review, idx) => (
               <ReviewCard key={review.id} review={review} idx={idx} />
@@ -345,7 +281,7 @@ const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
   );
 };
 
-/** Card recenzie separat pentru hover cu CSS inline */
+/** Subcomponentă separată pentru a gestiona starea hover local */
 const ReviewCard = ({ review, idx }: { review: Review; idx: number }) => {
   const [hovered, setHovered] = useState(false);
 
@@ -361,41 +297,38 @@ const ReviewCard = ({ review, idx }: { review: Review; idx: number }) => {
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group relative rounded-2xl p-6 backdrop-blur-xl transition-all duration-300"
+      className="group relative rounded-2xl p-6 backdrop-blur-xl bg-white transition-all duration-300"
       style={{
-        backgroundColor: "var(--c-surface-card)",
-        border: `1px solid ${hovered ? "var(--c-border-h)" : "var(--c-border-soft)"}`,
-        boxShadow: hovered ? "var(--c-shadow-h)" : "none",
+        border: `1px solid ${hovered ? "var(--rv-border-h)" : "var(--rv-border-soft)"}`,
+        boxShadow: hovered ? "var(--rv-shadow-h)" : "none",
       }}
     >
-      {/* Icon citat decorativ */}
       <Quote
         size={22}
         className="absolute top-5 right-5 transition-opacity duration-300"
         style={{
-          color: "var(--c-mauve-m)",
+          color: "var(--mauve-magic)",
           opacity: hovered ? 0.5 : 0.15,
         }}
       />
 
-      {/* Avatar + Nume */}
       <div className="flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-black tracking-wider shadow-md flex-shrink-0"
-          style={{ background: "var(--c-gradient)" }}
+          style={{ background: "var(--rv-gradient)" }}
         >
           {initials(review.user_name || review.customer_name)}
         </div>
         <div className="flex flex-col min-w-0">
           <span
             className="text-[11px] font-black uppercase tracking-widest truncate"
-            style={{ color: "var(--c-text-p)" }}
+            style={{ color: "var(--dark-amethyst)" }}
           >
             {review.user_name || review.customer_name || "Client Linea"}
           </span>
           <span
             className="text-[9px] font-bold uppercase tracking-widest"
-            style={{ color: "var(--c-mauve)" }}
+            style={{ color: "var(--mauve)" }}
           >
             {new Date(review.created_at).toLocaleDateString("ro-RO", {
               year: "numeric",
@@ -406,8 +339,10 @@ const ReviewCard = ({ review, idx }: { review: Review; idx: number }) => {
         </div>
       </div>
 
-      {/* Stele recenzie */}
-      <div className="flex gap-0.5 mt-4" style={{ color: "var(--c-royal)" }}>
+      <div
+        className="flex gap-0.5 mt-4"
+        style={{ color: "var(--royal-violet)" }}
+      >
         {[...Array(5)].map((_, i) => (
           <Star
             key={i}
@@ -418,10 +353,9 @@ const ReviewCard = ({ review, idx }: { review: Review; idx: number }) => {
         ))}
       </div>
 
-      {/* Comentariu */}
       <p
         className="mt-3 text-sm font-light leading-relaxed italic"
-        style={{ color: "var(--c-indigo)" }}
+        style={{ color: "var(--indigo-ink)" }}
       >
         &ldquo;{review.comment}&rdquo;
       </p>
