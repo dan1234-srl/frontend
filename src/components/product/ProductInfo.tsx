@@ -10,7 +10,11 @@ import {
   Star,
   ShieldCheck,
   Truck,
+  Phone,
 } from "lucide-react";
+
+const SUPPORT_PHONE = "+40 770 000 000";
+const SUPPORT_PHONE_TEL = "+40770000000";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
