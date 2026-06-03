@@ -70,24 +70,37 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
   });
 
   useEffect(() => {
-    if (!productId) return;
+    console.log("LOAD REVIEWS", {
+      productId,
+      page,
+    });
+
+    if (!productId) {
+      console.log("NO PRODUCT ID");
+      return;
+    }
 
     let alive = true;
 
-    async function fetchReviews() {
+    const loadReviews = async () => {
       try {
         setLoading(true);
 
-        const res = await fetch(
-          `${API_BASE_URL}/api/v1/reviews/products/${productId}/reviews?page=${page}&size=6`,
-          {
-            credentials: "include",
-          },
-        );
+        const url = `${API_BASE_URL}/api/v1/reviews/products/${productId}/reviews?page=${page}&size=6`;
+
+        console.log("FETCH:", url);
+
+        const res = await fetch(url, {
+          credentials: "include",
+        });
+
+        console.log("STATUS:", res.status);
 
         if (!res.ok) return;
 
         const data = await res.json();
+
+        console.log("REVIEWS DATA:", data);
 
         if (!alive) return;
 
@@ -97,20 +110,18 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
 
         setTotalPages(data.pages || 1);
 
-        if (data.stats) {
-          setGlobalStats({
-            avg: data.globalStats.avg ?? 0,
-            dist: data.globalStats.dist ?? [0, 0, 0, 0, 0],
-          });
-        }
+        setGlobalStats({
+          avg: data.stats?.avg ?? 0,
+          dist: data.stats?.dist ?? [0, 0, 0, 0, 0],
+        });
       } catch (err) {
-        console.error(err);
+        console.error("REVIEWS ERROR", err);
       } finally {
         if (alive) setLoading(false);
       }
-    }
+    };
 
-    fetchReviews();
+    loadReviews();
 
     return () => {
       alive = false;
