@@ -29,6 +29,8 @@ type Gender = "male" | "female" | "other" | "unspecified";
 const NAME_REGEX = /^[a-zA-ZĂÂÎȘȚăâîșț\s\-]+$/;
 const PHONE_REGEX = /^(07|\+407|407)[0-9]{8}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,20}$/;
 
 const initialState = {
   email: "",
@@ -115,6 +117,11 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
       if (!PHONE_REGEX.test(normalized))
         e.phone = "Format invalid. Ex: 07xxxxxxxx sau +407xxxxxxxx.";
     }
+    if (password && !PASSWORD_REGEX.test(password)) {
+      e.password =
+        "Parola trebuie să conțină cel puțin o literă mare, o cifră și un caracter special.";
+    }
+
     return e;
   }, [formData]);
 
@@ -149,13 +156,12 @@ const Register = ({ isOpen, onClose, onSwitchToLogin }: RegisterProps) => {
     formData.firstName.length >= 3 &&
     formData.lastName.length >= 3 &&
     EMAIL_REGEX.test(formData.email) &&
-    formData.password.length >= 8 &&
+    PASSWORD_REGEX.test(formData.password) &&
     formData.password === formData.confirmPassword &&
     !!formData.birthday &&
     PHONE_REGEX.test(formData.phone.replace(/\s+/g, "")) &&
     Object.keys(errors).length === 0 &&
     acceptTerms;
-
   const update = (k: keyof typeof formData, v: string) =>
     setFormData((p) => ({ ...p, [k]: v }));
 

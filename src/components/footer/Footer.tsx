@@ -427,8 +427,8 @@ const Footer = () => {
                 style={{ background: "var(--primary-gradient)" }}
               />
               <p className="text-[9px] font-bold tracking-widest text-white/30 uppercase">
-                © {new Date().getFullYear()} Tufan Logistic Expert SRL. Project
-                Zero Node.
+                © {new Date().getFullYear()} Tufan Logistic Expert SRL.{" "}
+                {t("Toate drepturile rezervate.", "All rights reserved.")}
               </p>
             </div>
 
