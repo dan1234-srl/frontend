@@ -12,6 +12,8 @@ import {
   Loader2,
   DollarSign,
   AlertTriangle,
+  PackageX,
+  X,
 } from "lucide-react";
 import {
   Table,
@@ -36,6 +38,10 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
 
+  // State pentru Modalul de anulare AWB
+  const [cancelOrderContext, setCancelOrderContext] = useState<any>(null);
+  const [isCancelingGls, setIsCancelingGls] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Toate");
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,7 +64,6 @@ const AdminOrders = () => {
       const data = await res.json();
 
       if (res.ok) {
-        // Normalizare date backend (extragere din obiectul Order dacă este cazul)
         const normalizedOrders =
           data.items?.map((item: any) => (item.Order ? item.Order : item)) ||
           [];
@@ -84,6 +89,34 @@ const AdminOrders = () => {
     return () => clearTimeout(delayDebounce);
   }, [fetchOrders]);
 
+  const handleCancelGlsLabel = async () => {
+    if (!cancelOrderContext) return;
+    try {
+      setIsCancelingGls(true);
+      const res = await fetch(
+        `${API_URL}/api/v1/orders/admin/${cancelOrderContext.id}/cancel-gls-label`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Eticheta GLS a fost anulată cu succes.");
+        setCancelOrderContext(null);
+        fetchOrders(); // Reîmprospătăm lista pentru a vedea modificările
+      } else {
+        toast.error(data.detail || "Nu s-a putut anula eticheta GLS.");
+      }
+    } catch (error) {
+      toast.error("Eroare de rețea la anularea etichetei.");
+    } finally {
+      setIsCancelingGls(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const s = status?.toLowerCase() || "";
     if (["livrat", "completed", "paid"].includes(s))
@@ -102,7 +135,6 @@ const AdminOrders = () => {
     0,
   );
 
-  // CARDURI DINAMICE (Folosesc variabilele CSS de temă)
   const metricCards = [
     {
       label: "Total Unități",
@@ -135,7 +167,7 @@ const AdminOrders = () => {
   ];
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
+    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left relative">
       {/* HEADER */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
@@ -324,7 +356,9 @@ const AdminOrders = () => {
                   </TableCell>
                   <TableCell className="text-center">
                     <span
-                      className={`px-4 py-1.5 border text-[9px] uppercase tracking-widest font-black rounded-full shadow-sm ${getStatusColor(order?.status)}`}
+                      className={`px-4 py-1.5 border text-[9px] uppercase tracking-widest font-black rounded-full shadow-sm ${getStatusColor(
+                        order?.status,
+                      )}`}
                     >
                       {order?.status || "N/A"}
                     </span>
@@ -336,8 +370,17 @@ const AdminOrders = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right px-10">
-                    {/* Am schimbat opacity-0 cu opacity-100 pe mobil și am adăugat lg: pentru hover pe desktop */}
                     <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all translate-x-0 lg:translate-x-4 lg:group-hover:translate-x-0">
+                      {/* Buton Anulare AWB */}
+                      <button
+                        className="p-3 bg-white border border-rose-100 rounded-xl transition-all shadow-sm flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white"
+                        onClick={() => setCancelOrderContext(order)}
+                        title="Anulează eticheta GLS"
+                      >
+                        <PackageX size={16} />
+                      </button>
+
+                      {/* Buton Review Comandă */}
                       <button
                         className="p-3 bg-white border border-zinc-100 rounded-xl transition-all shadow-sm flex items-center justify-center text-[var(--dark-amethyst)] hover:bg-[var(--dark-amethyst)] hover:text-white"
                         onClick={() => order?.id && setReviewOrderId(order.id)}
@@ -423,6 +466,72 @@ const AdminOrders = () => {
         onClose={() => setReviewOrderId(null)}
         onActionComplete={fetchOrders}
       />
+
+      {/* MODAL ANULARE AWB GLS */}
+      <AnimatePresence>
+        {cancelOrderContext && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden relative"
+            >
+              <div className="p-8">
+                <button
+                  onClick={() => setCancelOrderContext(null)}
+                  className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
+                  <PackageX size={32} />
+                </div>
+
+                <h3 className="text-2xl font-serif italic font-black text-[var(--dark-amethyst)] mb-2">
+                  Anulare AWB GLS
+                </h3>
+
+                <p className="text-sm text-zinc-500 font-medium mb-8 leading-relaxed">
+                  Sunteți sigur că doriți să anulați eticheta pentru comanda{" "}
+                  <span className="font-bold text-zinc-800">
+                    {cancelOrderContext.order_number}
+                  </span>
+                  ? Această acțiune va șterge coletul din sistemul GLS. Comanda
+                  nu va fi anulată din platformă.
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setCancelOrderContext(null)}
+                    disabled={isCancelingGls}
+                    className="flex-1 py-4 px-6 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    Renunță
+                  </button>
+                  <button
+                    onClick={handleCancelGlsLabel}
+                    disabled={isCancelingGls}
+                    className="flex-1 py-4 px-6 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isCancelingGls ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      "Confirmă Anularea"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
