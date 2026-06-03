@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import Navbar from "../components/header/Navbar";
@@ -127,6 +127,23 @@ const ProductDetail = () => {
             productId={product.id}
             reviews={product.reviews || []}
           />
+
+          {/* 🚀 LOGICĂ NOUĂ: Caruselul dinamic de Produse Recomandate, adus direct de la colecțiile de pe Index */}
+          <div className="mt-16 pt-16 border-t border-neutral-100">
+            <ProductCarousel
+              title={
+                <>
+                  Produse{" "}
+                  <span className="italic font-light text-zinc-500">
+                    recomandate
+                  </span>
+                </>
+              }
+              subtitle="Produse recomandate EVEM"
+              collectionType="produse-recomandate"
+              hideExploreLink={true}
+            />
+          </div>
 
           <div className="mt-16 pt-16 border-t border-neutral-100">
             <ProductCarousel
