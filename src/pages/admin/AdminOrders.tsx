@@ -15,6 +15,7 @@ import {
   PackageX,
   X,
   Database,
+  History,
 } from "lucide-react";
 import {
   Table,
@@ -43,10 +44,15 @@ const AdminOrders = () => {
   const [cancelOrderContext, setCancelOrderContext] = useState<any>(null);
   const [isCancelingGls, setIsCancelingGls] = useState(false);
 
-  // Stări noi pentru interogarea și ștergerea manuală GLS
+  // Stări pentru interogarea și ștergerea manuală GLS
   const [customParcelId, setCustomParcelId] = useState("");
   const [isSearchingParcels, setIsSearchingParcels] = useState(false);
   const [glsParcels, setGlsParcels] = useState<any[] | null>(null);
+
+  // Stări NOI pentru Istoricul Global GLS (60 zile)
+  const [showGlsHistory, setShowGlsHistory] = useState(false);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+  const [glsHistoryData, setGlsHistoryData] = useState<any[]>([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Toate");
@@ -95,7 +101,7 @@ const AdminOrders = () => {
     return () => clearTimeout(delayDebounce);
   }, [fetchOrders]);
 
-  // Funcție nouă: Interoghează GLS pentru a găsi ParcelId-urile reale
+  // Funcție pentru căutarea AWB-ului specific unei comenzi
   const handleSearchGlsParcels = async () => {
     if (!cancelOrderContext) return;
     try {
@@ -119,6 +125,30 @@ const AdminOrders = () => {
     }
   };
 
+  // Funcție NOUĂ: Aduce toate coletele din ultimele 60 de zile
+  const handleFetchGlobalGlsHistory = async () => {
+    setShowGlsHistory(true);
+    setIsFetchingHistory(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/v1/orders/admin/gls/all-parcels`,
+        {
+          credentials: "include",
+        },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setGlsHistoryData(data.parcels || []);
+      } else {
+        toast.error(data.detail || "Nu s-a putut încărca istoricul GLS.");
+      }
+    } catch (error) {
+      toast.error("Eroare de rețea la interogarea istoricului.");
+    } finally {
+      setIsFetchingHistory(false);
+    }
+  };
+
   const handleCancelGlsLabel = async () => {
     if (!cancelOrderContext) return;
     try {
@@ -128,7 +158,6 @@ const AdminOrders = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // Trimitem ID-ul personalizat dacă există
           body: JSON.stringify({ custom_parcel_id: customParcelId || null }),
           credentials: "include",
         },
@@ -224,9 +253,17 @@ const AdminOrders = () => {
           </h1>
         </div>
 
-        <div className="flex w-full xl:w-auto">
+        <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
+          {/* BUTON NOU: Istoric GLS 60 Zile */}
           <button
-            className="w-full md:w-auto text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 hover:brightness-110"
+            onClick={handleFetchGlobalGlsHistory}
+            className="w-full sm:w-auto bg-white border border-zinc-200 text-zinc-700 hover:text-[var(--royal-violet)] px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95 hover:border-[var(--royal-violet)]"
+          >
+            <History size={14} /> Istoric GLS (60 Zile)
+          </button>
+
+          <button
+            className="w-full sm:w-auto text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 hover:brightness-110"
             style={{ background: "var(--primary-gradient)" }}
           >
             <Download size={14} /> Export Date CSV
@@ -406,7 +443,6 @@ const AdminOrders = () => {
                   </TableCell>
                   <TableCell className="text-right px-10">
                     <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all translate-x-0 lg:translate-x-4 lg:group-hover:translate-x-0">
-                      {/* Buton Anulare AWB */}
                       <button
                         className="p-3 bg-white border border-rose-100 rounded-xl transition-all shadow-sm flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white"
                         onClick={() => setCancelOrderContext(order)}
@@ -414,8 +450,6 @@ const AdminOrders = () => {
                       >
                         <PackageX size={16} />
                       </button>
-
-                      {/* Buton Review Comandă */}
                       <button
                         className="p-3 bg-white border border-zinc-100 rounded-xl transition-all shadow-sm flex items-center justify-center text-[var(--dark-amethyst)] hover:bg-[var(--dark-amethyst)] hover:text-white"
                         onClick={() => order?.id && setReviewOrderId(order.id)}
@@ -502,7 +536,112 @@ const AdminOrders = () => {
         onActionComplete={fetchOrders}
       />
 
-      {/* MODAL ANULARE AWB GLS (MODIFICAT) */}
+      {/* MODAL ISTORIC GLOBAL GLS (NOU) */}
+      <AnimatePresence>
+        {showGlsHistory && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden relative max-h-[90vh] flex flex-col"
+            >
+              <div className="p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
+                <div>
+                  <h3 className="text-2xl font-serif italic font-black text-[var(--dark-amethyst)]">
+                    Istoric GLS
+                  </h3>
+                  <p className="text-sm text-zinc-500 font-medium">
+                    Toate coletele din ultimele 60 de zile
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowGlsHistory(false)}
+                  className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-white rounded-full transition-colors shadow-sm border border-transparent hover:border-zinc-200"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-0 overflow-y-auto flex-1 bg-white">
+                {isFetchingHistory ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-zinc-400">
+                    <Loader2
+                      size={32}
+                      className="animate-spin mb-4 text-[var(--royal-violet)]"
+                    />
+                    <p className="text-xs font-bold uppercase tracking-widest">
+                      Se interoghează GLS...
+                    </p>
+                  </div>
+                ) : glsHistoryData.length > 0 ? (
+                  <Table>
+                    <TableHeader className="bg-zinc-50 sticky top-0 z-10 shadow-sm">
+                      <TableRow>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                          ID Intern
+                        </TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                          AWB
+                        </TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                          Referință Client
+                        </TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                          Data AWB
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {glsHistoryData.map((parcel, idx) => (
+                        <TableRow key={idx} className="hover:bg-zinc-50">
+                          <TableCell className="font-bold text-[var(--dark-amethyst)]">
+                            {parcel.ParcelId}
+                          </TableCell>
+                          <TableCell className="text-zinc-600">
+                            {parcel.ParcelNumber}
+                          </TableCell>
+                          <TableCell>
+                            <span className="bg-zinc-100 px-2 py-1 rounded text-xs font-bold text-zinc-700">
+                              {parcel.ClientReference || "N/A"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-xs text-zinc-500">
+                            {parcel.Parcel?.PickupDate
+                              ? new Date(
+                                  parseInt(
+                                    parcel.Parcel.PickupDate.replace(
+                                      /[^0-9]/g,
+                                      "",
+                                    ),
+                                  ),
+                                ).toLocaleString("ro-RO")
+                              : "N/A"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 opacity-30">
+                    <Database size={48} className="mb-4" />
+                    <p className="text-sm font-bold">
+                      Nu există colete înregistrate în ultimele 60 de zile.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL ANULARE AWB GLS */}
       <AnimatePresence>
         {cancelOrderContext && (
           <motion.div
@@ -543,7 +682,6 @@ const AdminOrders = () => {
                   </div>
                 </div>
 
-                {/* SECȚIUNEA 1: CĂUTARE PARCELE IN GLS */}
                 <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs text-zinc-600 font-medium">
@@ -600,7 +738,6 @@ const AdminOrders = () => {
                   )}
                 </div>
 
-                {/* SECȚIUNEA 2: INPUT MANUAL */}
                 <div className="mb-8">
                   <label className="block text-[10px] uppercase tracking-widest font-black text-zinc-400 mb-2">
                     Parcel ID (ID-ul intern GLS de șters)
