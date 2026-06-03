@@ -287,7 +287,7 @@ const Navbar = () => {
           >
             <Sparkles size={10} className="text-cyan-200" />
             <p className="text-[10px] font-black uppercase tracking-[0.3em]">
-              Design Premium — Calitate Impecabilă
+              Produse premium — Standard ridicat
             </p>
           </motion.div>
         </div>

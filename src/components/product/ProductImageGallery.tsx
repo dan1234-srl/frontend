@@ -3,20 +3,18 @@
 import { useState, useMemo } from "react";
 import { SmartImage } from "@/components/ui/smart-image";
 import ImageZoom from "./ImageZoom";
-import { optimizeImageUrl } from "@/lib/images";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface GalleryProps {
   mainImage: any;
   additionalImages?: any;
-  isLCP?: boolean; // Adaugă asta aici
+  isLCP?: boolean;
 }
 
 const getRawImgUrl = (imgData: any): string => {
   if (!imgData) return "";
   if (typeof imgData === "object") {
-    // Verificăm structura JSON din baza de date
     const container = imgData.main || imgData;
     return (
       container.large ||
@@ -36,7 +34,6 @@ const ProductImageGallery = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-  // 1. Construim lista de obiecte de imagine
   const imageObjects = useMemo(() => {
     return [
       mainImage,
@@ -44,7 +41,6 @@ const ProductImageGallery = ({
     ].filter((img) => getRawImgUrl(img) !== "");
   }, [mainImage, additionalImages]);
 
-  // 2. 🚀 CRITIC: Transformăm obiectele în URL-uri (string) pentru Zoom
   const zoomUrls = useMemo(() => {
     return imageObjects.map((img) => getRawImgUrl(img));
   }, [imageObjects]);
@@ -63,13 +59,13 @@ const ProductImageGallery = ({
 
   if (imageObjects.length === 0)
     return (
-      <div className="aspect-[3/4] bg-zinc-50 rounded-2xl w-full max-w-[450px]" />
+      <div className="aspect-[3/4] bg-zinc-50 rounded-2xl w-full max-w-[200px]" />
     );
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[320px] md:max-w-[380px] lg:max-w-[400px] mx-auto lg:mx-0">
-      {" "}
-      {/* Imaginea Principală */}
+    //  ↓ mărit pe mobil: 180px → md: 240px → lg: 300px
+    <div className="flex flex-col gap-3 w-full max-w-[180px] md:max-w-[240px] lg:max-w-[300px] mx-auto lg:mx-0">
+      {/* Imaginea principală */}
       <div className="relative aspect-[3/4] group overflow-hidden rounded-2xl bg-white border border-zinc-100 shadow-sm cursor-zoom-in">
         <AnimatePresence mode="wait">
           <motion.div
@@ -84,11 +80,11 @@ const ProductImageGallery = ({
             <SmartImage
               src={getRawImgUrl(imageObjects[currentIndex])}
               alt="Imagine produs"
-              eager={isLCP} // Acum primește corect valoarea
+              eager={isLCP}
               objectFit="contain"
-              sizes="(max-width: 1024px) 100vw, 500px"
-              widths={[480, 640, 800, 1024]}
-              className="h-full w-full p-4 transition-transform duration-700 group-hover:scale-105 bg-white"
+              sizes="(max-width: 768px) 180px, (max-width: 1024px) 240px, 300px"
+              widths={[180, 240, 300, 600]}
+              className="h-full w-full p-3 transition-transform duration-700 group-hover:scale-105 bg-white"
             />
           </motion.div>
         </AnimatePresence>
@@ -96,39 +92,40 @@ const ProductImageGallery = ({
         {/* Badge Zoom */}
         <button
           onClick={() => setIsZoomOpen(true)}
-          className="absolute top-4 right-4 p-2 rounded-full bg-white/90 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all shadow-md z-10 hover:bg-black hover:text-white"
+          className="absolute top-3 right-3 p-1.5 rounded-full bg-white/90 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all shadow-md z-10 hover:bg-black hover:text-white"
         >
-          <Maximize2 size={18} />
+          <Maximize2 size={14} />
         </button>
 
-        {/* Săgeți Navigație */}
+        {/* Săgeți navigație */}
         {imageObjects.length > 1 && (
-          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-10">
+          <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-10">
             <button
               onClick={prev}
-              className="p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-md pointer-events-auto opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white"
+              className="p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md pointer-events-auto opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={next}
-              className="p-2 rounded-full bg-white/90 backdrop-blur-sm shadow-md pointer-events-auto opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white"
+              className="p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md pointer-events-auto opacity-0 group-hover:opacity-100 transition-all hover:bg-black hover:text-white"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={16} />
             </button>
           </div>
         )}
       </div>
+
       {/* Miniaturi */}
       {imageObjects.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 px-1 snap-x">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1 px-0.5 snap-x">
           {imageObjects.map((img, i) => (
             <button
               key={i}
               onClick={() => setCurrentIndex(i)}
-              className={`relative flex-shrink-0 w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all snap-start ${
+              className={`relative flex-shrink-0 w-10 sm:w-12 aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all snap-start ${
                 i === currentIndex
-                  ? "border-zinc-900 shadow-md"
+                  ? "border-zinc-900 shadow-sm"
                   : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
@@ -141,7 +138,8 @@ const ProductImageGallery = ({
           ))}
         </div>
       )}
-      {/* Modal Zoom - Primește acum doar URL-uri brute */}
+
+      {/* Modal Zoom */}
       <ImageZoom
         images={zoomUrls}
         initialIndex={currentIndex}
