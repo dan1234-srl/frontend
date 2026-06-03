@@ -123,7 +123,7 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
         >
           Ce spun cei care
           <br />
-          <span style={{ color: "var(--lavender-purple)" }}>poartă Linea</span>
+          <span style={{ color: "var(--lavender-purple)" }}>au comandat</span>
         </h2>
         <div
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em]"
