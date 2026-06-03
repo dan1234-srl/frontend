@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   PackageX,
   X,
+  Database,
 } from "lucide-react";
 import {
   Table,
@@ -41,6 +42,11 @@ const AdminOrders = () => {
   // State pentru Modalul de anulare AWB
   const [cancelOrderContext, setCancelOrderContext] = useState<any>(null);
   const [isCancelingGls, setIsCancelingGls] = useState(false);
+
+  // Stări noi pentru interogarea și ștergerea manuală GLS
+  const [customParcelId, setCustomParcelId] = useState("");
+  const [isSearchingParcels, setIsSearchingParcels] = useState(false);
+  const [glsParcels, setGlsParcels] = useState<any[] | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Toate");
@@ -89,6 +95,30 @@ const AdminOrders = () => {
     return () => clearTimeout(delayDebounce);
   }, [fetchOrders]);
 
+  // Funcție nouă: Interoghează GLS pentru a găsi ParcelId-urile reale
+  const handleSearchGlsParcels = async () => {
+    if (!cancelOrderContext) return;
+    try {
+      setIsSearchingParcels(true);
+      const res = await fetch(
+        `${API_URL}/api/v1/orders/admin/${cancelOrderContext.id}/gls-list`,
+        { credentials: "include" },
+      );
+      const data = await res.json();
+
+      if (res.ok) {
+        setGlsParcels(data.parcels || []);
+        toast.success("Date aduse de la GLS.");
+      } else {
+        toast.error(data.detail || "Nu am putut găsi colete în GLS.");
+      }
+    } catch (error) {
+      toast.error("Eroare la comunicarea cu GLS.");
+    } finally {
+      setIsSearchingParcels(false);
+    }
+  };
+
   const handleCancelGlsLabel = async () => {
     if (!cancelOrderContext) return;
     try {
@@ -97,6 +127,9 @@ const AdminOrders = () => {
         `${API_URL}/api/v1/orders/admin/${cancelOrderContext.id}/cancel-gls-label`,
         {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          // Trimitem ID-ul personalizat dacă există
+          body: JSON.stringify({ custom_parcel_id: customParcelId || null }),
           credentials: "include",
         },
       );
@@ -106,7 +139,9 @@ const AdminOrders = () => {
       if (res.ok) {
         toast.success("Eticheta GLS a fost anulată cu succes.");
         setCancelOrderContext(null);
-        fetchOrders(); // Reîmprospătăm lista pentru a vedea modificările
+        setCustomParcelId("");
+        setGlsParcels(null);
+        fetchOrders();
       } else {
         toast.error(data.detail || "Nu s-a putut anula eticheta GLS.");
       }
@@ -467,7 +502,7 @@ const AdminOrders = () => {
         onActionComplete={fetchOrders}
       />
 
-      {/* MODAL ANULARE AWB GLS */}
+      {/* MODAL ANULARE AWB GLS (MODIFICAT) */}
       <AnimatePresence>
         {cancelOrderContext && (
           <motion.div
@@ -480,36 +515,119 @@ const AdminOrders = () => {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden relative"
+              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative max-h-[90vh] flex flex-col"
             >
-              <div className="p-8">
+              <div className="p-8 overflow-y-auto">
                 <button
-                  onClick={() => setCancelOrderContext(null)}
+                  onClick={() => {
+                    setCancelOrderContext(null);
+                    setCustomParcelId("");
+                    setGlsParcels(null);
+                  }}
                   className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors"
                 >
                   <X size={20} />
                 </button>
 
-                <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6">
-                  <PackageX size={32} />
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shrink-0">
+                    <PackageX size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-serif italic font-black text-[var(--dark-amethyst)]">
+                      Anulare AWB GLS
+                    </h3>
+                    <p className="text-sm font-bold text-zinc-500">
+                      Comanda: {cancelOrderContext.order_number}
+                    </p>
+                  </div>
                 </div>
 
-                <h3 className="text-2xl font-serif italic font-black text-[var(--dark-amethyst)] mb-2">
-                  Anulare AWB GLS
-                </h3>
+                {/* SECȚIUNEA 1: CĂUTARE PARCELE IN GLS */}
+                <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-xs text-zinc-600 font-medium">
+                      Nu ești sigur care este ParcelId-ul?
+                    </p>
+                    <button
+                      onClick={handleSearchGlsParcels}
+                      disabled={isSearchingParcels}
+                      className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white border border-zinc-200 px-4 py-2 rounded-lg hover:border-[var(--royal-violet)] transition-colors disabled:opacity-50"
+                    >
+                      {isSearchingParcels ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Database size={14} />
+                      )}
+                      Caută în GLS
+                    </button>
+                  </div>
 
-                <p className="text-sm text-zinc-500 font-medium mb-8 leading-relaxed">
-                  Sunteți sigur că doriți să anulați eticheta pentru comanda{" "}
-                  <span className="font-bold text-zinc-800">
-                    {cancelOrderContext.order_number}
-                  </span>
-                  ? Această acțiune va șterge coletul din sistemul GLS. Comanda
-                  nu va fi anulată din platformă.
-                </p>
+                  {glsParcels && glsParcels.length > 0 && (
+                    <div className="space-y-2 mt-4 max-h-40 overflow-y-auto pr-2">
+                      {glsParcels.map((parcel: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="bg-white p-3 border border-zinc-200 rounded-xl flex justify-between items-center text-xs"
+                        >
+                          <div>
+                            <p className="font-bold text-[var(--dark-amethyst)]">
+                              ID Intern: {parcel.ParcelId}
+                            </p>
+                            <p className="text-zinc-500">
+                              AWB: {parcel.ParcelNumber}
+                            </p>
+                            <p className="text-zinc-400">
+                              Ref: {parcel.ClientReference}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() =>
+                              setCustomParcelId(parcel.ParcelId.toString())
+                            }
+                            className="bg-[var(--royal-violet)]/10 text-[var(--royal-violet)] px-3 py-1.5 rounded-lg font-bold hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
+                          >
+                            Folosește
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {glsParcels && glsParcels.length === 0 && (
+                    <p className="text-xs text-rose-500 font-bold">
+                      Nu s-a găsit niciun colet pentru această comandă în GLS.
+                    </p>
+                  )}
+                </div>
+
+                {/* SECȚIUNEA 2: INPUT MANUAL */}
+                <div className="mb-8">
+                  <label className="block text-[10px] uppercase tracking-widest font-black text-zinc-400 mb-2">
+                    Parcel ID (ID-ul intern GLS de șters)
+                  </label>
+                  <input
+                    type="text"
+                    value={customParcelId}
+                    onChange={(e) => setCustomParcelId(e.target.value)}
+                    placeholder={
+                      cancelOrderContext.gls_parcel_id?.toString() ||
+                      "Ex: 12345678"
+                    }
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/20 transition-all"
+                  />
+                  <p className="text-xs text-zinc-400 mt-2">
+                    *Lasă gol pentru a folosi ID-ul salvat în baza de date (dacă
+                    există).
+                  </p>
+                </div>
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setCancelOrderContext(null)}
+                    onClick={() => {
+                      setCancelOrderContext(null);
+                      setCustomParcelId("");
+                      setGlsParcels(null);
+                    }}
                     disabled={isCancelingGls}
                     className="flex-1 py-4 px-6 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors disabled:opacity-50"
                   >
@@ -523,7 +641,7 @@ const AdminOrders = () => {
                     {isCancelingGls ? (
                       <Loader2 size={16} className="animate-spin" />
                     ) : (
-                      "Confirmă Anularea"
+                      "Confirmă Ștergerea"
                     )}
                   </button>
                 </div>
