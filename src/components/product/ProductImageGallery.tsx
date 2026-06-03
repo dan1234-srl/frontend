@@ -67,7 +67,8 @@ const ProductImageGallery = ({
     );
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[500px] mx-auto lg:mx-0">
+    <div className="flex flex-col gap-4 w-full max-w-[320px] md:max-w-[380px] lg:max-w-[400px] mx-auto lg:mx-0">
+      {" "}
       {/* Imaginea Principală */}
       <div className="relative aspect-[3/4] group overflow-hidden rounded-2xl bg-white border border-zinc-100 shadow-sm cursor-zoom-in">
         <AnimatePresence mode="wait">
@@ -118,7 +119,6 @@ const ProductImageGallery = ({
           </div>
         )}
       </div>
-
       {/* Miniaturi */}
       {imageObjects.length > 1 && (
         <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 px-1 snap-x">
@@ -141,7 +141,6 @@ const ProductImageGallery = ({
           ))}
         </div>
       )}
-
       {/* Modal Zoom - Primește acum doar URL-uri brute */}
       <ImageZoom
         images={zoomUrls}

@@ -110,7 +110,7 @@ const ProductDetail = () => {
             <ChevronLeft size={14} /> Înapoi la Categorie
           </button>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
-            <div className="lg:col-span-5 lg:sticky lg:top-40">
+            <div className="lg:col-span-5 lg:sticky lg:top-40 flex justify-center lg:justify-end pr-0 lg:pr-8">
               <ProductImageGallery
                 mainImage={processedMainImage}
                 additionalImages={processedGallery}
@@ -123,7 +123,10 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <ProductReviews productId={product.id} reviews={product.reviews || []} />
+          <ProductReviews
+            productId={product.id}
+            reviews={product.reviews || []}
+          />
 
           <div className="mt-16 pt-16 border-t border-neutral-100">
             <ProductCarousel
@@ -137,7 +140,6 @@ const ProductDetail = () => {
             />
           </div>
         </main>
-
       )}
       <Footer />
     </div>
