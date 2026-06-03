@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   Globe,
   Loader2,
+  Facebook,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -146,13 +147,19 @@ const Footer = () => {
     {
       id: "ig",
       Icon: Instagram,
-      href: "https://instagram.com/evem",
+      href: "https://www.instagram.com/evem.ro?igsh=NGE5aTN2dWVvanho",
       label: "Instagram",
+    },
+    {
+      id: "fb",
+      Icon: Facebook,
+      href: "https://www.facebook.com/people/Evemro/100069947145940/",
+      label: "Facebook",
     },
     {
       id: "mail",
       Icon: Mail,
-      href: "mailto:contact@evem.ro",
+      href: "mailto:daniel.tufan@consultant.com",
       label: "Email",
     },
   ];
@@ -404,7 +411,7 @@ const Footer = () => {
                 >
                   daniel.tufan@consultant.com
                 </a>
-                <p className="opacity-50 text-[10px]">+40 770 000 000</p>
+                <p className="opacity-50 text-[10px]">+40 735 928 664</p>
                 <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-40">
                   <Globe size={11} /> <span>România</span>
                 </div>
@@ -420,7 +427,8 @@ const Footer = () => {
                 style={{ background: "var(--primary-gradient)" }}
               />
               <p className="text-[9px] font-bold tracking-widest text-white/30 uppercase">
-                © {new Date().getFullYear()} Evem Studio. Project Zero Node.
+                © {new Date().getFullYear()} Tufan Logistic Expert SRL. Project
+                Zero Node.
               </p>
             </div>
 

@@ -13,8 +13,8 @@ import {
   Phone,
 } from "lucide-react";
 
-const SUPPORT_PHONE = "+40 770 000 000";
-const SUPPORT_PHONE_TEL = "+40770000000";
+const SUPPORT_PHONE = "+40 735 928 664";
+const SUPPORT_PHONE_TEL = "+40735928664";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
