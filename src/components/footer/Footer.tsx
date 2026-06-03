@@ -310,7 +310,7 @@ const Footer = () => {
               </Link>
               <p className="text-xs text-white/40 leading-relaxed max-w-sm font-medium tracking-wide">
                 {t(
-                  "Arhitectură digitală complet integrată. O viziune atemporală ce reunește materia nobilă a designului contemporan universal sub o singură umbrelă tehnologică.",
+                  "Tot ce ai nevoie, într-un singur loc. Produse selectate inteligent, livrate într-o experiență simplă, rapidă și modernă.",
                   "Fully integrated digital architecture. A timeless vision joining the noble matter of global contemporary design under a single technological ecosystem.",
                 )}
               </p>
@@ -387,24 +387,26 @@ const Footer = () => {
                 {t("Contact", "Hub")}
               </span>
               <div className="space-y-3 text-xs font-semibold tracking-wide text-white/60 leading-relaxed">
-                <p className="opacity-70">EVEM Boutique SRL</p>
+                <p className="opacity-70">Tufan Logistic Expert SRL</p>
                 <p className="opacity-50 text-[10px]">
-                  CUI: RO12345678 · Reg. Com.: J40/0000/2026
+                  CUI: RO51574431 · Reg. Com.: J2025024172009
                 </p>
-                <p className="opacity-70">Calea Dorobanți 123, București</p>
+                <p className="opacity-70">
+                  Prelungirea Ghencea 124D, Sector 6, București
+                </p>
                 <a
-                  href="mailto:contact@evem.ro"
+                  href="mailto:daniel.tufan@consultant.com"
                   className="inline-block font-bold hover:underline bg-clip-text text-transparent"
                   style={{
                     backgroundImage: "var(--primary-gradient)",
                     WebkitBackgroundClip: "text",
                   }}
                 >
-                  contact@evem.ro
+                  daniel.tufan@consultant.com
                 </a>
                 <p className="opacity-50 text-[10px]">+40 770 000 000</p>
                 <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-40">
-                  <Globe size={11} /> <span>Ships Worldwide</span>
+                  <Globe size={11} /> <span>România</span>
                 </div>
               </div>
             </div>
