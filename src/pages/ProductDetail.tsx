@@ -122,12 +122,6 @@ const ProductDetail = () => {
               <ProductDescription product={product} />
             </div>
           </div>
-
-          <ProductReviews
-            productId={product.id}
-            reviews={product.reviews || []}
-          />
-
           <div className="mt-16 pt-16 border-t border-neutral-100">
             <ProductCarousel
               categorySlug={
@@ -139,6 +133,11 @@ const ProductDetail = () => {
               subtitle="Recomandări din aceeași categorie"
             />
           </div>
+
+          <ProductReviews
+            productId={product.id}
+            reviews={product.reviews || []}
+          />
         </main>
       )}
       <Footer />
