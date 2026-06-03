@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Star, Quote, Loader2, MessageSquareText, ShieldCheck } from "lucide-react";
+import {
+  Star,
+  Quote,
+  Loader2,
+  MessageSquareText,
+  ShieldCheck,
+} from "lucide-react";
 import { motion } from "framer-motion";
 
 const API_BASE_URL =
@@ -15,9 +21,17 @@ interface Review {
   created_at: string;
 }
 
+// 1. Definim interfața pentru setările de temă primite de la backend
+export interface ThemeConfig {
+  primaryColor?: string; // ex: "#7b2cbf"
+  secondaryColor?: string; // ex: "#3c096c"
+  gradient?: string; // ex: "linear-gradient(135deg, #7b2cbf 0%, #9d4edd 100%)"
+}
+
 interface Props {
   productId?: string | number;
   reviews?: Review[];
+  theme?: ThemeConfig; // 2. Prop-ul nou
 }
 
 const initials = (name?: string) => {
@@ -30,7 +44,7 @@ const initials = (name?: string) => {
     .join("");
 };
 
-const ProductReviews = ({ productId, reviews: initial }: Props) => {
+const ProductReviews = ({ productId, reviews: initial, theme }: Props) => {
   const [reviews, setReviews] = useState<Review[]>(initial || []);
   const [loading, setLoading] = useState(false);
 
@@ -66,28 +80,46 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
     return { avg: sum / reviews.length, dist };
   }, [reviews]);
 
+  // 3. Setăm variabilele CSS local folosind datele din backend
+  // color-mix() gestionează opacitățile automat (ex: 15% opacitate pentru borduri)
+  const themeStyles = {
+    "--theme-primary": theme?.primaryColor || "#7b2cbf",
+    "--theme-secondary": theme?.secondaryColor || "#3c096c",
+    "--theme-gradient":
+      theme?.gradient || "linear-gradient(to right, #7b2cbf, #9d4edd)",
+    "--theme-primary-15": `color-mix(in srgb, ${theme?.primaryColor || "#7b2cbf"} 15%, transparent)`,
+    "--theme-primary-30": `color-mix(in srgb, ${theme?.primaryColor || "#7b2cbf"} 30%, transparent)`,
+    "--theme-shadow-18": `0 8px 40px -12px color-mix(in srgb, ${theme?.primaryColor || "#7b2cbf"} 18%, transparent)`,
+    "--theme-shadow-22": `0 10px 30px -12px color-mix(in srgb, ${theme?.primaryColor || "#7b2cbf"} 22%, transparent)`,
+  } as React.CSSProperties;
+
   return (
-    <section className="pt-16 mt-12 border-t border-neutral-100 relative">
-      {/* Ambient orb decor — same theme tokens */}
-      <div className="pointer-events-none absolute -top-10 right-0 w-[420px] h-[420px] rounded-full opacity-[0.07] blur-3xl"
-           style={{ background: "var(--primary-gradient)" }} />
+    <section
+      className="pt-16 mt-12 border-t border-neutral-100 relative"
+      style={themeStyles} // Aplicăm stilurile pe rădăcina secțiunii
+    >
+      {/* Ambient orb decor */}
+      <div
+        className="pointer-events-none absolute -top-10 right-0 w-[420px] h-[420px] rounded-full opacity-[0.07] blur-3xl"
+        style={{ background: "var(--theme-gradient)" }}
+      />
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <MessageSquareText size={14} className="text-[var(--royal-violet)]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]">
+        <MessageSquareText size={14} className="text-[var(--theme-primary)]" />
+        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--theme-primary)]">
           Testimoniale clienți
         </span>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-        <h2 className="text-3xl md:text-4xl font-serif italic tracking-tighter text-[var(--dark-amethyst)] leading-[1.05]">
+        <h2 className="text-3xl md:text-4xl font-serif italic tracking-tighter text-[var(--theme-secondary)] leading-[1.05]">
           Ce spun cei care
           <br />
           poartă Linea
         </h2>
         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">
-          <ShieldCheck size={14} className="text-[var(--royal-violet)]" />
+          <ShieldCheck size={14} className="text-[var(--theme-primary)]" />
           {reviews.length} Recenzii verificate
         </div>
       </div>
@@ -97,37 +129,35 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
           <Loader2 className="animate-spin" size={20} />
         </div>
       ) : reviews.length === 0 ? (
-        <div
-          className="relative rounded-2xl border border-[var(--royal-violet)]/15 bg-white/60 backdrop-blur-xl py-16 px-8 text-center overflow-hidden"
-        >
+        <div className="relative rounded-2xl border border-[var(--theme-primary-15)] bg-white/60 backdrop-blur-xl py-16 px-8 text-center overflow-hidden">
           <div
             className="absolute inset-0 opacity-[0.04]"
-            style={{ background: "var(--primary-gradient)" }}
+            style={{ background: "var(--theme-gradient)" }}
           />
           <Quote
             size={28}
-            className="mx-auto text-[var(--royal-violet)] opacity-60 mb-4"
+            className="mx-auto text-[var(--theme-primary)] opacity-60 mb-4"
           />
-          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--dark-amethyst)]">
+          <p className="text-[11px] font-black uppercase tracking-[0.4em] text-[var(--theme-secondary)]">
             Încă nicio poveste scrisă
           </p>
           <p className="text-sm text-neutral-500 mt-3 font-light italic max-w-md mx-auto">
             Fii primul care împărtășește experiența cu acest produs și inspiră
-            comunitatea Linea.
+            comunitatea.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Summary card */}
           <aside className="lg:col-span-4">
-            <div className="sticky top-40 rounded-2xl border border-[var(--royal-violet)]/15 bg-white/70 backdrop-blur-xl p-7 shadow-[0_8px_40px_-12px_rgba(123,44,191,0.18)]">
+            <div className="sticky top-40 rounded-2xl border border-[var(--theme-primary-15)] bg-white/70 backdrop-blur-xl p-7 shadow-[var(--theme-shadow-18)]">
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-black text-[var(--dark-amethyst)] tracking-tighter">
+                <span className="text-5xl font-black text-[var(--theme-secondary)] tracking-tighter">
                   {stats.avg.toFixed(1)}
                 </span>
                 <span className="text-xs font-bold text-neutral-400">/ 5</span>
               </div>
-              <div className="flex gap-0.5 mt-2 text-[var(--royal-violet)]">
+              <div className="flex gap-0.5 mt-2 text-[var(--theme-primary)]">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
@@ -149,21 +179,24 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
                     : 0;
                   return (
                     <div key={star} className="flex items-center gap-3">
-                      <span className="text-[10px] font-black w-3 text-[var(--dark-amethyst)]">
+                      <span className="text-[10px] font-black w-3 text-[var(--theme-secondary)]">
                         {star}
                       </span>
                       <Star
                         size={10}
-                        className="text-[var(--royal-violet)]"
+                        className="text-[var(--theme-primary)]"
                         fill="currentColor"
                       />
                       <div className="flex-1 h-1 bg-neutral-100 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                          transition={{
+                            duration: 0.8,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
                           className="h-full rounded-full"
-                          style={{ background: "var(--primary-gradient)" }}
+                          style={{ background: "var(--theme-gradient)" }}
                         />
                       </div>
                       <span className="text-[10px] font-bold text-neutral-400 w-6 text-right">
@@ -189,23 +222,25 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
                   delay: Math.min(idx * 0.05, 0.3),
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="group relative rounded-2xl border border-neutral-100 bg-white/80 backdrop-blur-xl p-6 hover:border-[var(--royal-violet)]/30 hover:shadow-[0_10px_30px_-12px_rgba(123,44,191,0.22)] transition-all"
+                className="group relative rounded-2xl border border-neutral-100 bg-white/80 backdrop-blur-xl p-6 hover:border-[var(--theme-primary-30)] hover:shadow-[var(--theme-shadow-22)] transition-all"
               >
                 <Quote
                   size={22}
-                  className="absolute top-5 right-5 text-[var(--royal-violet)] opacity-15 group-hover:opacity-40 transition-opacity"
+                  className="absolute top-5 right-5 text-[var(--theme-primary)] opacity-15 group-hover:opacity-40 transition-opacity"
                 />
 
                 <div className="flex items-center gap-3">
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-black tracking-wider shadow-md"
-                    style={{ background: "var(--primary-gradient)" }}
+                    style={{ background: "var(--theme-gradient)" }}
                   >
                     {initials(review.user_name || review.customer_name)}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] truncate">
-                      {review.user_name || review.customer_name || "Client Linea"}
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[var(--theme-secondary)] truncate">
+                      {review.user_name ||
+                        review.customer_name ||
+                        "Client Linea"}
                     </span>
                     <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-300">
                       {new Date(review.created_at).toLocaleDateString("ro-RO", {
@@ -217,7 +252,7 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
                   </div>
                 </div>
 
-                <div className="flex gap-0.5 mt-4 text-[var(--royal-violet)]">
+                <div className="flex gap-0.5 mt-4 text-[var(--theme-primary)]">
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
