@@ -10,7 +10,11 @@ import {
   Star,
   ShieldCheck,
   Truck,
+  Phone,
 } from "lucide-react";
+
+const SUPPORT_PHONE = "+40 770 000 000";
+const SUPPORT_PHONE_TEL = "+40770000000";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -204,8 +208,8 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const status = getStockStatus();
 
   return (
-    <div className="flex flex-col gap-10 text-left">
-      <div className="space-y-4">
+    <div className="flex flex-col gap-6 text-left">
+      <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="flex gap-0.5">
             {[...Array(5)].map((_, i) => (
@@ -241,23 +245,21 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
         </p>
       </div>
 
-      <div className="py-8 border-y border-neutral-100">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-black text-[var(--dark-amethyst)]">
-              {priceStats.finalPrice?.toLocaleString("ro-RO")}
+      <div className="py-5 border-y border-neutral-100">
+        <div className="flex items-baseline gap-3">
+          <span className="text-3xl font-black text-[var(--dark-amethyst)]">
+            {priceStats.finalPrice?.toLocaleString("ro-RO")}
+          </span>
+          <span className="text-sm font-bold text-[var(--dark-amethyst)]">
+            RON
+          </span>
+          {priceStats.hasDiscount && (
+            <span className="text-lg text-neutral-300 line-through ml-2">
+              {priceStats.basePrice?.toLocaleString("ro-RO")} RON
             </span>
-            <span className="text-sm font-bold text-[var(--dark-amethyst)]">
-              RON
-            </span>
-            {priceStats.hasDiscount && (
-              <span className="text-lg text-neutral-300 line-through ml-2">
-                {priceStats.basePrice?.toLocaleString("ro-RO")} RON
-              </span>
-            )}
-          </div>
+          )}
         </div>
-        <div className="flex items-center gap-2 mt-3 text-neutral-400">
+        <div className="flex items-center gap-2 mt-2 text-neutral-400">
           <Info size={12} />
           <p className="text-[9px] font-bold uppercase tracking-widest">
             Cel mai mic preț 30 zile:{" "}
@@ -268,7 +270,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center gap-3 px-3 py-2 bg-neutral-50 w-fit rounded-sm">
           <div
             className={`w-1.5 h-1.5 rounded-full ${status.dot} ${!isOutOfStock && "animate-pulse"}`}
@@ -280,33 +282,55 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           </span>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <button
-            onClick={handleAddToCart}
-            disabled={isOutOfStock || isLimitReached}
-            className="h-16 w-full text-white rounded-none uppercase text-[10px] font-black tracking-[0.4em] transition-all disabled:bg-neutral-100 disabled:text-neutral-400 shadow-lg shadow-[var(--royal-violet)]/10 flex items-center justify-center group relative overflow-hidden"
-            style={{
-              background:
-                !isOutOfStock && !isLimitReached
-                  ? "var(--primary-gradient)"
-                  : undefined,
-            }}
-          >
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative flex items-center">
-              <ShoppingBag size={16} className="mr-3" />
-              {isOutOfStock
-                ? "Epuizat"
-                : isLimitReached
-                  ? "Limită atinsă"
-                  : "Adaugă în coș"}
-            </div>
-          </button>
+        <div className="flex flex-col gap-2.5">
+          {/* CTA row: Add to cart + Call */}
+          <div className="flex gap-2.5">
+            <button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isLimitReached}
+              className="h-16 flex-1 text-white rounded-none uppercase text-[10px] font-black tracking-[0.4em] transition-all disabled:bg-neutral-100 disabled:text-neutral-400 shadow-lg shadow-[var(--royal-violet)]/10 flex items-center justify-center group relative overflow-hidden"
+              style={{
+                background:
+                  !isOutOfStock && !isLimitReached
+                    ? "var(--primary-gradient)"
+                    : undefined,
+              }}
+            >
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex items-center">
+                <ShoppingBag size={16} className="mr-3" />
+                {isOutOfStock
+                  ? "Epuizat"
+                  : isLimitReached
+                    ? "Limită atinsă"
+                    : "Adaugă în coș"}
+              </div>
+            </button>
+
+            <a
+              href={`tel:${SUPPORT_PHONE_TEL}`}
+              aria-label={`Sună consultantul Linea ${SUPPORT_PHONE}`}
+              title={`Sună-ne: ${SUPPORT_PHONE}`}
+              className="group h-16 w-16 sm:w-auto sm:px-5 flex items-center justify-center gap-3 border border-[var(--royal-violet)]/30 text-[var(--dark-amethyst)] hover:text-white hover:border-transparent transition-all relative overflow-hidden rounded-none"
+            >
+              <span
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: "var(--primary-gradient)" }}
+              />
+              <Phone
+                size={16}
+                className="relative shrink-0 transition-transform group-hover:rotate-12"
+              />
+              <span className="hidden sm:inline relative text-[10px] font-black uppercase tracking-[0.3em]">
+                Sună-ne
+              </span>
+            </a>
+          </div>
 
           <Button
             variant="outline"
             onClick={handleWishlistToggle}
-            className={`h-16 w-full border-neutral-200 rounded-none uppercase text-[10px] font-black tracking-[0.4em] transition-all hover:bg-[var(--background)] ${
+            className={`h-14 w-full border-neutral-200 rounded-none uppercase text-[10px] font-black tracking-[0.4em] transition-all hover:bg-[var(--background)] ${
               isFavorite
                 ? "text-rose-500 border-rose-500 bg-rose-50/50"
                 : "hover:text-[var(--royal-violet)] hover:border-[var(--royal-violet)]"
@@ -318,11 +342,18 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             />
             {isFavorite ? "În listă" : "Wishlist"}
           </Button>
+
+          <a
+            href={`tel:${SUPPORT_PHONE_TEL}`}
+            className="text-center text-[9px] font-bold uppercase tracking-[0.3em] text-neutral-400 hover:text-[var(--royal-violet)] transition-colors"
+          >
+            Consultant disponibil · {SUPPORT_PHONE}
+          </a>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex items-center gap-4 p-4 border border-neutral-100 rounded-none">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex items-center gap-4 p-3.5 border border-neutral-100 rounded-none">
           <Truck size={20} className="text-[var(--royal-violet)]" />
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
@@ -333,7 +364,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-4 p-4 border border-neutral-100 rounded-none">
+        <div className="flex items-center gap-4 p-3.5 border border-neutral-100 rounded-none">
           <ShieldCheck size={20} className="text-[var(--royal-violet)]" />
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--dark-amethyst)]">
