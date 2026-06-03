@@ -5,6 +5,8 @@ import {
   Loader2,
   MessageSquareText,
   ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -54,40 +56,70 @@ const initials = (name?: string) => {
 };
 
 const ProductReviews = ({ productId, reviews: initial }: Props) => {
-  const [reviews, setReviews] = useState<Review[]>(initial || []);
+  const [reviews, setReviews] = useState<Review[]>([]);
+
   const [loading, setLoading] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [globalStats, setGlobalStats] = useState({
+    avg: 0,
+    dist: [0, 0, 0, 0, 0],
+  });
 
   useEffect(() => {
     if (!productId) return;
+
     let alive = true;
-    setLoading(true);
-    fetch(`${API_BASE_URL}/api/v1/reviews/products/${productId}/reviews`, {
-      credentials: "include",
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
+
+    async function fetchReviews() {
+      try {
+        setLoading(true);
+
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/reviews/products/${productId}/reviews?page=${page}&size=6`,
+          {
+            credentials: "include",
+          },
+        );
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
         if (!alive) return;
-        const list = Array.isArray(data) ? data : data?.items || [];
-        setReviews(list);
-      })
-      .catch(() => {})
-      .finally(() => alive && setLoading(false));
+
+        setReviews(data.items || []);
+
+        setTotalCount(data.total || 0);
+
+        setTotalPages(data.pages || 1);
+
+        if (data.stats) {
+          setGlobalStats({
+            avg: data.globalStats.avg ?? 0,
+            dist: data.globalStats.dist ?? [0, 0, 0, 0, 0],
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+
+    fetchReviews();
+
     return () => {
       alive = false;
     };
-  }, [productId]);
+  }, [productId, page]);
 
-  const stats = useMemo(() => {
-    if (!reviews.length) return { avg: 0, dist: [0, 0, 0, 0, 0] };
-    const dist = [0, 0, 0, 0, 0];
-    let sum = 0;
-    reviews.forEach((r) => {
-      const v = Math.max(1, Math.min(5, Math.round(r.rating)));
-      dist[v - 1] += 1;
-      sum += r.rating;
-    });
-    return { avg: sum / reviews.length, dist };
-  }, [reviews]);
+  useEffect(() => {
+    setPage(1);
+  }, [productId]);
 
   return (
     // ── Fără backgroundColor — fundalul paginii (alb) rămâne vizibil ──
@@ -130,7 +162,7 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
           style={{ color: "var(--indigo-ink)" }}
         >
           <ShieldCheck size={14} style={{ color: "var(--royal-violet)" }} />
-          {reviews.length} Recenzii verificate
+          {totalCount} Recenzii verificate
         </div>
       </div>
 
@@ -191,7 +223,7 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
                   className="text-5xl font-black tracking-tighter"
                   style={{ color: "var(--dark-amethyst)" }}
                 >
-                  {stats.avg.toFixed(1)}
+                  {globalStats.avg.toFixed(1)}
                 </span>
                 <span
                   className="text-xs font-bold"
@@ -209,7 +241,9 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
                   <Star
                     key={i}
                     size={14}
-                    fill={i < Math.round(stats.avg) ? "currentColor" : "none"}
+                    fill={
+                      i < Math.round(globalStats.avg) ? "currentColor" : "none"
+                    }
                     strokeWidth={1.5}
                   />
                 ))}
@@ -219,12 +253,12 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
                 className="mt-2 text-[10px] font-black uppercase tracking-[0.3em]"
                 style={{ color: "var(--lavender-purple)" }}
               >
-                Bazat pe {reviews.length} recenzii
+                Bazat pe {totalCount} recenzii
               </p>
 
               <div className="mt-6 space-y-2">
                 {[5, 4, 3, 2, 1].map((star) => {
-                  const count = stats.dist[star - 1];
+                  const count = globalStats.dist[star - 1];
                   const pct = reviews.length
                     ? (count / reviews.length) * 100
                     : 0;
@@ -275,6 +309,28 @@ const ProductReviews = ({ productId, reviews: initial }: Props) => {
               <ReviewCard key={review.id} review={review} idx={idx} />
             ))}
           </div>
+        </div>
+      )}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-10">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="p-2 rounded-full border bg-white disabled:opacity-40"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-xs font-black">
+            Pagina {page} / {totalPages}
+          </span>
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="p-2 rounded-full border bg-white disabled:opacity-40"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       )}
     </section>
