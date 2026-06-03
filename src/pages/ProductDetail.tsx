@@ -102,14 +102,14 @@ const ProductDetail = () => {
           </Link>
         </main>
       ) : (
-        <main className="px-6 lg:px-12 pt-[9.25rem] max-w-[1400px] mx-auto pb-24">
+        <main className="px-6 lg:px-12 pt-[9.25rem] max-w-[1400px] mx-auto pb-16">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 mb-8 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-black transition-colors"
+            className="flex items-center gap-2 mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-black transition-colors"
           >
             <ChevronLeft size={14} /> Înapoi la Categorie
           </button>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             <div className="lg:col-span-5 lg:sticky lg:top-40">
               <ProductImageGallery
                 mainImage={processedMainImage}
@@ -117,20 +117,15 @@ const ProductDetail = () => {
                 isLCP={true}
               />
             </div>
-            <div className="lg:col-span-7 flex flex-col gap-12">
+            <div className="lg:col-span-7 flex flex-col gap-8">
               <ProductInfo product={product} />
-              <div className="h-px bg-zinc-100 w-full" />
               <ProductDescription product={product} />
             </div>
           </div>
-          <div className="mt-24 border-t border-zinc-100 pt-16">
-            <ProductReviews productId={product.id} reviews={product.reviews || []} />
-          </div>
 
-          <div className="mt-20">
-            {/* Folosim fallback (||) pentru a ne asigura că prindem slug-ul categoriei
-              indiferent cum e formatat obiectul returnat de backend (din DB sau din Meilisearch)
-            */}
+          <ProductReviews productId={product.id} reviews={product.reviews || []} />
+
+          <div className="mt-16 pt-16 border-t border-neutral-100">
             <ProductCarousel
               categorySlug={
                 product.category?.slug ||
@@ -142,6 +137,7 @@ const ProductDetail = () => {
             />
           </div>
         </main>
+
       )}
       <Footer />
     </div>
