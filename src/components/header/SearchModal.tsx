@@ -345,39 +345,36 @@ const SearchModal = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* ── Backdrop ──────────────────────────────────────────────────── */}
+          {/* ── Invisible click-catcher (no blur, no darken) ───────────── */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[999] cursor-pointer"
-            style={{
-              background: "color-mix(in srgb, var(--dark-amethyst) 55%, transparent)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-            }}
+            transition={{ duration: 0.12 }}
+            className="fixed inset-0 z-[999] cursor-pointer bg-transparent"
             onClick={handleClose}
           />
 
-          {/* ── Panel ─────────────────────────────────────────────────────── */}
+          {/* ── Floating command palette panel ─────────────────────────── */}
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: -18, scale: 0.975 }}
+            initial={{ opacity: 0, y: -12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.978 }}
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed z-[1000] rounded-3xl overflow-hidden flex flex-col transform-gpu
-              left-1/2 -translate-x-1/2 top-[6.25rem] w-[calc(100vw-1.5rem)] max-w-lg
-              lg:left-24 lg:translate-x-0 lg:top-[8.75rem] lg:w-[min(36rem,calc(50vw-2rem))]"
+            exit={{ opacity: 0, y: -8, scale: 0.985 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed z-[1000] left-1/2 -translate-x-1/2 rounded-3xl overflow-hidden flex flex-col transform-gpu
+              top-[5.25rem] w-[calc(100vw-1.25rem)] max-w-[34rem]
+              sm:top-[6rem]
+              lg:top-[7.25rem]"
             style={{
-              background: "color-mix(in srgb, var(--background) 96%, white)",
+              background: "color-mix(in srgb, var(--background) 98%, white)",
               boxShadow:
-                "0 0 0 1px color-mix(in srgb, var(--royal-violet) 14%, transparent), 0 24px 64px color-mix(in srgb, var(--dark-amethyst) 28%, transparent), 0 4px 16px color-mix(in srgb, var(--dark-amethyst) 12%, transparent)",
-              maxHeight: "min(80vh, calc(100vh - 8rem))",
+                "0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent), 0 20px 60px color-mix(in srgb, var(--dark-amethyst) 22%, transparent), 0 4px 14px color-mix(in srgb, var(--dark-amethyst) 10%, transparent)",
+              maxHeight: "min(78vh, calc(100vh - 7rem))",
             }}
           >
+
 
             {/* Gradient cap bar */}
             <div
