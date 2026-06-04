@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 import { OrderTracking } from "@/components/account/OrderTracking";
 import { Textarea } from "@/components/ui/textarea";
+import { prefetchTracking } from "@/lib/tracking-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -567,6 +568,9 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
+          onMouseEnter={() => prefetchTracking(order.id)}
+          onPointerDown={() => prefetchTracking(order.id)}
+          onFocus={() => prefetchTracking(order.id)}
           className="w-full h-14 rounded-2xl text-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.2] border border-[var(--royal-violet)]/20 text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 hover:bg-[var(--royal-violet)] hover:text-white transition-all duration-300 shadow-sm active:scale-[0.98]"
         >
           Detalii Comandă{" "}

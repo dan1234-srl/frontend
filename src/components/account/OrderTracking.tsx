@@ -12,10 +12,10 @@ import {
   Copy,
   Check,
 } from "lucide-react";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://linea-backend-production.up.railway.app";
+import {
+  fetchTracking as fetchTrackingCached,
+  readTrackingCache,
+} from "@/lib/tracking-cache";
 
 interface GlsHistoryEvent {
   code: string | number | null;
@@ -364,39 +364,31 @@ export function OrderTracking({
   orderStatus,
   placeholderStatus,
 }: OrderTrackingProps) {
-  const [data, setData] = useState<TrackingPayload | null>(null);
+  // Hydrate immediately from sessionStorage → no spinner on 2G/3G
+  const initial = useMemo(() => readTrackingCache<TrackingPayload>(orderId), [orderId]);
+  const [data, setData] = useState<TrackingPayload | null>(initial.data);
+  const [loading, setLoading] = useState<boolean>(!initial.data);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Extragem datele reale din Backend (DB) care se actualizează prin Webhook
   const fetchTracking = useCallback(async () => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setError(null);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/post_sale/orders/${orderId}/tracking`,
-        {
-          credentials: "include",
-          signal: ctrl.signal,
-        },
-      );
-
-      if (!res.ok) {
-        if (res.status === 404) {
-          setData(null);
-          setError("not_yet");
-        } else {
-          throw new Error(`HTTP ${res.status}`);
-        }
+      const json = await fetchTrackingCached<TrackingPayload>(orderId, ctrl.signal);
+      if (json === null) {
+        setData(null);
+        setError("not_yet");
       } else {
-        const json = await res.json();
         setData(json);
       }
     } catch (e: any) {
       if (e.name !== "AbortError") setError("fetch_failed");
+    } finally {
+      setLoading(false);
     }
   }, [orderId]);
 
@@ -448,37 +440,52 @@ export function OrderTracking({
   };
 
   const hasNothing = !awbValue && history.length === 0;
+  const showSkeleton = loading && !data;
 
   return (
     <section
-      className="rounded-[2rem] border border-zinc-100 bg-white p-6 md:p-7 flex flex-col gap-6"
+      className="relative overflow-hidden rounded-[2rem] border border-[var(--royal-violet)]/10 bg-white/70 backdrop-blur-xl p-6 md:p-8 flex flex-col gap-6 shadow-[0_20px_60px_-30px_rgba(16,0,43,0.18)]"
       aria-label="Tracking colet"
     >
-      <div>
-        <header className="flex items-start justify-between gap-4 mb-5">
-          <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 flex items-center gap-1.5">
-              <Truck size={11} className="text-[var(--royal-violet)]" />
-              Tracking în timp real
+      {/* Decorative theme orb */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-[0.18] blur-3xl"
+        style={{ background: "var(--mauve-magic)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -left-20 w-80 h-80 rounded-full opacity-[0.10] blur-3xl"
+        style={{ background: "var(--lavender-purple)" }}
+      />
+
+      <div className="relative">
+        <header className="flex items-start justify-between gap-4 mb-6">
+          <div className="space-y-1.5">
+            <p className="text-[9px] font-black uppercase tracking-[0.35em] text-[var(--royal-violet)]/70 flex items-center gap-1.5">
+              <Sparkles size={11} className="text-[var(--royal-violet)] animate-pulse" />
+              Tracking live · GLS
             </p>
-            <h4 className="heading-serif text-2xl italic text-zinc-900 leading-tight">
-              {hasNothing
-                ? "În pregătire"
-                : history.length > 0
-                  ? current.meta.text
-                  : "AWB Generat"}
+            <h4 className="heading-serif text-2xl md:text-3xl italic text-[var(--dark-amethyst)] leading-tight tracking-tight">
+              {showSkeleton
+                ? "Se sincronizează…"
+                : hasNothing
+                  ? "În pregătire"
+                  : history.length > 0
+                    ? current.meta.text
+                    : "AWB Generat"}
             </h4>
             {awbValue && (
               <button
                 onClick={handleCopy}
-                className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] transition-colors"
+                className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500 hover:text-[var(--royal-violet)] transition-colors group"
                 title="Copiază AWB"
               >
                 <span>AWB · {awbValue}</span>
                 {copied ? (
                   <Check size={11} className="text-emerald-500" />
                 ) : (
-                  <Copy size={11} />
+                  <Copy size={11} className="group-hover:scale-110 transition-transform" />
                 )}
               </button>
             )}
@@ -486,20 +493,21 @@ export function OrderTracking({
 
           <div className="flex flex-col items-end gap-2">
             {!hasNothing && history.length > 0 && (
-              <span
+              <motion.span
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
                 className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ring-1 ${current.style.bg} ${current.style.text} ${current.style.ring}`}
               >
-                <span
-                  className={`size-1.5 rounded-full ${current.style.dot}`}
-                />
+                <span className={`size-1.5 rounded-full ${current.style.dot} animate-pulse`} />
                 {current.style.label}
-              </span>
+              </motion.span>
             )}
           </div>
         </header>
 
-        {isActive && (
-          <div className="relative h-[2px] bg-zinc-100 rounded-full overflow-hidden mb-6">
+        {(isActive || showSkeleton) && (
+          <div className="relative h-[2px] bg-zinc-100/80 rounded-full overflow-hidden mb-6">
             <motion.div
               className="absolute top-0 left-0 h-full w-1/3"
               style={{ background: "var(--primary-gradient)" }}
@@ -513,21 +521,41 @@ export function OrderTracking({
           </div>
         )}
 
-        {hasNothing ? (
-          <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/40 p-6 text-center">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+        {showSkeleton ? (
+          <ol className="relative pl-7 space-y-5 before:absolute before:left-[10px] before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-[var(--royal-violet)]/30 before:to-transparent">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="relative">
+                <span className="absolute -left-7 top-0.5 size-5 rounded-full bg-zinc-100 ring-2 ring-white animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-3 w-20 rounded-full bg-zinc-100 animate-pulse" />
+                  <div className="h-3.5 w-2/3 rounded-full bg-zinc-100 animate-pulse" />
+                  <div className="h-2.5 w-32 rounded-full bg-zinc-100/80 animate-pulse" />
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : hasNothing ? (
+          <div
+            className="rounded-2xl border border-dashed p-7 text-center"
+            style={{
+              borderColor: "rgba(123,44,191,0.18)",
+              background:
+                "linear-gradient(135deg, rgba(123,44,191,0.04), rgba(224,170,255,0.06))",
+            }}
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)]/70">
               {placeholderStatus ||
                 "Coletul nu a fost încă predat curierului. Vei primi AWB de îndată ce este expediat."}
             </p>
           </div>
         ) : history.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-100 bg-zinc-50/40 p-6 text-center">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+          <div className="rounded-2xl border border-[var(--royal-violet)]/10 bg-white/60 p-7 text-center">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
               AWB înregistrat. Așteptăm primele scanări de la curier.
             </p>
           </div>
         ) : (
-          <ol className="relative pl-7 space-y-5 before:absolute before:left-[10px] before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-zinc-200 before:via-zinc-200 before:to-transparent">
+          <ol className="relative pl-7 space-y-5 before:absolute before:left-[10px] before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-[var(--royal-violet)]/40 before:via-[var(--lavender-purple)]/25 before:to-transparent">
             <AnimatePresence initial={false}>
               {history.map((ev, idx) => {
                 const { meta, style } = resolveGlsStatus(ev.code);
