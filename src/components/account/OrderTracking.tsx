@@ -364,39 +364,31 @@ export function OrderTracking({
   orderStatus,
   placeholderStatus,
 }: OrderTrackingProps) {
-  const [data, setData] = useState<TrackingPayload | null>(null);
+  // Hydrate immediately from sessionStorage → no spinner on 2G/3G
+  const initial = useMemo(() => readTrackingCache<TrackingPayload>(orderId), [orderId]);
+  const [data, setData] = useState<TrackingPayload | null>(initial.data);
+  const [loading, setLoading] = useState<boolean>(!initial.data);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Extragem datele reale din Backend (DB) care se actualizează prin Webhook
   const fetchTracking = useCallback(async () => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setError(null);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/post_sale/orders/${orderId}/tracking`,
-        {
-          credentials: "include",
-          signal: ctrl.signal,
-        },
-      );
-
-      if (!res.ok) {
-        if (res.status === 404) {
-          setData(null);
-          setError("not_yet");
-        } else {
-          throw new Error(`HTTP ${res.status}`);
-        }
+      const json = await fetchTrackingCached<TrackingPayload>(orderId, ctrl.signal);
+      if (json === null) {
+        setData(null);
+        setError("not_yet");
       } else {
-        const json = await res.json();
         setData(json);
       }
     } catch (e: any) {
       if (e.name !== "AbortError") setError("fetch_failed");
+    } finally {
+      setLoading(false);
     }
   }, [orderId]);
 
