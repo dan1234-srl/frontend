@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 import { OrderTracking } from "@/components/account/OrderTracking";
 import { Textarea } from "@/components/ui/textarea";
+import { prefetchTracking } from "@/lib/tracking-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
