@@ -60,6 +60,8 @@ const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
 const AdminNewsletter = lazy(() => import("./pages/admin/AdminNewsletter"));
 const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const CollectionsAdmin = lazy(() => import("./pages/admin/CollectionsAdmin"));
+import Faq from "./pages/Faq"; // Ajustează calea către fișier dacă e diferită
+
 const AdminWishlistAnalytics = lazy(
   () => import("./pages/admin/AdminWishlistAnalytics"),
 );
@@ -78,7 +80,6 @@ const AdminGeneralSettings = lazy(
   () => import("./pages/admin/AdminGeneralSettings"),
 );
 const AdminGLS = lazy(() => import("./pages/admin/AdminGLS"));
-
 
 // Single Query Client + sane defaults (caching, no refetch storm).
 const queryClient = new QueryClient({
@@ -168,6 +169,15 @@ const AnimatedRoutes = () => {
               </PageWrapper>
             }
           />
+          <Route
+            path="/faq"
+            element={
+              <PageWrapper>
+                <Faq />
+              </PageWrapper>
+            }
+          />
+
           <Route
             path="/category/:slug"
             element={
@@ -333,25 +343,25 @@ const App = () => {
   }, []);
 
   return (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <CartProvider>
-            <FiltersProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <ScrollToTop />
-                  <AnimatedRoutes />
-                </BrowserRouter>
-              </TooltipProvider>
-            </FiltersProvider>
-          </CartProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CartProvider>
+              <FiltersProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <ScrollToTop />
+                    <AnimatedRoutes />
+                  </BrowserRouter>
+                </TooltipProvider>
+              </FiltersProvider>
+            </CartProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
