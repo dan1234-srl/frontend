@@ -778,15 +778,21 @@ const CheckoutPopup = ({
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto px-4 py-5 sm:px-7 sm:py-6 md:px-9 lg:px-11 bg-white custom-scrollbar"
             >
-              <header className="flex justify-between items-center mb-5 pb-4 border-b border-zinc-100">
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight text-zinc-900">
-                    Plată{" "}
-                    <span className="text-[var(--royal-violet)]">
-                      Securizată
-                    </span>
+              <header className="flex justify-between items-start mb-5 pb-4 border-b border-zinc-100">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: "var(--primary-gradient)" }}
+                    />
+                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                      Plată Securizată
+                    </p>
+                  </div>
+                  <h2 className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)]">
+                    Finalizează comanda
                   </h2>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 pt-1">
                     {[
                       { n: 1, label: "Livrare" },
                       { n: 2, label: "Plată" },
@@ -795,7 +801,7 @@ const CheckoutPopup = ({
                         {i > 0 && <div className="w-4 h-px bg-zinc-200" />}
                         <button
                           onClick={() => n < step && setStep(n)}
-                          className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${
+                          className={`text-[9px] font-black uppercase tracking-[0.25em] flex items-center gap-1.5 transition-colors ${
                             step === n
                               ? "text-[var(--royal-violet)]"
                               : step > n
@@ -822,9 +828,13 @@ const CheckoutPopup = ({
                 </div>
                 <button
                   onClick={onClose}
-                  className="size-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 transition-colors"
+                  aria-label="Închide"
+                  className="h-9 w-9 flex items-center justify-center rounded-full border border-zinc-100 hover:bg-zinc-50 transition-all text-zinc-400 hover:text-zinc-900 group shrink-0"
                 >
-                  <X size={15} />
+                  <X
+                    size={16}
+                    className="group-hover:rotate-90 transition-transform duration-300"
+                  />
                 </button>
               </header>
 

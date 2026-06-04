@@ -106,40 +106,40 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 220 }}
-            className="relative z-[701] flex h-full w-full sm:max-w-[420px] flex-col bg-[#fcfbfe] shadow-luxe overflow-hidden"
+            className="relative z-[701] flex h-full w-full sm:max-w-[400px] flex-col bg-white shadow-2xl overflow-hidden"
           >
             {/* Accente vizuale futuristice (Glows in background) */}
             <div className="absolute top-0 left-0 w-full h-64 bg-[var(--mauve-magic)] opacity-5 blur-[100px] pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-64 h-64 bg-[var(--royal-violet)] opacity-[0.03] blur-[100px] pointer-events-none" />
 
-            {/* --- HEADER --- */}
-            <header className="relative px-6 sm:px-10 py-8 flex items-center justify-between border-b border-zinc-100 bg-white/80 backdrop-blur-md z-10">
-              <div className="space-y-1 text-left">
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="inline-block text-[9px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)]"
-                >
-                  Colecția Ta
-                </motion.span>
-                <h2 className="text-3xl sm:text-4xl font-serif italic text-[var(--dark-amethyst)] leading-none tracking-tight">
-                  Wishlist
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="text-sm font-sans font-medium not-italic ml-2 opacity-40"
-                  >
+            {/* --- HEADER (aliniat cu ShoppingBag / SearchModal) --- */}
+            <header className="relative flex items-center justify-between px-6 py-6 shrink-0 border-b border-zinc-100 bg-white/80 backdrop-blur-md z-10">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: "var(--primary-gradient)" }}
+                  />
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400">
+                    Colecția ta
+                  </p>
+                </div>
+                <h2 className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)]">
+                  Lista de dorințe
+                  <span className="text-zinc-300 font-sans text-lg ml-1.5">
                     ({items.length})
-                  </motion.span>
+                  </span>
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="size-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-[var(--dark-amethyst)] hover:text-white hover:border-[var(--dark-amethyst)] hover:scale-105 hover:rotate-90 transition-all duration-500"
+                aria-label="Închide"
+                className="h-9 w-9 flex items-center justify-center rounded-full border border-zinc-100 hover:bg-zinc-50 transition-all text-zinc-400 hover:text-zinc-900 group"
               >
-                <X size={18} strokeWidth={1.5} />
+                <X
+                  size={16}
+                  className="group-hover:rotate-90 transition-transform duration-300"
+                />
               </button>
             </header>
 
@@ -213,34 +213,38 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
                           <div className="flex flex-col justify-center py-1 flex-1 text-left min-w-0 z-10">
                             <div className="space-y-2">
                               <div className="flex justify-between items-start gap-3">
-                                <h3 className="text-[11px] sm:text-[12px] font-bold uppercase tracking-widest text-zinc-800 group-hover:text-[var(--dark-amethyst)] transition-colors leading-snug pr-2">
-                                  {item.name}
-                                </h3>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">
+                                    Evem
+                                  </p>
+                                  <h3 className="text-[12px] font-bold text-[var(--dark-amethyst)] leading-tight line-clamp-2 pr-2">
+                                    {item.name}
+                                  </h3>
+                                </div>
 
-                                {/* Buton de ștergere restilizat */}
                                 <button
                                   onClick={() =>
                                     remove(user ? item.product_id : item.id)
                                   }
-                                  className="flex items-center justify-center size-8 rounded-full bg-zinc-50 text-zinc-400 hover:bg-rose-500 hover:text-white transition-all duration-300 shrink-0 shadow-sm"
+                                  className="text-zinc-300 hover:text-rose-500 transition-colors shrink-0"
                                   aria-label="Elimină din wishlist"
                                 >
-                                  <Trash2 size={14} strokeWidth={2} />
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
 
                               {isOutOfStock ? (
-                                <span className="inline-flex items-center gap-1.5 text-[9px] font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded-md w-fit">
+                                <span className="inline-flex items-center gap-1.5 text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] bg-rose-50 px-2 py-1 rounded-md w-fit">
                                   <AlertCircle size={10} strokeWidth={2} />{" "}
                                   Epuizat
                                 </span>
                               ) : (
-                                <span className="block text-[14px] font-black text-[var(--royal-violet)] tracking-tight">
+                                <p className="text-[13px] font-black text-[var(--dark-amethyst)]">
                                   {item.price?.toLocaleString()}{" "}
-                                  <span className="text-[10px] uppercase text-zinc-400 font-bold ml-0.5">
+                                  <span className="text-[9px] font-bold text-zinc-400 ml-0.5">
                                     RON
                                   </span>
-                                </span>
+                                </p>
                               )}
                             </div>
                           </div>
@@ -274,19 +278,21 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
                       strokeWidth={1.5}
                     />
                   </motion.div>
-                  <p className="text-3xl font-serif italic text-[var(--dark-amethyst)] mb-3">
+                  <p className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)] mb-2">
                     Selecția ta este goală
                   </p>
-                  <p className="text-[11px] text-zinc-500 max-w-[240px] uppercase tracking-widest leading-relaxed mb-10">
-                    Piesele pe care le iubești prind viață aici. Explorează
-                    colecțiile.
+                  <p className="text-[10px] font-medium text-zinc-400 max-w-[240px] leading-relaxed mb-8">
+                    Piesele pe care le iubești prind viață aici. Explorează colecțiile.
                   </p>
                   <button
                     onClick={onClose}
-                    className="group relative overflow-hidden px-10 py-4 bg-[var(--dark-amethyst)] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_40px_rgba(16,0,43,0.3)] transition-all duration-500 active:scale-95"
+                    className="relative h-12 px-8 text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
+                    style={{ background: "var(--primary-gradient)" }}
                   >
-                    <span className="relative z-10">Descoperă Magia</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--royal-violet)] to-[var(--indigo-velvet)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                    <span className="relative font-black uppercase text-[10px] tracking-[0.2em]">
+                      Descoperă Magia
+                    </span>
                   </button>
                 </div>
               )}
@@ -296,26 +302,24 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
             <AnimatePresence>
               {items.length > 0 && (
                 <motion.footer
-                  initial={{ y: 50, opacity: 0 }}
+                  initial={{ y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 50, opacity: 0 }}
-                  className="relative p-6 sm:p-8 bg-white/90 backdrop-blur-md border-t border-zinc-100 shrink-0 z-20"
+                  exit={{ y: 30, opacity: 0 }}
+                  className="relative px-6 py-6 bg-white border-t border-zinc-100 shrink-0 z-20"
                 >
                   <button
                     onClick={onClose}
-                    className="w-full h-14 rounded-2xl text-white flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_rgba(123,44,191,0.2)] bg-luxury-gradient relative overflow-hidden group"
+                    className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
+                    style={{ background: "var(--primary-gradient)" }}
                   >
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] relative z-10">
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                    <div className="relative flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em]">
                       Continuă Cumpărăturile
-                    </span>
-                    <ArrowRight
-                      size={16}
-                      strokeWidth={2}
-                      className="relative z-10 group-hover:translate-x-1 transition-transform"
-                    />
+                      <ArrowRight
+                        size={14}
+                        className="group-hover:translate-x-1.5 transition-transform duration-300"
+                      />
+                    </div>
                   </button>
                 </motion.footer>
               )}
