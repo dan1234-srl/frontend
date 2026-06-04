@@ -213,34 +213,38 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
                           <div className="flex flex-col justify-center py-1 flex-1 text-left min-w-0 z-10">
                             <div className="space-y-2">
                               <div className="flex justify-between items-start gap-3">
-                                <h3 className="text-[11px] sm:text-[12px] font-bold uppercase tracking-widest text-zinc-800 group-hover:text-[var(--dark-amethyst)] transition-colors leading-snug pr-2">
-                                  {item.name}
-                                </h3>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-1">
+                                    Evem
+                                  </p>
+                                  <h3 className="text-[12px] font-bold text-[var(--dark-amethyst)] leading-tight line-clamp-2 pr-2">
+                                    {item.name}
+                                  </h3>
+                                </div>
 
-                                {/* Buton de ștergere restilizat */}
                                 <button
                                   onClick={() =>
                                     remove(user ? item.product_id : item.id)
                                   }
-                                  className="flex items-center justify-center size-8 rounded-full bg-zinc-50 text-zinc-400 hover:bg-rose-500 hover:text-white transition-all duration-300 shrink-0 shadow-sm"
+                                  className="text-zinc-300 hover:text-rose-500 transition-colors shrink-0"
                                   aria-label="Elimină din wishlist"
                                 >
-                                  <Trash2 size={14} strokeWidth={2} />
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
 
                               {isOutOfStock ? (
-                                <span className="inline-flex items-center gap-1.5 text-[9px] font-bold text-rose-500 uppercase tracking-widest bg-rose-50 px-2 py-1 rounded-md w-fit">
+                                <span className="inline-flex items-center gap-1.5 text-[8px] font-black text-rose-500 uppercase tracking-[0.2em] bg-rose-50 px-2 py-1 rounded-md w-fit">
                                   <AlertCircle size={10} strokeWidth={2} />{" "}
                                   Epuizat
                                 </span>
                               ) : (
-                                <span className="block text-[14px] font-black text-[var(--royal-violet)] tracking-tight">
+                                <p className="text-[13px] font-black text-[var(--dark-amethyst)]">
                                   {item.price?.toLocaleString()}{" "}
-                                  <span className="text-[10px] uppercase text-zinc-400 font-bold ml-0.5">
+                                  <span className="text-[9px] font-bold text-zinc-400 ml-0.5">
                                     RON
                                   </span>
-                                </span>
+                                </p>
                               )}
                             </div>
                           </div>
