@@ -132,21 +132,21 @@ const Footer = () => {
   // --- SECȚIUNI NAVIGARE ACTUALIZATE ---
   const exploreLinks = [
     { name: t("Acasă", "Home"), path: "/" },
-    { name: t("Magazin", "Shop All"), path: "/shop" },
-    { name: t("Despre noi", "About Us"), path: "/about" },
+    { name: t("FAQ", "FAQ"), path: "/faq" },
+    { name: t("Contact", "Contact Us"), path: "/contact" },
   ];
 
   const supportLinks = [
-    { name: "FAQ", path: "/faq" },
-    { name: t("Contact", "Contact Us"), path: "/contact" },
+    { name: "Confidențialitate", path: "/confidentialitate" },
+    { name: t("Politica Cookies", "Cookie Policy"), path: "/cookie-policy" },
     { name: t("Politica de Retur", "Returns"), path: "/return-policy" },
-    { name: t("Ghid Mărimi", "Size Guide"), path: "/about/size-guide" },
+    {
+      name: t("Termeni & Condiții", "Terms & Conditions"),
+      path: "/terms-of-service",
+    },
   ];
 
   const legalLinks = [
-    { name: t("Confidențialitate", "Privacy"), path: "/privacy-policy" },
-    { name: "Cookies", path: "/cookie-policy" },
-    { name: t("Termeni", "Terms"), path: "/terms-of-service" },
     {
       name: "ANPC",
       path: "https://anpc.ro/ce-este-sal/",
@@ -366,7 +366,7 @@ const Footer = () => {
 
               <div className="space-y-6">
                 <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
-                  {t("Asistență", "Support")}
+                  {t("Legalitate", "Legal")}
                 </span>
                 <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/50">
                   {supportLinks.map((link) => (
