@@ -279,127 +279,169 @@ const FilterSheetExperience = ({
 // ─────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────
+// Module-level cache (survives unmount, re-mounts → instant render even pe 2G/3G)
+type PageCacheEntry = {
+  items: any[];
+  total: number;
+  pages: number;
+  ts: number;
+};
+const PAGE_CACHE = new Map<string, PageCacheEntry>();
+const PAGE_TTL = 5 * 60 * 1000;
+const cacheKey = (slug: string, qs: string, page: number) =>
+  `${slug}::${qs}::${page}`;
+
+const buildParams = (slug: string, searchParams: URLSearchParams, page: number) => {
+  const params = new URLSearchParams();
+  params.set("page", page.toString());
+  params.set("category_slug", slug);
+  searchParams.forEach((value, key) => {
+    if (
+      !["page", "category_slug", "sort", "sort_by", "sort_order"].includes(key)
+    ) {
+      params.append(key, value);
+    }
+  });
+  params.set("sort", searchParams.get("sort") || "pret-descrescator");
+  return params;
+};
+
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  const qs = searchParams.toString();
+
+  // Seed produs din cache (zero flash la revenire sau la schimbarea filtrului)
+  const seedFromCache = (): { items: any[]; total: number; pages: number } => {
+    if (!slug) return { items: [], total: 0, pages: 1 };
+    const merged: any[] = [];
+    let total = 0;
+    let pages = 1;
+    for (let p = 1; p <= currentPage; p++) {
+      const e = PAGE_CACHE.get(cacheKey(slug, qs, p));
+      if (!e) break;
+      merged.push(...e.items);
+      total = e.total;
+      pages = e.pages;
+    }
+    return { items: merged, total, pages };
+  };
+
+  const initial = seedFromCache();
+  const [products, setProducts] = useState<any[]>(initial.items);
+  const [totalPages, setTotalPages] = useState(initial.pages);
+  const [totalProducts, setTotalProducts] = useState(initial.total);
+  const [loading, setLoading] = useState(initial.items.length === 0);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const pageToLoadRef = useRef(2);
-  const [pageToLoadState, setPageToLoadState] = useState(2);
+  const pageToLoadRef = useRef(currentPage + 1);
+  const [, setPageToLoadState] = useState(currentPage + 1);
 
-  const [categoriesTree, setCategoriesTree] = useState<any[]>([]);
-  const [filtersData, setFiltersData] = useState<any>(null);
-  const [campaignBanners, setCampaignBanners] = useState<any[]>([]);
+  // Categorii / filtre / bannere — cache global via TanStack
+  const { data: categoriesTree = [] } = useCategoriesTree();
+  const { data: filtersData = null } = useCategoryFilters(slug, qs);
+  const { data: campaignBannersData = [] } = useCategoryBanner(slug);
+  const campaignBanners = campaignBannersData as any[];
+
   const [filtersOpen, setFiltersOpen] = useState(false);
-
-  // Stare pentru căutarea categoriilor (stil HomeHero)
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  const currentPage = parseInt(searchParams.get("page") || "1");
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/categories/tree`)
-      .then((res) => res.json())
-      .then(setCategoriesTree)
-      .catch(() => {});
-  }, []);
-
   const sortedCategories = useMemo(() => {
-    return [...categoriesTree].sort((a, b) => a.name.localeCompare(b.name));
+    return [...categoriesTree].sort((a: any, b: any) =>
+      a.name.localeCompare(b.name),
+    );
   }, [categoriesTree]);
 
   const filteredCategories = useMemo(() => {
     if (!categorySearchQuery) return sortedCategories;
-
     const fuse = new Fuse(sortedCategories, {
       keys: ["name"],
       threshold: 0.3,
       shouldSort: true,
     });
-
     return fuse.search(categorySearchQuery).map((result) => result.item);
   }, [sortedCategories, categorySearchQuery]);
 
-  useEffect(() => {
-    if (!slug) return;
-    setFiltersData(null);
-    fetch(
-      `${API_BASE_URL}/api/v1/products/filters/${slug}?${searchParams.toString()}`,
-    )
-      .then((res) => res.json())
-      .then((data) => setFiltersData(data))
-      .catch(() => {});
-  }, [slug, searchParams.toString()]);
-
-  useEffect(() => {
-    if (!slug) return;
-    fetch(`${API_BASE_URL}/api/v1/vouchers/category-banner/${slug}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        setCampaignBanners(Array.isArray(data) ? data : data ? [data] : []);
-      })
-      .catch(() => setCampaignBanners([]));
-  }, [slug]);
-
   const fetchProducts = useCallback(
     async (page: number, append: boolean = false) => {
-      if (append) setLoadingMore(true);
-      else setLoading(true);
+      if (!slug) return;
+      const key = cacheKey(slug, qs, page);
+      const cached = PAGE_CACHE.get(key);
+      if (cached && Date.now() - cached.ts < PAGE_TTL) {
+        // hit → folosim cache pentru render instant, dar revalidăm în background
+        if (!append) {
+          // produsele sunt deja seed-uite din cache; doar normalizăm count-urile
+          setTotalPages(cached.pages);
+          setTotalProducts(cached.total);
+          setLoading(false);
+        } else {
+          setProducts((prev) => [...prev, ...cached.items]);
+          setTotalPages(cached.pages);
+          setTotalProducts(cached.total);
+        }
+      } else {
+        if (append) setLoadingMore(true);
+        else if (products.length === 0) setLoading(true);
+      }
 
       try {
-        const params = new URLSearchParams();
-        params.set("page", page.toString());
-        params.set("category_slug", slug || "");
-
-        searchParams.forEach((value, key) => {
-          if (
-            ![
-              "page",
-              "category_slug",
-              "sort",
-              "sort_by",
-              "sort_order",
-            ].includes(key)
-          ) {
-            params.append(key, value);
-          }
-        });
-
-        // FIX: Folosim "pret-descrescator" pentru a se alinia cu backend-ul
-        params.set("sort", searchParams.get("sort") || "pret-descrescator");
-
+        const params = buildParams(slug, searchParams, page);
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/filter?${params.toString()}`,
         );
         const data = await res.json();
-
-        setProducts((prev) =>
-          append ? [...prev, ...(data.items || [])] : data.items || [],
-        );
+        const items = data.items || [];
+        PAGE_CACHE.set(key, {
+          items,
+          total: data.total || 0,
+          pages: data.pages || 1,
+          ts: Date.now(),
+        });
+        if (append) {
+          setProducts((prev) => {
+            // evită dublarea dacă deja era seed-uit din cache
+            const seen = new Set(prev.map((p: any) => p.id));
+            const additions = items.filter((p: any) => !seen.has(p.id));
+            return [...prev, ...additions];
+          });
+        } else {
+          setProducts(items);
+        }
         setTotalPages(data.pages || 1);
         setTotalProducts(data.total || 0);
       } catch {
+        // ignore — păstrăm ce avem
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [slug, searchParams.toString()],
+    [slug, qs, searchParams, products.length],
   );
 
   useEffect(() => {
+    if (!slug) return;
+    // re-seed din cache la schimbarea slug-ului / filtrelor (sincron, fără flash)
+    const seeded = seedFromCache();
+    if (seeded.items.length > 0) {
+      setProducts(seeded.items);
+      setTotalPages(seeded.pages);
+      setTotalProducts(seeded.total);
+      setLoading(false);
+    } else {
+      setProducts([]);
+      setLoading(true);
+    }
     pageToLoadRef.current = currentPage + 1;
     setPageToLoadState(currentPage + 1);
     fetchProducts(currentPage, false);
-  }, [slug, searchParams.toString()]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, qs]);
 
   useEffect(() => {
     if (!products.length) return;
@@ -429,7 +471,7 @@ const CategoryPage = () => {
           fetchProducts(nextPage, true);
         }
       },
-      { rootMargin: "300px" },
+      { rootMargin: "600px" }, // mai agresiv → senzație de "infinit fluid"
     );
 
     observerRef.current.observe(target);
