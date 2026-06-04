@@ -8,7 +8,7 @@ import {
   useRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Loader2, Search, ArrowUpRight, Tag } from "lucide-react";
+import { X, Sparkles, Loader2, Search, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
