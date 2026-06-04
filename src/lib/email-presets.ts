@@ -1,8 +1,6 @@
 /**
  * Luxury email design presets for Unlayer (react-email-editor).
  * Each preset returns a Unlayer JSON design ready for `loadDesign()`.
- *
- * Brand colors are passed in at runtime so emails always match the active theme.
  */
 
 export interface EmailPreset {
@@ -39,18 +37,26 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     description: "Cod de verificare 2FA cu valabilitate limitată.",
     category: "auth",
   },
+  // --- EVENIMENTE COMENZI (Sincronizate cu Backend-ul) ---
   {
-    id: "order-confirmation",
-    name: "Confirmare comandă",
-    event_name: "order_confirmation",
-    subject: "Comanda #{{orderNumber}} — confirmată",
-    description:
-      "Trimis automat după plasarea unei comenzi. Include detalii și total.",
+    id: "order-received",
+    name: "1. Comandă primită (Plasată de client)",
+    event_name: "order_received",
+    subject: "Am primit comanda ta #{{orderNumber}}",
+    description: "Trimis imediat după checkout. Comanda e în așteptare.",
+    category: "order",
+  },
+  {
+    id: "order-confirmed",
+    name: "2. Comandă Confirmată (de Admin)",
+    event_name: "order_confirmed_by_admin",
+    subject: "Comanda #{{orderNumber}} a fost confirmată",
+    description: "Trimis când adminul aprobă comanda. Se atașează PROFORMA.",
     category: "order",
   },
   {
     id: "order-shipped",
-    name: "Comandă expediată",
+    name: "3. Comandă Expediată (AWB Generat)",
     event_name: "order_shipped",
     subject: "Comanda #{{orderNumber}} este pe drum",
     description: "Notificare cu AWB, tracking și sumar produse.",
@@ -58,12 +64,21 @@ export const EMAIL_PRESETS: EmailPreset[] = [
   },
   {
     id: "order-delivered",
-    name: "Comandă livrată",
+    name: "4. Comandă Livrată (Webhook GLS)",
     event_name: "order_delivered",
     subject: "Comanda #{{orderNumber}} a fost livrată",
-    description: "Confirmare livrare, sumar comandă și invitație review.",
+    description: "Confirmare livrare trimisă automat. Se atașează FACTURA.",
     category: "order",
   },
+  {
+    id: "order-rejected",
+    name: "Comandă Respinsă/Anulată",
+    event_name: "order_rejected",
+    subject: "Actualizare privind comanda #{{orderNumber}}",
+    description: "Trimis când adminul respinge comanda.",
+    category: "order",
+  },
+  // --- MARKETING ---
   {
     id: "newsletter",
     name: "Newsletter Promoțional",
@@ -151,6 +166,7 @@ export function buildPresetDesign(
   `;
 
   const presets: Record<string, any[]> = {
+    // --- AUTENTIFICARE ---
     welcome: [
       headerLogo,
       textBlock(
@@ -162,22 +178,6 @@ export function buildPresetDesign(
         { paddingBottom: "32px" },
       ),
       buttonBlock("DESCOPERĂ COLECȚIA", "{{shopUrl}}", accent),
-      divider,
-      footer,
-    ],
-
-    newsletter: [
-      headerLogo,
-      textBlock(
-        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Colecția Nouă</h1>`,
-        { paddingTop: "40px", paddingBottom: "24px" },
-      ),
-      imageBlock("https://via.placeholder.com/600x400?text=Imagine+Campanie"),
-      textBlock(
-        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Am pregătit ceva special pentru tine. Descoperă piesele noi care definesc luxul și eleganța în acest sezon.</p>`,
-        { paddingTop: "24px", paddingBottom: "32px" },
-      ),
-      buttonBlock("VEZI NOUTĂȚILE", "{{shopUrl}}", accent),
       divider,
       footer,
     ],
@@ -222,10 +222,11 @@ export function buildPresetDesign(
       footer,
     ],
 
-    "order-confirmation": [
+    // --- COMENZI ---
+    "order-received": [
       headerLogo,
       textBlock(
-        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Mulțumim, {{customerName}}</h1><p style="text-align:center;font-family:Arial;font-size:11px;color:${accent};letter-spacing:0.3em;text-transform:uppercase;margin:12px 0 0;font-weight:bold;">Comandă confirmată</p>`,
+        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Mulțumim, {{customerName}}</h1><p style="text-align:center;font-family:Arial;font-size:11px;color:#888;letter-spacing:0.3em;text-transform:uppercase;margin:12px 0 0;font-weight:bold;">Comandă Primita</p>`,
         { paddingTop: "40px", paddingBottom: "24px" },
       ),
       textBlock(
@@ -233,11 +234,30 @@ export function buildPresetDesign(
         { paddingBottom: "24px" },
       ),
       textBlock(
-        `<p style="font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Comanda ta este în procesare și va fi pregătită cu grijă în următoarele 24-48h. Vei primi un email cu numărul de tracking imediat ce comanda va fi expediată.</p>`,
+        `<p style="font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Comanda ta a fost înregistrată cu succes și este <strong>în așteptarea confirmării</strong> de către echipa noastră. Te vom notifica pe email imediat ce o aprobăm.</p>`,
         { paddingBottom: "16px" },
       ),
-      htmlBlock(orderSummaryHtml), // AICI SE INJECTEAZĂ TABELUL CU PRODUSE
-      buttonBlock("VEZI DETALII COMANDĂ", "{{orderUrl}}", accent),
+      htmlBlock(orderSummaryHtml),
+      buttonBlock("VEZI STAREA COMENZII", "{{orderUrl}}", accent),
+      divider,
+      footer,
+    ],
+
+    "order-confirmed": [
+      headerLogo,
+      textBlock(
+        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Comandă Confirmată</h1>`,
+        { paddingTop: "40px", paddingBottom: "24px" },
+      ),
+      textBlock(
+        `<div style="background:#fafaf7;padding:24px;text-align:center;border:1px solid #eee;"><p style="margin:0;font-family:Arial;font-size:11px;color:#888;letter-spacing:0.2em;text-transform:uppercase;">Număr comandă</p><p style="margin:8px 0 0;font-family:Georgia,serif;font-size:28px;color:${deep};font-style:italic;">#{{orderNumber}}</p></div>`,
+        { paddingBottom: "24px" },
+      ),
+      textBlock(
+        `<p style="font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Salut {{customerName}}, comanda ta a fost acceptată! Am început pregătirea produselor și vei primi detaliile de livrare în scurt timp. <strong>Factura Proformă este atașată acestui email.</strong></p>`,
+        { paddingBottom: "16px" },
+      ),
+      htmlBlock(orderSummaryHtml),
       divider,
       footer,
     ],
@@ -249,14 +269,14 @@ export function buildPresetDesign(
         { paddingTop: "40px", paddingBottom: "16px" },
       ),
       textBlock(
-        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Salut {{customerName}}, comanda <strong>#{{orderNumber}}</strong> a fost expediată și va ajunge la tine în 1-3 zile lucrătoare.</p>`,
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Salut {{customerName}}, comanda <strong>#{{orderNumber}}</strong> a fost predată curierului GLS și va ajunge la tine curând.</p>`,
         { paddingBottom: "24px" },
       ),
       textBlock(
         `<div style="background:${soft}1A;padding:24px;text-align:center;border-left:3px solid ${accent};"><p style="margin:0;font-family:Arial;font-size:11px;color:${deep};letter-spacing:0.2em;text-transform:uppercase;font-weight:bold;">AWB Curier</p><p style="margin:8px 0 0;font-family:'Courier New',monospace;font-size:20px;color:${deep};font-weight:bold;">{{awbNumber}}</p></div>`,
         { paddingBottom: "16px" },
       ),
-      htmlBlock(orderSummaryHtml), // AICI SE INJECTEAZĂ TABELUL CU PRODUSE
+      htmlBlock(orderSummaryHtml),
       buttonBlock("URMĂREȘTE COLETUL", "{{trackingUrl}}", accent),
       divider,
       footer,
@@ -269,11 +289,50 @@ export function buildPresetDesign(
         { paddingTop: "40px", paddingBottom: "16px" },
       ),
       textBlock(
-        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Salut {{customerName}}, comanda <strong>#{{orderNumber}}</strong> a fost livrată cu succes.<br/>Sperăm să te bucuri de fiecare detaliu.</p>`,
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Salut {{customerName}}, coletul aferent comenzii <strong>#{{orderNumber}}</strong> a fost livrat cu succes.<br/><strong>Factura fiscală este atașată acestui email.</strong> Sperăm să te bucuri de fiecare detaliu!</p>`,
         { paddingBottom: "16px" },
       ),
-      htmlBlock(orderSummaryHtml), // AICI SE INJECTEAZĂ TABELUL CU PRODUSE
-      buttonBlock("LASĂ UN REVIEW", "{{reviewUrl}}", accent),
+      htmlBlock(orderSummaryHtml),
+      buttonBlock("VEZI DETALII COMANDĂ", "{{orderUrl}}", accent),
+      divider,
+      footer,
+    ],
+
+    "order-rejected": [
+      headerLogo,
+      textBlock(
+        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:#D32F2F;margin:0;font-weight:400;">Comandă Anulată</h1>`,
+        { paddingTop: "40px", paddingBottom: "16px" },
+      ),
+      textBlock(
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Salut {{customerName}}, din păcate comanda <strong>#{{orderNumber}}</strong> a fost anulată.</p>`,
+        { paddingBottom: "16px" },
+      ),
+      textBlock(
+        `<div style="background:#FFF3F3;padding:16px;text-align:center;border-left:3px solid #D32F2F;"><p style="margin:0;font-family:Arial;font-size:13px;color:#D32F2F;"><strong>Motivul anulării:</strong><br/>{{reason}}</p></div>`,
+        { paddingBottom: "32px" },
+      ),
+      textBlock(
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Dacă o plată cu cardul a fost efectuată, aceasta va fi rambursată automat în contul tău în următoarele zile lucrătoare.</p>`,
+        { paddingBottom: "32px" },
+      ),
+      divider,
+      footer,
+    ],
+
+    // --- MARKETING ---
+    newsletter: [
+      headerLogo,
+      textBlock(
+        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Colecția Nouă</h1>`,
+        { paddingTop: "40px", paddingBottom: "24px" },
+      ),
+      imageBlock("https://via.placeholder.com/600x400?text=Imagine+Campanie"),
+      textBlock(
+        `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Am pregătit ceva special pentru tine. Descoperă piesele noi care definesc luxul și eleganța în acest sezon.</p>`,
+        { paddingTop: "24px", paddingBottom: "32px" },
+      ),
+      buttonBlock("VEZI NOUTĂȚILE", "{{shopUrl}}", accent),
       divider,
       footer,
     ],
