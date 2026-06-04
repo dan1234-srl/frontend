@@ -8,46 +8,61 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { readCache, swrFetch, invalidateCache } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 const MAX_ADDRESSES = 5;
+const ADDR_KEY = "addresses:me";
+const ADDR_TTL_MS = 60_000;
 
 const Addresses = () => {
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [addresses, setAddresses] = useState<any[]>(() => {
+    const { data } = readCache<any[]>(ADDR_KEY, ADDR_TTL_MS);
+    return Array.isArray(data) ? data : [];
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    const { data } = readCache<any[]>(ADDR_KEY, ADDR_TTL_MS);
+    return !Array.isArray(data);
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const navigate = useNavigate();
 
-  const fetchAddresses = async () => {
-    setIsLoading(true);
+  const fetchAddresses = async (forceRefresh = false) => {
+    const { data: cached, fresh } = readCache<any[]>(ADDR_KEY, ADDR_TTL_MS);
+    if (!forceRefresh && Array.isArray(cached)) {
+      setAddresses(cached);
+      setIsLoading(false);
+      if (fresh) return;
+    } else if (!Array.isArray(cached)) {
+      setIsLoading(true);
+    }
+
+    if (forceRefresh) invalidateCache(ADDR_KEY);
+
     try {
-      // Adăugăm un timestamp la URL pentru a forța browserul să facă cererea nouă
-      const timestamp = Date.now();
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/addresses/?_t=${timestamp}`,
-        {
+      const data = await swrFetch<any[]>(ADDR_KEY, async () => {
+        const response = await fetch(`${API_BASE_URL}/api/v1/addresses/`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate", // 🚀 Adăugă asta
+            "Cache-Control": "no-cache",
           },
           credentials: "include",
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setAddresses(data);
-      }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      });
+      setAddresses(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Network error:", error);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchAddresses();
@@ -86,7 +101,7 @@ const Addresses = () => {
         toast.success(
           isEditing ? "Adresa a fost actualizată" : "Adresa a fost adăugată",
         );
-        fetchAddresses();
+        fetchAddresses(true);
         setIsModalOpen(false);
       } else {
         toast.error(result.detail || "Eroare la validarea datelor.");
@@ -103,7 +118,11 @@ const Addresses = () => {
         credentials: "include",
       });
       if (response.ok) {
-        setAddresses((prev) => prev.filter((a) => a.id !== id));
+        setAddresses((prev) => {
+          const next = prev.filter((a) => a.id !== id);
+          invalidateCache(ADDR_KEY);
+          return next;
+        });
         toast.success("Adresă eliminată.");
       }
     } catch {
@@ -118,15 +137,18 @@ const Addresses = () => {
         { method: "PATCH", credentials: "include" },
       );
       if (response.ok) {
-        setAddresses((prev) =>
-          prev.map((a) => ({ ...a, is_default: a.id === id })),
-        );
+        setAddresses((prev) => {
+          const next = prev.map((a) => ({ ...a, is_default: a.id === id }));
+          invalidateCache(ADDR_KEY);
+          return next;
+        });
         toast.success("Adresă principală setată.");
       }
     } catch {
       toast.error("Eroare la actualizarea priorității.");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--deep-twilight)] font-sans flex flex-col transition-colors duration-700">

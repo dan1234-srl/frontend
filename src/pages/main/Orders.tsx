@@ -13,59 +13,95 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { readCache, swrFetch } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
+const ORDERS_TTL_MS = 60_000;
+const ordersKey = (page: number, limit: number) =>
+  `orders:me:p${page}:l${limit}`;
+
 const Orders = () => {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
   const ordersPerPage = 6;
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      const skip = (currentPage - 1) * ordersPerPage;
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/orders/me?skip=${skip}&limit=${ordersPerPage}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        },
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(Array.isArray(data) ? data : []);
-      } else if (response.status === 401) {
-        toast({
-          variant: "destructive",
-          title: "Sesiune expirată",
-          description:
-            "Vă rugăm să vă reautentificați pentru a vedea istoricul.",
-        });
-        navigate("/login");
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Eroare sincronizare",
-        description: "Nu s-au putut prelua datele din baza de date.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Seed synchronously from sessionStorage cache for instant paint on revisits.
+  const [orders, setOrders] = useState<any[]>(() => {
+    const { data } = readCache<any[]>(ordersKey(1, 6), ORDERS_TTL_MS);
+    return Array.isArray(data) ? data : [];
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    const { data } = readCache<any[]>(ordersKey(1, 6), ORDERS_TTL_MS);
+    return !Array.isArray(data);
+  });
 
   useEffect(() => {
-    fetchOrders();
+    const key = ordersKey(currentPage, ordersPerPage);
+    const { data: cached, fresh } = readCache<any[]>(key, ORDERS_TTL_MS);
+    if (Array.isArray(cached)) {
+      setOrders(cached);
+      setIsLoading(false);
+      if (fresh) return; // skip network if still fresh
+    } else {
+      setIsLoading(true);
+    }
+
+    const ctrl = new AbortController();
+    swrFetch(
+      key,
+      async (signal) => {
+        const skip = (currentPage - 1) * ordersPerPage;
+        const response = await fetch(
+          `${API_BASE_URL}/api/v1/orders/me?skip=${skip}&limit=${ordersPerPage}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            signal,
+          },
+        );
+        if (response.status === 401) {
+          toast({
+            variant: "destructive",
+            title: "Sesiune expirată",
+            description:
+              "Vă rugăm să vă reautentificați pentru a vedea istoricul.",
+          });
+          navigate("/login");
+          return [];
+        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      },
+      ctrl.signal,
+    )
+      .then((data) => {
+        if (ctrl.signal.aborted) return;
+        setOrders(data);
+      })
+      .catch((e) => {
+        if (e?.name === "AbortError") return;
+        if (!Array.isArray(cached)) {
+          toast({
+            variant: "destructive",
+            title: "Eroare sincronizare",
+            description: "Nu s-au putut prelua datele din baza de date.",
+          });
+        }
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setIsLoading(false);
+      });
+
+    return () => ctrl.abort();
   }, [currentPage]);
+
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
