@@ -301,13 +301,18 @@ const Navbar = () => {
           }}
           className="relative flex w-full items-center justify-between px-4 sm:px-6 lg:px-12 transform-gpu"
         >
-          {/* LEFT — SEARCH (icon only) */}
+          {/* LEFT — SEARCH (icon only; hidden while modal is open to avoid duplicate lupa) */}
           <div className="flex flex-1 items-center justify-start">
             <motion.button
               whileHover={{ y: -2 }}
               onClick={() => setSearchOpen(true)}
               aria-label="Caută"
-              className="flex items-center justify-center h-10 w-10 rounded-full text-zinc-700 hover:bg-zinc-50 transition-all"
+              aria-hidden={searchOpen}
+              tabIndex={searchOpen ? -1 : 0}
+              animate={{ opacity: searchOpen ? 0 : 1, scale: searchOpen ? 0.85 : 1 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              style={{ pointerEvents: searchOpen ? "none" : "auto" }}
+              className="flex items-center justify-center h-10 w-10 rounded-full text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               <Search size={20} />
             </motion.button>
