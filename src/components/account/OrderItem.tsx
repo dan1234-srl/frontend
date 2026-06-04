@@ -10,13 +10,14 @@ import {
   CheckCircle,
   Package,
   Check,
+  X,
   Star,
   Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Sparkle } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
 import { OrderTracking } from "@/components/account/OrderTracking";
@@ -283,8 +284,9 @@ export const OrderItem = ({ order }: any) => {
     return order.status?.trim().toUpperCase() || "PENDING";
   }, [order.status]);
 
+  // ORICE status final umple bara complet, restul parcurg pașii
   const currentStepIndex = (() => {
-    if (normalizedStatus === "DELIVERED" || normalizedStatus === "RETURNED")
+    if (["DELIVERED", "RETURNED", "CANCELLED"].includes(normalizedStatus))
       return 5;
     if (normalizedStatus === "SHIPPED") return 4;
     if (normalizedStatus === "CONFIRMED") return 3;
@@ -297,7 +299,14 @@ export const OrderItem = ({ order }: any) => {
     { label: "În procesare", icon: Clock },
     { label: "Confirmată", icon: CheckCircle },
     { label: "În livrare", icon: isLocker ? Package : Truck },
-    { label: "Finalizată", icon: Check },
+    {
+      label: ["CANCELLED", "RETURNED"].includes(normalizedStatus)
+        ? normalizedStatus === "RETURNED"
+          ? "Returnată"
+          : "Anulată"
+        : "Finalizată",
+      icon: ["CANCELLED", "RETURNED"].includes(normalizedStatus) ? X : Check,
+    },
   ];
 
   const statusConfig = useMemo(() => {
