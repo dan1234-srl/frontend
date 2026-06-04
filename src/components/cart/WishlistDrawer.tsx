@@ -278,19 +278,21 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
                       strokeWidth={1.5}
                     />
                   </motion.div>
-                  <p className="text-3xl font-serif italic text-[var(--dark-amethyst)] mb-3">
+                  <p className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)] mb-2">
                     Selecția ta este goală
                   </p>
-                  <p className="text-[11px] text-zinc-500 max-w-[240px] uppercase tracking-widest leading-relaxed mb-10">
-                    Piesele pe care le iubești prind viață aici. Explorează
-                    colecțiile.
+                  <p className="text-[10px] font-medium text-zinc-400 max-w-[240px] leading-relaxed mb-8">
+                    Piesele pe care le iubești prind viață aici. Explorează colecțiile.
                   </p>
                   <button
                     onClick={onClose}
-                    className="group relative overflow-hidden px-10 py-4 bg-[var(--dark-amethyst)] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:shadow-[0_10px_40px_rgba(16,0,43,0.3)] transition-all duration-500 active:scale-95"
+                    className="relative h-12 px-8 text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
+                    style={{ background: "var(--primary-gradient)" }}
                   >
-                    <span className="relative z-10">Descoperă Magia</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-[var(--royal-violet)] to-[var(--indigo-velvet)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                    <span className="relative font-black uppercase text-[10px] tracking-[0.2em]">
+                      Descoperă Magia
+                    </span>
                   </button>
                 </div>
               )}
