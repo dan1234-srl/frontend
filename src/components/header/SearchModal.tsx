@@ -356,21 +356,21 @@ const SearchModal = ({
             onClick={handleClose}
           />
 
-          {/* ── Panel — extends from beneath the navbar (no top gap, no overlap) ── */}
+          {/* ── Panel — extends from beneath the navbar (no warp, no overlap) ── */}
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed z-[1000] rounded-b-2xl overflow-hidden flex flex-col transform-gpu border-t-0
-              top-[6.5rem] left-2 right-2 mx-auto w-auto max-w-[26rem]
-              sm:left-6 sm:right-auto sm:top-[7.5rem] sm:w-[22rem]
-              lg:left-12 lg:top-[7.5rem] lg:w-[28rem]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed z-[1000] overflow-hidden flex flex-col transform-gpu
+              top-[6.5rem] left-0 right-0 w-full rounded-b-none
+              sm:top-[7.5rem] sm:left-0 sm:right-auto sm:w-[22rem] sm:rounded-br-2xl
+              lg:left-0 lg:w-[28rem]"
             style={{
               background: "color-mix(in srgb, var(--background) 98%, white)",
               boxShadow:
-                "1px 0 0 0 color-mix(in srgb, var(--royal-violet) 10%, transparent), -1px 0 0 0 color-mix(in srgb, var(--royal-violet) 10%, transparent), 0 1px 0 0 color-mix(in srgb, var(--royal-violet) 10%, transparent), 0 24px 60px -10px color-mix(in srgb, var(--dark-amethyst) 28%, transparent), 0 8px 18px -8px color-mix(in srgb, var(--dark-amethyst) 14%, transparent)",
+                "1px 0 0 0 color-mix(in srgb, var(--royal-violet) 10%, transparent), 0 1px 0 0 color-mix(in srgb, var(--royal-violet) 10%, transparent), 0 24px 60px -10px color-mix(in srgb, var(--dark-amethyst) 28%, transparent), 0 8px 18px -8px color-mix(in srgb, var(--dark-amethyst) 14%, transparent)",
               maxHeight: "min(75vh, calc(100vh - 7.5rem))",
             }}
           >
