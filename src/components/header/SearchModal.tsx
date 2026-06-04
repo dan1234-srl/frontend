@@ -370,14 +370,17 @@ const SearchModal = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.978 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed z-[1000] left-1/2 top-[8vh] w-full max-w-lg -translate-x-1/2 rounded-3xl overflow-hidden flex flex-col transform-gpu"
+            className="fixed z-[1000] rounded-3xl overflow-hidden flex flex-col transform-gpu
+              left-1/2 -translate-x-1/2 top-[6.25rem] w-[calc(100vw-1.5rem)] max-w-lg
+              lg:left-24 lg:translate-x-0 lg:top-[8.75rem] lg:w-[min(36rem,calc(50vw-2rem))]"
             style={{
               background: "color-mix(in srgb, var(--background) 96%, white)",
               boxShadow:
                 "0 0 0 1px color-mix(in srgb, var(--royal-violet) 14%, transparent), 0 24px 64px color-mix(in srgb, var(--dark-amethyst) 28%, transparent), 0 4px 16px color-mix(in srgb, var(--dark-amethyst) 12%, transparent)",
-              maxHeight: "80vh",
+              maxHeight: "min(80vh, calc(100vh - 8rem))",
             }}
           >
+
             {/* Gradient cap bar */}
             <div
               className="h-0.5 w-full shrink-0"
