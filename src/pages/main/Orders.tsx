@@ -13,10 +13,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { readCache, swrFetch } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
+
+const ORDERS_TTL_MS = 60_000;
+const ordersKey = (page: number, limit: number) =>
+  `orders:me:p${page}:l${limit}`;
 
 const Orders = () => {
   const [orders, setOrders] = useState<any[]>([]);
