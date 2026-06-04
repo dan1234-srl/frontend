@@ -118,7 +118,11 @@ const Addresses = () => {
         credentials: "include",
       });
       if (response.ok) {
-        setAddresses((prev) => prev.filter((a) => a.id !== id));
+        setAddresses((prev) => {
+          const next = prev.filter((a) => a.id !== id);
+          invalidateCache(ADDR_KEY);
+          return next;
+        });
         toast.success("Adresă eliminată.");
       }
     } catch {
@@ -133,15 +137,18 @@ const Addresses = () => {
         { method: "PATCH", credentials: "include" },
       );
       if (response.ok) {
-        setAddresses((prev) =>
-          prev.map((a) => ({ ...a, is_default: a.id === id })),
-        );
+        setAddresses((prev) => {
+          const next = prev.map((a) => ({ ...a, is_default: a.id === id }));
+          invalidateCache(ADDR_KEY);
+          return next;
+        });
         toast.success("Adresă principală setată.");
       }
     } catch {
       toast.error("Eroare la actualizarea priorității.");
     }
   };
+
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--deep-twilight)] font-sans flex flex-col transition-colors duration-700">
