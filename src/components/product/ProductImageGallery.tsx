@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { SmartImage } from "@/components/ui/smart-image";
+import { useState, useMemo, useEffect } from "react";
+import { SmartImage, prefetchImage } from "@/components/ui/smart-image";
 import ImageZoom from "./ImageZoom";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,6 +45,16 @@ const ProductImageGallery = ({
     return imageObjects.map((img) => getRawImgUrl(img));
   }, [imageObjects]);
 
+  // Preload vecinii → swap instant la click pe săgeți (esențial 2G/3G)
+  useEffect(() => {
+    if (imageObjects.length <= 1) return;
+    const nextIdx = (currentIndex + 1) % imageObjects.length;
+    const prevIdx =
+      (currentIndex - 1 + imageObjects.length) % imageObjects.length;
+    prefetchImage(getRawImgUrl(imageObjects[nextIdx]));
+    prefetchImage(getRawImgUrl(imageObjects[prevIdx]));
+  }, [currentIndex, imageObjects]);
+
   const next = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % imageObjects.length);
@@ -64,23 +74,22 @@ const ProductImageGallery = ({
 
   return (
     <div className="flex flex-col gap-4 w-full max-w-[320px] md:max-w-[380px] lg:max-w-[400px] mx-auto lg:mx-0">
-      {/* Imaginea principală */}
-      {/* mobil: aspect pătrat (1:1) → nu mai e alungită; md+: revine la 3/4 portrait */}
+      {/* Imaginea principală — cross-fade lin, fără scale flash */}
       <div className="relative aspect-square md:aspect-[3/4] group overflow-hidden rounded-2xl bg-white border border-zinc-100 shadow-sm cursor-zoom-in">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="h-full w-full"
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute inset-0 h-full w-full"
             onClick={() => setIsZoomOpen(true)}
           >
             <SmartImage
               src={getRawImgUrl(imageObjects[currentIndex])}
               alt="Imagine produs"
-              eager={isLCP}
+              eager={isLCP || currentIndex === 0}
               objectFit="contain"
               sizes="(max-width: 1024px) 100vw, 500px"
               widths={[480, 640, 800, 1024]}
@@ -122,6 +131,7 @@ const ProductImageGallery = ({
           {imageObjects.map((img, i) => (
             <button
               key={i}
+              onMouseEnter={() => prefetchImage(getRawImgUrl(img))}
               onClick={() => setCurrentIndex(i)}
               className={`relative flex-shrink-0 w-16 sm:w-20 aspect-square md:aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all snap-start ${
                 i === currentIndex
@@ -131,6 +141,8 @@ const ProductImageGallery = ({
             >
               <img
                 src={getRawImgUrl(img)}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 alt={`Miniatură ${i + 1}`}
               />

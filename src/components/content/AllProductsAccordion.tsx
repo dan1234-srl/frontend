@@ -22,19 +22,42 @@ const getImg = (p: any) => {
   return d;
 };
 
+/**
+ * Cache la nivel de modul → la re-deschiderea accordion-ului
+ * produsele apar instant (zero spinner pe 2G/3G).
+ */
+type PageData = { items: any[]; pages: number };
+const PAGE_CACHE = new Map<number, PageData>();
+
 const AllProductsAccordion = () => {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
+  const [items, setItems] = useState<any[]>(() => {
+    const merged: any[] = [];
+    for (let p = 1; PAGE_CACHE.has(p); p++) {
+      merged.push(...(PAGE_CACHE.get(p)?.items || []));
+    }
+    return merged;
+  });
+  const [page, setPage] = useState(() => Math.max(1, PAGE_CACHE.size));
+  const [pages, setPages] = useState(
+    () => PAGE_CACHE.get(PAGE_CACHE.size)?.pages || 1,
+  );
   const [loading, setLoading] = useState(false);
   const sentinel = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    const cached = PAGE_CACHE.get(page);
+    if (cached) {
+      // hit → background revalidate, dar nu blocăm UI-ul
+      setItems((prev) =>
+        page === 1 ? cached.items : prev.length ? prev : cached.items,
+      );
+      setPages(cached.pages);
+    }
     let cancel = false;
     (async () => {
-      setLoading(true);
+      if (!cached) setLoading(true);
       try {
         const res = await fetch(
           `${API_BASE_URL}/api/v1/products/?page=${page}&limit=${PAGE}`,
@@ -43,8 +66,14 @@ const AllProductsAccordion = () => {
         const data = await res.json();
         if (cancel) return;
         const list = data.items || (Array.isArray(data) ? data : []);
+        PAGE_CACHE.set(page, { items: list, pages: data.pages || 1 });
         setPages(data.pages || 1);
-        setItems((prev) => (page === 1 ? list : [...prev, ...list]));
+        setItems((prev) => {
+          if (page === 1) return list;
+          // evită dublarea când a fost deja seed-uit din cache
+          const seen = new Set(prev.map((p: any) => p.id || p.sku));
+          return [...prev, ...list.filter((p: any) => !seen.has(p.id || p.sku))];
+        });
       } finally {
         if (!cancel) setLoading(false);
       }

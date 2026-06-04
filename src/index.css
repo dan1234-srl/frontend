@@ -114,6 +114,17 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Anti layout-shift când Radix (Select / Sheet / Dialog) blochează scroll-ul.
+   Radix adaugă padding-right pe body ca să compenseze scrollbar-ul; cu
+   scrollbar-gutter:stable nu mai e nevoie și producea un "salt" pe pagina
+   de categorii când deschideai sort-bar-ul. */
+html body[data-scroll-locked],
+html body[data-scroll-locked][style] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+  overflow: visible !important;
+}
+
 #nprogress .bar {
   background: var(--royal-violet) !important;
   height: 3px !important;
