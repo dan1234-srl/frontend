@@ -356,22 +356,22 @@ const SearchModal = ({
             onClick={handleClose}
           />
 
-          {/* ── Floating command palette panel ─────────────────────────── */}
+          {/* ── Floating command palette panel — anchored under search icon ── */}
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: -12, scale: 0.98 }}
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.985 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed z-[1000] left-1/2 -translate-x-1/2 rounded-3xl overflow-hidden flex flex-col transform-gpu
-              top-[5.25rem] w-[calc(100vw-1.25rem)] max-w-[34rem]
-              sm:top-[6rem]
-              lg:top-[7.25rem]"
+            exit={{ opacity: 0, y: -6, scale: 0.985 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed z-[1000] rounded-2xl overflow-hidden flex flex-col transform-gpu
+              top-[5rem] left-2 right-2 mx-auto w-auto max-w-[26rem]
+              sm:left-6 sm:right-auto sm:top-[5.25rem] sm:w-[22rem]
+              lg:left-12 lg:top-[6.25rem] lg:w-[28rem]"
             style={{
               background: "color-mix(in srgb, var(--background) 98%, white)",
               boxShadow:
                 "0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent), 0 20px 60px color-mix(in srgb, var(--dark-amethyst) 22%, transparent), 0 4px 14px color-mix(in srgb, var(--dark-amethyst) 10%, transparent)",
-              maxHeight: "min(78vh, calc(100vh - 7rem))",
+              maxHeight: "min(75vh, calc(100vh - 6.5rem))",
             }}
           >
 
