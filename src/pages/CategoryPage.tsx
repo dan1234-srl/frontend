@@ -24,6 +24,12 @@ import {
 } from "@/components/ui/sheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
+import {
+  useCategoriesTree,
+  useCategoryFilters,
+  useCategoryBanner,
+  useProducts,
+} from "@/lib/queries";
 import Fuse from "fuse.js";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
