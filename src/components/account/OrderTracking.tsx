@@ -94,37 +94,45 @@ export function OrderTracking({
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  const fetchTracking = useCallback(async () => {
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/post_sale/orders/${orderId}/tracking`,
-        { credentials: "include", signal: ctrl.signal },
-      );
-      if (!res.ok) {
-        if (res.status === 404) {
-          setData(null);
-          setError("not_yet");
+  const fetchTracking = useCallback(
+    async (forceLive: boolean = false) => {
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      setLoading(true);
+      setError(null);
+      try {
+        const endpoint = forceLive
+          ? `/api/v1/post_sale/orders/${orderId}/tracking/live`
+          : `/api/v1/post_sale/orders/${orderId}/tracking`;
+
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+          credentials: "include",
+          signal: ctrl.signal,
+        });
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            setData(null);
+            setError("not_yet");
+          } else {
+            throw new Error(`HTTP ${res.status}`);
+          }
         } else {
-          throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          setData(json);
         }
-      } else {
-        const json = await res.json();
-        setData(json);
+      } catch (e: any) {
+        if (e.name !== "AbortError") setError("fetch_failed");
+      } finally {
+        setLoading(false);
       }
-    } catch (e: any) {
-      if (e.name !== "AbortError") setError("fetch_failed");
-    } finally {
-      setLoading(false);
-    }
-  }, [orderId]);
+    },
+    [orderId],
+  );
 
   useEffect(() => {
-    fetchTracking();
+    fetchTracking(false);
     return () => abortRef.current?.abort();
   }, [fetchTracking]);
 
@@ -139,7 +147,7 @@ export function OrderTracking({
     let interval: number | undefined;
     const start = () => {
       stop();
-      interval = window.setInterval(fetchTracking, 30000);
+      interval = window.setInterval(() => fetchTracking(false), 30000);
     };
     const stop = () => {
       if (interval) window.clearInterval(interval);
@@ -156,7 +164,6 @@ export function OrderTracking({
 
   const history = useMemo(() => normalizeHistory(data), [data]);
 
-  // Am modificat aici pentru a asigura ca extrage din payload-ul de test corect
   const awbValue =
     data?.awb || data?.parcel_number || data?.ParcelNumber || awb || null;
   const currentCode = data?.current_code ?? history[0]?.code ?? null;
@@ -178,7 +185,7 @@ export function OrderTracking({
     scenario: "transit" | "delivered" | "refused" | "reset",
   ) => {
     if (scenario === "reset") {
-      fetchTracking(); // Reapelează API-ul real
+      fetchTracking(false); // Reapelează API-ul real
       return;
     }
 
@@ -260,7 +267,6 @@ export function OrderTracking({
   };
   // =====================================================================
 
-  // STARE: nu există încă AWB / tracking
   const hasNothing = !awbValue && history.length === 0;
 
   return (
@@ -310,18 +316,17 @@ export function OrderTracking({
               </span>
             )}
             <button
-              onClick={fetchTracking}
+              onClick={() => fetchTracking(true)}
               disabled={loading}
               className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-[var(--royal-violet)] transition-colors disabled:opacity-40"
-              title="Reîmprospătează"
+              title="Forțează actualizarea de la curier"
             >
               <RefreshCw size={11} className={loading ? "animate-spin" : ""} />
-              {loading ? "Sync" : "Reîmprospătează"}
+              {loading ? "Se actualizează..." : "Sincronizare GLS"}
             </button>
           </div>
         </header>
 
-        {/* PULSE BAR – arată că polling-ul rulează în fundal */}
         {isActive && (
           <div className="relative h-[2px] bg-zinc-100 rounded-full overflow-hidden mb-6">
             <motion.div

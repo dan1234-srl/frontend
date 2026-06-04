@@ -13,10 +13,9 @@ import {
   Star,
   Loader2,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence } from "framer-motion";
 import { X, Sparkle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LuxuryModal } from "@/components/ui/luxury-modal";
@@ -249,31 +248,32 @@ export const OrderItem = ({ order }: any) => {
     const source = item.product_image || item.product?.image_url;
     if (!source) return "/placeholder-product.jpg";
 
-    let rawUrl = "";
     if (typeof source === "string") {
-      if (source.startsWith("http")) {
-        rawUrl = source;
-      } else {
-        try {
-          const parsed = JSON.parse(source);
-          rawUrl = parsed?.main?.medium || parsed?.url || parsed?.medium || "";
-        } catch {
-          return "/placeholder-product.jpg";
-        }
+      if (source.startsWith("http")) return source;
+      try {
+        const parsed = JSON.parse(source);
+        return (
+          parsed?.main?.medium ||
+          parsed?.url ||
+          parsed?.medium ||
+          "/placeholder-product.jpg"
+        );
+      } catch {
+        return "/placeholder-product.jpg";
       }
-    } else {
-      rawUrl = source?.main?.medium || source?.url || source?.medium || "";
     }
-
-    return rawUrl || "/placeholder-product.jpg";
+    return (
+      source?.main?.medium ||
+      source?.url ||
+      source?.medium ||
+      "/placeholder-product.jpg"
+    );
   };
 
-  // 🚀 LOGICĂ NOUĂ PENTRU ADRESĂ (Tratează diferit Curier vs Locker)
   const isLocker = order.delivery_type === "locker";
 
   const addressObj = useMemo(() => {
     if (!order.shipping_address) return {};
-    // Fallback în caz că datele vechi sunt încă string-uri
     return typeof order.shipping_address === "string"
       ? JSON.parse(order.shipping_address)
       : order.shipping_address;
@@ -383,7 +383,6 @@ export const OrderItem = ({ order }: any) => {
     if (isDownloading) return;
     setIsDownloading(true);
 
-    // Statusuri care permit factură finală
     const isFinal = ["SHIPPED", "DELIVERED", "RETURNED"].includes(
       normalizedStatus,
     );
@@ -559,7 +558,7 @@ export const OrderItem = ({ order }: any) => {
 
         <button
           onClick={() => setShowFullDetails(true)}
-          className="w-full h-14 rounded-2xl text-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.2] border border-[var(--royal-violet)]/20 text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 hover:bg-[var(--royal-violet)] hover:text-white transition-all shadow-sm active:scale-[0.99]"
+          className="w-full h-14 rounded-2xl text-[var(--royal-violet)] bg-[var(--lavender-purple)]/[0.2] border border-[var(--royal-violet)]/20 text-[10px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 hover:bg-[var(--royal-violet)] hover:text-white transition-all duration-300 shadow-sm active:scale-[0.98]"
         >
           Detalii Comandă{" "}
           <ArrowUpRight
@@ -577,7 +576,6 @@ export const OrderItem = ({ order }: any) => {
       >
         <div className="space-y-8 py-2 bg-white text-left w-full font-sans">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* BOX: ADRESĂ (Curier sau Locker) */}
             <div className="p-7 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center">
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3 flex items-center gap-1.5">
                 {isLocker ? (
@@ -623,7 +621,6 @@ export const OrderItem = ({ order }: any) => {
               </div>
             </div>
 
-            {/* BOX: DETALII GENERALE */}
             <div className="p-7 bg-zinc-50 rounded-[2rem] border border-zinc-100 flex flex-col justify-center space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
@@ -726,7 +723,7 @@ export const OrderItem = ({ order }: any) => {
                   {normalizedStatus === "DELIVERED" ? (
                     <button
                       onClick={() => {
-                        setShowFullDetails(false); // Închide mai întâi modalul parinte
+                        setShowFullDetails(false);
                         setReviewItem(item);
                       }}
                       className="sm:ml-2 h-9 px-3 rounded-xl bg-[var(--royal-violet)] text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:opacity-90 transition-all"
@@ -774,7 +771,7 @@ export const OrderItem = ({ order }: any) => {
         open={!!reviewItem}
         onClose={() => {
           setReviewItem(null);
-          setShowFullDetails(true); // Reapare orderul
+          setShowFullDetails(true);
         }}
         item={reviewItem}
         orderId={order.id}
