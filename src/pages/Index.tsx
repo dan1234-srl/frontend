@@ -12,22 +12,66 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
+const SCROLL_KEY = "index:scrollY";
+const COLLECTIONS_CACHE_KEY = "index:collections:order";
+
 const Index = () => {
-  const [collections, setCollections] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Hidrăm instant ordinea colecțiilor din sessionStorage (doar pozițiile/structura,
+  // datele propriu-zise se reîmprospătează din backend în fundal).
+  const cachedOrder = (() => {
+    try {
+      const raw = sessionStorage.getItem(COLLECTIONS_CACHE_KEY);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  })();
+
+  const [collections, setCollections] = useState<string[]>(cachedOrder);
+  const [isLoading, setIsLoading] = useState(cachedOrder.length === 0);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/v1/collections/`)
       .then((res) => res.json())
       .then((data) => {
-        setCollections(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setCollections(list);
         setIsLoading(false);
+        try {
+          sessionStorage.setItem(COLLECTIONS_CACHE_KEY, JSON.stringify(list));
+        } catch {}
       })
       .catch((err) => {
         console.error("Eroare la preluarea colecțiilor:", err);
         setIsLoading(false);
       });
   }, []);
+
+  // Restaurare poziție scroll (per-tab) pentru navigarea înapoi/refresh.
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    const saved = Number(sessionStorage.getItem(SCROLL_KEY) || 0);
+    if (saved > 0) {
+      // după primul paint pentru ca layoutul să existe
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => window.scrollTo(0, saved)),
+      );
+    }
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        sessionStorage.setItem(SCROLL_KEY, String(window.scrollY));
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
 
   const formatTitle = (slug: string) => {
     const parts = slug.replace(/-/g, " ").split(" ");
