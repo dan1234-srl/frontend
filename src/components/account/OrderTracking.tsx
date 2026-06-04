@@ -12,10 +12,10 @@ import {
   Copy,
   Check,
 } from "lucide-react";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://linea-backend-production.up.railway.app";
+import {
+  fetchTracking as fetchTrackingCached,
+  readTrackingCache,
+} from "@/lib/tracking-cache";
 
 interface GlsHistoryEvent {
   code: string | number | null;
