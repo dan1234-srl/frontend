@@ -428,6 +428,7 @@ export const OrderReviewModal = ({
   };
 
   if (!orderId) return null;
+  const currentStatus = order?.status?.trim().toLowerCase() || "";
 
   // Verificăm dacă comanda a fost deja expediată/anulată
   const isActionable = ![
@@ -435,7 +436,7 @@ export const OrderReviewModal = ({
     "delivered",
     "cancelled",
     "returned",
-  ].includes(order?.status?.toLowerCase() || "");
+  ].includes(currentStatus);
 
   return (
     <AnimatePresence>
