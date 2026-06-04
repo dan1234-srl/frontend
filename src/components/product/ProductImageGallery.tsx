@@ -131,6 +131,7 @@ const ProductImageGallery = ({
           {imageObjects.map((img, i) => (
             <button
               key={i}
+              onMouseEnter={() => prefetchImage(getRawImgUrl(img))}
               onClick={() => setCurrentIndex(i)}
               className={`relative flex-shrink-0 w-16 sm:w-20 aspect-square md:aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all snap-start ${
                 i === currentIndex
@@ -140,6 +141,8 @@ const ProductImageGallery = ({
             >
               <img
                 src={getRawImgUrl(img)}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 alt={`Miniatură ${i + 1}`}
               />
