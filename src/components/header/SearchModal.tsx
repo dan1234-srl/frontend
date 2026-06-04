@@ -111,7 +111,7 @@ const HitRow = memo(
               className="absolute inset-x-2 inset-y-0.5 rounded-2xl pointer-events-none"
               style={{
                 background:
-                  "linear-gradient(100deg, rgba(123,44,191,0.055) 0%, rgba(224,170,255,0.035) 100%)",
+                  "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 5.5%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 3.5%, transparent) 100%)",
               }}
             />
           )}
@@ -121,7 +121,7 @@ const HitRow = memo(
         <span
           className="relative text-[9px] font-black tabular-nums w-5 text-right shrink-0 transition-colors duration-150"
           style={{
-            color: hovered ? "var(--royal-violet)" : "rgba(180,180,190,0.5)",
+            color: hovered ? "var(--royal-violet)" : "color-mix(in srgb, var(--royal-violet) 18%, transparent)",
           }}
         >
           {String(index + 1).padStart(2, "0")}
@@ -164,7 +164,7 @@ const HitRow = memo(
           <p
             className="text-[8.5px] uppercase tracking-[0.32em] font-bold mb-0.5 truncate transition-colors duration-150"
             style={{
-              color: hovered ? "var(--royal-violet)" : "rgba(123,44,191,0.38)",
+              color: hovered ? "var(--royal-violet)" : "color-mix(in srgb, var(--royal-violet) 38%, transparent)",
             }}
           >
             {hit.brand || "Colecție Nouă"}
@@ -216,7 +216,7 @@ HitRow.displayName = "HitRow";
 // SEPARATOR
 // ─────────────────────────────────────────────────────────────────────────────
 const Sep = () => (
-  <div className="mx-5 h-px" style={{ background: "rgba(123,44,191,0.05)" }} />
+  <div className="mx-5 h-px" style={{ background: "color-mix(in srgb, var(--royal-violet) 5%, transparent)" }} />
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -356,7 +356,7 @@ const SearchModal = ({
             transition={{ duration: 0.18 }}
             className="fixed inset-0 z-[999] cursor-pointer"
             style={{
-              background: "rgba(12, 6, 24, 0.52)",
+              background: "color-mix(in srgb, var(--dark-amethyst) 55%, transparent)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
             }}
@@ -372,9 +372,9 @@ const SearchModal = ({
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="fixed z-[1000] left-1/2 top-[8vh] w-full max-w-lg -translate-x-1/2 rounded-3xl overflow-hidden flex flex-col transform-gpu"
             style={{
-              background: "rgba(254, 253, 255, 0.97)",
+              background: "color-mix(in srgb, var(--background) 96%, white)",
               boxShadow:
-                "0 0 0 1px rgba(123,44,191,0.09), 0 24px 64px rgba(80,20,140,0.22), 0 4px 16px rgba(80,20,140,0.08)",
+                "0 0 0 1px color-mix(in srgb, var(--royal-violet) 14%, transparent), 0 24px 64px color-mix(in srgb, var(--dark-amethyst) 28%, transparent), 0 4px 16px color-mix(in srgb, var(--dark-amethyst) 12%, transparent)",
               maxHeight: "80vh",
             }}
           >
@@ -416,7 +416,7 @@ const SearchModal = ({
                         <Search
                           size={17}
                           strokeWidth={1.6}
-                          style={{ color: "rgba(123,44,191,0.4)" }}
+                          style={{ color: "color-mix(in srgb, var(--royal-violet) 40%, transparent)" }}
                         />
                       </motion.div>
                     )}
@@ -472,7 +472,7 @@ const SearchModal = ({
               {/* Progress bar */}
               <div
                 className="mt-3 h-px w-full overflow-hidden rounded-full"
-                style={{ background: "rgba(123,44,191,0.06)" }}
+                style={{ background: "color-mix(in srgb, var(--royal-violet) 6%, transparent)" }}
               >
                 <AnimatePresence>
                   {isCurrentlySearching && (
@@ -521,14 +521,14 @@ const SearchModal = ({
                   <div className="px-5 pt-1 pb-2.5 flex items-center justify-between">
                     <span
                       className="text-[8.5px] uppercase tracking-[0.38em] font-black"
-                      style={{ color: "rgba(123,44,191,0.32)" }}
+                      style={{ color: "color-mix(in srgb, var(--royal-violet) 32%, transparent)" }}
                     >
                       {hits.length} rezultate
                     </span>
                     {searchQuery && (
                       <span
                         className="text-[8.5px] font-semibold"
-                        style={{ color: "rgba(123,44,191,0.32)" }}
+                        style={{ color: "color-mix(in srgb, var(--royal-violet) 32%, transparent)" }}
                       >
                         pentru „{searchQuery}"
                       </span>
@@ -554,13 +554,13 @@ const SearchModal = ({
                     className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4"
                     style={{
                       background:
-                        "linear-gradient(135deg, rgba(123,44,191,0.07), rgba(224,170,255,0.1))",
+                        "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 8%, transparent), color-mix(in srgb, var(--mauve-magic) 12%, transparent))",
                     }}
                   >
                     <Search
                       size={18}
                       strokeWidth={1.2}
-                      style={{ color: "rgba(123,44,191,0.38)" }}
+                      style={{ color: "color-mix(in srgb, var(--royal-violet) 38%, transparent)" }}
                     />
                   </div>
                   <p
@@ -571,7 +571,7 @@ const SearchModal = ({
                   </p>
                   <p
                     className="text-[10px] font-medium"
-                    style={{ color: "rgba(123,44,191,0.38)" }}
+                    style={{ color: "color-mix(in srgb, var(--royal-violet) 38%, transparent)" }}
                   >
                     Nimic pentru „{searchQuery}"
                   </p>
@@ -630,17 +630,17 @@ const SearchModal = ({
             {/* ── Footer ─────────────────────────────────────────────────── */}
             <div
               className="shrink-0 flex items-center justify-between px-5 py-2.5 border-t"
-              style={{ borderColor: "rgba(123,44,191,0.06)" }}
+              style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 6%, transparent)" }}
             >
               <div className="flex items-center gap-1.5">
                 <Sparkles
                   size={9}
                   className="animate-pulse"
-                  style={{ color: "rgba(123,44,191,0.35)" }}
+                  style={{ color: "color-mix(in srgb, var(--royal-violet) 35%, transparent)" }}
                 />
                 <span
                   className="text-[8px] uppercase tracking-[0.45em] font-black"
-                  style={{ color: "rgba(123,44,191,0.28)" }}
+                  style={{ color: "color-mix(in srgb, var(--royal-violet) 28%, transparent)" }}
                 >
                   Căutare inteligentă
                 </span>
