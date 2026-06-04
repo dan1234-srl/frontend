@@ -8,11 +8,11 @@ import {
   useRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Loader2, Search } from "lucide-react";
+import { X, Sparkles, Loader2, Search, ArrowUpRight, Tag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cache simplu in-memory per query → tastare/ștergere = instant, fără jitter
+// Cache simplu in-memory per query — neschimbat din original
 // ─────────────────────────────────────────────────────────────────────────────
 const queryCache = new Map<string, any[]>();
 const QUERY_CACHE_LIMIT = 50;
@@ -25,27 +25,43 @@ const cachePut = (q: string, hits: any[]) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SKELETON CARD
+// SKELETON ROW
 // ─────────────────────────────────────────────────────────────────────────────
-const HitSkeleton = memo(() => (
-  <div className="flex flex-col gap-3 p-3 rounded-2xl w-full h-full">
-    <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-100/70 rounded-xl relative animate-pulse" />
-    <div className="space-y-2 px-1 flex-1 flex flex-col">
-      <div className="h-2 w-1/3 bg-zinc-100 rounded animate-pulse" />
-      <div className="h-3 w-3/4 bg-zinc-200/70 rounded animate-pulse" />
-      <div className="h-3 w-1/2 bg-zinc-200/70 rounded animate-pulse" />
-      <div className="mt-auto h-4 w-1/2 bg-zinc-100 rounded animate-pulse" />
+const RowSkeleton = memo(({ index }: { index: number }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: index * 0.04 }}
+    className="flex items-center gap-4 px-5 py-3.5"
+  >
+    <div className="text-[9px] font-black text-zinc-100 w-5 text-right tabular-nums shrink-0">
+      {String(index + 1).padStart(2, "0")}
     </div>
-  </div>
+    <div className="w-12 h-12 rounded-xl bg-zinc-100 animate-pulse shrink-0" />
+    <div className="flex-1 space-y-2">
+      <div className="h-1.5 w-14 bg-zinc-100 rounded-full animate-pulse" />
+      <div className="h-3 w-40 bg-zinc-200/70 rounded-full animate-pulse" />
+    </div>
+    <div className="h-3 w-20 bg-zinc-100 rounded-full animate-pulse shrink-0" />
+  </motion.div>
 ));
-HitSkeleton.displayName = "HitSkeleton";
+RowSkeleton.displayName = "RowSkeleton";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HIT CARD
+// HIT ROW
 // ─────────────────────────────────────────────────────────────────────────────
-const HitCard = memo(
-  ({ hit, onClick }: { hit: any; onClick: (slug: string) => void }) => {
+const HitRow = memo(
+  ({
+    hit,
+    onClick,
+    index,
+  }: {
+    hit: any;
+    onClick: (slug: string) => void;
+    index: number;
+  }) => {
     const [imgLoaded, setImgLoaded] = useState(false);
+    const [hovered, setHovered] = useState(false);
 
     const parsedImage = useMemo(() => {
       if (!hit.image_url) return hit.image || "";
@@ -64,56 +80,149 @@ const HitCard = memo(
       }
     }, [hit.image_url, hit.image]);
 
+    const isOnSale =
+      hit.sale_price &&
+      hit.original_price &&
+      hit.sale_price < hit.original_price;
+
     return (
-      <button
+      <motion.button
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          delay: index * 0.028,
+          duration: 0.22,
+          ease: [0.22, 1, 0.36, 1],
+        }}
         onClick={() => onClick(hit.slug)}
-        className="group flex flex-col gap-3 p-3 hover:bg-[var(--lavender-purple)]/10 transition-colors duration-200 rounded-2xl text-left w-full h-full will-change-transform"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="relative w-full flex items-center gap-4 px-5 py-3 text-left group focus:outline-none"
       >
-        <div className="aspect-[3/4] w-full overflow-hidden bg-zinc-50 rounded-xl relative border border-[var(--royal-violet)]/5 transform-gpu">
+        {/* Hover fill */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div
+              key="hfill"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.12 }}
+              className="absolute inset-x-2 inset-y-0.5 rounded-2xl pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(100deg, rgba(123,44,191,0.055) 0%, rgba(224,170,255,0.035) 100%)",
+              }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Row number */}
+        <span
+          className="relative text-[9px] font-black tabular-nums w-5 text-right shrink-0 transition-colors duration-150"
+          style={{
+            color: hovered ? "var(--royal-violet)" : "rgba(180,180,190,0.5)",
+          }}
+        >
+          {String(index + 1).padStart(2, "0")}
+        </span>
+
+        {/* Thumbnail */}
+        <div className="relative shrink-0 w-12 h-12 rounded-xl overflow-hidden bg-zinc-50 border border-black/[0.04]">
           <img
             src={parsedImage}
             alt={hit.name}
             loading="lazy"
             decoding="async"
-            className={`w-full h-full object-cover transition-all duration-500 transform-gpu group-hover:scale-[1.04] ${
-              imgLoaded ? "opacity-100" : "opacity-0"
-            }`}
             onLoad={() => setImgLoaded(true)}
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                "https://placehold.co/600x800?text=Fara+Imagine";
+                "https://placehold.co/200x200?text=?";
               setImgLoaded(true);
+            }}
+            className="w-full h-full object-cover transition-all duration-500 will-change-transform"
+            style={{
+              opacity: imgLoaded ? 1 : 0,
+              transform: hovered ? "scale(1.12)" : "scale(1)",
             }}
           />
           {!imgLoaded && (
             <div className="absolute inset-0 bg-zinc-100 animate-pulse" />
           )}
 
-          {hit.sale_price < hit.original_price && (
+          {/* Sale dot */}
+          {isOnSale && (
             <div
-              className="absolute top-2 left-2 text-white text-[8px] font-black px-2.5 py-1.5 rounded-md uppercase tracking-[0.2em] shadow-lg"
+              className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full shadow-sm"
               style={{ background: "var(--primary-gradient)" }}
-            >
-              Ofertă
-            </div>
+            />
           )}
         </div>
-        <div className="space-y-1.5 px-1 flex-1 flex flex-col">
-          <p className="text-[9px] uppercase tracking-[0.3em] text-[var(--royal-violet)]/60 font-bold line-clamp-1">
+
+        {/* Text content */}
+        <div className="relative flex-1 min-w-0">
+          <p
+            className="text-[8.5px] uppercase tracking-[0.32em] font-bold mb-0.5 truncate transition-colors duration-150"
+            style={{
+              color: hovered ? "var(--royal-violet)" : "rgba(123,44,191,0.38)",
+            }}
+          >
             {hit.brand || "Colecție Nouă"}
           </p>
-          <h4 className="text-[12px] font-semibold tracking-tight text-[var(--dark-amethyst)] leading-snug line-clamp-2 flex-1">
+          <h4
+            className="text-[12.5px] font-semibold leading-tight tracking-tight truncate transition-colors duration-150"
+            style={{ color: "var(--dark-amethyst)" }}
+          >
             {hit.name}
           </h4>
-          <p className="text-[13px] font-black text-[var(--dark-amethyst)] pt-1">
-            {hit.price ? `${Number(hit.price).toLocaleString()} RON` : "---"}
-          </p>
         </div>
-      </button>
+
+        {/* Price block */}
+        <div className="relative flex items-center gap-2.5 shrink-0">
+          <div className="text-right">
+            {isOnSale && (
+              <p className="text-[9px] line-through font-medium text-zinc-300 leading-none mb-0.5">
+                {Number(hit.original_price).toLocaleString()} RON
+              </p>
+            )}
+            <p
+              className="text-[12.5px] font-black leading-none transition-colors duration-150"
+              style={{ color: "var(--dark-amethyst)" }}
+            >
+              {hit.price ? `${Number(hit.price).toLocaleString()} RON` : "—"}
+            </p>
+          </div>
+
+          {/* Arrow icon */}
+          <motion.div
+            animate={{ opacity: hovered ? 1 : 0, x: hovered ? 0 : -5 }}
+            transition={{ duration: 0.15 }}
+            className="shrink-0"
+          >
+            <ArrowUpRight
+              size={13}
+              strokeWidth={2}
+              style={{ color: "var(--royal-violet)" }}
+            />
+          </motion.div>
+        </div>
+      </motion.button>
     );
   },
 );
-HitCard.displayName = "HitCard";
+HitRow.displayName = "HitRow";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEPARATOR
+// ─────────────────────────────────────────────────────────────────────────────
+const Sep = () => (
+  <div className="mx-5 h-px" style={{ background: "rgba(123,44,191,0.05)" }} />
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SUGGESTION PILL — quick searches pentru empty state
+// ─────────────────────────────────────────────────────────────────────────────
+const SUGGESTIONS = ["Rochii", "Bluze", "Pantaloni", "Sacouri", "Accesorii"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTA PRINCIPALĂ
@@ -133,6 +242,7 @@ const SearchModal = ({
   const [isFetching, setIsFetching] = useState(false);
   const [initialSearchDone, setInitialSearchDone] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const meiliUrl = import.meta.env.VITE_MEILI_URL;
   const meiliKey = import.meta.env.VITE_MEILI_SEARCH_KEY;
@@ -142,19 +252,18 @@ const SearchModal = ({
     [meiliUrl, meiliKey],
   );
 
-  // Debounce
+  // ─── Debounce ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     const timer = setTimeout(() => setSearchQuery(inputValue), 220);
     return () => clearTimeout(timer);
   }, [inputValue, isOpen]);
 
-  // Fetch + cache
+  // ─── Fetch + cache ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isConfigValid || !isOpen) return;
     const q = searchQuery.trim();
 
-    // hit din cache → randare instant, fără spinner
     if (queryCache.has(q)) {
       startTransition(() => {
         setHits(queryCache.get(q) || []);
@@ -198,7 +307,7 @@ const SearchModal = ({
     return () => ctrl.abort();
   }, [searchQuery, meiliUrl, meiliKey, isConfigValid, isOpen]);
 
-  // Block body scroll while open
+  // ─── Body scroll lock + ESC ─────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -230,193 +339,330 @@ const SearchModal = ({
   const isCurrentlySearching =
     isFetching || isPending || inputValue !== searchQuery;
 
+  const showEmptyState =
+    initialSearchDone && !isCurrentlySearching && hits.length === 0;
+  const showInitialState = !initialSearchDone && !isCurrentlySearching;
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[1000] flex flex-col transform-gpu"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(252,251,254,0.98) 100%)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-          }}
-        >
-          {/* orbe decorative */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-[0.08] blur-3xl"
-            style={{ background: "var(--mauve-magic)" }}
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-[0.06] blur-3xl"
-            style={{ background: "var(--lavender-purple)" }}
+        <>
+          {/* ── Backdrop ──────────────────────────────────────────────────── */}
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-[999] cursor-pointer"
+            style={{
+              background: "rgba(12, 6, 24, 0.52)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+            }}
+            onClick={handleClose}
           />
 
-          {/* HEADER */}
-          <div className="relative flex items-center justify-between px-6 lg:px-16 py-7 border-b border-[var(--royal-violet)]/8 shrink-0">
-            <div className="flex items-center gap-3">
-              <Sparkles
-                size={13}
-                className="text-[var(--royal-violet)] animate-pulse"
-              />
-              <span className="text-[10px] font-black uppercase tracking-[0.45em] text-[var(--royal-violet)]/70">
-                Căutare inteligentă
-              </span>
-            </div>
-            <button
-              onClick={handleClose}
-              className="group flex items-center gap-4 text-zinc-400 hover:text-[var(--dark-amethyst)] transition-colors"
-            >
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                Închide
-              </span>
-              <div className="h-11 w-11 border border-[var(--royal-violet)]/15 rounded-full flex items-center justify-center group-hover:bg-[var(--dark-amethyst)] group-hover:text-white group-hover:border-transparent transition-all shadow-sm">
-                <X size={16} strokeWidth={1.5} />
-              </div>
-            </button>
-          </div>
+          {/* ── Panel ─────────────────────────────────────────────────────── */}
+          <motion.div
+            key="panel"
+            initial={{ opacity: 0, y: -18, scale: 0.975 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.978 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed z-[1000] left-1/2 top-[8vh] w-full max-w-lg -translate-x-1/2 rounded-3xl overflow-hidden flex flex-col transform-gpu"
+            style={{
+              background: "rgba(254, 253, 255, 0.97)",
+              boxShadow:
+                "0 0 0 1px rgba(123,44,191,0.09), 0 24px 64px rgba(80,20,140,0.22), 0 4px 16px rgba(80,20,140,0.08)",
+              maxHeight: "80vh",
+            }}
+          >
+            {/* Gradient cap bar */}
+            <div
+              className="h-0.5 w-full shrink-0"
+              style={{ background: "var(--primary-gradient)" }}
+            />
 
-          {/* CONTENT */}
-          <div className="relative flex-1 flex flex-col max-w-7xl mx-auto w-full px-6 pt-10 overflow-hidden">
-            {isConfigValid ? (
-              <div className="flex flex-col h-full w-full">
-                {/* INPUT */}
-                <div className="mb-6 relative shrink-0">
-                  <div className="relative flex items-center w-full">
-                    <Search
-                      className="absolute left-0 text-[var(--royal-violet)]/40"
-                      size={30}
-                      strokeWidth={1.25}
-                    />
-                    <input
-                      autoFocus
-                      type="text"
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      placeholder="Caută în catalogul EVEM..."
-                      className="heading-serif w-full bg-transparent border-b-2 border-[var(--royal-violet)]/10 py-5 pl-14 pr-14 text-3xl lg:text-5xl italic outline-none focus:border-[var(--royal-violet)] transition-colors placeholder:text-zinc-300 text-[var(--dark-amethyst)]"
-                    />
-
-                    <div className="absolute right-2 flex items-center gap-2">
-                      <AnimatePresence>
-                        {isCurrentlySearching && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.5 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <Loader2
-                              size={22}
-                              className="text-[var(--royal-violet)] animate-spin"
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      {inputValue && !isCurrentlySearching && (
-                        <button
-                          onClick={() => setInputValue("")}
-                          className="text-zinc-300 hover:text-[var(--dark-amethyst)] p-2 transition-colors"
-                          aria-label="Șterge"
-                        >
-                          <X size={22} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Linie progres subțire în loc de tag-uri */}
-                  <div className="mt-4 h-[1px] w-full overflow-hidden rounded-full bg-[var(--royal-violet)]/5">
-                    <AnimatePresence>
-                      {isCurrentlySearching && (
-                        <motion.div
-                          key="bar"
-                          className="h-full w-1/3"
-                          style={{ background: "var(--primary-gradient)" }}
-                          initial={{ x: "-100%" }}
-                          animate={{ x: "300%" }}
-                          exit={{ opacity: 0 }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 1.2,
-                            ease: "easeInOut",
-                          }}
+            {/* ── Search input ───────────────────────────────────────────── */}
+            <div className="px-5 pt-4 pb-3 shrink-0">
+              <div className="flex items-center gap-3">
+                {/* Icon / spinner */}
+                <div className="shrink-0 w-5 flex items-center justify-center">
+                  <AnimatePresence mode="wait">
+                    {isCurrentlySearching ? (
+                      <motion.div
+                        key="spin"
+                        initial={{ opacity: 0, rotate: -90 }}
+                        animate={{ opacity: 1, rotate: 0 }}
+                        exit={{ opacity: 0, rotate: 90 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <Loader2
+                          size={17}
+                          strokeWidth={2}
+                          className="animate-spin"
+                          style={{ color: "var(--royal-violet)" }}
                         />
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-
-                {/* REZULTATE */}
-                <div className="flex-1 overflow-y-auto pb-32 luxury-scrollbar relative w-full transform-gpu">
-                  {isCurrentlySearching && !initialSearchDone ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-10">
-                      {[...Array(12)].map((_, i) => (
-                        <HitSkeleton key={`skel-${i}`} />
-                      ))}
-                    </div>
-                  ) : hits.length > 0 ? (
-                    <div
-                      className={`grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-10 transition-opacity duration-150 ${
-                        isCurrentlySearching ? "opacity-40" : "opacity-100"
-                      }`}
-                    >
-                      {hits.map((hit) => (
-                        <HitCard
-                          key={hit.id}
-                          hit={hit}
-                          onClick={handleHitClick}
-                        />
-                      ))}
-                    </div>
-                  ) : initialSearchDone && !isCurrentlySearching ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="flex flex-col items-center justify-start pt-24 text-center"
-                    >
-                      <div
-                        className="size-20 rounded-full flex items-center justify-center mb-6"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, rgba(123,44,191,0.08), rgba(224,170,255,0.12))",
-                        }}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="icon"
+                        initial={{ opacity: 0, rotate: 90 }}
+                        animate={{ opacity: 1, rotate: 0 }}
+                        exit={{ opacity: 0, rotate: -90 }}
+                        transition={{ duration: 0.15 }}
                       >
                         <Search
-                          size={32}
-                          strokeWidth={1}
-                          className="text-[var(--royal-violet)]/50"
+                          size={17}
+                          strokeWidth={1.6}
+                          style={{ color: "rgba(123,44,191,0.4)" }}
                         />
-                      </div>
-                      <h3 className="heading-serif text-3xl italic text-[var(--dark-amethyst)] mb-2">
-                        Niciun rezultat
-                      </h3>
-                      <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-[0.3em]">
-                        Nimic pentru „
-                        <span className="text-[var(--royal-violet)]">
-                          {searchQuery}
-                        </span>
-                        ”
-                      </p>
-                    </motion.div>
-                  ) : null}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
+                {/* Text input */}
+                <input
+                  ref={inputRef}
+                  autoFocus
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Caută în catalogul EVEM…"
+                  className="flex-1 bg-transparent text-[14px] font-medium outline-none placeholder:font-normal"
+                  style={{
+                    color: "var(--dark-amethyst)",
+                  }}
+                />
+
+                {/* Clear / close */}
+                <AnimatePresence>
+                  {inputValue ? (
+                    <motion.button
+                      key="clear"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.12 }}
+                      onClick={() => setInputValue("")}
+                      className="shrink-0 w-5 h-5 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-600 transition-colors"
+                    >
+                      <X size={10} strokeWidth={2.5} />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      key="close"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.12 }}
+                      onClick={handleClose}
+                      className="shrink-0 flex items-center gap-1.5 text-zinc-300 hover:text-zinc-500 transition-colors"
+                    >
+                      <kbd className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-400">
+                        esc
+                      </kbd>
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-[10px] uppercase tracking-[0.5em] text-red-400 text-center px-4">
-                Sincronizare eșuată. Verificați VITE_MEILI_URL și
-                VITE_MEILI_SEARCH_KEY.
+
+              {/* Progress bar */}
+              <div
+                className="mt-3 h-px w-full overflow-hidden rounded-full"
+                style={{ background: "rgba(123,44,191,0.06)" }}
+              >
+                <AnimatePresence>
+                  {isCurrentlySearching && (
+                    <motion.div
+                      key="bar"
+                      className="h-full w-1/3"
+                      style={{ background: "var(--primary-gradient)" }}
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "340%" }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1.1,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
               </div>
-            )}
-          </div>
-        </motion.div>
+            </div>
+
+            {/* ── Results body ───────────────────────────────────────────── */}
+            <div className="overflow-y-auto flex-1 luxury-scrollbar">
+              {!isConfigValid ? (
+                <div className="py-10 text-center text-[10px] uppercase tracking-[0.45em] text-red-400 px-6">
+                  Sincronizare eșuată. Verificați VITE_MEILI_URL și
+                  VITE_MEILI_SEARCH_KEY.
+                </div>
+              ) : isCurrentlySearching && !initialSearchDone ? (
+                /* ── Skeleton rows ── */
+                <div className="py-2">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={`sk-${i}`}>
+                      <RowSkeleton index={i} />
+                      {i < 5 && <Sep />}
+                    </div>
+                  ))}
+                </div>
+              ) : hits.length > 0 ? (
+                /* ── Real results ── */
+                <div
+                  className="py-2 transition-opacity duration-150"
+                  style={{ opacity: isCurrentlySearching ? 0.38 : 1 }}
+                >
+                  {/* Result count label */}
+                  <div className="px-5 pt-1 pb-2.5 flex items-center justify-between">
+                    <span
+                      className="text-[8.5px] uppercase tracking-[0.38em] font-black"
+                      style={{ color: "rgba(123,44,191,0.32)" }}
+                    >
+                      {hits.length} rezultate
+                    </span>
+                    {searchQuery && (
+                      <span
+                        className="text-[8.5px] font-semibold"
+                        style={{ color: "rgba(123,44,191,0.32)" }}
+                      >
+                        pentru „{searchQuery}"
+                      </span>
+                    )}
+                  </div>
+
+                  {hits.map((hit, i) => (
+                    <div key={hit.id}>
+                      <HitRow hit={hit} onClick={handleHitClick} index={i} />
+                      {i < hits.length - 1 && <Sep />}
+                    </div>
+                  ))}
+                </div>
+              ) : showEmptyState ? (
+                /* ── Empty state ── */
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="py-12 flex flex-col items-center text-center px-8"
+                >
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(123,44,191,0.07), rgba(224,170,255,0.1))",
+                    }}
+                  >
+                    <Search
+                      size={18}
+                      strokeWidth={1.2}
+                      style={{ color: "rgba(123,44,191,0.38)" }}
+                    />
+                  </div>
+                  <p
+                    className="text-[12px] font-semibold mb-1"
+                    style={{ color: "var(--dark-amethyst)" }}
+                  >
+                    Niciun rezultat
+                  </p>
+                  <p
+                    className="text-[10px] font-medium"
+                    style={{ color: "rgba(123,44,191,0.38)" }}
+                  >
+                    Nimic pentru „{searchQuery}"
+                  </p>
+                </motion.div>
+              ) : showInitialState ? (
+                /* ── Initial idle state — suggestions ── */
+                <div className="px-5 py-4">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Tag size={9} style={{ color: "rgba(123,44,191,0.3)" }} />
+                    <span
+                      className="text-[8.5px] uppercase tracking-[0.38em] font-black"
+                      style={{ color: "rgba(123,44,191,0.3)" }}
+                    >
+                      Sugestii populare
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {SUGGESTIONS.map((s, i) => (
+                      <motion.button
+                        key={s}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05, duration: 0.18 }}
+                        onClick={() => setInputValue(s)}
+                        className="px-3.5 py-1.5 rounded-full text-[10.5px] font-semibold border transition-all duration-150 hover:scale-[1.03]"
+                        style={{
+                          color: "rgba(123,44,191,0.65)",
+                          borderColor: "rgba(123,44,191,0.12)",
+                          background: "rgba(123,44,191,0.03)",
+                        }}
+                        onMouseEnter={(e) => {
+                          (
+                            e.currentTarget as HTMLButtonElement
+                          ).style.background = "rgba(123,44,191,0.08)";
+                          (
+                            e.currentTarget as HTMLButtonElement
+                          ).style.borderColor = "rgba(123,44,191,0.25)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (
+                            e.currentTarget as HTMLButtonElement
+                          ).style.background = "rgba(123,44,191,0.03)";
+                          (
+                            e.currentTarget as HTMLButtonElement
+                          ).style.borderColor = "rgba(123,44,191,0.12)";
+                        }}
+                      >
+                        {s}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {/* ── Footer ─────────────────────────────────────────────────── */}
+            <div
+              className="shrink-0 flex items-center justify-between px-5 py-2.5 border-t"
+              style={{ borderColor: "rgba(123,44,191,0.06)" }}
+            >
+              <div className="flex items-center gap-1.5">
+                <Sparkles
+                  size={9}
+                  className="animate-pulse"
+                  style={{ color: "rgba(123,44,191,0.35)" }}
+                />
+                <span
+                  className="text-[8px] uppercase tracking-[0.45em] font-black"
+                  style={{ color: "rgba(123,44,191,0.28)" }}
+                >
+                  Căutare inteligentă
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="text-[9px] font-medium text-zinc-300 flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-400 font-mono text-[8px]">
+                    ↵
+                  </kbd>
+                  selectează
+                </span>
+                <span className="text-[9px] font-medium text-zinc-300 flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-400 font-mono text-[8px]">
+                    esc
+                  </kbd>
+                  închide
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
