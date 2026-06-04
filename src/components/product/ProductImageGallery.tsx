@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { SmartImage } from "@/components/ui/smart-image";
+import { useState, useMemo, useEffect } from "react";
+import { SmartImage, prefetchImage } from "@/components/ui/smart-image";
 import ImageZoom from "./ImageZoom";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
