@@ -105,7 +105,9 @@ export const OrderReviewModal = ({
 }: Props) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
+  const [busy, setBusy] = useState<"approve" | "reject" | "dispatch" | null>(
+    null,
+  );
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
@@ -320,12 +322,11 @@ export const OrderReviewModal = ({
     }
   };
 
+  // --- APROBARE SIMPLĂ (PATCH /process) ---
   const handleApprove = async () => {
     if (!order) return;
     if (!validation.ok) {
-      toast.error(
-        `Nu se poate aproba: ${validation.issues.length} problemă(e) detectate.`,
-      );
+      toast.error(`Nu se poate aproba: date lipsă.`);
       return;
     }
     setBusy("approve");
@@ -336,7 +337,6 @@ export const OrderReviewModal = ({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          // SE TRIMITE CHEIA LOCAȚIEI SELECTATE CĂTRE BACKEND
           body: JSON.stringify({
             action: "approve",
             pickup_location_key: pickupLocationKey,
@@ -358,6 +358,43 @@ export const OrderReviewModal = ({
     }
   };
 
+  // --- EXPEDIERE / DISPATCH (POST /dispatch) ---
+  const handleDispatch = async () => {
+    if (!order) return;
+    if (!validation.ok) {
+      toast.error("Completează datele lipsă înainte de a expedia comanda.");
+      return;
+    }
+    setBusy("dispatch");
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/orders/admin/${order.id}/dispatch`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            courier_name: "GLS",
+            use_gls_api: true,
+          }),
+        },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success("Comanda a fost expediată și AWB-ul a fost generat!");
+        onActionComplete();
+        onClose();
+      } else {
+        toast.error(data.detail || "Expedierea a eșuat.");
+      }
+    } catch {
+      toast.error("Eroare de rețea la expediere.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // --- RESPINGERE (PATCH /process) ---
   const handleReject = async () => {
     if (!order) return;
     if (!rejectReason.trim()) {
@@ -391,6 +428,14 @@ export const OrderReviewModal = ({
   };
 
   if (!orderId) return null;
+
+  // Verificăm dacă comanda a fost deja expediată/anulată
+  const isActionable = ![
+    "shipped",
+    "delivered",
+    "cancelled",
+    "returned",
+  ].includes(order?.status?.toLowerCase() || "");
 
   return (
     <AnimatePresence>
@@ -497,7 +542,7 @@ export const OrderReviewModal = ({
                   {/* Punct de ridicare AWB (Randat Dinamic) */}
                   <div className="lg:col-span-2">
                     <InfoBlock
-                      title="Locație Ridicare Colet (Depozit)"
+                      title="Locație Ridicare Colet (Depozit GLS)"
                       icon={<Store size={14} />}
                     >
                       <div className="space-y-2 mt-1">
@@ -872,24 +917,38 @@ export const OrderReviewModal = ({
                 <>
                   <button
                     onClick={() => setShowRejectForm(true)}
-                    disabled={!!busy}
-                    className="sm:flex-1 h-12 rounded-xl border border-rose-200 text-rose-600 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-rose-50 transition-all flex items-center justify-center gap-2"
+                    disabled={!!busy || !isActionable}
+                    className="sm:flex-1 h-12 rounded-xl border border-rose-200 text-rose-600 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-rose-50 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <XCircle size={14} /> Respinge
                   </button>
+
                   <button
                     onClick={handleApprove}
-                    disabled={!!busy || !validation.ok}
-                    className="sm:flex-[2] h-12 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
-                    style={{ background: "var(--primary-gradient)" }}
+                    disabled={!!busy || !validation.ok || !isActionable}
+                    className="sm:flex-1 h-12 rounded-xl bg-white border-2 border-[var(--royal-violet)] text-[var(--royal-violet)] text-[10px] font-black uppercase tracking-[0.3em] shadow-sm transition-all flex items-center justify-center gap-2 hover:bg-[var(--royal-violet)] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     {busy === "approve" ? (
                       <Loader2 className="animate-spin" size={14} />
                     ) : (
                       <CheckCircle2 size={14} />
                     )}
+                    Aprobă
+                  </button>
+
+                  <button
+                    onClick={handleDispatch}
+                    disabled={!!busy || !validation.ok || !isActionable}
+                    className="sm:flex-[2] h-12 rounded-xl text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.99]"
+                    style={{ background: "var(--primary-gradient)" }}
+                  >
+                    {busy === "dispatch" ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <Truck size={14} />
+                    )}
                     {validation.ok
-                      ? "Aprobă & Generează AWB"
+                      ? "Expediază (Dispatch AWB)"
                       : "Completează datele lipsă"}
                   </button>
                 </>
