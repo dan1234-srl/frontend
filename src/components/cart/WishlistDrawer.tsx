@@ -302,26 +302,24 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
             <AnimatePresence>
               {items.length > 0 && (
                 <motion.footer
-                  initial={{ y: 50, opacity: 0 }}
+                  initial={{ y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 50, opacity: 0 }}
-                  className="relative p-6 sm:p-8 bg-white/90 backdrop-blur-md border-t border-zinc-100 shrink-0 z-20"
+                  exit={{ y: 30, opacity: 0 }}
+                  className="relative px-6 py-6 bg-white border-t border-zinc-100 shrink-0 z-20"
                 >
                   <button
                     onClick={onClose}
-                    className="w-full h-14 rounded-2xl text-white flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_rgba(123,44,191,0.2)] bg-luxury-gradient relative overflow-hidden group"
+                    className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
+                    style={{ background: "var(--primary-gradient)" }}
                   >
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
-
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] relative z-10">
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                    <div className="relative flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em]">
                       Continuă Cumpărăturile
-                    </span>
-                    <ArrowRight
-                      size={16}
-                      strokeWidth={2}
-                      className="relative z-10 group-hover:translate-x-1 transition-transform"
-                    />
+                      <ArrowRight
+                        size={14}
+                        className="group-hover:translate-x-1.5 transition-transform duration-300"
+                      />
+                    </div>
                   </button>
                 </motion.footer>
               )}
