@@ -53,7 +53,7 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     name: "Comandă expediată",
     event_name: "order_shipped",
     subject: "Comanda #{{orderNumber}} este pe drum",
-    description: "Notificare cu AWB și link de tracking.",
+    description: "Notificare cu AWB, tracking și sumar produse.",
     category: "order",
   },
   {
@@ -61,7 +61,7 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     name: "Comandă livrată",
     event_name: "order_delivered",
     subject: "Comanda #{{orderNumber}} a fost livrată",
-    description: "Confirmare livrare + invitație review.",
+    description: "Confirmare livrare, sumar comandă și invitație review.",
     category: "order",
   },
   {
@@ -101,6 +101,55 @@ export function buildPresetDesign(
     { paddingTop: "32px", paddingBottom: "24px" },
   );
 
+  // --- HTML INJECTAT PENTRU SUMARUL COMENZII (PRODUSE + TOTALURI) ---
+  const orderSummaryHtml = `
+    {% if items %}
+    <div style="margin-top: 8px; margin-bottom: 16px;">
+        <h3 style="font-family: Georgia, serif; font-size: 18px; color: ${deep}; margin-bottom: 12px; font-weight: normal; border-bottom: 1px solid #eee; padding-bottom: 8px;">Produse comandate</h3>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 13px; color: #555;">
+            {% for item in items %}
+            <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #eee;" width="60" valign="middle">
+                    <img src="{{item.image_url}}" width="50" style="display: block; border-radius: 4px; border: 1px solid #eee; max-height: 50px;" alt="{{item.name}}" />
+                </td>
+                <td style="padding: 12px 10px; border-bottom: 1px solid #eee; vertical-align: middle;" valign="middle">
+                    <strong style="color: ${deep}; font-size: 13px;">{{item.name}}</strong><br/>
+                    <span style="color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;">Cantitate: {{item.quantity}}</span>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: ${deep}; vertical-align: middle; white-space: nowrap;" valign="middle">
+                    {{item.price}}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    {% if totalAmount %}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, sans-serif; font-size: 13px; color: #555; margin-bottom: 24px;">
+        <tr>
+            <td style="padding: 4px 0;">Subtotal:</td>
+            <td style="padding: 4px 0; text-align: right;">{{subtotalAmount}}</td>
+        </tr>
+        <tr>
+            <td style="padding: 4px 0;">Transport:</td>
+            <td style="padding: 4px 0; text-align: right;">{{shippingFee}}</td>
+        </tr>
+        <tr>
+            <td style="padding: 12px 0; font-weight: bold; font-size: 16px; color: ${deep}; border-top: 1px solid #eee;">TOTAL:</td>
+            <td style="padding: 12px 0; font-weight: bold; font-size: 16px; color: ${deep}; text-align: right; border-top: 1px solid #eee;">{{totalAmount}}</td>
+        </tr>
+    </table>
+    {% endif %}
+    
+    {% if shippingAddress %}
+    <div style="margin-bottom: 32px; padding: 16px; background-color: #fafaf7; border: 1px solid #eee; border-radius: 4px;">
+        <h4 style="margin: 0 0 8px 0; font-family: Arial, sans-serif; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.1em;">Adresă de livrare</h4>
+        <p style="margin: 0; font-family: Arial, sans-serif; font-size: 13px; color: #333; line-height: 1.5;">{{shippingAddress}}</p>
+    </div>
+    {% endif %}
+  `;
+
   const presets: Record<string, any[]> = {
     welcome: [
       headerLogo,
@@ -123,7 +172,7 @@ export function buildPresetDesign(
         `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Colecția Nouă</h1>`,
         { paddingTop: "40px", paddingBottom: "24px" },
       ),
-      imageBlock("https://via.placeholder.com/600x400?text=Imagine+Campanie"), // Poți schimba URL-ul ulterior
+      imageBlock("https://via.placeholder.com/600x400?text=Imagine+Campanie"),
       textBlock(
         `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Am pregătit ceva special pentru tine. Descoperă piesele noi care definesc luxul și eleganța în acest sezon.</p>`,
         { paddingTop: "24px", paddingBottom: "32px" },
@@ -184,9 +233,10 @@ export function buildPresetDesign(
         { paddingBottom: "24px" },
       ),
       textBlock(
-        `<p style="font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Comanda ta este în procesare și va fi pregătită cu grijă în următoarele 24-48h. Vei primi un email cu numărul de tracking imediat ce comanda va fi expediată.</p><p style="font-family:Arial;font-size:14px;color:#555;line-height:1.7;margin-top:16px;"><strong>Total plată:</strong> {{totalAmount}}<br/><strong>Adresa livrare:</strong> {{shippingAddress}}</p>`,
-        { paddingBottom: "32px" },
+        `<p style="font-family:Arial;font-size:14px;color:#555;line-height:1.7;">Comanda ta este în procesare și va fi pregătită cu grijă în următoarele 24-48h. Vei primi un email cu numărul de tracking imediat ce comanda va fi expediată.</p>`,
+        { paddingBottom: "16px" },
       ),
+      htmlBlock(orderSummaryHtml), // AICI SE INJECTEAZĂ TABELUL CU PRODUSE
       buttonBlock("VEZI DETALII COMANDĂ", "{{orderUrl}}", accent),
       divider,
       footer,
@@ -204,8 +254,9 @@ export function buildPresetDesign(
       ),
       textBlock(
         `<div style="background:${soft}1A;padding:24px;text-align:center;border-left:3px solid ${accent};"><p style="margin:0;font-family:Arial;font-size:11px;color:${deep};letter-spacing:0.2em;text-transform:uppercase;font-weight:bold;">AWB Curier</p><p style="margin:8px 0 0;font-family:'Courier New',monospace;font-size:20px;color:${deep};font-weight:bold;">{{awbNumber}}</p></div>`,
-        { paddingBottom: "32px" },
+        { paddingBottom: "16px" },
       ),
+      htmlBlock(orderSummaryHtml), // AICI SE INJECTEAZĂ TABELUL CU PRODUSE
       buttonBlock("URMĂREȘTE COLETUL", "{{trackingUrl}}", accent),
       divider,
       footer,
@@ -219,8 +270,9 @@ export function buildPresetDesign(
       ),
       textBlock(
         `<p style="text-align:center;font-family:Arial;font-size:14px;color:#555;line-height:1.7;max-width:480px;margin:0 auto;">Salut {{customerName}}, comanda <strong>#{{orderNumber}}</strong> a fost livrată cu succes.<br/>Sperăm să te bucuri de fiecare detaliu.</p>`,
-        { paddingBottom: "32px" },
+        { paddingBottom: "16px" },
       ),
+      htmlBlock(orderSummaryHtml), // AICI SE INJECTEAZĂ TABELUL CU PRODUSE
       buttonBlock("LASĂ UN REVIEW", "{{reviewUrl}}", accent),
       divider,
       footer,
@@ -235,6 +287,7 @@ export function buildPresetDesign(
       u_column: contents.length,
       u_content_text: contents.length,
       u_content_button: 1,
+      u_content_html: contents.filter((c) => c.type === "html").length,
     },
     body: {
       id: "luxury-body",
@@ -328,6 +381,29 @@ export function buildPresetDesign(
 }
 
 /* -------- helpers -------- */
+
+function htmlBlock(html: string) {
+  return {
+    type: "html",
+    values: {
+      html: html,
+      containerPadding: "0px 32px 16px 32px",
+      anchor: "",
+      hideDesktop: false,
+      displayCondition: null,
+      _meta: {
+        htmlID: `u_content_html_${Math.random().toString(36).slice(2, 8)}`,
+        htmlClassNames: "u_content_html",
+      },
+      selectable: true,
+      draggable: true,
+      duplicatable: true,
+      deletable: true,
+      hideable: true,
+    },
+  };
+}
+
 function textBlock(
   html: string,
   padding: { paddingTop?: string; paddingBottom?: string } = {},
@@ -364,6 +440,7 @@ function textBlock(
     },
   };
 }
+
 function imageBlock(url: string) {
   return {
     type: "image",
