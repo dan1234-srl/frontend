@@ -580,55 +580,45 @@ const SearchModal = ({
                   </p>
                 </motion.div>
               ) : showInitialState ? (
-                /* ── Initial idle state — suggestions ── */
-                <div className="px-5 py-4">
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Tag size={9} style={{ color: "rgba(123,44,191,0.3)" }} />
-                    <span
-                      className="text-[8.5px] uppercase tracking-[0.38em] font-black"
-                      style={{ color: "rgba(123,44,191,0.3)" }}
-                    >
-                      Sugestii populare
-                    </span>
+                /* ── Initial idle state — minimal hint ── */
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="py-12 flex flex-col items-center text-center px-8"
+                >
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 8%, transparent), color-mix(in srgb, var(--mauve-magic) 12%, transparent))",
+                    }}
+                  >
+                    <Sparkles
+                      size={16}
+                      strokeWidth={1.4}
+                      style={{ color: "var(--royal-violet)" }}
+                    />
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTIONS.map((s, i) => (
-                      <motion.button
-                        key={s}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05, duration: 0.18 }}
-                        onClick={() => setInputValue(s)}
-                        className="px-3.5 py-1.5 rounded-full text-[10.5px] font-semibold border transition-all duration-150 hover:scale-[1.03]"
-                        style={{
-                          color: "rgba(123,44,191,0.65)",
-                          borderColor: "rgba(123,44,191,0.12)",
-                          background: "rgba(123,44,191,0.03)",
-                        }}
-                        onMouseEnter={(e) => {
-                          (
-                            e.currentTarget as HTMLButtonElement
-                          ).style.background = "rgba(123,44,191,0.08)";
-                          (
-                            e.currentTarget as HTMLButtonElement
-                          ).style.borderColor = "rgba(123,44,191,0.25)";
-                        }}
-                        onMouseLeave={(e) => {
-                          (
-                            e.currentTarget as HTMLButtonElement
-                          ).style.background = "rgba(123,44,191,0.03)";
-                          (
-                            e.currentTarget as HTMLButtonElement
-                          ).style.borderColor = "rgba(123,44,191,0.12)";
-                        }}
-                      >
-                        {s}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
+                  <p
+                    className="text-[12px] font-semibold"
+                    style={{ color: "var(--dark-amethyst)" }}
+                  >
+                    Începe să tastezi pentru a căuta
+                  </p>
+                  <p
+                    className="text-[10px] font-medium mt-1"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 38%, transparent)",
+                    }}
+                  >
+                    Produse, branduri, colecții
+                  </p>
+                </motion.div>
               ) : null}
             </div>
+
 
             {/* ── Footer ─────────────────────────────────────────────────── */}
             <div
