@@ -101,7 +101,7 @@ const Addresses = () => {
         toast.success(
           isEditing ? "Adresa a fost actualizată" : "Adresa a fost adăugată",
         );
-        fetchAddresses();
+        fetchAddresses(true);
         setIsModalOpen(false);
       } else {
         toast.error(result.detail || "Eroare la validarea datelor.");
