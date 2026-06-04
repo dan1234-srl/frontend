@@ -291,7 +291,11 @@ const PAGE_TTL = 5 * 60 * 1000;
 const cacheKey = (slug: string, qs: string, page: number) =>
   `${slug}::${qs}::${page}`;
 
-const buildParams = (slug: string, searchParams: URLSearchParams, page: number) => {
+const buildParams = (
+  slug: string,
+  searchParams: URLSearchParams,
+  page: number,
+) => {
   const params = new URLSearchParams();
   params.set("page", page.toString());
   params.set("category_slug", slug);

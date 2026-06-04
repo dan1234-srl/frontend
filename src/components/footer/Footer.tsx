@@ -115,9 +115,9 @@ const Footer = () => {
           root.style.setProperty("--mauve-magic", theme.mauve_magic);
         if (theme.mauve) root.style.setProperty("--mauve", theme.mauve);
         if (theme.text_primary)
-          root.style.setProperty("--text-primary", theme.text_primary);
+          root.style.setProperty("--text_primary", theme.text_primary);
         if (theme.surface_bg)
-          root.style.setProperty("--surface-bg", theme.surface_bg);
+          root.style.setProperty("--surface_bg", theme.surface_bg);
         if (theme.primary_gradient)
           root.style.setProperty("--primary-gradient", theme.primary_gradient);
       })
@@ -129,18 +129,34 @@ const Footer = () => {
       });
   }, []);
 
-  const collectionLinks = [
-    { name: "Archive", path: "/category/archive" },
-    { name: "New In", path: "/category/new-in" },
-    { name: "Limited", path: "/category/limited" },
-    { name: "Bespoke", path: "/category/bespoke" },
+  // --- SECȚIUNI NAVIGARE ACTUALIZATE ---
+  const exploreLinks = [
+    { name: t("Acasă", "Home"), path: "/" },
+    { name: t("Magazin", "Shop All"), path: "/shop" },
+    { name: t("Despre noi", "About Us"), path: "/about" },
   ];
 
   const supportLinks = [
+    { name: "FAQ", path: "/faq" },
+    { name: t("Contact", "Contact Us"), path: "/contact" },
+    { name: t("Politica de Retur", "Returns"), path: "/return-policy" },
     { name: t("Ghid Mărimi", "Size Guide"), path: "/about/size-guide" },
-    { name: t("Customer Care", "Customer Care"), path: "/about/customer-care" },
-    { name: t("Retur", "Returns"), path: "/return-policy" },
+  ];
+
+  const legalLinks = [
+    { name: t("Confidențialitate", "Privacy"), path: "/privacy-policy" },
+    { name: "Cookies", path: "/cookie-policy" },
     { name: t("Termeni", "Terms"), path: "/terms-of-service" },
+    {
+      name: "ANPC",
+      path: "https://anpc.ro/ce-este-sal/",
+      external: true,
+    },
+    {
+      name: "SOL",
+      path: "https://ec.europa.eu/consumers/odr",
+      external: true,
+    },
   ];
 
   const socialLinks = [
@@ -164,29 +180,11 @@ const Footer = () => {
     },
   ];
 
-  const legalLinks = [
-    { name: t("Confidențialitate", "Privacy"), path: "/privacy-policy" },
-    { name: "Cookies", path: "/cookie-policy" },
-    { name: "Retur", path: "/return-policy" },
-    { name: "Termeni", path: "/terms-of-service" },
-    {
-      name: "ANPC",
-      path: "https://anpc.ro/ce-este-sal/",
-      external: true,
-    },
-    {
-      name: "SOL",
-      path: "https://ec.europa.eu/consumers/odr",
-      external: true,
-    },
-  ];
-
   return (
     <footer className="w-full mt-8 relative bg-transparent selection:bg-zinc-900 selection:text-white">
       {/* 1. HIGH-END NEWSLETTER (Minimal & Floating Above) */}
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-20 mb-[-4rem]">
         <div className="bg-white rounded-[3rem] border border-zinc-100 p-10 md:p-16 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.05)] overflow-hidden relative">
-          {/* Ambient Glow pentru un aspect mai premium */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--royal-violet)] opacity-[0.03] rounded-full blur-[80px] -mr-40 -mt-40 pointer-events-none" />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center relative z-10">
@@ -279,7 +277,6 @@ const Footer = () => {
           clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
         }}
       >
-        {/* Decorative thin structural outline mapping the asymmetric slope */}
         <div
           className="absolute top-0 left-0 right-0 h-[2px] opacity-70 z-20 pointer-events-none"
           style={{
@@ -288,7 +285,6 @@ const Footer = () => {
           }}
         />
 
-        {/* Ambient mesh space distortion */}
         <div className="absolute inset-0 opacity-25 pointer-events-none mix-blend-screen overflow-hidden">
           <div
             className="absolute -top-20 right-10 size-[600px] rounded-full blur-[150px]"
@@ -322,7 +318,6 @@ const Footer = () => {
                 )}
               </p>
 
-              {/* Monolithic micro-brackets for icons */}
               <div className="flex gap-2.5">
                 {socialLinks.map(({ id, Icon, href, label }) => (
                   <motion.a
@@ -352,7 +347,7 @@ const Footer = () => {
                   {t("Navigare", "Explore")}
                 </span>
                 <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/50">
-                  {collectionLinks.map((link) => (
+                  {exploreLinks.map((link) => (
                     <li key={link.name}>
                       <Link
                         to={link.path}
