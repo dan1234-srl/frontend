@@ -301,26 +301,16 @@ const Navbar = () => {
           }}
           className="relative flex w-full items-center justify-between px-4 sm:px-6 lg:px-12 transform-gpu"
         >
-          {/* LEFT — SEARCH */}
+          {/* LEFT — SEARCH (icon only) */}
           <div className="flex flex-1 items-center justify-start">
-            <button
+            <motion.button
+              whileHover={{ y: -2 }}
               onClick={() => setSearchOpen(true)}
-              className="hidden md:flex items-center gap-3 bg-zinc-50 border border-zinc-100 rounded-full py-2 px-5 group hover:bg-zinc-100 transition-all duration-300"
+              aria-label="Caută"
+              className="flex items-center justify-center h-10 w-10 rounded-full text-zinc-700 hover:bg-zinc-50 transition-all"
             >
-              <Search
-                size={15}
-                className="text-zinc-400 group-hover:text-black transition-colors"
-              />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:text-black transition-colors">
-                Caută în colecție
-              </span>
-            </button>
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="md:hidden flex items-center justify-center h-10 w-10 rounded-full hover:bg-zinc-50 transition-colors"
-            >
-              <Search size={20} className="text-black" />
-            </button>
+              <Search size={20} />
+            </motion.button>
           </div>
 
           {/* CENTER — LOGO */}
