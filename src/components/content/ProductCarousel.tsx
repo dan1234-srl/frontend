@@ -8,7 +8,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { motion } from "framer-motion";
 import { SmartImage } from "@/components/ui/smart-image";
 import { ProductCardSkeleton } from "@/components/ui/skeleton";
 import { prefetchProduct, prefetchImage } from "@/lib/prefetch";
@@ -22,54 +21,90 @@ interface ProductCarouselProps {
   sort?: string;
   limit?: number;
   collectionType?: string;
-  hideExploreLink?: boolean; // Adaugă linia asta
+  hideExploreLink?: boolean;
 }
 
-const ProductCarousel = ({
-  categorySlug,
-  title,
-  subtitle,
-  sort,
-  limit = 20,
-  collectionType,
-  hideExploreLink = false,
-}: ProductCarouselProps) => {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+/**
+ * Cache la nivel de modul + dedupe pentru request-uri in-flight.
+ * → la a doua afișare (revenire / re-render) produsele apar instant.
+ * → pe 2G/3G eliminăm complet flash-ul / staggered fade-in care dădea senzație de lag.
+ */
+const CAROUSEL_CACHE = new Map<string, any[]>();
+const INFLIGHT = new Map<string, Promise<any[]>>();
+
+const buildKey = (p: ProductCarouselProps) =>
+  p.collectionType
+    ? `col::${p.collectionType}`
+    : `cat::${p.categorySlug || ""}::${p.sort || ""}::${p.limit || 20}`;
+
+const fetchProducts = (key: string, url: string): Promise<any[]> => {
+  if (CAROUSEL_CACHE.has(key)) return Promise.resolve(CAROUSEL_CACHE.get(key)!);
+  if (INFLIGHT.has(key)) return INFLIGHT.get(key)!;
+  const p = fetch(url, { credentials: "include" })
+    .then((r) => r.json())
+    .then((data) => {
+      const list = data.items || (Array.isArray(data) ? data : []);
+      CAROUSEL_CACHE.set(key, list);
+      return list as any[];
+    })
+    .finally(() => INFLIGHT.delete(key));
+  INFLIGHT.set(key, p);
+  return p;
+};
+
+const ProductCarousel = (props: ProductCarouselProps) => {
+  const {
+    categorySlug,
+    title,
+    subtitle,
+    sort,
+    limit = 20,
+    collectionType,
+    hideExploreLink = false,
+  } = props;
+
+  const key = buildKey(props);
+  const cached = CAROUSEL_CACHE.get(key);
+
+  const [products, setProducts] = useState<any[]>(cached || []);
+  const [loading, setLoading] = useState(!cached);
 
   useEffect(() => {
-    const fetchCarouselProducts = async () => {
-      setLoading(true);
-      try {
-        let url = "";
+    const k = buildKey(props);
+    const hit = CAROUSEL_CACHE.get(k);
+    if (hit) {
+      setProducts(hit);
+      setLoading(false);
+      return;
+    }
 
-        // 🚀 LOGICĂ SMART DE FETCH
-        if (collectionType) {
-          // 1. Dacă vine din Index.tsx -> Fetch din tabela `product_collections`
-          url = `${API_BASE_URL}/api/v1/collections/${collectionType}/products`;
-        } else {
-          // 2. Dacă vine din ProductDetail.tsx -> Fetch produse din aceeași categorie
-          const params = new URLSearchParams();
-          params.set("limit", String(limit));
-          if (categorySlug) params.set("category_slug", categorySlug);
-          if (sort) params.set("sort", sort);
-          url = `${API_BASE_URL}/api/v1/products/?${params.toString()}`;
-        }
+    let url = "";
+    if (collectionType) {
+      url = `${API_BASE_URL}/api/v1/collections/${collectionType}/products`;
+    } else {
+      const params = new URLSearchParams();
+      params.set("limit", String(limit));
+      if (categorySlug) params.set("category_slug", categorySlug);
+      if (sort) params.set("sort", sort);
+      url = `${API_BASE_URL}/api/v1/products/?${params.toString()}`;
+    }
 
-        const res = await fetch(url, { credentials: "include" });
-        const data = await res.json();
+    let cancel = false;
+    setLoading(true);
+    fetchProducts(k, url)
+      .then((list) => {
+        if (cancel) return;
+        setProducts(list);
+      })
+      .catch((err) => console.error("Carousel fetch error:", err))
+      .finally(() => {
+        if (!cancel) setLoading(false);
+      });
 
-        // Asigurare că setăm un array
-        const productList = data.items || (Array.isArray(data) ? data : []);
-        setProducts(productList);
-      } catch (err) {
-        console.error("Carousel fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      cancel = true;
     };
-
-    fetchCarouselProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, sort, limit, collectionType]);
 
   const getImageUrl = (p: any) => {
@@ -82,7 +117,7 @@ const ProductCarousel = ({
     return imgData;
   };
 
-  if (loading) {
+  if (loading && products.length === 0) {
     return (
       <section className="w-full py-16 px-6 max-w-[1920px] mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
@@ -98,16 +133,12 @@ const ProductCarousel = ({
 
   return (
     <section className="w-full py-0 md:py-8 text-left relative">
-      {" "}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
-        {" "}
         <div className="space-y-2">
           <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400 block">
-            {" "}
             {subtitle || "Curated Excellence"}
           </span>
           <h2 className="heading-serif text-3xl md:text-4xl text-zinc-900 leading-tight">
-            {" "}
             {title || (
               <>
                 Produse{" "}
@@ -140,7 +171,6 @@ const ProductCarousel = ({
             const imgMedium = getImageUrl(p);
             const imgSmall = p.image_url?.main?.small;
 
-            // 🚀 LOGICA NOUĂ: Prioritizăm sale_price dacă există și este valid
             const hasValidSale = p.sale_price && p.sale_price > 0;
             const finalPrice = hasValidSale ? p.sale_price : p.price;
             const isDiscounted = hasValidSale && p.sale_price < p.price;
@@ -149,77 +179,70 @@ const ProductCarousel = ({
                 key={p.id || p.sku}
                 className="basis-1/2 md:basis-1/4 lg:basis-1/6 xl:basis-[12.5%] pl-3"
               >
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.05 }}
+                <Link
+                  to={`/product/${p.sku}`}
+                  className="block group/card text-left"
+                  onMouseEnter={() => {
+                    prefetchProduct(p.sku);
+                    if (imgMedium) prefetchImage(imgMedium);
+                  }}
+                  onTouchStart={() => {
+                    prefetchProduct(p.sku);
+                    if (imgMedium) prefetchImage(imgMedium);
+                  }}
                 >
-                  <Link
-                    to={`/product/${p.sku}`}
-                    className="block group/card text-left"
-                    onMouseEnter={() => {
-                      prefetchProduct(p.sku);
-                      if (imgMedium) prefetchImage(imgMedium);
-                    }}
-                    onTouchStart={() => {
-                      prefetchProduct(p.sku);
-                      if (imgMedium) prefetchImage(imgMedium);
-                    }}
-                  >
-                    <div className="relative aspect-[3/4] bg-zinc-50 overflow-hidden mb-4 border border-zinc-100 transition-all duration-500 group-hover/card:shadow-md">
-                      <SmartImage
-                        src={imgMedium}
-                        lqip={imgSmall}
-                        alt={p.name}
-                        eager={idx < 8}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
-                      />
+                  <div className="relative aspect-[3/4] bg-zinc-50 overflow-hidden mb-4 border border-zinc-100 transition-all duration-500 group-hover/card:shadow-md">
+                    <SmartImage
+                      src={imgMedium}
+                      lqip={imgSmall}
+                      alt={p.name}
+                      eager={idx < 8}
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover/card:scale-105"
+                    />
 
-                      {p.stock_quantity <= 0 ? (
-                        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-10">
-                          <span className="bg-zinc-900 text-white text-[7px] font-black uppercase tracking-widest px-3 py-2">
-                            Sold Out
-                          </span>
-                        </div>
-                      ) : p.stock_quantity <= 3 ? (
-                        <div className="absolute top-2 left-2 z-10">
-                          <span className="bg-white/95 text-zinc-900 text-[6px] font-black uppercase tracking-tighter px-2 py-1 border border-zinc-100">
-                            Stoc: {p.stock_quantity}
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="space-y-3 px-1">
-                      <div className="space-y-1">
-                        <span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest block truncate">
-                          {p.brand_name || "Evem"}
+                    {p.stock_quantity <= 0 ? (
+                      <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-10">
+                        <span className="bg-zinc-900 text-white text-[7px] font-black uppercase tracking-widest px-3 py-2">
+                          Sold Out
                         </span>
-                        <h3 className="text-[10px] font-bold uppercase tracking-tight text-zinc-900 leading-tight group-hover/card:text-zinc-500 transition-colors line-clamp-1">
-                          {p.name}
-                        </h3>
                       </div>
+                    ) : p.stock_quantity <= 3 ? (
+                      <div className="absolute top-2 left-2 z-10">
+                        <span className="bg-white/95 text-zinc-900 text-[6px] font-black uppercase tracking-tighter px-2 py-1 border border-zinc-100">
+                          Stoc: {p.stock_quantity}
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
 
-                      <div className="pt-2 border-t border-zinc-50 flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black text-zinc-950">
-                            {p.sale_price.toLocaleString()} RON
-                          </span>
-                          {isDiscounted && (
-                            <p className="text-[6px] text-zinc-400 uppercase font-medium">
-                              Min. 30z: {p.sale_price.toLocaleString()}
-                            </p>
-                          )}
-                        </div>
-                        <ArrowRight
-                          size={10}
-                          className="text-zinc-300 group-hover/card:text-zinc-900 transition-colors"
-                        />
-                      </div>
+                  <div className="space-y-3 px-1">
+                    <div className="space-y-1">
+                      <span className="text-[7px] font-bold text-zinc-400 uppercase tracking-widest block truncate">
+                        {p.brand_name || "Evem"}
+                      </span>
+                      <h3 className="text-[10px] font-bold uppercase tracking-tight text-zinc-900 leading-tight group-hover/card:text-zinc-500 transition-colors line-clamp-1">
+                        {p.name}
+                      </h3>
                     </div>
-                  </Link>
-                </motion.div>
+
+                    <div className="pt-2 border-t border-zinc-50 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] font-black text-zinc-950">
+                          {finalPrice?.toLocaleString()} RON
+                        </span>
+                        {isDiscounted && (
+                          <p className="text-[6px] text-zinc-400 uppercase font-medium">
+                            Min. 30z: {p.sale_price.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <ArrowRight
+                        size={10}
+                        className="text-zinc-300 group-hover/card:text-zinc-900 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </Link>
               </CarouselItem>
             );
           })}
