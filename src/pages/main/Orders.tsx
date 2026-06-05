@@ -102,7 +102,6 @@ const Orders = () => {
     return () => ctrl.abort();
   }, [currentPage]);
 
-
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
       const matchQuery = searchTerm.toLowerCase();
@@ -153,17 +152,6 @@ const Orders = () => {
         {/* HEADER CONTROLS */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-16 text-left">
           <div className="space-y-4">
-            <button
-              onClick={() => navigate("/account")}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-[var(--royal-violet)] transition-all group"
-            >
-              <ArrowLeft
-                size={12}
-                className="group-hover:-translate-x-1 transition-transform duration-300"
-              />
-              Contul meu
-            </button>
-
             <h1 className="heading-serif text-5xl md:text-7xl tracking-tighter italic text-zinc-900 leading-none">
               Arhiva{" "}
               <span
