@@ -428,6 +428,12 @@ const CheckoutPopup = ({
   }, [isOpen, user, initialDiscount]);
 
   useEffect(() => {
+    if (shippingMethod === "locker" && paymentMethod === "cod") {
+      setPaymentMethod("card");
+    }
+  }, [shippingMethod, paymentMethod]);
+
+  useEffect(() => {
     if (!isOpen) return;
     fetch(`${API_BASE_URL}/api/v1/orders/shipping/config`)
       .then((r) => r.json())
@@ -1367,13 +1373,17 @@ const CheckoutPopup = ({
                           Icon: CreditCard,
                           desc: "Securizat prin Stripe · procesare instant",
                         },
-                        {
-                          id: "cod",
-                          title: "Plată la Livrare",
-                          Icon: Truck,
-                          desc: "Cash sau card direct la curier",
-                        },
-                      ].map(({ id, title, Icon, desc }) => (
+                        ...(shippingMethod !== "locker"
+                          ? [
+                              {
+                                id: "cod",
+                                title: "Plată la Livrare",
+                                Icon: Truck,
+                                desc: "Cash sau card direct la curier",
+                              },
+                            ]
+                          : []),
+                      ].map(({ id, title, Icon, desc }: any) => (
                         <button
                           key={id}
                           type="button"
