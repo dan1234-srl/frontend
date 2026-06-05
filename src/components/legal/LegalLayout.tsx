@@ -46,17 +46,6 @@ const LegalLayout = ({
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="relative max-w-4xl mx-auto px-6 pt-12 pb-16 md:pt-20 md:pb-24 text-center"
           >
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 hover:text-[var(--royal-violet)] transition-colors group mb-10"
-            >
-              <ArrowLeft
-                size={12}
-                className="group-hover:-translate-x-1 transition-transform"
-              />
-              Înapoi
-            </button>
-
             <div className="flex items-center justify-center gap-3 mb-5">
               <span
                 className="h-[2px] w-8 rounded-full"
@@ -79,12 +68,17 @@ const LegalLayout = ({
             </h1>
 
             {updated && (
-              <div className="mt-8 inline-flex items-center gap-2.5 px-4 py-2 rounded-full border bg-white/60 backdrop-blur-xl shadow-sm"
+              <div
+                className="mt-8 inline-flex items-center gap-2.5 px-4 py-2 rounded-full border bg-white/60 backdrop-blur-xl shadow-sm"
                 style={{
-                  borderColor: "color-mix(in srgb, var(--royal-violet) 14%, transparent)",
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 14%, transparent)",
                 }}
               >
-                <ShieldCheck size={12} style={{ color: "var(--royal-violet)" }} />
+                <ShieldCheck
+                  size={12}
+                  style={{ color: "var(--royal-violet)" }}
+                />
                 <p
                   className="text-[9px] font-black uppercase tracking-[0.3em]"
                   style={{ color: "var(--royal-violet)" }}
