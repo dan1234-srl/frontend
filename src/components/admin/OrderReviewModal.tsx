@@ -376,6 +376,7 @@ export const OrderReviewModal = ({
           body: JSON.stringify({
             courier_name: "GLS",
             use_gls_api: true,
+            pickup_location_key: pickupLocationKey, // <--- ADĂUGAT AICI
           }),
         },
       );
