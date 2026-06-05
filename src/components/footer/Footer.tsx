@@ -137,7 +137,7 @@ const Footer = () => {
   ];
 
   const supportLinks = [
-    { name: "Confidențialitate", path: "/confidentialitate" },
+    { name: "Confidențialitate", path: "/privacy-policy" },
     { name: t("Politica Cookies", "Cookie Policy"), path: "/cookie-policy" },
     { name: t("Politica de Retur", "Returns"), path: "/return-policy" },
     {
