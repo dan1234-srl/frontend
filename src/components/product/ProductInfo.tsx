@@ -340,7 +340,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
               size={16}
               className={`mr-3 ${isFavorite ? "fill-rose-500" : ""}`}
             />
-            {isFavorite ? "În listă" : "Wishlist"}
+            {isFavorite ? "În listă" : "Adaugă la favorite"}
           </Button>
 
           <a
