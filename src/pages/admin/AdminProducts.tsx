@@ -507,7 +507,7 @@ const AdminProducts = () => {
   if (!isAdmin) return null;
 
   return (
-    <div className="w-full space-y-6 px-2 sm:px-4 md:px-8 pb-20 animate-in fade-in duration-500 font-sans text-left selection:bg-[var(--royal-violet)] selection:text-white">
+    <div className="w-full space-y-6 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left selection:bg-[var(--royal-violet)] selection:text-white">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 border-b border-zinc-100 pb-8 pt-4">
         <div className="space-y-2">

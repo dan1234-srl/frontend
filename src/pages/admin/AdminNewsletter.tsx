@@ -128,7 +128,7 @@ const AdminNewsletter = () => {
     }
   };
   return (
-    <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans">
       {/* HEADER */}
       <div className="flex flex-col gap-3 border-b border-zinc-100 pb-10">
         <div className="flex items-center gap-3">

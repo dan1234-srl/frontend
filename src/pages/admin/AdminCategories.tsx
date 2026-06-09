@@ -302,7 +302,7 @@ const AdminCategories = () => {
   if (authLoading || !isAdmin) return null;
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
+    <div className="w-full space-y-10 pb-20 font-sans text-left">
       {/* HEADER */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
