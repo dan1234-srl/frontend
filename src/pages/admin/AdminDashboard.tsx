@@ -16,12 +16,17 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom"; // Asigură-te că este importat
+import { useNavigate } from "react-router-dom";
+import { readCache, writeCache } from "@/lib/swr-cache";
 
 const AdminDashboard = () => {
-  const [statsData, setStatsData] = useState<any>(null);
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Hydrate synchronously from sessionStorage cache — instant render on revisit
+  const cachedStats = readCache<any>("admin:dashboard:stats", 60_000);
+  const [statsData, setStatsData] = useState<any>(cachedStats.data);
+  const [recentOrders, setRecentOrders] = useState<any[]>(
+    readCache<any>("admin:dashboard:orders:1", 60_000).data?.items || [],
+  );
+  const [loading, setLoading] = useState(!cachedStats.data);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -32,7 +37,9 @@ const AdminDashboard = () => {
   const [isMasterSyncing, setIsMasterSyncing] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(
+    readCache<any>("admin:dashboard:orders:1", 60_000).data?.pages || 1,
+  );
   const itemsPerPage = 6;
 
   const API_BASE_URL =
@@ -44,7 +51,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = async (isManualRefresh = false) => {
     try {
       if (isManualRefresh) setIsRefreshing(true);
-      else setLoading(true);
+      else if (!statsData) setLoading(true);
 
       const fetchOptions = {
         method: "GET",
@@ -56,6 +63,8 @@ const AdminDashboard = () => {
           Expires: "0",
         },
       };
+
+      const ordersKey = `admin:dashboard:orders:${currentPage}`;
 
       const [statsRes, ordersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/v1/admin/stats`, fetchOptions),
@@ -74,6 +83,9 @@ const AdminDashboard = () => {
       setRecentOrders(ordersData.items || []);
       setTotalPages(ordersData.pages || 1);
 
+      writeCache("admin:dashboard:stats", stats);
+      writeCache(ordersKey, ordersData);
+
       if (isManualRefresh) {
         toast({
           title: "Sincronizare completă",
@@ -91,6 +103,18 @@ const AdminDashboard = () => {
       setIsRefreshing(false);
     }
   };
+
+  // Hydrate cached page data when navigating between order pages
+  useEffect(() => {
+    const cached = readCache<any>(
+      `admin:dashboard:orders:${currentPage}`,
+      60_000,
+    );
+    if (cached.data) {
+      setRecentOrders(cached.data.items || []);
+      setTotalPages(cached.data.pages || 1);
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -187,7 +211,7 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="w-full space-y-12 md:space-y-20 pb-20 animate-in fade-in duration-700 font-sans text-left bg-[#fcfbfe]">
+    <div className="w-full space-y-12 md:space-y-20 pb-20 font-sans text-left bg-[#fcfbfe]">
       {/* HEADER ACTIONS BAR */}
       <section className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10 border-b border-zinc-100/80 pb-12 relative">
         <div className="space-y-4 relative z-10">
@@ -301,16 +325,8 @@ const AdminDashboard = () => {
       {/* EYE-CATCHING CARDS GRID */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {displayStats.map((stat, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 100,
-              damping: 15,
-              delay: i * 0.05,
-            }}
             className="relative overflow-hidden p-8 rounded-[2.8rem] group cursor-pointer transition-all duration-500"
             style={{
               background: stat.gradient,
@@ -344,7 +360,7 @@ const AdminDashboard = () => {
 
             {/* Ambient light ring */}
             <div className="absolute -right-6 -bottom-6 size-28 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-          </motion.div>
+          </div>
         ))}
       </section>
 

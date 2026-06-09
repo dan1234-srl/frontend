@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { readCache, writeCache } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -24,10 +25,14 @@ const AdminNewsletter = () => {
     "subscribers",
   );
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ total_active_users: 0 });
+  const [stats, setStats] = useState(
+    readCache<{ total_active_users: number }>("admin:newsletter:stats", 60_000)
+      .data || { total_active_users: 0 },
+  );
 
-  // Stocăm template-urile create în Unlayer
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>(
+    readCache<any[]>("admin:newsletter:templates", 60_000).data || [],
+  );
 
   // Structura nouă a campaniei folosește ID-ul template-ului
   const [campaign, setCampaign] = useState({
@@ -54,6 +59,7 @@ const AdminNewsletter = () => {
       if (res.ok) {
         const data = await res.json();
         setStats(data);
+        writeCache("admin:newsletter:stats", data);
       } else if (res.status === 401) {
         toast.error("Sesiunea a expirat sau nu ai drepturi de admin.");
       }
@@ -70,8 +76,9 @@ const AdminNewsletter = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        // Filtrăm doar template-urile active
-        setTemplates(data.filter((t: any) => t.is_active));
+        const active = data.filter((t: any) => t.is_active);
+        setTemplates(active);
+        writeCache("admin:newsletter:templates", active);
       }
     } catch (error) {
       toast.error("Eroare la încărcarea template-urilor.");
@@ -128,7 +135,7 @@ const AdminNewsletter = () => {
     }
   };
   return (
-    <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-10 pb-16 text-left font-sans">
       {/* HEADER */}
       <div className="flex flex-col gap-3 border-b border-zinc-100 pb-10">
         <div className="flex items-center gap-3">
