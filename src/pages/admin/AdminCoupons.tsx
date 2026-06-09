@@ -43,6 +43,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { readCache, writeCache } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -76,7 +77,9 @@ const AdminCoupons = () => {
   const [activeTab, setActiveTab] = useState<"VOUCHERS" | "BANNERS">(
     "VOUCHERS",
   );
-  const [categories, setCategories] = useState<any[]>([]);
+  const cachedCats = readCache<any[]>("admin:coupons:categories", 120_000);
+  const cachedBanners = readCache<any[]>("admin:coupons:banners", 60_000);
+  const [categories, setCategories] = useState<any[]>(cachedCats.data || []);
   const [loading, setLoading] = useState(true);
 
   // --- STATE VOUCHERE ---
