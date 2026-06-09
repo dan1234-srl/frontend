@@ -4,7 +4,8 @@
  * Modificare principală: textarea "Documentație Editorială" → RichTextEditor complet.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { readCache, writeCache } from "@/lib/swr-cache";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Plus,
@@ -143,6 +144,21 @@ const AdminProducts = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
+
+  // SWR cache key — narrows by all parameters that change the result set
+  const cacheKey = useMemo(
+    () =>
+      `admin:products:${currentPage}:${debouncedSearch}:${statusFilter}:${stockFilter}:${sortBy}:${sortOrder}:${categoryIdFilter}`,
+    [
+      currentPage,
+      debouncedSearch,
+      statusFilter,
+      stockFilter,
+      sortBy,
+      sortOrder,
+      categoryIdFilter,
+    ],
+  );
 
   const initialFormState = {
     sku: "",
