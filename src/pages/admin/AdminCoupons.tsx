@@ -109,10 +109,10 @@ const AdminCoupons = () => {
   const [selectedProductsData, setSelectedProductsData] = useState<any[]>([]);
 
   // --- STATE BANNERE EDITORIALE ---
-  const [banners, setBanners] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>(cachedBanners.data || []);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isEditingBanner, setIsEditingBanner] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState<boolean>(false); // 🚀 Unificat din Enum în Boolean simplu
+  const [uploadingImage, setUploadingImage] = useState<boolean>(false);
 
   const [bannerFormData, setBannerFormData] = useState({
     id: "",
@@ -132,8 +132,16 @@ const AdminCoupons = () => {
   // 3. API CONNECTIVITY
   // ─────────────────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
+    const vKey = `admin:coupons:vouchers:${page}`;
+    const vCached = readCache<any>(vKey, 60_000);
+    if (vCached.data) {
+      setCoupons(vCached.data.items || []);
+      setTotalPages(vCached.data.pages || 1);
+      setTotalItems(vCached.data.total || 0);
+      setLoading(false);
+    }
     try {
-      setLoading(true);
+      if (!vCached.data && !cachedBanners.data) setLoading(true);
       const [vouchersRes, categoriesRes, bannersRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/v1/vouchers/admin?page=${page}&size=10`, {
           credentials: "include",
@@ -148,14 +156,17 @@ const AdminCoupons = () => {
       setCoupons(vouchersData.items || []);
       setTotalPages(vouchersData.pages || 1);
       setTotalItems(vouchersData.total || 0);
+      writeCache(vKey, vouchersData);
 
       const cats = await categoriesRes.json();
       setCategories(cats);
+      writeCache("admin:coupons:categories", cats);
 
       const bannersData = await bannersRes.json();
       setBanners(bannersData || []);
+      writeCache("admin:coupons:banners", bannersData || []);
     } catch (e) {
-      toast.error("Eroare de sincronizare cu baza de date.");
+      if (!vCached.data) toast.error("Eroare de sincronizare cu baza de date.");
     } finally {
       setLoading(false);
     }
