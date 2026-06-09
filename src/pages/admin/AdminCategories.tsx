@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { readCache, writeCache } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -101,8 +102,9 @@ interface Category {
 
 const AdminCategories = () => {
   const { isAdmin, isLoading: authLoading } = useAuth();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedCats = readCache<Category[]>("admin:categories", 60_000);
+  const [categories, setCategories] = useState<Category[]>(cachedCats.data || []);
+  const [loading, setLoading] = useState(!cachedCats.data);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
@@ -122,12 +124,15 @@ const AdminCategories = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
-      setLoading(true);
+      const hadCache = !!readCache<Category[]>("admin:categories", 60_000).data;
+      if (!hadCache) setLoading(true);
       const response = await fetch(`${API_BASE_URL}/api/v1/categories/`, {
         credentials: "include",
       });
       const data = await response.json();
-      setCategories(Array.isArray(data) ? data : []);
+      const arr = Array.isArray(data) ? data : [];
+      setCategories(arr);
+      writeCache("admin:categories", arr);
     } catch (error) {
       toast.error("Eroare la sincronizare.");
     } finally {
