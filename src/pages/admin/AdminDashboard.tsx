@@ -325,16 +325,8 @@ const AdminDashboard = () => {
       {/* EYE-CATCHING CARDS GRID */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
         {displayStats.map((stat, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 100,
-              damping: 15,
-              delay: i * 0.05,
-            }}
             className="relative overflow-hidden p-8 rounded-[2.8rem] group cursor-pointer transition-all duration-500"
             style={{
               background: stat.gradient,
