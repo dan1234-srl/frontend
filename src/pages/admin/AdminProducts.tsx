@@ -218,8 +218,17 @@ const AdminProducts = () => {
       return;
     }
 
+    // Instant hydrate from cache (no skeleton flash on revisit)
+    const cached = readCache<any>(cacheKey, 30_000);
+    if (cached.data) {
+      setProducts(cached.data.items || []);
+      setTotalPages(cached.data.pages || 1);
+      setTotalItems(cached.data.total || 0);
+      setLoading(false);
+    }
+
     try {
-      setLoading(true);
+      if (!cached.data) setLoading(true);
       const endpoint = debouncedSearch
         ? `${API_BASE_URL}/api/v1/products/search/live`
         : `${API_BASE_URL}/api/v1/products/admin-inventory`;
@@ -249,7 +258,6 @@ const AdminProducts = () => {
       }
       if (categoryIdFilter) params.append("category_id", categoryIdFilter);
 
-      // 🚀 AICI ESTE FIX-UL: Am adăugat linia care îți lipsea
       const res = await fetch(`${endpoint}?${params.toString()}`, {
         credentials: "include",
         headers: { "Cache-Control": "no-cache" },
@@ -258,19 +266,20 @@ const AdminProducts = () => {
       if (!res.ok) throw new Error("Eroare la încărcare");
 
       const data = await res.json();
-      console.log("DEBUG: Date primite:", data);
 
       setProducts(data.items || []);
       setTotalPages(data.pages || 1);
       setTotalItems(data.total || 0);
+      writeCache(cacheKey, data);
     } catch (err) {
       console.error("Fetch error:", err);
-      toast.error("Eroare la încărcarea datelor.");
+      if (!cached.data) toast.error("Eroare la încărcarea datelor.");
     } finally {
       setLoading(false);
     }
   }, [
     isAdmin,
+    cacheKey,
     currentPage,
     statusFilter,
     debouncedSearch,
