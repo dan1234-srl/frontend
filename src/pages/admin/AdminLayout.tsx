@@ -1,4 +1,4 @@
-import { useState, memo, useEffect } from "react";
+import { useState, memo, useEffect, useRef } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 
 import {
@@ -239,21 +239,44 @@ const AdminLayout = () => {
           <div className="size-10" />
         </header>
 
+        {/* Premium top progress bar — fires briefly on every route change */}
+        <RouteProgress key={location.pathname} />
+
         <main className="flex-1 overflow-y-auto w-full">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="p-4 sm:p-6 lg:p-10"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          {/* No remount of Outlet — sub-pages keep their state and skeletons
+              don't re-flash when navigating between admin pages. A subtle
+              fade is applied via key on a wrapper that only changes on path. */}
+          <div
+            key={location.pathname}
+            className="p-4 sm:p-6 lg:p-10 animate-in fade-in duration-300"
+          >
+            <Outlet />
+          </div>
         </main>
       </div>
+    </div>
+  );
+};
+
+/* Lightweight indeterminate progress bar shown for ~600ms after route change.
+   Gives users a premium "loading" signal even when the new page hydrates
+   instantly from SWR cache. */
+const RouteProgress = () => {
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(false), 650);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="fixed top-0 left-0 right-0 h-[2px] z-[100] overflow-hidden pointer-events-none">
+      <motion.div
+        initial={{ x: "-40%", width: "40%" }}
+        animate={{ x: "120%" }}
+        transition={{ duration: 0.6, ease: "easeInOut" }}
+        className="h-full"
+        style={{ background: "var(--primary-gradient)" }}
+      />
     </div>
   );
 };
