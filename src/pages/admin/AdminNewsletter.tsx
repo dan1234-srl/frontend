@@ -59,6 +59,7 @@ const AdminNewsletter = () => {
       if (res.ok) {
         const data = await res.json();
         setStats(data);
+        writeCache("admin:newsletter:stats", data);
       } else if (res.status === 401) {
         toast.error("Sesiunea a expirat sau nu ai drepturi de admin.");
       }
@@ -75,8 +76,9 @@ const AdminNewsletter = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        // Filtrăm doar template-urile active
-        setTemplates(data.filter((t: any) => t.is_active));
+        const active = data.filter((t: any) => t.is_active);
+        setTemplates(active);
+        writeCache("admin:newsletter:templates", active);
       }
     } catch (error) {
       toast.error("Eroare la încărcarea template-urilor.");
