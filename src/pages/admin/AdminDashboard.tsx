@@ -360,7 +360,7 @@ const AdminDashboard = () => {
 
             {/* Ambient light ring */}
             <div className="absolute -right-6 -bottom-6 size-28 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-          </motion.div>
+          </div>
         ))}
       </section>
 
