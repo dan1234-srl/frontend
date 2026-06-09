@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { readCache, writeCache } from "@/lib/swr-cache";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -24,10 +25,14 @@ const AdminNewsletter = () => {
     "subscribers",
   );
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ total_active_users: 0 });
+  const [stats, setStats] = useState(
+    readCache<{ total_active_users: number }>("admin:newsletter:stats", 60_000)
+      .data || { total_active_users: 0 },
+  );
 
-  // Stocăm template-urile create în Unlayer
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>(
+    readCache<any[]>("admin:newsletter:templates", 60_000).data || [],
+  );
 
   // Structura nouă a campaniei folosește ID-ul template-ului
   const [campaign, setCampaign] = useState({
