@@ -253,7 +253,7 @@ const AdminOrders = () => {
   ];
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left relative">
+    <div className="w-full space-y-10 pb-20 font-sans text-left relative">
       {/* HEADER */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
         <div className="space-y-4">
@@ -276,7 +276,6 @@ const AdminOrders = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
-          {/* BUTON NOU: Istoric GLS 60 Zile */}
           <button
             onClick={handleFetchGlobalGlsHistory}
             className="w-full sm:w-auto bg-white border border-zinc-200 text-zinc-700 hover:text-[var(--royal-violet)] px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95 hover:border-[var(--royal-violet)]"
@@ -293,14 +292,11 @@ const AdminOrders = () => {
         </div>
       </header>
 
-      {/* METRICS GRID */}
+      {/* METRICS GRID — instant render, no per-card stagger */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {metricCards.map((item, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
             className="relative overflow-hidden p-8 rounded-[2rem] shadow-2xl shadow-zinc-200/50 group hover:-translate-y-1 transition-all duration-500"
             style={{ background: item.gradient }}
           >
@@ -309,6 +305,9 @@ const AdminOrders = () => {
                 <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 text-white">
                   {item.icon}
                 </div>
+                {isRevalidating && i === 0 && (
+                  <Loader2 size={14} className="animate-spin text-white/60" />
+                )}
               </div>
               <div className="mt-8">
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/50 mb-2">
@@ -320,9 +319,10 @@ const AdminOrders = () => {
               </div>
             </div>
             <div className="absolute -right-4 -bottom-4 size-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-colors" />
-          </motion.div>
+          </div>
         ))}
       </section>
+
 
       {/* SEARCH & FILTERS */}
       <section className="bg-white border border-zinc-100 p-3 flex flex-col lg:flex-row gap-3 items-center justify-between rounded-[2rem] shadow-sm">
