@@ -34,10 +34,11 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
+const buildOrdersKey = (page: number, search: string, status: string) =>
+  `admin:orders:list:${page}:${search}:${status}`;
+
 const AdminOrders = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
 
   // State pentru Modalul de anulare AWB
@@ -57,12 +58,31 @@ const AdminOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Toate");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+
+  // Synchronous hydration from cache — no skeleton flash on revisit
+  const initialKey = buildOrdersKey(1, "", "Toate");
+  const initialCached = readCache<any>(initialKey, 60_000).data;
+  const [orders, setOrders] = useState<any[]>(initialCached?.items || []);
+  const [totalPages, setTotalPages] = useState<number>(initialCached?.pages || 1);
+  const [totalItems, setTotalItems] = useState<number>(initialCached?.total || 0);
+  const [loading, setLoading] = useState<boolean>(!initialCached);
+  const [isRevalidating, setIsRevalidating] = useState(false);
 
   const fetchOrders = useCallback(async () => {
-    try {
+    const cacheKey = buildOrdersKey(currentPage, searchTerm, statusFilter);
+    const cached = readCache<any>(cacheKey, 60_000).data;
+    if (cached) {
+      const normalized = cached.items?.map((it: any) => (it.Order ? it.Order : it)) || [];
+      setOrders(normalized);
+      setTotalPages(cached.pages || 1);
+      setTotalItems(cached.total || 0);
+      setLoading(false);
+      setIsRevalidating(true);
+    } else {
       setLoading(true);
+    }
+
+    try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: "10",
@@ -83,16 +103,18 @@ const AdminOrders = () => {
         setOrders(normalizedOrders);
         setTotalPages(data.pages || 1);
         setTotalItems(data.total || 0);
+        writeCache(cacheKey, data);
       } else {
         const msg = Array.isArray(data.detail)
           ? data.detail[0].msg
           : data.detail;
-        toast.error(msg || "Eroare la încărcarea datelor.");
+        if (!cached) toast.error(msg || "Eroare la încărcarea datelor.");
       }
     } catch (err) {
-      toast.error("Eroare de rețea.");
+      if (!cached) toast.error("Eroare de rețea.");
     } finally {
       setLoading(false);
+      setIsRevalidating(false);
     }
   }, [currentPage, searchTerm, statusFilter]);
 
