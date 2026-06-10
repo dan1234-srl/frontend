@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -13,7 +13,6 @@ import {
   DollarSign,
   AlertTriangle,
   PackageX,
-  X,
   Database,
   History,
 } from "lucide-react";
@@ -26,9 +25,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import OrderReviewModal from "@/components/admin/OrderReviewModal";
+import AdminDialog from "@/components/admin/AdminDialog";
+import { readCache, writeCache } from "@/lib/swr-cache";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
