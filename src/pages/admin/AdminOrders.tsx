@@ -558,257 +558,216 @@ const AdminOrders = () => {
         onActionComplete={fetchOrders}
       />
 
-      {/* MODAL ISTORIC GLOBAL GLS (NOU) */}
-      <AnimatePresence>
-        {showGlsHistory && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-4xl overflow-hidden relative max-h-[90vh] flex flex-col"
-            >
-              <div className="p-8 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
-                <div>
-                  <h3 className="text-2xl font-serif italic font-black text-[var(--dark-amethyst)]">
-                    Istoric GLS
-                  </h3>
-                  <p className="text-sm text-zinc-500 font-medium">
-                    Toate coletele din ultimele 60 de zile
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowGlsHistory(false)}
-                  className="p-2 text-zinc-400 hover:text-zinc-800 hover:bg-white rounded-full transition-colors shadow-sm border border-transparent hover:border-zinc-200"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="p-0 overflow-y-auto flex-1 bg-white">
-                {isFetchingHistory ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-zinc-400">
-                    <Loader2
-                      size={32}
-                      className="animate-spin mb-4 text-[var(--royal-violet)]"
-                    />
-                    <p className="text-xs font-bold uppercase tracking-widest">
-                      Se interoghează GLS...
-                    </p>
-                  </div>
-                ) : glsHistoryData.length > 0 ? (
-                  <Table>
-                    <TableHeader className="bg-zinc-50 sticky top-0 z-10 shadow-sm">
-                      <TableRow>
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
-                          ID Intern
-                        </TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
-                          AWB
-                        </TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
-                          Referință Client
-                        </TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest">
-                          Data AWB
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {glsHistoryData.map((parcel, idx) => (
-                        <TableRow key={idx} className="hover:bg-zinc-50">
-                          <TableCell className="font-bold text-[var(--dark-amethyst)]">
-                            {parcel.ParcelId}
-                          </TableCell>
-                          <TableCell className="text-zinc-600">
-                            {parcel.ParcelNumber}
-                          </TableCell>
-                          <TableCell>
-                            <span className="bg-zinc-100 px-2 py-1 rounded text-xs font-bold text-zinc-700">
-                              {parcel.ClientReference || "N/A"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-xs text-zinc-500">
-                            {parcel.Parcel?.PickupDate
-                              ? new Date(
-                                  parseInt(
-                                    parcel.Parcel.PickupDate.replace(
-                                      /[^0-9]/g,
-                                      "",
-                                    ),
-                                  ),
-                                ).toLocaleString("ro-RO")
-                              : "N/A"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 opacity-30">
-                    <Database size={48} className="mb-4" />
-                    <p className="text-sm font-bold">
-                      Nu există colete înregistrate în ultimele 60 de zile.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+      {/* MODAL ISTORIC GLOBAL GLS — premium, fully responsive */}
+      <AdminDialog
+        open={showGlsHistory}
+        onOpenChange={(o) => !o && setShowGlsHistory(false)}
+        eyebrow="Tranzacțional · GLS"
+        title="Istoric GLS"
+        description="Toate coletele din ultimele 60 de zile"
+        size="lg"
+      >
+        {isFetchingHistory ? (
+          <div className="flex flex-col items-center justify-center h-64 text-zinc-400">
+            <Loader2
+              size={32}
+              className="animate-spin mb-4 text-[var(--royal-violet)]"
+            />
+            <p className="text-xs font-bold uppercase tracking-widest">
+              Se interoghează GLS...
+            </p>
+          </div>
+        ) : glsHistoryData.length > 0 ? (
+          <div className="overflow-x-auto -mx-6 sm:-mx-8 px-6 sm:px-8">
+            <Table className="min-w-[640px]">
+              <TableHeader className="bg-zinc-50/70 sticky top-0 z-10 shadow-sm">
+                <TableRow>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                    ID Intern
+                  </TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                    AWB
+                  </TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                    Referință Client
+                  </TableHead>
+                  <TableHead className="text-[10px] font-black uppercase tracking-widest">
+                    Data AWB
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {glsHistoryData.map((parcel, idx) => (
+                  <TableRow key={idx} className="hover:bg-zinc-50">
+                    <TableCell className="font-bold text-[var(--dark-amethyst)]">
+                      {parcel.ParcelId}
+                    </TableCell>
+                    <TableCell className="text-zinc-600">
+                      {parcel.ParcelNumber}
+                    </TableCell>
+                    <TableCell>
+                      <span className="bg-zinc-100 px-2 py-1 rounded text-xs font-bold text-zinc-700">
+                        {parcel.ClientReference || "N/A"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs text-zinc-500">
+                      {parcel.Parcel?.PickupDate
+                        ? new Date(
+                            parseInt(
+                              parcel.Parcel.PickupDate.replace(/[^0-9]/g, ""),
+                            ),
+                          ).toLocaleString("ro-RO")
+                        : "N/A"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 opacity-30">
+            <Database size={48} className="mb-4" />
+            <p className="text-sm font-bold text-center">
+              Nu există colete înregistrate în ultimele 60 de zile.
+            </p>
+          </div>
         )}
-      </AnimatePresence>
+      </AdminDialog>
 
-      {/* MODAL ANULARE AWB GLS */}
-      <AnimatePresence>
+      {/* MODAL ANULARE AWB GLS — premium, fully responsive */}
+      <AdminDialog
+        open={!!cancelOrderContext}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCancelOrderContext(null);
+            setCustomParcelId("");
+            setGlsParcels(null);
+          }
+        }}
+        eyebrow="Acțiune critică"
+        title="Anulare AWB GLS"
+        description={
+          cancelOrderContext
+            ? `Comanda: ${cancelOrderContext.order_number}`
+            : undefined
+        }
+        size="md"
+        footer={
+          <>
+            <button
+              onClick={() => {
+                setCancelOrderContext(null);
+                setCustomParcelId("");
+                setGlsParcels(null);
+              }}
+              disabled={isCancelingGls}
+              className="sm:flex-1 py-4 px-6 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors disabled:opacity-50"
+            >
+              Renunță
+            </button>
+            <button
+              onClick={handleCancelGlsLabel}
+              disabled={isCancelingGls}
+              className="sm:flex-1 py-4 px-6 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isCancelingGls ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                "Confirmă Ștergerea"
+              )}
+            </button>
+          </>
+        }
+      >
         {cancelOrderContext && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden relative max-h-[90vh] flex flex-col"
-            >
-              <div className="p-8 overflow-y-auto">
-                <button
-                  onClick={() => {
-                    setCancelOrderContext(null);
-                    setCustomParcelId("");
-                    setGlsParcels(null);
-                  }}
-                  className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors"
-                >
-                  <X size={20} />
-                </button>
-
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shrink-0">
-                    <PackageX size={32} />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-serif italic font-black text-[var(--dark-amethyst)]">
-                      Anulare AWB GLS
-                    </h3>
-                    <p className="text-sm font-bold text-zinc-500">
-                      Comanda: {cancelOrderContext.order_number}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-2xl mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs text-zinc-600 font-medium">
-                      Nu ești sigur care este ParcelId-ul?
-                    </p>
-                    <button
-                      onClick={handleSearchGlsParcels}
-                      disabled={isSearchingParcels}
-                      className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white border border-zinc-200 px-4 py-2 rounded-lg hover:border-[var(--royal-violet)] transition-colors disabled:opacity-50"
-                    >
-                      {isSearchingParcels ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <Database size={14} />
-                      )}
-                      Caută în GLS
-                    </button>
-                  </div>
-
-                  {glsParcels && glsParcels.length > 0 && (
-                    <div className="space-y-2 mt-4 max-h-40 overflow-y-auto pr-2">
-                      {glsParcels.map((parcel: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="bg-white p-3 border border-zinc-200 rounded-xl flex justify-between items-center text-xs"
-                        >
-                          <div>
-                            <p className="font-bold text-[var(--dark-amethyst)]">
-                              ID Intern: {parcel.ParcelId}
-                            </p>
-                            <p className="text-zinc-500">
-                              AWB: {parcel.ParcelNumber}
-                            </p>
-                            <p className="text-zinc-400">
-                              Ref: {parcel.ClientReference}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() =>
-                              setCustomParcelId(parcel.ParcelId.toString())
-                            }
-                            className="bg-[var(--royal-violet)]/10 text-[var(--royal-violet)] px-3 py-1.5 rounded-lg font-bold hover:bg-[var(--royal-violet)] hover:text-white transition-colors"
-                          >
-                            Folosește
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {glsParcels && glsParcels.length === 0 && (
-                    <p className="text-xs text-rose-500 font-bold">
-                      Nu s-a găsit niciun colet pentru această comandă în GLS.
-                    </p>
-                  )}
-                </div>
-
-                <div className="mb-8">
-                  <label className="block text-[10px] uppercase tracking-widest font-black text-zinc-400 mb-2">
-                    Parcel ID (ID-ul intern GLS de șters)
-                  </label>
-                  <input
-                    type="text"
-                    value={customParcelId}
-                    onChange={(e) => setCustomParcelId(e.target.value)}
-                    placeholder={
-                      cancelOrderContext.gls_parcel_id?.toString() ||
-                      "Ex: 12345678"
-                    }
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/20 transition-all"
-                  />
-                  <p className="text-xs text-zinc-400 mt-2">
-                    *Lasă gol pentru a folosi ID-ul salvat în baza de date (dacă
-                    există).
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setCancelOrderContext(null);
-                      setCustomParcelId("");
-                      setGlsParcels(null);
-                    }}
-                    disabled={isCancelingGls}
-                    className="flex-1 py-4 px-6 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors disabled:opacity-50"
-                  >
-                    Renunță
-                  </button>
-                  <button
-                    onClick={handleCancelGlsLabel}
-                    disabled={isCancelingGls}
-                    className="flex-1 py-4 px-6 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {isCancelingGls ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      "Confirmă Ștergerea"
-                    )}
-                  </button>
-                </div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center shrink-0">
+                <PackageX size={26} />
               </div>
-            </motion.div>
-          </motion.div>
+              <p className="text-sm text-zinc-500 font-medium leading-snug">
+                Această acțiune anulează eticheta GLS și nu poate fi reluată
+                fără regenerare manuală.
+              </p>
+            </div>
+
+            <div className="bg-zinc-50 border border-zinc-100 p-4 rounded-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <p className="text-xs text-zinc-600 font-medium">
+                  Nu ești sigur care este ParcelId-ul?
+                </p>
+                <button
+                  onClick={handleSearchGlsParcels}
+                  disabled={isSearchingParcels}
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white border border-zinc-200 px-4 py-2 rounded-lg hover:border-[var(--royal-violet)] transition-colors disabled:opacity-50 self-start sm:self-auto"
+                >
+                  {isSearchingParcels ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Database size={14} />
+                  )}
+                  Caută în GLS
+                </button>
+              </div>
+
+              {glsParcels && glsParcels.length > 0 && (
+                <div className="space-y-2 mt-2 max-h-48 overflow-y-auto pr-2">
+                  {glsParcels.map((parcel: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="bg-white p-3 border border-zinc-200 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-xs"
+                    >
+                      <div>
+                        <p className="font-bold text-[var(--dark-amethyst)]">
+                          ID Intern: {parcel.ParcelId}
+                        </p>
+                        <p className="text-zinc-500">
+                          AWB: {parcel.ParcelNumber}
+                        </p>
+                        <p className="text-zinc-400">
+                          Ref: {parcel.ClientReference}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          setCustomParcelId(parcel.ParcelId.toString())
+                        }
+                        className="bg-[var(--royal-violet)]/10 text-[var(--royal-violet)] px-3 py-1.5 rounded-lg font-bold hover:bg-[var(--royal-violet)] hover:text-white transition-colors self-start sm:self-auto"
+                      >
+                        Folosește
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {glsParcels && glsParcels.length === 0 && (
+                <p className="text-xs text-rose-500 font-bold">
+                  Nu s-a găsit niciun colet pentru această comandă în GLS.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-black text-zinc-400 mb-2">
+                Parcel ID (ID-ul intern GLS de șters)
+              </label>
+              <input
+                type="text"
+                value={customParcelId}
+                onChange={(e) => setCustomParcelId(e.target.value)}
+                placeholder={
+                  cancelOrderContext.gls_parcel_id?.toString() || "Ex: 12345678"
+                }
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/20 transition-all"
+              />
+              <p className="text-xs text-zinc-400 mt-2">
+                *Lasă gol pentru a folosi ID-ul salvat în baza de date (dacă
+                există).
+              </p>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
+      </AdminDialog>
     </div>
   );
 };
