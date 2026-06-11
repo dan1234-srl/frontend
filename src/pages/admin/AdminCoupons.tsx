@@ -862,18 +862,25 @@ const AdminCoupons = () => {
       </div>
 
       {/* ── MODAL CONFIGURARE VOUCHER ── */}
-      <Dialog open={isVoucherModalOpen} onOpenChange={setIsVoucherModalOpen}>
-        <DialogContent className="max-w-[1200px] w-[96vw] h-[92vh] p-0 rounded-[3.5rem] border-none shadow-2xl flex flex-col overflow-hidden bg-[#FBFBFD] [&>button]:hidden">
-          <header className="px-8 md:px-12 py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border-b border-zinc-100 shrink-0">
-            <div className="text-left space-y-2">
-              <DialogTitle
-                className="text-4xl md:text-5xl font-serif italic tracking-tight"
-                style={{ color: "var(--brand-dark)" }}
-              >
-                {isEditingVoucher
-                  ? "Actualizare Voucher"
-                  : "Arhitectură Voucher"}
-              </DialogTitle>
+      <AdminDialogShell
+        open={isVoucherModalOpen}
+        onOpenChange={setIsVoucherModalOpen}
+        size="full"
+        className="bg-[#FBFBFD]"
+      >
+        <AdminDialogTitle>
+          {isEditingVoucher ? "Actualizare Voucher" : "Arhitectură Voucher"}
+        </AdminDialogTitle>
+        <header className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border-b border-zinc-100 shrink-0">
+          <div className="text-left space-y-2">
+            <h2
+              className="text-3xl sm:text-4xl md:text-5xl font-serif italic tracking-tight"
+              style={{ color: "var(--brand-dark)" }}
+            >
+              {isEditingVoucher
+                ? "Actualizare Voucher"
+                : "Arhitectură Voucher"}
+            </h2>
               <div className="flex items-center gap-3">
                 <ShieldCheck
                   size={14}
