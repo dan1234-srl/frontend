@@ -242,16 +242,23 @@ const AdminLayout = () => {
         {/* Premium top progress bar — fires briefly on every route change */}
         <RouteProgress key={location.pathname} />
 
-        <main className="flex-1 overflow-y-auto w-full">
-          {/* No remount of Outlet — sub-pages keep their state and skeletons
-              don't re-flash when navigating between admin pages. A subtle
-              fade is applied via key on a wrapper that only changes on path. */}
-          <div
-            key={location.pathname}
-            className="p-4 sm:p-6 lg:p-10 animate-in fade-in duration-300"
-          >
-            <Outlet />
-          </div>
+        <main className="flex-1 overflow-y-auto w-full overflow-x-hidden">
+          {/* Slide lateral 200ms — premium, fără jitter, fără remount fade.
+              Outlet rămâne în loc; doar wrapper-ul cu key=path face slide-in.
+              Pe 2G/3G datele sunt deja în cache (SWR sessionStorage), deci
+              tranziția pare instant. */}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="p-4 sm:p-6 lg:p-10 will-change-transform"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
