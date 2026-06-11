@@ -20,11 +20,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AdminDialogShell,
+  AdminDialogTitle,
+} from "@/components/admin/AdminDialogShell";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -387,110 +385,116 @@ const AdminBrands = () => {
       )}
 
       {/* MODAL CONFIGURATION */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[700px] p-0 bg-[#FBFBFD] border-none rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col font-sans">
-          <header className="px-8 py-6 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
-            <div className="text-left">
-              <DialogTitle className="heading-serif text-3xl italic text-[var(--dark-amethyst)]">
-                {editingBrand ? "Revizuire Partener" : "Sincronizare Brand"}
-              </DialogTitle>
-              <p
-                className="text-[10px] uppercase tracking-widest font-black mt-1"
-                style={{ color: "var(--royal-violet)" }}
-              >
-                Configurare Entitate Master
-              </p>
-            </div>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="p-3 bg-zinc-50 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-sm"
+      <AdminDialogShell
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        size="lg"
+        className="bg-[#FBFBFD] font-sans"
+      >
+        <AdminDialogTitle>
+          {editingBrand ? "Revizuire Partener" : "Sincronizare Brand"}
+        </AdminDialogTitle>
+        <header className="px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
+          <div className="text-left">
+            <h2 className="heading-serif text-2xl sm:text-3xl italic text-[var(--dark-amethyst)]">
+              {editingBrand ? "Revizuire Partener" : "Sincronizare Brand"}
+            </h2>
+            <p
+              className="text-[10px] uppercase tracking-widest font-black mt-1"
+              style={{ color: "var(--royal-violet)" }}
             >
-              <X size={20} />
-            </button>
-          </header>
+              Configurare Entitate Master
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="p-3 bg-zinc-50 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-sm"
+          >
+            <X size={20} />
+          </button>
+        </header>
 
-          <div className="p-8 space-y-8 overflow-y-auto luxury-scrollbar text-left">
-            <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-3">
-              <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">
-                Denumire Oficială
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-8 luxury-scrollbar text-left">
+          <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-3">
+            <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">
+              Denumire Oficială
+            </Label>
+            <input
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full bg-transparent border-b-2 border-zinc-100 outline-none py-3 text-xl font-black uppercase transition-all"
+              onFocus={(e) =>
+                (e.target.style.borderColor = "var(--royal-violet)")
+              }
+              onBlur={(e) => (e.target.style.borderColor = "#f4f4f5")}
+              placeholder="EX: Evem EXCLUSIVE..."
+            />
+          </div>
+
+          <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+            <div className="flex justify-between items-center px-1">
+              <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
+                Logo Asset (URL)
               </Label>
-              <input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full bg-transparent border-b-2 border-zinc-100 outline-none py-3 text-xl font-black uppercase transition-all"
-                onFocus={(e) =>
-                  (e.target.style.borderColor = "var(--royal-violet)")
-                }
-                onBlur={(e) => (e.target.style.borderColor = "#f4f4f5")}
-                placeholder="EX: Evem EXCLUSIVE..."
-              />
+              {formData.logo_url && (
+                <a
+                  href={getValidImageUrl(formData.logo_url)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[9px] font-black flex items-center gap-1 hover:underline uppercase"
+                  style={{ color: "var(--royal-violet)" }}
+                >
+                  Test Link <ExternalLink size={10} />
+                </a>
+              )}
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-              <div className="flex justify-between items-center px-1">
-                <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
-                  Logo Asset (URL)
-                </Label>
-                {formData.logo_url && (
-                  <a
-                    href={getValidImageUrl(formData.logo_url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[9px] font-black flex items-center gap-1 hover:underline uppercase"
-                    style={{ color: "var(--royal-violet)" }}
-                  >
-                    Test Link <ExternalLink size={10} />
-                  </a>
+            <div className="flex gap-6 items-center p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
+              <div className="w-20 h-20 bg-white border border-zinc-200 rounded-xl flex items-center justify-center p-3 shadow-sm shrink-0">
+                {getValidImageUrl(formData.logo_url) ? (
+                  <img
+                    src={getValidImageUrl(formData.logo_url)}
+                    className="w-full h-full object-contain"
+                    alt="Preview"
+                  />
+                ) : (
+                  <ImageIcon className="text-zinc-200" size={24} />
                 )}
               </div>
-
-              <div className="flex gap-6 items-center p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
-                <div className="w-20 h-20 bg-white border border-zinc-200 rounded-xl flex items-center justify-center p-3 shadow-sm shrink-0">
-                  {getValidImageUrl(formData.logo_url) ? (
-                    <img
-                      src={getValidImageUrl(formData.logo_url)}
-                      className="w-full h-full object-contain"
-                      alt="Preview"
-                    />
-                  ) : (
-                    <ImageIcon className="text-zinc-200" size={24} />
-                  )}
-                </div>
-                <div className="flex-1 space-y-2">
-                  <input
-                    placeholder="https://image-url.com/logo.png"
-                    value={formData.logo_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, logo_url: e.target.value })
-                    }
-                    className="w-full border-none py-2 text-[11px] font-mono font-bold outline-none bg-transparent"
-                  />
-                  <p className="text-[8px] text-zinc-400 font-bold uppercase italic">
-                    Format recomandat: PNG transparent (400px).
-                  </p>
-                </div>
+              <div className="flex-1 space-y-2">
+                <input
+                  placeholder="https://image-url.com/logo.png"
+                  value={formData.logo_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, logo_url: e.target.value })
+                  }
+                  className="w-full border-none py-2 text-[11px] font-mono font-bold outline-none bg-transparent"
+                />
+                <p className="text-[8px] text-zinc-400 font-bold uppercase italic">
+                  Format recomandat: PNG transparent (400px).
+                </p>
               </div>
             </div>
           </div>
+        </div>
 
-          <DialogFooter className="p-8 bg-white border-t border-zinc-100 shrink-0">
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full text-white py-5 rounded-2xl text-[11px] uppercase tracking-[0.4em] font-black shadow-xl hover:brightness-110 active:scale-95 disabled:bg-zinc-200 transition-all flex justify-center items-center gap-3"
-              style={{ background: "var(--primary-gradient)" }}
-            >
-              {isSaving ? (
-                <Loader2 className="animate-spin" size={16} />
-              ) : (
-                "Salvează Brand în Catalog"
-              )}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <footer className="p-6 sm:p-8 bg-white border-t border-zinc-100 shrink-0">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full text-white py-5 rounded-2xl text-[11px] uppercase tracking-[0.4em] font-black shadow-xl hover:brightness-110 active:scale-95 disabled:bg-zinc-200 transition-all flex justify-center items-center gap-3"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            {isSaving ? (
+              <Loader2 className="animate-spin" size={16} />
+            ) : (
+              "Salvează Brand în Catalog"
+            )}
+          </button>
+        </footer>
+      </AdminDialogShell>
     </div>
   );
 };
