@@ -1,10 +1,6 @@
 import { ReactNode } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { DialogDescription } from "@/components/ui/dialog";
+import { AdminDialogShell, AdminDialogTitle, AdminDialogShellSize } from "./AdminDialogShell";
 import { cn } from "@/lib/utils";
 
 interface AdminDialogProps {
@@ -15,23 +11,18 @@ interface AdminDialogProps {
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: AdminDialogShellSize;
+  mobileVariant?: "sheet" | "modal";
   className?: string;
 }
 
-const sizeClass: Record<NonNullable<AdminDialogProps["size"]>, string> = {
-  sm: "sm:max-w-md",
-  md: "sm:max-w-2xl",
-  lg: "sm:max-w-4xl",
-  xl: "sm:max-w-6xl",
-};
-
 /**
- * Fully responsive admin dialog wrapper — matches the modern-luxury theme
- * used across the storefront (royal-violet eyebrow, serif title, soft borders).
+ * Branded admin dialog with built-in eyebrow/title/description header and
+ * optional sticky footer. Built on top of AdminDialogShell:
  *
- * On mobile: full-width (95vw), max-h 92vh, internal scroll, sticky header/footer.
- * On desktop: capped width by `size`.
+ * - Mobile: bottom-sheet (drag handle, safe area).
+ * - Desktop: centered modal capped by `size`.
+ * - GPU-only animations — no jitter.
  */
 export const AdminDialog = ({
   open,
@@ -42,44 +33,45 @@ export const AdminDialog = ({
   children,
   footer,
   size = "md",
+  mobileVariant = "sheet",
   className,
 }: AdminDialogProps) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={cn(
-          "p-0 gap-0 w-[95vw] max-h-[92vh] overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-2xl flex flex-col",
-          sizeClass[size],
-          className,
-        )}
-      >
-        <header className="px-6 sm:px-8 py-6 border-b border-zinc-100 bg-white shrink-0">
-          {eyebrow && (
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)] mb-1.5">
-              {eyebrow}
-            </p>
-          )}
-          <DialogTitle className="heading-serif text-2xl sm:text-3xl tracking-tighter text-[var(--dark-amethyst)] font-medium">
-            {title}
-          </DialogTitle>
-          {description && (
-            <DialogDescription className="text-[11px] text-zinc-400 font-medium mt-1.5">
-              {description}
-            </DialogDescription>
-          )}
-        </header>
+    <AdminDialogShell
+      open={open}
+      onOpenChange={onOpenChange}
+      size={size}
+      mobileVariant={mobileVariant}
+      className={cn("bg-white", className)}
+    >
+      <AdminDialogTitle>{title}</AdminDialogTitle>
 
-        <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 luxury-scrollbar">
-          {children}
-        </div>
-
-        {footer && (
-          <footer className="px-6 sm:px-8 py-5 border-t border-zinc-100 bg-zinc-50/40 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-            {footer}
-          </footer>
+      <header className="px-6 sm:px-8 py-5 sm:py-6 border-b border-zinc-100 bg-white shrink-0 text-left">
+        {eyebrow && (
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)] mb-1.5">
+            {eyebrow}
+          </p>
         )}
-      </DialogContent>
-    </Dialog>
+        <h2 className="heading-serif text-2xl sm:text-3xl tracking-tighter text-[var(--dark-amethyst)] font-medium">
+          {title}
+        </h2>
+        {description && (
+          <DialogDescription className="text-[11px] text-zinc-400 font-medium mt-1.5">
+            {description}
+          </DialogDescription>
+        )}
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 luxury-scrollbar">
+        {children}
+      </div>
+
+      {footer && (
+        <footer className="px-6 sm:px-8 py-4 sm:py-5 border-t border-zinc-100 bg-zinc-50/40 shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          {footer}
+        </footer>
+      )}
+    </AdminDialogShell>
   );
 };
 

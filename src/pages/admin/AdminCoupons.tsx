@@ -35,11 +35,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AdminDialogShell,
+  AdminDialogTitle,
+} from "@/components/admin/AdminDialogShell";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -864,18 +862,25 @@ const AdminCoupons = () => {
       </div>
 
       {/* ── MODAL CONFIGURARE VOUCHER ── */}
-      <Dialog open={isVoucherModalOpen} onOpenChange={setIsVoucherModalOpen}>
-        <DialogContent className="max-w-[1200px] w-[96vw] h-[92vh] p-0 rounded-[3.5rem] border-none shadow-2xl flex flex-col overflow-hidden bg-[#FBFBFD] [&>button]:hidden">
-          <header className="px-8 md:px-12 py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border-b border-zinc-100 shrink-0">
-            <div className="text-left space-y-2">
-              <DialogTitle
-                className="text-4xl md:text-5xl font-serif italic tracking-tight"
-                style={{ color: "var(--brand-dark)" }}
-              >
-                {isEditingVoucher
-                  ? "Actualizare Voucher"
-                  : "Arhitectură Voucher"}
-              </DialogTitle>
+      <AdminDialogShell
+        open={isVoucherModalOpen}
+        onOpenChange={setIsVoucherModalOpen}
+        size="full"
+        className="bg-[#FBFBFD]"
+      >
+        <AdminDialogTitle>
+          {isEditingVoucher ? "Actualizare Voucher" : "Arhitectură Voucher"}
+        </AdminDialogTitle>
+        <header className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border-b border-zinc-100 shrink-0">
+          <div className="text-left space-y-2">
+            <h2
+              className="text-3xl sm:text-4xl md:text-5xl font-serif italic tracking-tight"
+              style={{ color: "var(--brand-dark)" }}
+            >
+              {isEditingVoucher
+                ? "Actualizare Voucher"
+                : "Arhitectură Voucher"}
+            </h2>
               <div className="flex items-center gap-3">
                 <ShieldCheck
                   size={14}
@@ -1215,10 +1220,10 @@ const AdminCoupons = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-8 md:px-12 py-10 bg-white border-t border-zinc-100 shrink-0">
+          <footer className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 bg-white border-t border-zinc-100 shrink-0">
             <button
               onClick={handleSaveVoucher}
-              className="w-full py-8 rounded-[3rem] text-white text-[14px] font-black uppercase tracking-[0.5em] shadow-[0_20px_40px_-15px_rgba(0,85,255,0.4)] hover:shadow-[0_20px_50px_-10px_rgba(0,85,255,0.6)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-4 border-none"
+              className="w-full py-6 sm:py-8 rounded-[3rem] text-white text-[12px] sm:text-[14px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] shadow-[0_20px_40px_-15px_rgba(0,85,255,0.4)] hover:shadow-[0_20px_50px_-10px_rgba(0,85,255,0.6)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-4 border-none"
               style={{ background: brand.primary_gradient, color: "#FFFFFF" }}
             >
               <MousePointerClick size={22} color="#FFFFFF" strokeWidth={3} />
@@ -1228,23 +1233,28 @@ const AdminCoupons = () => {
                   : "Lansează Voucherul în Rețea"}
               </span>
             </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </AdminDialogShell>
 
       {/* ── MODAL CONFIGURARE BANNER EDITORIAL (GLOBAL + LOCAL SUPORT) ── */}
-      <Dialog open={isBannerModalOpen} onOpenChange={setIsBannerModalOpen}>
-        <DialogContent className="max-w-[800px] w-[96vw] max-h-[90vh] p-0 rounded-[3.5rem] border-none shadow-2xl flex flex-col overflow-hidden bg-white [&>button]:hidden">
-          <header className="px-8 md:px-12 py-8 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
-            <div>
-              <DialogTitle
-                className="text-3xl font-serif italic tracking-tight"
-                style={{ color: "var(--brand-dark)" }}
-              >
-                {isEditingBanner
-                  ? "Editează Bannerul"
+      <AdminDialogShell
+        open={isBannerModalOpen}
+        onOpenChange={setIsBannerModalOpen}
+        size="lg"
+      >
+        <AdminDialogTitle>
+          {isEditingBanner ? "Editează Bannerul" : "Banner Nou de Campanie"}
+        </AdminDialogTitle>
+        <header className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
+          <div>
+            <h2
+              className="text-2xl sm:text-3xl font-serif italic tracking-tight"
+              style={{ color: "var(--brand-dark)" }}
+            >
+              {isEditingBanner
+                ? "Editează Bannerul"
                   : "Banner Nou de Campanie"}
-              </DialogTitle>
+              </h2>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">
                 Sistemul Editorial de Landing Page-uri
               </p>
@@ -1428,7 +1438,7 @@ const AdminCoupons = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-8 md:px-12 py-8 bg-white border-t border-zinc-100 shrink-0">
+          <footer className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 bg-white border-t border-zinc-100 shrink-0">
             <button
               onClick={handleSaveBanner}
               disabled={uploadingImage}
@@ -1440,9 +1450,8 @@ const AdminCoupons = () => {
                 {isEditingBanner ? "Salvează Modificările" : "Publică Bannerul"}
               </span>
             </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </AdminDialogShell>
     </div>
   );
 };

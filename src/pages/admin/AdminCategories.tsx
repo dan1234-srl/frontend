@@ -20,11 +20,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AdminDialogShell,
+  AdminDialogTitle,
+} from "@/components/admin/AdminDialogShell";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { readCache, writeCache } from "@/lib/swr-cache";
@@ -550,144 +548,150 @@ const AdminCategories = () => {
       </div>
 
       {/* MODAL CONFIG */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[700px] w-[95vw] p-0 bg-[#FBFBFD] border-none rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-          <header className="px-10 py-8 flex justify-between items-center bg-white border-b shrink-0">
-            <div>
-              <DialogTitle className="heading-serif text-3xl italic text-[var(--dark-amethyst)]">
-                {editingCategory ? "Editează Parametrii" : "Colecție Nouă"}
-              </DialogTitle>
-              <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
-                Configurare Ierarhie Master
-              </p>
-            </div>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
-            >
-              <X size={20} />
-            </button>
-          </header>
+      <AdminDialogShell
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        size="lg"
+        className="bg-[#FBFBFD]"
+      >
+        <AdminDialogTitle>
+          {editingCategory ? "Editează Parametrii" : "Colecție Nouă"}
+        </AdminDialogTitle>
+        <header className="px-6 sm:px-10 py-6 sm:py-8 flex justify-between items-center bg-white border-b shrink-0">
+          <div>
+            <h2 className="heading-serif text-2xl sm:text-3xl italic text-[var(--dark-amethyst)]">
+              {editingCategory ? "Editează Parametrii" : "Colecție Nouă"}
+            </h2>
+            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
+              Configurare Ierarhie Master
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+          >
+            <X size={20} />
+          </button>
+        </header>
 
-          <div className="p-10 space-y-10 overflow-y-auto luxury-scrollbar">
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-                  Denumire
-                </Label>
-                <input
-                  className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-zinc-100 outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      name: e.target.value,
-                      slug: generateSlug(e.target.value),
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-                  URL Slug
-                </Label>
-                <input
-                  className="w-full bg-white rounded-2xl p-4 text-sm font-mono font-bold border border-zinc-100 outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all"
-                  value={formData.slug}
-                  onChange={(e) =>
-                    setFormData({ ...formData, slug: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
+        <div className="flex-1 p-6 sm:p-10 space-y-8 sm:space-y-10 overflow-y-auto luxury-scrollbar">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-                Părinte Ierarhic (Optional)
+                Denumire
               </Label>
-              <select
-                className="w-full bg-white rounded-2xl p-4 text-xs font-black border border-zinc-100 outline-none appearance-none"
-                value={formData.parent_id || ""}
+              <input
+                className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-zinc-100 outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all"
+                value={formData.name}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    parent_id: e.target.value || null,
+                    name: e.target.value,
+                    slug: generateSlug(e.target.value),
                   })
                 }
-              >
-                <option value="">COLECȚIE PRINCIPALĂ (ROOT)</option>
-                {categories
-                  .filter((c) => !c.parent_id && c.id !== editingCategory?.id)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name.toUpperCase()}
-                    </option>
-                  ))}
-              </select>
+              />
             </div>
-
             <div className="space-y-3">
               <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-                Imagine Prezentare
+                URL Slug
               </Label>
-              <div className="flex gap-6 items-center">
-                <OptimizedImage
-                  src={formData.image_url}
-                  className="size-24 rounded-2xl shadow-md border shrink-0"
+              <input
+                className="w-full bg-white rounded-2xl p-4 text-sm font-mono font-bold border border-zinc-100 outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all"
+                value={formData.slug}
+                onChange={(e) =>
+                  setFormData({ ...formData, slug: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
+              Părinte Ierarhic (Optional)
+            </Label>
+            <select
+              className="w-full bg-white rounded-2xl p-4 text-xs font-black border border-zinc-100 outline-none appearance-none"
+              value={formData.parent_id || ""}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  parent_id: e.target.value || null,
+                })
+              }
+            >
+              <option value="">COLECȚIE PRINCIPALĂ (ROOT)</option>
+              {categories
+                .filter((c) => !c.parent_id && c.id !== editingCategory?.id)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name.toUpperCase()}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
+              Imagine Prezentare
+            </Label>
+            <div className="flex gap-6 items-center">
+              <OptimizedImage
+                src={formData.image_url}
+                className="size-24 rounded-2xl shadow-md border shrink-0"
+              />
+              <div className="flex-1 flex flex-col gap-3">
+                <input
+                  className="w-full bg-zinc-50 rounded-xl p-3 text-xs font-medium border border-zinc-100 outline-none focus:bg-white focus:border-[var(--royal-violet)] transition-colors"
+                  placeholder="Paste image link..."
+                  value={formData.image_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, image_url: e.target.value })
+                  }
                 />
-                <div className="flex-1 flex flex-col gap-3">
+                <div className="relative">
                   <input
-                    className="w-full bg-zinc-50 rounded-xl p-3 text-xs font-medium border border-zinc-100 outline-none focus:bg-white focus:border-[var(--royal-violet)] transition-colors"
-                    placeholder="Paste image link..."
-                    value={formData.image_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, image_url: e.target.value })
-                    }
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploadingImage}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
                   />
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      disabled={isUploadingImage}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                    />
-                    <button
-                      type="button"
-                      disabled={isUploadingImage}
-                      className="w-full h-10 bg-white border border-zinc-200 hover:border-[var(--royal-violet)] hover:text-[var(--royal-violet)] text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="animate-spin" size={16} />
-                      ) : (
-                        <UploadCloud size={16} />
-                      )}
-                      {isUploadingImage
-                        ? "Procesare S3..."
-                        : "Încarcă fișier (S3)"}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    disabled={isUploadingImage}
+                    className="w-full h-10 bg-white border border-zinc-200 hover:border-[var(--royal-violet)] hover:text-[var(--royal-violet)] text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="animate-spin" size={16} />
+                    ) : (
+                      <UploadCloud size={16} />
+                    )}
+                    {isUploadingImage
+                      ? "Procesare S3..."
+                      : "Încarcă fișier (S3)"}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <DialogFooter className="p-8 bg-white border-t shrink-0">
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full text-white py-5 rounded-2xl text-[11px] uppercase tracking-[0.4em] font-black shadow-xl hover:brightness-110 active:scale-95 disabled:bg-zinc-200 transition-all"
-              style={{ background: "var(--primary-gradient)" }}
-            >
-              {isSaving ? (
-                <Loader2 className="animate-spin mx-auto" />
-              ) : (
-                "Salvează Modificările"
-              )}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <footer className="p-6 sm:p-8 bg-white border-t shrink-0">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full text-white py-5 rounded-2xl text-[11px] uppercase tracking-[0.4em] font-black shadow-xl hover:brightness-110 active:scale-95 disabled:bg-zinc-200 transition-all"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            {isSaving ? (
+              <Loader2 className="animate-spin mx-auto" />
+            ) : (
+              "Salvează Modificările"
+            )}
+          </button>
+        </footer>
+      </AdminDialogShell>
     </div>
   );
 };

@@ -42,11 +42,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AdminDialogShell,
+  AdminDialogTitle,
+} from "@/components/admin/AdminDialogShell";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -910,8 +908,16 @@ const AdminProducts = () => {
       </div>
 
       {/* ── Modal Editare ───────────────────────────────────────────────────── */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[1350px] w-full h-full sm:h-[94vh] sm:w-[96vw] p-0 rounded-none sm:rounded-[2.5rem] border-none bg-[#F8F9FA] shadow-2xl flex flex-col overflow-hidden">
+      <AdminDialogShell
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        size="full"
+        mobileVariant="modal"
+        className="bg-[#F8F9FA] h-[100dvh] sm:h-[94vh] sm:max-h-[94vh] rounded-none sm:rounded-[2.5rem]"
+      >
+        <AdminDialogTitle>
+          {formData.sku ? `Editare: ${formData.sku}` : "Fișă Articol Nou"}
+        </AdminDialogTitle>
           {/* Header Modal */}
           <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
@@ -919,11 +925,11 @@ const AdminProducts = () => {
                 <Package size={22} />
               </div>
               <div>
-                <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
+                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
                   {formData.sku
                     ? `Editare: ${formData.sku}`
                     : "Fișă Articol Nou"}
-                </DialogTitle>
+                </h2>
                 <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-black mt-0.5">
                   Core Product Configuration
                 </p>
@@ -1379,7 +1385,7 @@ const AdminProducts = () => {
           </div>
 
           {/* Footer Modal */}
-          <DialogFooter className="px-6 md:px-10 py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <footer className="px-6 md:px-10 py-5 md:py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5 text-zinc-400">
               <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
               <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
@@ -1400,9 +1406,8 @@ const AdminProducts = () => {
                 <Save size={14} /> {editingProduct ? "Salvează" : "Publică"}
               </button>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </AdminDialogShell>
 
       <style
         dangerouslySetInnerHTML={{
