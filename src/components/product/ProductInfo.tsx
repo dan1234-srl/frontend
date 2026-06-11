@@ -1,7 +1,7 @@
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT ATOMIC: Importăm hook-ul nativ Shadcn în loc de sonner
+import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
 import {
   ShoppingBag,
@@ -26,7 +26,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
-  const { toast } = useToast(); // 🚀 REPARAT ATOMIC: Inițializăm generatorul de ferestre toast
+  
 
   // --- LOGICĂ VERIFICARE FAVORIT ---
   useEffect(() => {
@@ -171,11 +171,24 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       brand_name: product.brand_name || "",
     });
 
-    // 🚀 REPARAT ATOMIC: Trimitere fluidă sub structura unificată a temei tale
-    toast({
-      title: "Adăugat în coș",
-      description: product.name,
-    });
+    // Toast tappable — pe mobil/desktop, click pe el deschide coșul.
+    const openCart = () =>
+      window.dispatchEvent(new CustomEvent("evem:open-cart"));
+    toast.success("Adăugat în coș", {
+      description: `${product.name} — apasă pentru a vedea coșul`,
+      duration: 4000,
+      onAutoClose: () => {},
+      action: {
+        label: "Vezi coșul",
+        onClick: openCart,
+      },
+      // Apăsare pe corpul toast-ului (important pe mobil)
+      onDismiss: () => {},
+      classNames: {
+        toast: "cursor-pointer",
+      },
+      onClick: openCart,
+    } as any);
   };
 
   const getStockStatus = () => {

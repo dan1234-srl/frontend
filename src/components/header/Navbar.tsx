@@ -192,6 +192,13 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  // Global hook: allow any component (e.g. add-to-cart toasts) to open the cart
+  useEffect(() => {
+    const openCart = () => setBagOpen(true);
+    window.addEventListener("evem:open-cart", openCart);
+    return () => window.removeEventListener("evem:open-cart", openCart);
+  }, []);
+
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const { scrollY } = useScroll();
