@@ -647,7 +647,13 @@ export function OrderTracking({
                       <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
                         {ev.timestamp
                           ? (() => {
-                              const d = new Date(ev.timestamp);
+                              // Extragem timestamp-ul dintre paranteze (ex: 1781120544000)
+                              const match = String(ev.timestamp).match(/\d+/);
+                              const timestamp = match
+                                ? parseInt(match[0], 10)
+                                : NaN;
+
+                              const d = new Date(timestamp);
                               return isNaN(d.getTime())
                                 ? ev.timestamp
                                 : d.toLocaleString("ro-RO", {
