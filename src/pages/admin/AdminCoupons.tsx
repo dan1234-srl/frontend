@@ -1438,7 +1438,7 @@ const AdminCoupons = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-8 md:px-12 py-8 bg-white border-t border-zinc-100 shrink-0">
+          <footer className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 bg-white border-t border-zinc-100 shrink-0">
             <button
               onClick={handleSaveBanner}
               disabled={uploadingImage}
@@ -1450,9 +1450,8 @@ const AdminCoupons = () => {
                 {isEditingBanner ? "Salvează Modificările" : "Publică Bannerul"}
               </span>
             </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </AdminDialogShell>
     </div>
   );
 };
