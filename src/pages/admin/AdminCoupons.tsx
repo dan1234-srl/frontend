@@ -1254,7 +1254,7 @@ const AdminCoupons = () => {
               {isEditingBanner
                 ? "Editează Bannerul"
                   : "Banner Nou de Campanie"}
-              </DialogTitle>
+              </h2>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">
                 Sistemul Editorial de Landing Page-uri
               </p>
