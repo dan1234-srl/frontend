@@ -425,154 +425,161 @@ const AdminAttributes = () => {
       </div>
 
       {/* MODAL UTILIZARE */}
-      <Dialog open={isUsageModalOpen} onOpenChange={setIsUsageModalOpen}>
-        <DialogContent className="max-w-2xl p-0 rounded-[2.5rem] overflow-hidden bg-[#FBFBFD] border-none shadow-2xl font-sans">
-          <header className="px-10 py-8 flex justify-between items-center bg-white border-b shrink-0">
-            <div>
-              <DialogTitle className="text-3xl italic font-serif text-[var(--dark-amethyst)]">
-                Utilizare:{" "}
-                <span style={{ color: "var(--royal-violet)" }}>
-                  {usageData?.key}
-                </span>
-              </DialogTitle>
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-2">
-                Harta distribuției în catalog
+      <AdminDialogShell
+        open={isUsageModalOpen}
+        onOpenChange={setIsUsageModalOpen}
+        size="md"
+        className="bg-[#FBFBFD] font-sans"
+      >
+        <AdminDialogTitle>Utilizare atribut</AdminDialogTitle>
+        <header className="px-6 sm:px-10 py-6 sm:py-8 flex justify-between items-center bg-white border-b shrink-0">
+          <div>
+            <h2 className="text-2xl sm:text-3xl italic font-serif text-[var(--dark-amethyst)]">
+              Utilizare:{" "}
+              <span style={{ color: "var(--royal-violet)" }}>
+                {usageData?.key}
+              </span>
+            </h2>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-2">
+              Harta distribuției în catalog
+            </p>
+          </div>
+          <button
+            onClick={() => setIsUsageModalOpen(false)}
+            className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+          >
+            <X size={20} />
+          </button>
+        </header>
+        <div className="flex-1 p-6 sm:p-10 space-y-6 overflow-y-auto luxury-scrollbar text-left">
+          {usageData?.categories.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {usageData.categories.map((cat: any, i: number) => (
+                <div
+                  key={i}
+                  className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4"
+                >
+                  <div className="flex items-center gap-2 border-b border-zinc-50 pb-3">
+                    <Layers
+                      size={14}
+                      style={{ color: "var(--royal-violet)" }}
+                    />
+                    <h4 className="text-[11px] font-black uppercase text-[var(--dark-amethyst)]">
+                      {cat.name}
+                    </h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {cat.values.map((v: any, idx: number) => (
+                      <span
+                        key={idx}
+                        className="bg-zinc-50 px-3 py-1.5 rounded-lg text-[10px] font-bold text-zinc-500 border border-zinc-100"
+                      >
+                        {v}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center bg-zinc-50 rounded-3xl border-2 border-dashed">
+              <AlertTriangle
+                size={32}
+                className="mx-auto text-zinc-300 mb-3"
+              />
+              <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+                Atributul nu are instanțe active.
               </p>
             </div>
-            <button
-              onClick={() => setIsUsageModalOpen(false)}
-              className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
-            >
-              <X size={20} />
-            </button>
-          </header>
-          <div className="p-10 space-y-6 max-h-[60vh] overflow-y-auto luxury-scrollbar text-left">
-            {usageData?.categories.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {usageData.categories.map((cat: any, i: number) => (
-                  <div
-                    key={i}
-                    className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4"
-                  >
-                    <div className="flex items-center gap-2 border-b border-zinc-50 pb-3">
-                      <Layers
-                        size={14}
-                        style={{ color: "var(--royal-violet)" }}
-                      />
-                      <h4 className="text-[11px] font-black uppercase text-[var(--dark-amethyst)]">
-                        {cat.name}
-                      </h4>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {cat.values.map((v: any, idx: number) => (
-                        <span
-                          key={idx}
-                          className="bg-zinc-50 px-3 py-1.5 rounded-lg text-[10px] font-bold text-zinc-500 border border-zinc-100"
-                        >
-                          {v}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center bg-zinc-50 rounded-3xl border-2 border-dashed">
-                <AlertTriangle
-                  size={32}
-                  className="mx-auto text-zinc-300 mb-3"
-                />
-                <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">
-                  Atributul nu are instanțe active.
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      </AdminDialogShell>
 
       {/* MODAL ADAUGARE MANUALA */}
-      <Dialog open={isAttrModalOpen} onOpenChange={setIsAttrModalOpen}>
-        <DialogContent className="max-w-md p-0 rounded-[2.5rem] overflow-hidden bg-white border-none shadow-2xl font-sans text-left">
-          <header className="px-8 py-8 border-b flex justify-between items-start">
-            <div>
-              <DialogTitle className="text-3xl italic font-serif text-[var(--dark-amethyst)]">
-                Creează Atribut
-              </DialogTitle>
-              <p
-                className="text-[10px] font-black uppercase tracking-widest mt-2"
-                style={{ color: "var(--royal-violet)" }}
-              >
-                Setare Dicționar Manual
-              </p>
-            </div>
-            <button
-              onClick={() => setIsAttrModalOpen(false)}
-              className="size-10 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+      <AdminDialogShell
+        open={isAttrModalOpen}
+        onOpenChange={setIsAttrModalOpen}
+        size="sm"
+      >
+        <AdminDialogTitle>Creează atribut</AdminDialogTitle>
+        <header className="px-6 sm:px-8 py-6 sm:py-8 border-b flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl sm:text-3xl italic font-serif text-[var(--dark-amethyst)]">
+              Creează Atribut
+            </h2>
+            <p
+              className="text-[10px] font-black uppercase tracking-widest mt-2"
+              style={{ color: "var(--royal-violet)" }}
             >
-              <X size={18} />
-            </button>
-          </header>
-          <div className="p-8 space-y-6 bg-[#FBFBFD]">
-            <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-2">
-              <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">
-                Nume Website
+              Setare Dicționar Manual
+            </p>
+          </div>
+          <button
+            onClick={() => setIsAttrModalOpen(false)}
+            className="size-10 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+          >
+            <X size={18} />
+          </button>
+        </header>
+        <div className="flex-1 p-6 sm:p-8 space-y-6 bg-[#FBFBFD] overflow-y-auto luxury-scrollbar">
+          <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-2">
+            <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">
+              Nume Website
+            </Label>
+            <input
+              className="w-full bg-transparent border-b-2 border-zinc-100 focus:border-[var(--royal-violet)] py-2 font-bold text-lg text-[var(--dark-amethyst)] outline-none transition-all"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  name: e.target.value,
+                  slug: e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "_"),
+                })
+              }
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-1">
+              <Label className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                Slug Intern
               </Label>
               <input
-                className="w-full bg-transparent border-b-2 border-zinc-100 focus:border-[var(--royal-violet)] py-2 font-bold text-lg text-[var(--dark-amethyst)] outline-none transition-all"
-                value={formData.name}
+                className="w-full bg-transparent border-b border-zinc-100 py-1 font-mono text-[11px] font-bold text-[var(--royal-violet)] outline-none"
+                value={formData.slug}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    name: e.target.value,
-                    slug: e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, "_"),
-                  })
+                  setFormData({ ...formData, slug: e.target.value })
                 }
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-1">
-                <Label className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                  Slug Intern
-                </Label>
-                <input
-                  className="w-full bg-transparent border-b border-zinc-100 py-1 font-mono text-[11px] font-bold text-[var(--royal-violet)] outline-none"
-                  value={formData.slug}
-                  onChange={(e) =>
-                    setFormData({ ...formData, slug: e.target.value })
-                  }
-                />
-              </div>
-              <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-1">
-                <Label className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                  Control
-                </Label>
-                <select
-                  className="w-full bg-transparent border-b border-zinc-100 py-1 text-[11px] font-black uppercase text-[var(--dark-amethyst)] outline-none appearance-none"
-                  value={formData.type}
-                  onChange={(e) =>
-                    setFormData({ ...formData, type: e.target.value })
-                  }
-                >
-                  <option value="Select">Dropdown</option>
-                  <option value="Color">Swatch</option>
-                </select>
-              </div>
+            <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-1">
+              <Label className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                Control
+              </Label>
+              <select
+                className="w-full bg-transparent border-b border-zinc-100 py-1 text-[11px] font-black uppercase text-[var(--dark-amethyst)] outline-none appearance-none"
+                value={formData.type}
+                onChange={(e) =>
+                  setFormData({ ...formData, type: e.target.value })
+                }
+              >
+                <option value="Select">Dropdown</option>
+                <option value="Color">Swatch</option>
+              </select>
             </div>
           </div>
-          <DialogFooter className="p-8 bg-white border-t">
-            <button
-              onClick={handleCreateAttribute}
-              className="w-full h-16 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all"
-              style={{ background: "var(--primary-gradient)" }}
-            >
-              Creează și Activează
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+        <footer className="p-6 sm:p-8 bg-white border-t">
+          <button
+            onClick={handleCreateAttribute}
+            className="w-full h-16 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            Creează și Activează
+          </button>
+        </footer>
+      </AdminDialogShell>
     </div>
   );
 };
