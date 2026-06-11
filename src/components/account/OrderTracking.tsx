@@ -646,13 +646,18 @@ export function OrderTracking({
                       </p>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
                         {ev.timestamp
-                          ? new Date(ev.timestamp).toLocaleString("ro-RO", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
+                          ? (() => {
+                              const d = new Date(ev.timestamp);
+                              return isNaN(d.getTime())
+                                ? ev.timestamp
+                                : d.toLocaleString("ro-RO", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  });
+                            })()
                           : "—"}
                         {ev.depot || ev.location
                           ? ` · ${ev.depot || ev.location}`
