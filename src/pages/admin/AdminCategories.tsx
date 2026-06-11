@@ -20,11 +20,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AdminDialogShell,
+  AdminDialogTitle,
+} from "@/components/admin/AdminDialogShell";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { readCache, writeCache } from "@/lib/swr-cache";
