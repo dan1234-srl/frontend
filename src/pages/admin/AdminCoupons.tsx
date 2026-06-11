@@ -1220,10 +1220,10 @@ const AdminCoupons = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-8 md:px-12 py-10 bg-white border-t border-zinc-100 shrink-0">
+          <footer className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 bg-white border-t border-zinc-100 shrink-0">
             <button
               onClick={handleSaveVoucher}
-              className="w-full py-8 rounded-[3rem] text-white text-[14px] font-black uppercase tracking-[0.5em] shadow-[0_20px_40px_-15px_rgba(0,85,255,0.4)] hover:shadow-[0_20px_50px_-10px_rgba(0,85,255,0.6)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-4 border-none"
+              className="w-full py-6 sm:py-8 rounded-[3rem] text-white text-[12px] sm:text-[14px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] shadow-[0_20px_40px_-15px_rgba(0,85,255,0.4)] hover:shadow-[0_20px_50px_-10px_rgba(0,85,255,0.6)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-4 border-none"
               style={{ background: brand.primary_gradient, color: "#FFFFFF" }}
             >
               <MousePointerClick size={22} color="#FFFFFF" strokeWidth={3} />
@@ -1233,9 +1233,8 @@ const AdminCoupons = () => {
                   : "Lansează Voucherul în Rețea"}
               </span>
             </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </AdminDialogShell>
 
       {/* ── MODAL CONFIGURARE BANNER EDITORIAL (GLOBAL + LOCAL SUPORT) ── */}
       <Dialog open={isBannerModalOpen} onOpenChange={setIsBannerModalOpen}>
