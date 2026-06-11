@@ -1237,16 +1237,22 @@ const AdminCoupons = () => {
       </AdminDialogShell>
 
       {/* ── MODAL CONFIGURARE BANNER EDITORIAL (GLOBAL + LOCAL SUPORT) ── */}
-      <Dialog open={isBannerModalOpen} onOpenChange={setIsBannerModalOpen}>
-        <DialogContent className="max-w-[800px] w-[96vw] max-h-[90vh] p-0 rounded-[3.5rem] border-none shadow-2xl flex flex-col overflow-hidden bg-white [&>button]:hidden">
-          <header className="px-8 md:px-12 py-8 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
-            <div>
-              <DialogTitle
-                className="text-3xl font-serif italic tracking-tight"
-                style={{ color: "var(--brand-dark)" }}
-              >
-                {isEditingBanner
-                  ? "Editează Bannerul"
+      <AdminDialogShell
+        open={isBannerModalOpen}
+        onOpenChange={setIsBannerModalOpen}
+        size="lg"
+      >
+        <AdminDialogTitle>
+          {isEditingBanner ? "Editează Bannerul" : "Banner Nou de Campanie"}
+        </AdminDialogTitle>
+        <header className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
+          <div>
+            <h2
+              className="text-2xl sm:text-3xl font-serif italic tracking-tight"
+              style={{ color: "var(--brand-dark)" }}
+            >
+              {isEditingBanner
+                ? "Editează Bannerul"
                   : "Banner Nou de Campanie"}
               </DialogTitle>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">
