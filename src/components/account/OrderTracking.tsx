@@ -38,10 +38,19 @@ interface TrackingPayload {
 
 function normalizeHistory(payload: TrackingPayload | null): GlsHistoryEvent[] {
   if (!payload) return [];
-  if (Array.isArray(payload.history) && payload.history.length)
-    return payload.history;
-  if (Array.isArray(payload.ParcelStatusList)) {
-    return payload.ParcelStatusList.map((s: any) => ({
+
+  let events: GlsHistoryEvent[] = [];
+
+  if (Array.isArray(payload.history) && payload.history.length) {
+    events = payload.history.map((h: any) => ({
+      code: h.code,
+      description: h.description,
+      timestamp: h.timestamp || h.date,
+      depot: h.depot,
+      location: h.location,
+    }));
+  } else if (Array.isArray(payload.ParcelStatusList)) {
+    events = payload.ParcelStatusList.map((s: any) => ({
       code: s.StatusCode ?? s.code,
       description: s.StatusDescription ?? s.description,
       timestamp: s.StatusDate ?? s.Date ?? s.timestamp,
@@ -49,7 +58,34 @@ function normalizeHistory(payload: TrackingPayload | null): GlsHistoryEvent[] {
       location: s.Location ?? s.location,
     }));
   }
-  return [];
+
+  // --- FILTRU PENTRU CURĂȚAREA ZGOMOTULUI GLS ---
+  const codesToIgnore = [
+    "01",
+    "1", // Inregistrare si cantarire (clientul stie deja din "AWB Generat")
+    "03",
+    "3", // Intrare in depozit
+    "10", // Rollkarte Check / Scanare verificata
+    "191", // StatusKey_St191 (Gunoi intern GLS)
+    "51", // Date transmise (Se suprapune cu AWB generat)
+  ];
+
+  return events.filter((ev) => {
+    // 1. Elimină statusurile cu coduri cunoscute ca "zgomot"
+    if (ev.code && codesToIgnore.includes(String(ev.code))) return false;
+
+    // 2. Elimină statusurile care contin cuvinte cheie interne
+    if (
+      ev.description &&
+      (ev.description.includes("StatusKey_") ||
+        ev.description.includes("Date transmise") ||
+        ev.description.includes("Rollkarte"))
+    ) {
+      return false;
+    }
+
+    return true; // Pastreaza restul!
+  });
 }
 
 const CATEGORY_ICON: Record<GlsCategory, typeof Truck> = {
@@ -365,7 +401,10 @@ export function OrderTracking({
   placeholderStatus,
 }: OrderTrackingProps) {
   // Hydrate immediately from sessionStorage → no spinner on 2G/3G
-  const initial = useMemo(() => readTrackingCache<TrackingPayload>(orderId), [orderId]);
+  const initial = useMemo(
+    () => readTrackingCache<TrackingPayload>(orderId),
+    [orderId],
+  );
   const [data, setData] = useState<TrackingPayload | null>(initial.data);
   const [loading, setLoading] = useState<boolean>(!initial.data);
   const [error, setError] = useState<string | null>(null);
@@ -378,7 +417,10 @@ export function OrderTracking({
     abortRef.current = ctrl;
     setError(null);
     try {
-      const json = await fetchTrackingCached<TrackingPayload>(orderId, ctrl.signal);
+      const json = await fetchTrackingCached<TrackingPayload>(
+        orderId,
+        ctrl.signal,
+      );
       if (json === null) {
         setData(null);
         setError("not_yet");
@@ -463,7 +505,10 @@ export function OrderTracking({
         <header className="flex items-start justify-between gap-4 mb-6">
           <div className="space-y-1.5">
             <p className="text-[9px] font-black uppercase tracking-[0.35em] text-[var(--royal-violet)]/70 flex items-center gap-1.5">
-              <Sparkles size={11} className="text-[var(--royal-violet)] animate-pulse" />
+              <Sparkles
+                size={11}
+                className="text-[var(--royal-violet)] animate-pulse"
+              />
               Tracking live · GLS
             </p>
             <h4 className="heading-serif text-2xl md:text-3xl italic text-[var(--dark-amethyst)] leading-tight tracking-tight">
@@ -485,7 +530,10 @@ export function OrderTracking({
                 {copied ? (
                   <Check size={11} className="text-emerald-500" />
                 ) : (
-                  <Copy size={11} className="group-hover:scale-110 transition-transform" />
+                  <Copy
+                    size={11}
+                    className="group-hover:scale-110 transition-transform"
+                  />
                 )}
               </button>
             )}
@@ -499,7 +547,9 @@ export function OrderTracking({
                 transition={{ type: "spring", stiffness: 320, damping: 22 }}
                 className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ring-1 ${current.style.bg} ${current.style.text} ${current.style.ring}`}
               >
-                <span className={`size-1.5 rounded-full ${current.style.dot} animate-pulse`} />
+                <span
+                  className={`size-1.5 rounded-full ${current.style.dot} animate-pulse`}
+                />
                 {current.style.label}
               </motion.span>
             )}
