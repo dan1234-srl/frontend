@@ -16,7 +16,9 @@ type CacheEntry<T> = { data: T; ts: number };
 
 const inflight = new Map<string, Promise<any>>();
 
-export function readTrackingCache<T = any>(orderId: string): {
+export function readTrackingCache<T = any>(
+  orderId: string,
+): {
   data: T | null;
   fresh: boolean;
 } {
@@ -46,7 +48,8 @@ export async function fetchTracking<T = any>(
   if (inflight.has(orderId)) return inflight.get(orderId)!;
   const p = (async () => {
     const res = await fetch(
-      `${API_BASE_URL}/api/v1/post_sale/orders/${orderId}/tracking`,
+      // --- MODIFICAREA ESTE AICI (am adăugat /live) ---
+      `${API_BASE_URL}/api/v1/post_sale/orders/${orderId}/tracking/live`,
       { credentials: "include", signal },
     );
     if (res.status === 404) return null;
@@ -58,7 +61,6 @@ export async function fetchTracking<T = any>(
   inflight.set(orderId, p);
   return p;
 }
-
 /**
  * Fire-and-forget prefetch — call on hover/pointerdown of "Detalii comandă"
  * so that opening the modal feels instant even on slow connections.
