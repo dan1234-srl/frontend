@@ -908,8 +908,16 @@ const AdminProducts = () => {
       </div>
 
       {/* ── Modal Editare ───────────────────────────────────────────────────── */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[1350px] w-full h-full sm:h-[94vh] sm:w-[96vw] p-0 rounded-none sm:rounded-[2.5rem] border-none bg-[#F8F9FA] shadow-2xl flex flex-col overflow-hidden">
+      <AdminDialogShell
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        size="full"
+        mobileVariant="modal"
+        className="bg-[#F8F9FA] h-[100dvh] sm:h-[94vh] sm:max-h-[94vh] rounded-none sm:rounded-[2.5rem]"
+      >
+        <AdminDialogTitle>
+          {formData.sku ? `Editare: ${formData.sku}` : "Fișă Articol Nou"}
+        </AdminDialogTitle>
           {/* Header Modal */}
           <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
@@ -917,11 +925,11 @@ const AdminProducts = () => {
                 <Package size={22} />
               </div>
               <div>
-                <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
+                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
                   {formData.sku
                     ? `Editare: ${formData.sku}`
                     : "Fișă Articol Nou"}
-                </DialogTitle>
+                </h2>
                 <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-black mt-0.5">
                   Core Product Configuration
                 </p>
