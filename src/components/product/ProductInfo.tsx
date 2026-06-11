@@ -1,7 +1,7 @@
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast"; // 🚀 REPARAT ATOMIC: Importăm hook-ul nativ Shadcn în loc de sonner
+import { toast } from "sonner";
 import { useMemo, useState, useEffect } from "react";
 import {
   ShoppingBag,
@@ -26,7 +26,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
-  const { toast } = useToast(); // 🚀 REPARAT ATOMIC: Inițializăm generatorul de ferestre toast
+  
 
   // --- LOGICĂ VERIFICARE FAVORIT ---
   useEffect(() => {
@@ -92,15 +92,13 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             : savedIds.filter((id: string) => id !== product.id);
           localStorage.setItem("user_wishlist_ids", JSON.stringify(newIds));
 
-          toast({
-            title: active ? "Adăugat la favorite" : "Eliminat de la favorite",
-            description: product.name,
-          });
+          toast.success(
+            active ? "Adăugat la favorite" : "Eliminat de la favorite",
+            { description: product.name },
+          );
         }
       } catch (err) {
-        toast({
-          variant: "destructive",
-          title: "Eroare asimetrică",
+        toast.error("Eroare", {
           description: "Nu s-a putut salva elementul.",
         });
       }
@@ -111,10 +109,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
 
       if (exists) {
         updated = local.filter((item: any) => item.id !== product.id);
-        toast({
-          title: "Eliminat din favorite",
-          description: product.name,
-        });
+        toast("Eliminat din favorite", { description: product.name });
       } else {
         updated = [
           ...local,
@@ -126,10 +121,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
             slug: product.slug,
           },
         ];
-        toast({
-          title: "Salvat în wishlist",
-          description: product.name,
-        });
+        toast.success("Salvat în wishlist", { description: product.name });
       }
       localStorage.setItem("guest_wishlist", JSON.stringify(updated));
       setIsFavorite(!exists);
@@ -144,17 +136,13 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const handleAddToCart = () => {
     if (!product) return;
     if (isOutOfStock) {
-      toast({
-        variant: "destructive",
-        title: "Stoc epuizat",
+      toast.error("Stoc epuizat", {
         description: "Produsul nu mai este disponibil.",
       });
       return;
     }
     if (isLimitReached) {
-      toast({
-        variant: "destructive",
-        title: "Stoc insuficient",
+      toast.error("Stoc insuficient", {
         description: `Ai deja toate cele ${product.stock_quantity} unități adăugate.`,
       });
       return;
@@ -171,11 +159,24 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
       brand_name: product.brand_name || "",
     });
 
-    // 🚀 REPARAT ATOMIC: Trimitere fluidă sub structura unificată a temei tale
-    toast({
-      title: "Adăugat în coș",
-      description: product.name,
-    });
+    // Toast tappable — pe mobil/desktop, click pe el deschide coșul.
+    const openCart = () =>
+      window.dispatchEvent(new CustomEvent("evem:open-cart"));
+    toast.success("Adăugat în coș", {
+      description: `${product.name} — apasă pentru a vedea coșul`,
+      duration: 4000,
+      onAutoClose: () => {},
+      action: {
+        label: "Vezi coșul",
+        onClick: openCart,
+      },
+      // Apăsare pe corpul toast-ului (important pe mobil)
+      onDismiss: () => {},
+      classNames: {
+        toast: "cursor-pointer",
+      },
+      onClick: openCart,
+    } as any);
   };
 
   const getStockStatus = () => {
