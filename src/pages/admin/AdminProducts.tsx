@@ -1385,7 +1385,7 @@ const AdminProducts = () => {
           </div>
 
           {/* Footer Modal */}
-          <DialogFooter className="px-6 md:px-10 py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <footer className="px-6 md:px-10 py-5 md:py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5 text-zinc-400">
               <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
               <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
@@ -1406,9 +1406,8 @@ const AdminProducts = () => {
                 <Save size={14} /> {editingProduct ? "Salvează" : "Publică"}
               </button>
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </footer>
+      </AdminDialogShell>
 
       <style
         dangerouslySetInnerHTML={{
