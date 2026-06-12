@@ -864,7 +864,7 @@ const AdminProducts = () => {
                             </p>
                             {p.sale_price && (
                               <p className="text-[8px] text-rose-500 font-black uppercase tracking-tight">
-                                Promo: {p.sale_price}
+                                Preț vânzare: {p.sale_price}
                               </p>
                             )}
                           </div>
