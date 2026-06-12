@@ -23,6 +23,7 @@ import {
   History,
   Sparkles,
   X,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
