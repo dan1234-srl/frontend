@@ -421,14 +421,19 @@ const AdminProducts = () => {
       const result = await res.json();
       const uploadedUrl = result.url || result.file_url || result.data?.url;
       if (!uploadedUrl) throw new Error("Upload invalid");
+
       if (index === "main") {
         setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
       } else {
         const nl = [...formData.additional_image_link];
         nl[index as number] = uploadedUrl;
+
         setFormData((prev) => ({
           ...prev,
-          additional_image_link: nl.filter(Boolean),
+          // REPARAȚIE: Filtrăm automat golurile din array ca să nu mai trimitem [,]
+          additional_image_link: nl.filter(
+            (img) => img && typeof img === "string" && img.trim() !== "",
+          ),
         }));
       }
       toast.success("Imagine urcată pe S3.");
@@ -444,34 +449,44 @@ const AdminProducts = () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
 
+    // Curățare imagini: Elimină orice element falsy (null, undefined, string gol)
+    const cleanedImages = formData.additional_image_link.filter(
+      (img) => typeof img === "string" && img.trim() !== "",
+    );
+
+    // Asigurare format obiect (dict) pentru atribute
+    const attributesPayload =
+      typeof formData.attributes_json === "object"
+        ? formData.attributes_json
+        : JSON.parse(formData.attributes_json || "{}");
+
     const payload = {
-      sku: formData.sku
-        ? formData.sku.trim().toUpperCase()
-        : `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
-      ean: formData.ean ? formData.ean.trim() : "",
+      sku:
+        formData.sku?.trim().toUpperCase() ||
+        `LN-${Math.random().toString(36).toUpperCase().slice(2, 8)}`,
+      ean: formData.ean?.trim() || "",
       slug: formData.slug || generateSlug(formData.name),
       name: formData.name.trim(),
       brand_name: formData.brand_name || "Evem",
       status: formData.status.toUpperCase(),
-      price: Number(formData.price),
-      sale_price: formData.sale_price > 0 ? Number(formData.sale_price) : null,
-      stock_quantity: Number(formData.stock_quantity),
+      price: Number(formData.price) || 0,
+      sale_price:
+        Number(formData.sale_price) > 0 ? Number(formData.sale_price) : null,
+      stock_quantity: Number(formData.stock_quantity) || 0,
       category_id: formData.category_id,
-      image_url: formData.image_url,
-      // 🚀 Descrierea se salvează ca HTML complet (cu emoji, spații, iframe-uri)
+      image_url: formData.image_url || "",
       description: formData.description || "",
-      weight: Number(formData.weight || 0),
-      length: Number(formData.length || 0),
-      width: Number(formData.width || 0),
-      height: Number(formData.height || 0),
+      weight: Number(formData.weight) || 0,
+      length: Number(formData.length) || 0,
+      width: Number(formData.width) || 0,
+      height: Number(formData.height) || 0,
       meta_title: formData.meta_title || "",
       meta_description: formData.meta_description || "",
       canonical_url: formData.canonical_url || "",
-      additional_image_link: formData.additional_image_link.filter(Boolean),
-      attributes_json:
-        typeof formData.attributes_json === "object"
-          ? JSON.stringify(formData.attributes_json)
-          : formData.attributes_json,
+
+      // REPARAȚIE: Trimitem valorile curățate
+      additional_image_link: cleanedImages,
+      attributes_json: attributesPayload,
     };
 
     const url = editingProduct
@@ -485,15 +500,19 @@ const AdminProducts = () => {
         credentials: "include",
         body: JSON.stringify(payload),
       });
+
       if (res.ok) {
         toast.success("Catalog sincronizat cu succes!");
         fetchData();
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
+        // AFIȘĂM EROAREA EXACTĂ RETURNATĂ DE BACKEND ÎN TOAST
         toast.error(errorData.detail || "Eroare la scriere în baza de date.");
+        console.error("Backend Error:", errorData);
       }
-    } catch {
+    } catch (e) {
+      console.error("Fetch Error:", e);
       toast.error("Pierdere conexiune gateway API.");
     }
   };
@@ -918,495 +937,493 @@ const AdminProducts = () => {
         <AdminDialogTitle>
           {formData.sku ? `Editare: ${formData.sku}` : "Fișă Articol Nou"}
         </AdminDialogTitle>
-          {/* Header Modal */}
-          <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-[var(--royal-violet)] text-white hidden sm:block">
-                <Package size={22} />
+        {/* Header Modal */}
+        <header className="px-6 md:px-10 py-6 bg-white border-b border-zinc-100 flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-[var(--royal-violet)] text-white hidden sm:block">
+              <Package size={22} />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
+                {formData.sku ? `Editare: ${formData.sku}` : "Fișă Articol Nou"}
+              </h2>
+              <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-black mt-0.5">
+                Core Product Configuration
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="w-10 h-10 bg-zinc-50 hover:bg-rose-50 text-zinc-600 hover:text-rose-600 rounded-full flex items-center justify-center transition-all"
+          >
+            <X size={16} />
+          </button>
+        </header>
+
+        {/* Body Modal */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* ── Coloana Media ──────────────────────────────────────────── */}
+            <div className="lg:col-span-4 space-y-6 md:sticky md:top-0">
+              {/* Imagine principală */}
+              <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+                <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                  <ImageIcon size={12} /> Thumbnail Principal
+                </Label>
+                <div className="aspect-[3/4] bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden transition-all hover:bg-zinc-100/50">
+                  {formData.image_url ? (
+                    <>
+                      <img
+                        src={getValidImageUrl(formData.image_url)}
+                        crossOrigin="anonymous"
+                        onError={handleImageError}
+                        className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-102"
+                        alt=""
+                      />
+                      <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-xs">
+                        <button
+                          onClick={() =>
+                            setFormData({ ...formData, image_url: "" })
+                          }
+                          className="bg-white text-rose-600 p-3.5 rounded-full shadow-xl hover:scale-110 active:scale-95 transition-transform"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-3 w-full h-full justify-center">
+                      {uploading === "main" ? (
+                        <Loader2
+                          className="animate-spin text-[var(--royal-violet)]"
+                          size={32}
+                        />
+                      ) : (
+                        <Upload size={32} strokeWidth={1.5} />
+                      )}
+                      <span className="text-[9px] font-black uppercase tracking-widest text-center">
+                        Alege fișier
+                      </span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => handleImageUpload(e, "main")}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] truncate max-w-xs sm:max-w-md">
-                  {formData.sku
-                    ? `Editare: ${formData.sku}`
-                    : "Fișă Articol Nou"}
-                </h2>
-                <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-black mt-0.5">
-                  Core Product Configuration
-                </p>
+
+              {/* Galerie */}
+              <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+                <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                  <Layers size={12} /> Sub-Imagini Galerie
+                </Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="aspect-square bg-zinc-50 rounded-xl border border-zinc-200 relative overflow-hidden group shadow-inner"
+                    >
+                      {formData.additional_image_link[i] ? (
+                        <>
+                          <img
+                            src={getValidImageUrl(
+                              formData.additional_image_link[i],
+                            )}
+                            crossOrigin="anonymous"
+                            onError={handleImageError}
+                            className="w-full h-full object-cover"
+                            alt=""
+                          />
+                          <button
+                            onClick={() => {
+                              const nl = [...formData.additional_image_link];
+                              nl.splice(i, 1);
+                              setFormData({
+                                ...formData,
+                                additional_image_link: nl,
+                              });
+                            }}
+                            className="absolute inset-0 bg-rose-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-100 hover:text-[var(--royal-violet)] transition-colors">
+                          {uploading === `extra-${i}` ? (
+                            <Loader2 className="animate-spin" size={14} />
+                          ) : (
+                            <Plus size={16} />
+                          )}
+                          <input
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e, i)}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="w-10 h-10 bg-zinc-50 hover:bg-rose-50 text-zinc-600 hover:text-rose-600 rounded-full flex items-center justify-center transition-all"
-            >
-              <X size={16} />
-            </button>
-          </header>
 
-          {/* Body Modal */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-10 luxury-scrollbar text-left">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* ── Coloana Media ──────────────────────────────────────────── */}
-              <div className="lg:col-span-4 space-y-6 md:sticky md:top-0">
-                {/* Imagine principală */}
-                <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
-                    <ImageIcon size={12} /> Thumbnail Principal
+            {/* ── Coloana Date ────────────────────────────────────────────── */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Identificatori */}
+              <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                <div className="space-y-1">
+                  <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                    Identificator Comercial Nativ
                   </Label>
-                  <div className="aspect-[3/4] bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-center relative group overflow-hidden transition-all hover:bg-zinc-100/50">
-                    {formData.image_url ? (
-                      <>
-                        <img
-                          src={getValidImageUrl(formData.image_url)}
-                          crossOrigin="anonymous"
-                          onError={handleImageError}
-                          className="h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-102"
-                          alt=""
-                        />
-                        <div className="absolute inset-0 bg-zinc-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-xs">
-                          <button
-                            onClick={() =>
-                              setFormData({ ...formData, image_url: "" })
-                            }
-                            className="bg-white text-rose-600 p-3.5 rounded-full shadow-xl hover:scale-110 active:scale-95 transition-transform"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <label className="cursor-pointer text-zinc-400 flex flex-col items-center gap-3 w-full h-full justify-center">
-                        {uploading === "main" ? (
-                          <Loader2
-                            className="animate-spin text-[var(--royal-violet)]"
-                            size={32}
-                          />
-                        ) : (
-                          <Upload size={32} strokeWidth={1.5} />
-                        )}
-                        <span className="text-[9px] font-black uppercase tracking-widest text-center">
-                          Alege fișier
-                        </span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          onChange={(e) => handleImageUpload(e, "main")}
-                        />
-                      </label>
-                    )}
-                  </div>
+                  <input
+                    className="w-full bg-transparent border-b-2 border-zinc-100 pb-2 text-2xl md:text-3xl font-black outline-none focus:border-[var(--royal-violet)] transition-all text-[var(--dark-amethyst)] placeholder:text-zinc-200 tracking-tight"
+                    value={formData.name}
+                    placeholder="Titlul complet al produsului..."
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        name: e.target.value,
+                        slug: generateSlug(e.target.value),
+                      })
+                    }
+                  />
                 </div>
-
-                {/* Galerie */}
-                <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-                  <Label className="text-[9px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
-                    <Layers size={12} /> Sub-Imagini Galerie
-                  </Label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="aspect-square bg-zinc-50 rounded-xl border border-zinc-200 relative overflow-hidden group shadow-inner"
-                      >
-                        {formData.additional_image_link[i] ? (
-                          <>
-                            <img
-                              src={getValidImageUrl(
-                                formData.additional_image_link[i],
-                              )}
-                              crossOrigin="anonymous"
-                              onError={handleImageError}
-                              className="w-full h-full object-cover"
-                              alt=""
-                            />
-                            <button
-                              onClick={() => {
-                                const nl = [...formData.additional_image_link];
-                                nl.splice(i, 1);
-                                setFormData({
-                                  ...formData,
-                                  additional_image_link: nl,
-                                });
-                              }}
-                              className="absolute inset-0 bg-rose-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                            >
-                              <X size={14} />
-                            </button>
-                          </>
-                        ) : (
-                          <label className="w-full h-full flex items-center justify-center cursor-pointer text-zinc-300 hover:bg-zinc-100 hover:text-[var(--royal-violet)] transition-colors">
-                            {uploading === `extra-${i}` ? (
-                              <Loader2 className="animate-spin" size={14} />
-                            ) : (
-                              <Plus size={16} />
-                            )}
-                            <input
-                              type="file"
-                              className="hidden"
-                              onChange={(e) => handleImageUpload(e, i)}
-                            />
-                          </label>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* ── Coloana Date ────────────────────────────────────────────── */}
-              <div className="lg:col-span-8 space-y-6">
-                {/* Identificatori */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <PremiumInput
+                    label="Cod SKU"
+                    icon={<Hash size={11} />}
+                    value={formData.sku}
+                    onChange={(e: any) =>
+                      setFormData({ ...formData, sku: e.target.value })
+                    }
+                  />
+                  <PremiumInput
+                    label="Cod EAN"
+                    icon={<Hash size={11} />}
+                    value={formData.ean}
+                    onChange={(e: any) =>
+                      setFormData({ ...formData, ean: e.target.value })
+                    }
+                  />
+                  <div className="space-y-1.5 text-left w-full">
                     <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                      Identificator Comercial Nativ
+                      Segment
                     </Label>
-                    <input
-                      className="w-full bg-transparent border-b-2 border-zinc-100 pb-2 text-2xl md:text-3xl font-black outline-none focus:border-[var(--royal-violet)] transition-all text-[var(--dark-amethyst)] placeholder:text-zinc-200 tracking-tight"
-                      value={formData.name}
-                      placeholder="Titlul complet al produsului..."
+                    <select
+                      className="w-full bg-zinc-50 rounded-xl px-3 py-3.5 text-xs font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] text-[var(--dark-amethyst)] appearance-none shadow-inner cursor-pointer"
+                      value={formData.category_id}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          name: e.target.value,
-                          slug: generateSlug(e.target.value),
+                          category_id: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Alege segmentul...</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financiare */}
+              <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                  <DollarSign size={13} /> Financiare & Matrice Logistică
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                    <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
+                      Preț Original
+                    </Label>
+                    <input
+                      type="number"
+                      className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          price: Number(e.target.value),
                         })
                       }
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <PremiumInput
-                      label="Cod SKU"
-                      icon={<Hash size={11} />}
-                      value={formData.sku}
-                      onChange={(e: any) =>
-                        setFormData({ ...formData, sku: e.target.value })
+                  <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
+                    <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
+                      Preț Vanzare
+                    </Label>
+                    <input
+                      type="number"
+                      className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
+                      value={formData.sale_price || ""}
+                      placeholder="—"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          sale_price: Number(e.target.value),
+                        })
                       }
                     />
-                    <PremiumInput
-                      label="Cod EAN"
-                      icon={<Hash size={11} />}
-                      value={formData.ean}
-                      onChange={(e: any) =>
-                        setFormData({ ...formData, ean: e.target.value })
+                  </div>
+                  <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
+                    <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
+                      Stoc
+                    </Label>
+                    <input
+                      type="number"
+                      className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
+                      value={formData.stock_quantity}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          stock_quantity: Number(e.target.value),
+                        })
                       }
                     />
-                    <div className="space-y-1.5 text-left w-full">
-                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                        Segment
-                      </Label>
-                      <select
-                        className="w-full bg-zinc-50 rounded-xl px-3 py-3.5 text-xs font-bold border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] text-[var(--dark-amethyst)] appearance-none shadow-inner cursor-pointer"
-                        value={formData.category_id}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            category_id: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="">Alege segmentul...</option>
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  </div>
+                  <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center flex flex-col justify-center">
+                    <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
+                      Status
+                    </Label>
+                    <select
+                      className="bg-transparent text-[10px] font-black text-center text-zinc-900 uppercase border-none outline-none cursor-pointer w-full"
+                      value={formData.status}
+                      onChange={(e) =>
+                        setFormData({ ...formData, status: e.target.value })
+                      }
+                    >
+                      <option value="ACTIVE">Public</option>
+                      <option value="DRAFT">Schiță</option>
+                      <option value="OUT_OF_STOCK">Fără stoc</option>
+                    </select>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-zinc-100/70">
+                  <PremiumInput
+                    label="Masă (g)"
+                    icon={<Scale size={11} />}
+                    value={formData.weight}
+                    onChange={(e: any) =>
+                      setFormData({
+                        ...formData,
+                        weight: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <PremiumInput
+                    label="Lungime (cm)"
+                    icon={<Maximize size={11} />}
+                    value={formData.length}
+                    onChange={(e: any) =>
+                      setFormData({
+                        ...formData,
+                        length: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <PremiumInput
+                    label="Lățime (cm)"
+                    icon={<Maximize size={11} />}
+                    value={formData.width}
+                    onChange={(e: any) =>
+                      setFormData({
+                        ...formData,
+                        width: Number(e.target.value),
+                      })
+                    }
+                  />
+                  <PremiumInput
+                    label="Înălțime (cm)"
+                    icon={<Maximize size={11} />}
+                    value={formData.height}
+                    onChange={(e: any) =>
+                      setFormData({
+                        ...formData,
+                        height: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+              </div>
 
-                {/* Financiare */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+              {/* ── 🚀 DESCRIERE CU EDITOR WYSIWYG ──────────────────────── */}
+              <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
-                    <DollarSign size={13} /> Financiare & Matrice Logistică
+                    <AlignLeft size={13} /> Documentație Editorială
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Preț Original
-                      </Label>
-                      <input
-                        type="number"
-                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
-                        value={formData.price}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            price: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100 text-center">
-                      <Label className="text-[9px] font-black text-rose-500 uppercase tracking-widest block mb-2">
-                        Preț Vanzare
-                      </Label>
-                      <input
-                        type="number"
-                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-rose-600 outline-none"
-                        value={formData.sale_price || ""}
-                        placeholder="—"
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            sale_price: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Stoc
-                      </Label>
-                      <input
-                        type="number"
-                        className="w-full bg-transparent text-lg md:text-xl font-black text-center text-black outline-none"
-                        value={formData.stock_quantity}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            stock_quantity: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 text-center flex flex-col justify-center">
-                      <Label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2">
-                        Status
-                      </Label>
-                      <select
-                        className="bg-transparent text-[10px] font-black text-center text-zinc-900 uppercase border-none outline-none cursor-pointer w-full"
-                        value={formData.status}
-                        onChange={(e) =>
-                          setFormData({ ...formData, status: e.target.value })
-                        }
-                      >
-                        <option value="ACTIVE">Public</option>
-                        <option value="DRAFT">Schiță</option>
-                        <option value="OUT_OF_STOCK">Fără stoc</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-zinc-100/70">
-                    <PremiumInput
-                      label="Masă (g)"
-                      icon={<Scale size={11} />}
-                      value={formData.weight}
-                      onChange={(e: any) =>
-                        setFormData({
-                          ...formData,
-                          weight: Number(e.target.value),
-                        })
-                      }
-                    />
-                    <PremiumInput
-                      label="Lungime (cm)"
-                      icon={<Maximize size={11} />}
-                      value={formData.length}
-                      onChange={(e: any) =>
-                        setFormData({
-                          ...formData,
-                          length: Number(e.target.value),
-                        })
-                      }
-                    />
-                    <PremiumInput
-                      label="Lățime (cm)"
-                      icon={<Maximize size={11} />}
-                      value={formData.width}
-                      onChange={(e: any) =>
-                        setFormData({
-                          ...formData,
-                          width: Number(e.target.value),
-                        })
-                      }
-                    />
-                    <PremiumInput
-                      label="Înălțime (cm)"
-                      icon={<Maximize size={11} />}
-                      value={formData.height}
-                      onChange={(e: any) =>
-                        setFormData({
-                          ...formData,
-                          height: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
+                  <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
+                    Suportă emoji · YouTube · Formatare
+                  </span>
                 </div>
 
-                {/* ── 🚀 DESCRIERE CU EDITOR WYSIWYG ──────────────────────── */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.25em] text-[var(--dark-amethyst)] flex items-center gap-2">
-                      <AlignLeft size={13} /> Documentație Editorială
-                    </h3>
-                    <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
-                      Suportă emoji · YouTube · Formatare
-                    </span>
-                  </div>
-
-                  {/* 
+                {/* 
                     🚀 ÎNLOCUIM TEXTAREA cu RichTextEditor.
                     Valoarea este HTML string — se salvează direct în DB ca `description`.
                     La randare, ProductDescription.tsx îl afișează perfect.
                   */}
-                  <RichTextEditor
-                    key={editingProduct?.sku || "new-product"}
-                    value={formData.description}
-                    onChange={(html) =>
-                      setFormData({ ...formData, description: html })
-                    }
-                    placeholder="Descrie produsul: caracteristici, specificații, avantaje..."
-                    minHeight={320}
-                  />
+                <RichTextEditor
+                  key={editingProduct?.sku || "new-product"}
+                  value={formData.description}
+                  onChange={(html) =>
+                    setFormData({ ...formData, description: html })
+                  }
+                  placeholder="Descrie produsul: caracteristici, specificații, avantaje..."
+                  minHeight={320}
+                />
 
-                  <p className="text-[9px] text-zinc-300 font-bold uppercase tracking-widest">
-                    ✓ Spațiile, emoji-urile și video-urile sunt salvate și
-                    randate exact cum le scrii
-                  </p>
-                </div>
+                <p className="text-[9px] text-zinc-300 font-bold uppercase tracking-widest">
+                  ✓ Spațiile, emoji-urile și video-urile sunt salvate și randate
+                  exact cum le scrii
+                </p>
+              </div>
 
-                {/* SEO + Atribute */}
-                <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* SEO */}
-                    <div className="space-y-4">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
-                        <Globe size={13} /> Parametri SEO
-                      </h4>
-                      <PremiumInput
-                        label="Slug URL"
-                        value={formData.slug}
-                        onChange={(e: any) =>
-                          setFormData({ ...formData, slug: e.target.value })
-                        }
-                      />
-                      <PremiumInput
-                        label="Meta Title"
-                        value={formData.meta_title}
-                        onChange={(e: any) =>
+              {/* SEO + Atribute */}
+              <div className="bg-white p-6 md:p-8 rounded-3xl border border-zinc-100 shadow-sm space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {/* SEO */}
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
+                      <Globe size={13} /> Parametri SEO
+                    </h4>
+                    <PremiumInput
+                      label="Slug URL"
+                      value={formData.slug}
+                      onChange={(e: any) =>
+                        setFormData({ ...formData, slug: e.target.value })
+                      }
+                    />
+                    <PremiumInput
+                      label="Meta Title"
+                      value={formData.meta_title}
+                      onChange={(e: any) =>
+                        setFormData({
+                          ...formData,
+                          meta_title: e.target.value,
+                        })
+                      }
+                    />
+                    <div className="space-y-1">
+                      <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
+                        Meta Description
+                      </Label>
+                      <textarea
+                        className="w-full h-20 bg-zinc-50 rounded-xl p-3 text-[11px] font-medium border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none shadow-inner"
+                        value={formData.meta_description}
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
-                            meta_title: e.target.value,
+                            meta_description: e.target.value,
                           })
                         }
                       />
-                      <div className="space-y-1">
-                        <Label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">
-                          Meta Description
-                        </Label>
-                        <textarea
-                          className="w-full h-20 bg-zinc-50 rounded-xl p-3 text-[11px] font-medium border-none outline-none focus:ring-1 focus:ring-[var(--royal-violet)] transition-all resize-none shadow-inner"
-                          value={formData.meta_description}
-                          onChange={(e) =>
+                    </div>
+                  </div>
+
+                  {/* Atribute */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
+                        <Layers size={13} /> Atribute Index
+                      </h4>
+                      <button
+                        onClick={() => {
+                          const k = prompt("Cheie Atribut (Ex: Culoare):");
+                          if (k)
                             setFormData({
                               ...formData,
-                              meta_description: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                              attributes_json: {
+                                ...formData.attributes_json,
+                                [k]: "",
+                              },
+                            });
+                        }}
+                        className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
+                      >
+                        + Adaugă
+                      </button>
                     </div>
-
-                    {/* Atribute */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 flex items-center gap-2">
-                          <Layers size={13} /> Atribute Index
-                        </h4>
-                        <button
-                          onClick={() => {
-                            const k = prompt("Cheie Atribut (Ex: Culoare):");
-                            if (k)
-                              setFormData({
-                                ...formData,
-                                attributes_json: {
-                                  ...formData.attributes_json,
-                                  [k]: "",
-                                },
-                              });
-                          }}
-                          className="text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-[var(--royal-violet)] hover:underline"
-                        >
-                          + Adaugă
-                        </button>
-                      </div>
-                      <div className="space-y-2 max-h-[220px] overflow-y-auto luxury-scrollbar pr-1">
-                        {Object.entries(formData.attributes_json || {}).map(
-                          ([k, v], idx) => (
-                            <div
-                              key={idx}
-                              className="flex gap-2 items-center bg-zinc-50/70 p-1.5 rounded-xl border border-zinc-200/50 group"
+                    <div className="space-y-2 max-h-[220px] overflow-y-auto luxury-scrollbar pr-1">
+                      {Object.entries(formData.attributes_json || {}).map(
+                        ([k, v], idx) => (
+                          <div
+                            key={idx}
+                            className="flex gap-2 items-center bg-zinc-50/70 p-1.5 rounded-xl border border-zinc-200/50 group"
+                          >
+                            <span
+                              className="text-[9px] font-black uppercase text-zinc-400 w-1/3 pl-2 truncate"
+                              title={k}
                             >
-                              <span
-                                className="text-[9px] font-black uppercase text-zinc-400 w-1/3 pl-2 truncate"
-                                title={k}
-                              >
-                                {k}
-                              </span>
-                              <input
-                                className="w-2/3 bg-transparent text-xs font-bold outline-none text-zinc-900"
-                                placeholder="Valoare..."
-                                value={v as string}
-                                onChange={(e) =>
-                                  setFormData({
-                                    ...formData,
-                                    attributes_json: {
-                                      ...formData.attributes_json,
-                                      [k]: e.target.value,
-                                    },
-                                  })
-                                }
-                              />
-                              <button
-                                onClick={() => {
-                                  const up = { ...formData.attributes_json };
-                                  delete up[k];
-                                  setFormData({
-                                    ...formData,
-                                    attributes_json: up,
-                                  });
-                                }}
-                                className="text-rose-400 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity pr-1"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          ),
-                        )}
-                      </div>
+                              {k}
+                            </span>
+                            <input
+                              className="w-2/3 bg-transparent text-xs font-bold outline-none text-zinc-900"
+                              placeholder="Valoare..."
+                              value={v as string}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  attributes_json: {
+                                    ...formData.attributes_json,
+                                    [k]: e.target.value,
+                                  },
+                                })
+                              }
+                            />
+                            <button
+                              onClick={() => {
+                                const up = { ...formData.attributes_json };
+                                delete up[k];
+                                setFormData({
+                                  ...formData,
+                                  attributes_json: up,
+                                });
+                              }}
+                              className="text-rose-400 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity pr-1"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ),
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Footer Modal */}
-          <footer className="px-6 md:px-10 py-5 md:py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 text-zinc-400">
-              <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
-              <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
-                Sincronizare infrastructura EVEM API Gate
-              </p>
-            </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 sm:flex-none px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 border border-zinc-200 transition-colors"
-              >
-                Anulează
-              </button>
-              <button
-                onClick={handleSave}
-                className="flex-1 sm:flex-none bg-[var(--royal-violet)] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-[var(--dark-amethyst)] active:scale-98 transition-all flex items-center justify-center gap-2"
-              >
-                <Save size={14} /> {editingProduct ? "Salvează" : "Publică"}
-              </button>
-            </div>
-          </footer>
+        {/* Footer Modal */}
+        <footer className="px-6 md:px-10 py-5 md:py-6 bg-white border-t border-zinc-100 shrink-0 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 text-zinc-400">
+            <ShieldCheck size={16} className="text-[var(--royal-violet)]" />
+            <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest">
+              Sincronizare infrastructura EVEM API Gate
+            </p>
+          </div>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="flex-1 sm:flex-none px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 border border-zinc-200 transition-colors"
+            >
+              Anulează
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex-1 sm:flex-none bg-[var(--royal-violet)] text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] shadow-lg hover:bg-[var(--dark-amethyst)] active:scale-98 transition-all flex items-center justify-center gap-2"
+            >
+              <Save size={14} /> {editingProduct ? "Salvează" : "Publică"}
+            </button>
+          </div>
+        </footer>
       </AdminDialogShell>
 
       <style
