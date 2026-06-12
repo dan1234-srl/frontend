@@ -22,7 +22,10 @@ const sizeClass: Record<AdminDialogShellSize, string> = {
   full: "sm:max-w-[1300px]",
 };
 
-interface AdminDialogShellProps {
+const EASE = [0.22, 1, 0.36, 1] as const;
+const SHEET_EASE = [0.34, 1.2, 0.64, 1] as const;
+
+export interface AdminDialogShellProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   size?: AdminDialogShellSize;
@@ -36,9 +39,6 @@ interface AdminDialogShellProps {
   /** Hide the floating external close button (rare). */
   hideClose?: boolean;
 }
-
-const EASE = [0.22, 1, 0.36, 1] as const;
-const SHEET_EASE = [0.34, 1.2, 0.64, 1] as const;
 
 export const AdminDialogShell = ({
   open,
@@ -88,7 +88,11 @@ export const AdminDialogShell = ({
                   scale: 1,
                   transition: { duration: 0.45, ease: EASE },
                 }}
-                exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2 } }}
+                exit={{
+                  opacity: 0,
+                  scale: 0.85,
+                  transition: { duration: 0.2 },
+                }}
                 className="fixed left-1/2 top-1/2 z-[9998] pointer-events-none"
                 style={{
                   width: "min(90vw, 1400px)",
@@ -140,27 +144,40 @@ export const AdminDialogShell = ({
                     }
                   : {
                       initial: reduce
-                        ? { opacity: 0 }
+                        ? { opacity: 0, x: "-50%", y: "-50%" }
                         : {
                             opacity: 0,
-                            y: 18,
+                            x: "-50%",
+                            y: "-48%", // ⬇️ Shiftat puțin în jos inițial
                             scale: 0.965,
                             clipPath: "inset(30% 30% 30% 30% round 28px)",
                           },
                       animate: reduce
-                        ? { opacity: 1, transition: { duration: 0.15 } }
+                        ? {
+                            opacity: 1,
+                            x: "-50%",
+                            y: "-50%",
+                            transition: { duration: 0.15 },
+                          }
                         : {
                             opacity: 1,
-                            y: 0,
+                            x: "-50%",
+                            y: "-50%", // 🎯 Acum centrează absolut perfect!
                             scale: 1,
                             clipPath: "inset(0% 0% 0% 0% round 28px)",
                             transition: { duration: 0.36, ease: EASE },
                           },
                       exit: reduce
-                        ? { opacity: 0, transition: { duration: 0.12 } }
+                        ? {
+                            opacity: 0,
+                            x: "-50%",
+                            y: "-50%",
+                            transition: { duration: 0.12 },
+                          }
                         : {
                             opacity: 0,
-                            y: 10,
+                            x: "-50%",
+                            y: "-48%",
                             scale: 0.97,
                             transition: { duration: 0.18, ease: "easeIn" },
                           },
@@ -181,7 +198,7 @@ export const AdminDialogShell = ({
                         "pb-[env(safe-area-inset-bottom)]",
                       ]
                     : [
-                        "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+                        "left-1/2 top-1/2", // Eliminat vechiul transform manual din Tailwind
                         "w-[95vw] max-h-[92vh] rounded-[28px]",
                         sizeClass[size],
                       ],
@@ -243,7 +260,11 @@ export const AdminDialogShell = ({
                   rotate: 0,
                   transition: { delay: 0.15, duration: 0.3, ease: EASE },
                 }}
-                exit={{ opacity: 0, scale: 0.6, transition: { duration: 0.15 } }}
+                exit={{
+                  opacity: 0,
+                  scale: 0.6,
+                  transition: { duration: 0.15 },
+                }}
                 whileHover={{ rotate: 90 }}
                 transition={{ duration: 0.25 }}
                 className="fixed z-[10000] top-6 right-6 sm:top-8 sm:right-8 h-11 w-11 rounded-full bg-white text-[var(--dark-amethyst)] flex items-center justify-center shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] hover:bg-[var(--dark-amethyst)] hover:text-white transition-colors"
