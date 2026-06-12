@@ -362,7 +362,7 @@ const AdminUsers = () => {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-zinc-50" />
                           <DropdownMenuItem
-                            onClick={() => handleDeleteUser(u.id)}
+                            onClick={() => setConfirmDeleteId(u.id)}
                             className="rounded-xl gap-3 py-3 cursor-pointer text-rose-500 font-bold focus:bg-rose-50 focus:text-rose-600"
                           >
                             <Trash2 size={14} /> Suspendă Contul
