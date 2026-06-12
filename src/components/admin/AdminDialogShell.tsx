@@ -46,6 +46,7 @@ export const AdminDialogShell = ({
   size = "md",
   mobileVariant = "sheet",
   className,
+  style,
   children,
   hideOverlay,
   accentColor = "var(--royal-violet)",
