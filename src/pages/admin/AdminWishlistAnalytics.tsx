@@ -1,26 +1,25 @@
 // pages/admin/AdminWishlistAnalytics.tsx
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Importat pentru navigare
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Heart,
   AlertCircle,
   ShoppingBag,
   ArrowUpRight,
-  Loader2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminSWR } from "@/lib/admin-swr";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
 
 const AdminWishlistAnalytics = () => {
-  const navigate = useNavigate(); // Inițializare navigare
-  const [trends, setTrends] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Stări pentru paginare
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const limit = 20;
 
   const getImageUrl = (imageSource: any) => {
@@ -41,50 +40,30 @@ const AdminWishlistAnalytics = () => {
     return typeof imageSource === "string" ? imageSource : "";
   };
 
-  useEffect(() => {
-    const fetchTrends = async () => {
-      try {
-        setLoading(true);
-        const skip = (page - 1) * limit;
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/admin/analytics/wishlist-trends?skip=${skip}&limit=${limit}`,
-        );
+  const skip = (page - 1) * limit;
+  const { data, loading } = useAdminSWR<{
+    items: any[];
+    pages: number;
+    total: number;
+  }>(
+    `admin:wishlist:trends:skip=${skip}:limit=${limit}`,
+    async () => {
+      const res = await fetch(
+        `${API_BASE}/api/v1/admin/analytics/wishlist-trends?skip=${skip}&limit=${limit}`,
+      );
+      if (!res.ok) throw new Error(`Eroare server: ${res.status}`);
+      return res.json();
+    },
+    { ttl: 60_000 },
+  );
 
-        if (!response.ok) throw new Error(`Eroare server: ${response.status}`);
-
-        const data = await response.json();
-
-        // Backend-ul returnează acum { items: [], total: x, pages: y }
-        setTrends(data.items || []);
-        setTotalPages(data.pages || 1);
-        setError(null);
-      } catch (err: any) {
-        console.error("Fetch error:", err);
-        setError(err.message);
-        setTrends([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrends();
-  }, [page]);
+  const trends = data?.items || [];
+  const totalPages = data?.pages || 1;
 
   const handleActionClick = (sku: string) => {
-    // Navighează la lista de produse și aplică filtrul de căutare pentru SKU-ul respectiv
     navigate(`/admin/products?search=${sku}`);
   };
 
-  if (loading && page === 1) {
-    return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-left">
-        <Loader2 className="animate-spin text-zinc-300" size={40} />
-        <p className="text-zinc-400 text-xs font-black uppercase tracking-[0.2em]">
-          Sincronizare date...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-10 text-left animate-in fade-in duration-500">
@@ -119,7 +98,30 @@ const AdminWishlistAnalytics = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-50">
-                {trends.length > 0 ? (
+                {loading && trends.length === 0 ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={`sk-${i}`}>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="size-14 rounded-2xl" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-center">
+                        <Skeleton className="h-5 w-10 mx-auto" />
+                      </td>
+                      <td className="px-8 py-6">
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <Skeleton className="size-11 rounded-full ml-auto" />
+                      </td>
+                    </tr>
+                  ))
+                ) : trends.length > 0 ? (
                   trends.map((item: any) => (
                     <tr
                       key={item.id}
@@ -129,6 +131,7 @@ const AdminWishlistAnalytics = () => {
                         <div className="flex items-center gap-4">
                           <img
                             src={getImageUrl(item.image)}
+                            loading="lazy"
                             className="size-14 rounded-2xl object-cover bg-zinc-50 border border-zinc-100"
                             onError={(e: any) =>
                               (e.target.src = "/placeholder.png")

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Star,
   Search,
@@ -16,6 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useAdminSWR } from "@/lib/admin-swr";
+import { invalidateCache } from "@/lib/swr-cache";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -53,52 +56,40 @@ const initials = (name?: string) =>
     .toUpperCase();
 
 const AdminReviews = () => {
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
-  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [ratingFilter, setRatingFilter] = useState<string>("Toate");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [confirmDelete, setConfirmDelete] = useState<
+    string | number | null
+  >(null);
   const perPage = 8;
 
-  const fetchReviews = async () => {
-    setLoading(true);
-    try {
+  const swrKey = `admin:reviews:status=${statusFilter}`;
+  const { data: reviews = [], loading, mutate, setData } = useAdminSWR<AdminReview[]>(
+    swrKey,
+    async () => {
       const url = new URL(`${API_BASE_URL}/api/v1/reviews/admin`);
       if (statusFilter !== "Toate")
         url.searchParams.set("status", statusFilter);
       const res = await fetch(url.toString(), { credentials: "include" });
       if (!res.ok) throw new Error();
-      const data = await res.json();
-      const list: AdminReview[] = Array.isArray(data)
-        ? data
-        : data?.items || [];
-      setReviews(list);
-    } catch {
-      toast.error("Nu am putut încărca recenziile.");
-      setReviews([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReviews();
-    setPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+      const json = await res.json();
+      return Array.isArray(json) ? json : json?.items || [];
+    },
+    { ttl: 30_000, refreshInterval: statusFilter === "pending" ? 30_000 : undefined },
+  );
 
   const updateStatus = async (id: string | number, status: ReviewStatus) => {
     setBusyId(id);
-    // Dacă status-ul este "approved", apelăm /approve, altfel poate fi alta logică
     const endpoint = status === "approved" ? "approve" : "reject";
 
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/reviews/admin/${id}/${endpoint}`,
         {
-          method: status === "approved" ? "PATCH" : "DELETE", // Se potrivește cu router-ul
+          method: status === "approved" ? "PATCH" : "DELETE",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
         },
@@ -106,8 +97,13 @@ const AdminReviews = () => {
 
       if (!res.ok) throw new Error();
 
-      setReviews((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status } : r)),
+      // Optimistic update
+      setData(((reviews || []) as AdminReview[]).map((r) =>
+        r.id === id ? { ...r, status } : r,
+      ));
+      // Invalidate all status caches since item may move tabs
+      ["pending", "approved", "rejected", "Toate"].forEach((s) =>
+        invalidateCache(`admin:reviews:status=${s}`),
       );
       toast.success(
         status === "approved"
@@ -122,10 +118,8 @@ const AdminReviews = () => {
   };
 
   const removeReview = async (id: string | number) => {
-    if (!confirm("Sigur ștergi această recenzie?")) return;
     setBusyId(id);
     try {
-      // Atenție: ruta din backend este /admin/{review_id}/reject
       const res = await fetch(
         `${API_BASE_URL}/api/v1/reviews/admin/${id}/reject`,
         {
@@ -134,14 +128,19 @@ const AdminReviews = () => {
         },
       );
       if (!res.ok) throw new Error();
-      setReviews((prev) => prev.filter((r) => r.id !== id));
+      setData(((reviews || []) as AdminReview[]).filter((r) => r.id !== id));
+      ["pending", "approved", "rejected", "Toate"].forEach((s) =>
+        invalidateCache(`admin:reviews:status=${s}`),
+      );
       toast.success("Recenzia a fost ștearsă.");
     } catch {
       toast.error("Nu am putut șterge recenzia.");
+      throw new Error();
     } finally {
       setBusyId(null);
     }
   };
+
 
   const filtered = useMemo(() => {
     return reviews.filter((r) => {
@@ -377,7 +376,7 @@ const AdminReviews = () => {
                       )}
                       <Button
                         disabled={busyId === review.id}
-                        onClick={() => removeReview(review.id)}
+                        onClick={() => setConfirmDelete(review.id)}
                         variant="ghost"
                         className="flex-1 lg:flex-none rounded-xl bg-zinc-50 text-zinc-400 hover:text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] h-12 gap-2"
                       >
@@ -420,6 +419,19 @@ const AdminReviews = () => {
           </div>
         </div>
       )}
+
+      <AdminConfirmDialog
+        open={confirmDelete !== null}
+        onOpenChange={(v) => !v && setConfirmDelete(null)}
+        eyebrow="Ștergere recenzie"
+        title="Ștergi această recenzie?"
+        description="Acțiunea este permanentă. Recenzia nu va mai apărea în niciun raport."
+        confirmLabel="Șterge"
+        destructive
+        onConfirm={async () => {
+          if (confirmDelete !== null) await removeReview(confirmDelete);
+        }}
+      />
     </div>
   );
 };
