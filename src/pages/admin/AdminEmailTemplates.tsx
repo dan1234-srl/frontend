@@ -165,7 +165,6 @@ const AdminEmailTemplates = () => {
   };
 
   const toggleTemplateStatus = async (t: any) => {
-    // Modifică statusul și salvează direct
     try {
       const updated = { ...t, is_active: !t.is_active };
       setTemplates(
@@ -503,30 +502,33 @@ const AdminEmailTemplates = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-white flex flex-col"
           >
-            {/* Header Consolă pentru Editor */}
+            {/* Header Consolă pentru Editor (Aerisit și flexibil) */}
             <header
-              className="h-[88px] bg-white border-b flex items-center justify-between px-6 shrink-0 shadow-sm z-30"
+              className="w-full bg-white border-b flex flex-col lg:flex-row items-center justify-between px-6 py-4 gap-4 shrink-0 shadow-sm z-30"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
             >
-              <button
-                onClick={() => setView("list")}
-                className="flex items-center justify-center size-10 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
-                style={{
-                  borderColor:
-                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                }}
-                title="Renunță"
-              >
-                <X size={16} strokeWidth={2.5} />
-              </button>
+              <div className="flex w-full lg:w-auto items-center justify-between lg:justify-start gap-4">
+                <button
+                  onClick={() => setView("list")}
+                  className="flex items-center justify-center size-12 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  title="Renunță"
+                >
+                  <X size={18} strokeWidth={2.5} />
+                </button>
+              </div>
 
-              <div className="flex flex-1 max-w-4xl mx-6 gap-4 overflow-x-auto luxury-scrollbar">
-                <div className="min-w-[180px] flex-1 group relative">
+              {/* Input-urile au lățime flexibilă și spațiu generos */}
+              <div className="flex flex-1 w-full lg:max-w-6xl xl:max-w-7xl mx-auto gap-4 overflow-x-auto luxury-scrollbar pb-2 lg:pb-0">
+                <div className="min-w-[200px] flex-[1.5] group relative">
                   <Label
-                    className="text-[8px] font-black uppercase ml-1 transition-colors"
+                    className="text-[9px] font-black uppercase ml-1 transition-colors"
                     style={{
                       color:
                         "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -542,27 +544,30 @@ const AdminEmailTemplates = () => {
                         title: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-lg p-2.5 text-xs font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1 border"
+                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = "var(--royal-violet)";
+                      e.target.style.backgroundColor = "#ffffff";
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor =
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                      e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
                     }}
                   />
                 </div>
 
-                <div className="min-w-[180px] flex-1 group relative">
+                <div className="min-w-[200px] flex-1 group relative">
                   <Label
-                    className="text-[8px] font-black uppercase ml-1 transition-colors flex items-center gap-1.5"
+                    className="text-[9px] font-black uppercase ml-1 transition-colors flex items-center gap-1.5"
                     style={{ color: "var(--royal-violet)" }}
                   >
-                    <Activity size={10} /> Trigger Event
+                    <Activity size={12} /> Trigger Event
                   </Label>
                   <input
                     value={currentTemplate.event_name}
@@ -572,24 +577,27 @@ const AdminEmailTemplates = () => {
                         event_name: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-lg p-2.5 text-xs font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1 border"
+                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = "var(--royal-violet)";
+                      e.target.style.backgroundColor = "#ffffff";
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor =
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                      e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
                     }}
                   />
                 </div>
 
-                <div className="min-w-[250px] flex-[2] group relative">
+                <div className="min-w-[300px] flex-[2.5] group relative">
                   <Label
-                    className="text-[8px] font-black uppercase ml-1 transition-colors"
+                    className="text-[9px] font-black uppercase ml-1 transition-colors"
                     style={{
                       color:
                         "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -605,35 +613,40 @@ const AdminEmailTemplates = () => {
                         subject: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-lg p-2.5 text-xs font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1 border"
+                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = "var(--royal-violet)";
+                      e.target.style.backgroundColor = "#ffffff";
                     }}
                     onBlur={(e) => {
                       e.target.style.borderColor =
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                      e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
                     }}
                   />
                 </div>
               </div>
 
-              <button
-                onClick={saveTemplate}
-                disabled={isSaving}
-                className="text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all shrink-0"
-                style={{ background: "var(--primary-gradient)" }}
-              >
-                {isSaving ? (
-                  <Loader2 className="animate-spin" size={14} />
-                ) : (
-                  <Save size={16} />
-                )}
-                Actualizează Design
-              </button>
+              <div className="flex w-full lg:w-auto">
+                <button
+                  onClick={saveTemplate}
+                  disabled={isSaving}
+                  className="w-full sm:w-auto text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all shrink-0 whitespace-nowrap"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Save size={16} />
+                  )}
+                  Actualizează Design
+                </button>
+              </div>
             </header>
 
             {/* Email Editor Canvas */}
