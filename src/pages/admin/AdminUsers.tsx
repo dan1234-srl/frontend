@@ -161,9 +161,9 @@ const AdminUsers = () => {
             <input
               className="w-full sm:w-[350px] pl-12 pr-6 py-4 bg-zinc-50 border-none rounded-2xl focus:ring-2 focus:ring-[var(--royal-violet)]/10 outline-none transition-all text-sm font-bold shadow-inner"
               placeholder="Identifică utilizator..."
-              value={searchTerm}
+              value={searchInput}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
+                setSearchInput(e.target.value);
                 setPage(1);
               }}
             />
