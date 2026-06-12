@@ -40,10 +40,18 @@ const API_BASE =
   "https://linea-backend-production.up.railway.app";
 
 const AdminUsers = () => {
+  const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Debounce search → SWR key changes only after 400ms idle
+  useEffect(() => {
+    const t = setTimeout(() => setSearchTerm(searchInput), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
 
   const swrKey = `admin:users:p=${page}:q=${searchTerm}:r=${roleFilter}`;
   const { data, loading, mutate } = useAdminSWR<{
