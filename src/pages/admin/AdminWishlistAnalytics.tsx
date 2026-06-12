@@ -98,7 +98,30 @@ const AdminWishlistAnalytics = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-50">
-                {trends.length > 0 ? (
+                {loading && trends.length === 0 ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={`sk-${i}`}>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="size-14 rounded-2xl" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-center">
+                        <Skeleton className="h-5 w-10 mx-auto" />
+                      </td>
+                      <td className="px-8 py-6">
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <Skeleton className="size-11 rounded-full ml-auto" />
+                      </td>
+                    </tr>
+                  ))
+                ) : trends.length > 0 ? (
                   trends.map((item: any) => (
                     <tr
                       key={item.id}
@@ -108,6 +131,7 @@ const AdminWishlistAnalytics = () => {
                         <div className="flex items-center gap-4">
                           <img
                             src={getImageUrl(item.image)}
+                            loading="lazy"
                             className="size-14 rounded-2xl object-cover bg-zinc-50 border border-zinc-100"
                             onError={(e: any) =>
                               (e.target.src = "/placeholder.png")
