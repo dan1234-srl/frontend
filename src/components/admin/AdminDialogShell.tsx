@@ -170,6 +170,7 @@ export const AdminDialogShell = ({
                   boxShadow: asSheet
                     ? "0 -20px 60px -20px rgba(16, 0, 43, 0.35), 0 -2px 0 0 rgba(255,255,255,0.6) inset"
                     : `0 30px 80px -20px rgba(16, 0, 43, 0.45), 0 8px 24px -8px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.6) inset, 0 0 60px -10px ${accentColor}33`,
+                  ...style,
                 }}
                 className={cn(
                   "fixed z-[9999] bg-white flex flex-col overflow-hidden outline-none",
