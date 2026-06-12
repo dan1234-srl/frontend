@@ -158,33 +158,31 @@ const RowTotal = ({
 const AdminOrderDetail = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const fetchOrder = async () => {
-    try {
-      setLoading(true);
+  const {
+    data: order,
+    loading,
+    mutate,
+    error,
+  } = useAdminSWR<any>(
+    orderId ? `admin:order:${orderId}` : null,
+    async () => {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/orders/admin/${orderId}`,
-        {
-          credentials: "include",
-        },
+        { credentials: "include" },
       );
       if (!res.ok) throw new Error("Comanda nu a putut fi găsită.");
-      const data = await res.json();
-      setOrder(data);
-    } catch (err: any) {
-      toast.error(err.message || "Eroare la încărcarea comenzii.");
-      navigate("/admin");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.json();
+    },
+    { ttl: 30_000 },
+  );
 
-  useEffect(() => {
-    if (orderId) fetchOrder();
-  }, [orderId]);
+  // Redirect on permanent error (e.g. 404)
+  if (error && !loading && !order) {
+    toast.error(error.message || "Eroare la încărcarea comenzii.");
+    navigate("/admin");
+  }
 
   const handleStatusUpdate = async (newStatus: string) => {
     try {
@@ -202,7 +200,7 @@ const AdminOrderDetail = () => {
         toast.success(
           `Status actualizat la: ${STATUS_MAP[newStatus]?.label || newStatus}`,
         );
-        fetchOrder();
+        mutate(true);
       } else {
         toast.error("Eroare la actualizarea statusului.");
       }
@@ -212,6 +210,7 @@ const AdminOrderDetail = () => {
       setUpdatingStatus(false);
     }
   };
+
 
   const shipping = useMemo(() => {
     if (!order?.shipping_address) return {};
