@@ -36,6 +36,7 @@ import {
   AdminDialogShell,
   AdminDialogTitle,
 } from "@/components/admin/AdminDialogShell";
+import { Skeleton } from "@/components/ui/skeleton";
 import { readCache, writeCache } from "@/lib/swr-cache";
 
 const API_URL =
@@ -80,9 +81,9 @@ const STATUS_PALETTE: Record<
   { bg: string; text: string; ring: string; bar: string; label: string }
 > = {
   pending: {
-    bg: "rgba(245,158,11,0.10)",
+    bg: "color-mix(in srgb, #f59e0b 10%, transparent)",
     text: "#b45309",
-    ring: "rgba(245,158,11,0.25)",
+    ring: "color-mix(in srgb, #f59e0b 25%, transparent)",
     bar: "linear-gradient(180deg,#f59e0b,#fbbf24)",
     label: "Pending",
   },
@@ -94,30 +95,30 @@ const STATUS_PALETTE: Record<
     label: "Procesare",
   },
   shipped: {
-    bg: "rgba(59,130,246,0.10)",
+    bg: "color-mix(in srgb, #3b82f6 10%, transparent)",
     text: "#1d4ed8",
-    ring: "rgba(59,130,246,0.25)",
+    ring: "color-mix(in srgb, #3b82f6 25%, transparent)",
     bar: "linear-gradient(180deg,#3b82f6,#60a5fa)",
     label: "Expediată",
   },
   delivered: {
-    bg: "rgba(16,185,129,0.10)",
+    bg: "color-mix(in srgb, #10b981 10%, transparent)",
     text: "#047857",
-    ring: "rgba(16,185,129,0.25)",
+    ring: "color-mix(in srgb, #10b981 25%, transparent)",
     bar: "linear-gradient(180deg,#10b981,#34d399)",
     label: "Livrată",
   },
   cancelled: {
-    bg: "rgba(244,63,94,0.10)",
+    bg: "color-mix(in srgb, #f43f5e 10%, transparent)",
     text: "#be123c",
-    ring: "rgba(244,63,94,0.25)",
+    ring: "color-mix(in srgb, #f43f5e 25%, transparent)",
     bar: "linear-gradient(180deg,#f43f5e,#fb7185)",
     label: "Anulată",
   },
   unknown: {
-    bg: "rgba(113,113,122,0.10)",
+    bg: "color-mix(in srgb, #71717a 10%, transparent)",
     text: "#52525b",
-    ring: "rgba(113,113,122,0.25)",
+    ring: "color-mix(in srgb, #71717a 25%, transparent)",
     bar: "linear-gradient(180deg,#71717a,#a1a1aa)",
     label: "N/A",
   },
@@ -359,6 +360,7 @@ const AdminOrders = () => {
       transition: { staggerChildren: reduce ? 0 : 0.03 },
     },
   };
+
   const cardVariants = {
     hidden: reduce ? { opacity: 0 } : { opacity: 0, y: 8 },
     visible: reduce
@@ -405,7 +407,7 @@ const AdminOrders = () => {
         <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
           <button
             onClick={handleFetchGlobalGlsHistory}
-            className="w-full sm:w-auto bg-white/60 backdrop-blur-xl border hover:bg-white text-zinc-600 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+            className="w-full sm:w-auto bg-white/60 backdrop-blur-xl border hover:bg-white text-zinc-600 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition flex items-center justify-center gap-2 shadow-[0_1px_0_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_-24px_rgba(16,0,43,0.18)]"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -440,7 +442,7 @@ const AdminOrders = () => {
             className="relative overflow-hidden rounded-[20px] p-5 sm:p-6 shadow-lg shadow-black/[0.04] group border border-white/10"
             style={{ background: "var(--primary-gradient)" }}
           >
-            {/* Glossy overlay effect for luxury feel */}
+            {/* Glossy overlay effect */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
             <div className="relative z-10 flex flex-col h-full justify-between gap-6">
@@ -475,7 +477,7 @@ const AdminOrders = () => {
         ))}
       </section>
 
-      {/* ── Search + filter chips (Glassmorphism) ──────────────────────────── */}
+      {/* ── Search + filter chips ──────────────────────────── */}
       <section
         className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between p-3 rounded-[1.5rem] backdrop-blur-xl border bg-white/40"
         style={{
@@ -486,10 +488,10 @@ const AdminOrders = () => {
         <div className="relative w-full lg:w-[420px] group">
           <Search
             className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+            size={14}
             style={{
               color: "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
             }}
-            size={14}
           />
           <input
             placeholder="Căutare comandă, client, email..."
@@ -498,7 +500,7 @@ const AdminOrders = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-md border rounded-xl text-sm font-medium outline-none transition placeholder:text-zinc-400 placeholder:font-normal text-[var(--dark-amethyst)]"
+            className="w-full pl-11 pr-4 py-3.5 bg-white/60 backdrop-blur-md border rounded-xl text-sm font-medium outline-none transition placeholder:text-zinc-400 placeholder:font-normal text-[var(--dark-amethyst)]"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -558,18 +560,18 @@ const AdminOrders = () => {
 
       {/* ── BENTO GRID ─────────────────────────────────────── */}
       {loading ? (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[180px]">
-          {[...Array(8)].map((_, i) => (
+        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+          {[...Array(12)].map((_, i) => (
             <div
               key={i}
-              className={`rounded-[24px] bg-white border border-zinc-100 p-5 overflow-hidden relative shadow-sm ${
-                isWide(i) ? "lg:col-span-2" : ""
+              className={`rounded-[24px] bg-white border border-zinc-100 p-5 relative min-h-[160px] ${
+                isWide(i) ? "md:col-span-2" : "col-span-1"
               }`}
             >
               <div className="h-3 w-16 bg-zinc-100 rounded animate-pulse mb-3" />
               <div className="h-5 w-32 bg-zinc-100 rounded animate-pulse mb-2" />
               <div className="h-3 w-24 bg-zinc-100 rounded animate-pulse mb-6" />
-              <div className="h-7 w-20 bg-zinc-100 rounded animate-pulse" />
+              <div className="h-7 w-20 bg-zinc-100 rounded animate-pulse mt-auto" />
             </div>
           ))}
         </section>
@@ -581,11 +583,11 @@ const AdminOrders = () => {
               "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
           }}
         >
-          <AlertTriangle
+          <Sparkles
             size={40}
             strokeWidth={1}
             style={{
-              color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+              color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
             }}
           />
           <span
@@ -602,7 +604,7 @@ const AdminOrders = () => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[180px]"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5"
         >
           {orders.map((order, i) => (
             <OrderBentoCard
@@ -620,10 +622,10 @@ const AdminOrders = () => {
       {/* ── PAGINATION ─────────────────────────────────────── */}
       {!loading && totalPages > 1 && (
         <div
-          className="flex justify-center items-center gap-3 mt-4 p-4 rounded-2xl bg-white/40 backdrop-blur-md border shadow-sm"
+          className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm mt-8"
           style={{
             borderColor:
-              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
           }}
         >
           <button
@@ -716,6 +718,7 @@ const AdminOrders = () => {
         onActionComplete={fetchOrders}
       />
 
+      {/* GLS history modal */}
       <AdminDialogShell
         open={showGlsHistory}
         onOpenChange={(o) => !o && setShowGlsHistory(false)}
@@ -869,6 +872,7 @@ const AdminOrders = () => {
         </div>
       </AdminDialogShell>
 
+      {/* GLS cancel modal */}
       <AdminDialogShell
         open={!!cancelOrderContext}
         onOpenChange={(o) => {
@@ -940,7 +944,7 @@ const AdminOrders = () => {
             </div>
 
             <div
-              className="bg-white border p-5 rounded-[1.5rem] shadow-sm space-y-4"
+              className="bg-white border p-6 rounded-[1.5rem] shadow-sm space-y-4"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -974,9 +978,9 @@ const AdminOrders = () => {
                   }}
                 >
                   {isSearchingParcels ? (
-                    <Loader2 size={13} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <Database size={13} />
+                    <Database size={14} />
                   )}
                   Caută în GLS
                 </button>
@@ -1075,8 +1079,7 @@ const AdminOrders = () => {
                   color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
                 }}
               >
-                *Lasă gol pentru a folosi ID-ul salvat în baza de date (dacă
-                există).
+                *Lasă gol pentru a folosi ID-ul salvat în baza de date.
               </p>
             </div>
           </div>
@@ -1181,139 +1184,142 @@ const OrderBentoCard = ({
     <motion.div
       variants={variants}
       onClick={onReview}
-      className={`group relative cursor-pointer rounded-[24px] border bg-white overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-xl shadow-sm ${
-        wide ? "lg:col-span-2" : ""
+      className={`group relative cursor-pointer rounded-[24px] border bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl shadow-sm flex flex-col ${
+        wide ? "md:col-span-2" : "col-span-1"
       }`}
       style={{
         borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
       }}
     >
-      {/* Background Gradient on Hover */}
+      {/* Background Gradient on Hover (Sincronizat cu Navbar) */}
       <div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
-        style={{
-          background:
-            "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
-        }}
+        style={{ background: "var(--primary-gradient)" }}
       />
 
-      {/* Accent bar */}
+      {/* Culoare solidă semi-transparentă peste gradient pentru a păstra textul vizibil */}
+      <div
+        className="absolute inset-1 rounded-[20px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+        style={{ background: "rgba(255, 255, 255, 0.94)" }}
+      />
+
+      {/* Accent bar colorat pe baza statusului */}
       <div
         aria-hidden
-        className="absolute left-0 top-0 bottom-0 w-[3px] z-10"
+        className="absolute left-0 top-0 bottom-0 w-[4px] z-10"
         style={{ background: pal.bar }}
       />
 
-      <div className="h-full p-5 flex flex-col justify-between relative z-10">
-        {/* Top row: order ref + date + status pill */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p
-              className="text-[9px] font-black uppercase tracking-[0.3em] truncate group-hover:text-[var(--royal-violet)] transition-colors"
-              style={{ color: "var(--dark-amethyst)" }}
-            >
-              #ORD-{orderRef}
-            </p>
-            <p
-              className="text-[10px] font-bold uppercase tracking-[0.2em] mt-0.5"
+      <div className="flex flex-col h-full p-6 justify-between relative z-10">
+        {/* TOP ROW */}
+        <div>
+          <div className="flex justify-between items-start mb-4 gap-3">
+            <div className="min-w-0">
+              <p
+                className="text-[10px] font-black uppercase tracking-[0.3em] truncate transition-colors group-hover:text-[var(--royal-violet)]"
+                style={{ color: "var(--dark-amethyst)" }}
+              >
+                #ORD-{orderRef}
+              </p>
+              <p
+                className="text-[10px] font-bold uppercase tracking-[0.2em] mt-1"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
+                {dateShort}
+              </p>
+            </div>
+            <span
+              className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap border shadow-sm"
               style={{
-                color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                backgroundColor: pal.bg,
+                color: pal.text,
+                borderColor: pal.ring,
               }}
             >
-              {dateShort}
-            </p>
+              {pal.label}
+            </span>
           </div>
 
-          <span
-            className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap border shadow-sm"
-            style={{
-              backgroundColor: pal.bg,
-              color: pal.text,
-              borderColor: pal.ring,
-            }}
-          >
-            {pal.label}
-          </span>
-        </div>
-
-        {/* Customer */}
-        <div className="flex items-center gap-3 mt-3 min-w-0">
-          <div
-            className="size-9 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 border"
-            style={{
-              background:
-                "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-              color: "var(--royal-violet)",
-              borderColor:
-                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-            }}
-          >
-            {initials}
-          </div>
-          <div className="min-w-0">
-            <p className="text-[13px] font-bold tracking-tight text-[var(--dark-amethyst)] truncate group-hover:text-[var(--royal-violet)] transition-colors">
-              {order?.customer_name || "Client Anonim"}
-            </p>
-            <p
-              className="text-[10px] lowercase truncate font-semibold mt-0.5"
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="size-10 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 border"
               style={{
-                color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                background:
+                  "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                color: "var(--royal-violet)",
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
               }}
             >
-              {order?.email || "fără@email"}
-            </p>
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-bold tracking-tight text-[var(--dark-amethyst)] truncate group-hover:text-[var(--royal-violet)] transition-colors">
+                {order?.customer_name || "Client Anonim"}
+              </p>
+              <p
+                className="text-[10px] lowercase truncate font-semibold mt-0.5"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
+                {order?.email || "fără@email.com"}
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Wide-only: status timeline */}
-        {wide && stepIdx >= 0 && (
-          <div className="mt-4 hidden lg:flex items-center gap-1.5">
-            {STATUS_STEPS.map((s, i) => {
-              const done = i <= stepIdx;
-              const current = i === stepIdx;
-              return (
-                <div key={s.key} className="flex items-center gap-1.5 flex-1">
-                  <div
-                    className="h-1.5 flex-1 rounded-full"
-                    style={{
-                      background: done
-                        ? pal.bar
-                        : "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
-                    }}
-                  />
-                  {current && (
-                    <span
-                      className="size-2 rounded-full shrink-0 shadow-md"
+          {/* TIMELINE PENTRU CARDURILE WIDE */}
+          {wide && stepIdx >= 0 && (
+            <div className="mt-5 hidden lg:flex items-center gap-1.5">
+              {STATUS_STEPS.map((s, i) => {
+                const done = i <= stepIdx;
+                const current = i === stepIdx;
+                return (
+                  <div key={s.key} className="flex items-center gap-1.5 flex-1">
+                    <div
+                      className="h-1.5 flex-1 rounded-full"
                       style={{
-                        background: pal.text,
-                        boxShadow: `0 0 0 3px ${pal.bg}`,
+                        background: done
+                          ? pal.bar
+                          : "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
                       }}
                     />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                    {current && (
+                      <span
+                        className="size-2.5 rounded-full shrink-0 shadow-md"
+                        style={{
+                          background: pal.text,
+                          boxShadow: `0 0 0 3px ${pal.bg}`,
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-        {/* Bottom row: total + count + (wide) actions */}
+        {/* BOTTOM ROW */}
         <div
-          className="flex items-end justify-between mt-4 gap-3 pt-3 border-t"
+          className="mt-auto pt-5 border-t flex justify-between items-end gap-3"
           style={{
             borderColor:
-              "color-mix(in srgb, var(--royal-violet) 6%, transparent)",
+              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
           }}
         >
           <div>
             <p
-              className="text-[8px] font-black uppercase tracking-[0.3em] mb-0.5"
+              className="text-[8px] font-black uppercase tracking-[0.3em] mb-1"
               style={{
                 color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
               }}
             >
-              Total
+              Total Document
             </p>
-            <p className="heading-serif text-xl tracking-tight text-[var(--dark-amethyst)] font-medium tabular-nums">
+            <p className="heading-serif text-xl tracking-tight text-[var(--dark-amethyst)] font-medium tabular-nums leading-none">
               {(Number(order?.total_amount) || 0).toLocaleString("ro-RO")}
               <span className="text-[9px] font-black ml-1 uppercase tracking-widest opacity-60">
                 RON
@@ -1324,7 +1330,7 @@ const OrderBentoCard = ({
           <div className="flex items-center gap-2">
             {itemsCount != null && (
               <span
-                className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md bg-white border"
+                className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg bg-white border"
                 style={{
                   color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                   borderColor:
@@ -1336,47 +1342,38 @@ const OrderBentoCard = ({
               </span>
             )}
 
-            {wide && (
-              <div className="hidden lg:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-300">
+            {/* ACTION BUTTONS */}
+            <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 lg:translate-x-2 group-hover:translate-x-0">
+              {wide && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onCancelGls();
                   }}
-                  className="p-2 bg-white border border-rose-100 rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition shadow-sm"
+                  className="hidden lg:flex p-2 bg-white border border-rose-100 rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition shadow-sm"
                   title="Anulează AWB"
                 >
-                  <PackageX size={12} strokeWidth={2.5} />
+                  <PackageX size={14} strokeWidth={2.5} />
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onReview();
-                  }}
-                  className="p-2 bg-white border rounded-lg text-[var(--dark-amethyst)] hover:bg-[var(--royal-violet)] hover:text-white transition shadow-sm"
-                  style={{
-                    borderColor:
-                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                  }}
-                  title="Vizualizează"
-                >
-                  <Eye size={12} strokeWidth={2.5} />
-                </button>
-              </div>
-            )}
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReview();
+                }}
+                className="p-2 bg-white border rounded-lg text-[var(--dark-amethyst)] hover:bg-[var(--royal-violet)] hover:text-white transition shadow-sm"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
+                title="Vizualizează Comanda"
+              >
+                <Eye size={14} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Compact card: subtle hover halo */}
-      <div
-        aria-hidden
-        className="absolute -right-8 -bottom-8 size-28 rounded-full opacity-0 group-hover:opacity-20 transition-all duration-500 pointer-events-none"
-        style={{
-          background: pal.text,
-          filter: "blur(30px)",
-        }}
-      />
     </motion.div>
   );
 };
