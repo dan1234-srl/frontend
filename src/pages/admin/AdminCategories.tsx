@@ -399,7 +399,7 @@ const AdminCategories = () => {
           }}
         >
           <div className="col-span-7 pl-4">Denumire & Ierarhie</div>
-          <div className="col-span-2 text-center">Articole Indexate</div>
+          <div className="col-span-2 text-center">Probleme</div>
           <div className="col-span-3 text-right pr-4">Management</div>
         </div>
 
