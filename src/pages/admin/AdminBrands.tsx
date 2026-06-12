@@ -1,4 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+/**
+ * AdminBrands.tsx
+ * Pagina de administrare branduri - Design Futuristic (Isomorphic UI)
+ */
+
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -15,7 +20,7 @@ import {
   Loader2,
   AlertTriangle,
   ExternalLink,
-  RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -71,7 +76,7 @@ const AdminBrands = () => {
     }
   }, [user, isAdmin, authLoading, navigate]);
 
-  const fetchBrands = async () => {
+  const fetchBrands = useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch(
@@ -91,7 +96,7 @@ const AdminBrands = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage, searchTerm]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -100,7 +105,7 @@ const AdminBrands = () => {
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [isAdmin, currentPage, searchTerm]);
+  }, [isAdmin, currentPage, searchTerm, fetchBrands]);
 
   const handleSave = async () => {
     if (!formData.name.trim())
@@ -124,6 +129,8 @@ const AdminBrands = () => {
         toast.success("Catalog branduri actualizat.");
         fetchBrands();
         setIsModalOpen(false);
+      } else {
+        toast.error("A apărut o eroare la salvare.");
       }
     } catch (err) {
       toast.error("Eroare server.");
@@ -143,6 +150,8 @@ const AdminBrands = () => {
       if (res.ok) {
         toast.success("Eliminat.");
         fetchBrands();
+      } else {
+        toast.error("Nu se poate șterge. Posibil să aibă produse asociate.");
       }
     } catch (error) {
       toast.error("Eroare comunicare.");
@@ -154,6 +163,7 @@ const AdminBrands = () => {
     setFormData({ name: "", logo_url: "" });
     setIsModalOpen(true);
   };
+
   const openEdit = (brand: any) => {
     setEditingBrand(brand);
     setFormData({ name: brand.name, logo_url: brand.logo_url || "" });
@@ -163,279 +173,433 @@ const AdminBrands = () => {
   if (authLoading || !isAdmin) return null;
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER LUXURY */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-12 h-[1px]"
-              style={{ backgroundColor: "var(--royal-violet)" }}
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in">
+      {/* ── Header Futuristic ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              style={{ color: "var(--royal-violet)" }}
+              className="animate-pulse"
             />
             <span
-              className="text-[10px] font-black uppercase tracking-[0.5em]"
-              style={{ color: "var(--royal-violet)" }}
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
             >
               Brand Management
             </span>
           </div>
-          <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
             Parteneri{" "}
             <span style={{ color: "var(--royal-violet)" }}>Atelier</span>
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-          <div className="relative group flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 sm:w-80 group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
-              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+              size={15}
+              style={{
+                color:
+                  "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+              }}
             />
             <input
-              className="w-full sm:w-[350px] pl-12 pr-6 py-4 bg-zinc-50 border-none rounded-2xl focus:ring-2 focus:ring-[var(--royal-violet)]/10 outline-none transition-all text-sm font-bold shadow-inner"
+              className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-xl border rounded-xl outline-none transition-all text-sm font-medium placeholder:font-normal"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                color: "var(--dark-amethyst)",
+                boxShadow:
+                  "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
               placeholder="Caută producător..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "var(--royal-violet)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor =
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)")
+              }
             />
           </div>
           <button
             onClick={openCreate}
-            className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 whitespace-nowrap"
+            className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
             style={{ background: "var(--primary-gradient)" }}
           >
-            <Plus size={16} /> Înregistrare Nouă
+            <Plus size={14} strokeWidth={2.5} /> Înregistrare Nouă
           </button>
         </div>
       </header>
 
-      {/* GRID CONTAINER */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
-        {loading ? (
-          // SKELETON LOADING GRID
-          [...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white border border-zinc-100 p-8 rounded-[2rem] space-y-6"
-            >
-              <div className="flex justify-between items-start">
-                <Skeleton className="w-16 h-16 rounded-xl" />
-                <Skeleton className="w-24 h-4 rounded-full" />
+      {/* ── Listă Branduri (Futuristic Data Grid) ──────────────────────────── */}
+      <div
+        className="bg-white rounded-3xl border shadow-xl shadow-black/[0.02] overflow-hidden relative z-10"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        {/* Header Listă */}
+        <div
+          className="hidden md:grid grid-cols-12 bg-zinc-50/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+            color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+          }}
+        >
+          <div className="col-span-6 pl-4">Denumire Oficială</div>
+          <div className="col-span-3 text-center">Articole Asociate</div>
+          <div className="col-span-3 text-right pr-4">Management</div>
+        </div>
+
+        <div
+          className="divide-y min-h-[400px]"
+          style={{
+            divideColor:
+              "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+          }}
+        >
+          {loading ? (
+            [...Array(6)].map((_, i) => (
+              <div key={i} className="px-8 py-4 flex items-center gap-6">
+                <Skeleton className="h-12 w-12 rounded-xl" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-2 w-24" />
+                </div>
+                <Skeleton className="h-8 w-16 mx-auto rounded-lg" />
+                <Skeleton className="h-8 w-24 rounded-lg ml-auto" />
               </div>
-              <div className="space-y-2">
-                <Skeleton className="w-3/4 h-6" />
-                <Skeleton className="w-1/2 h-3" />
-              </div>
-            </div>
-          ))
-        ) : brands.length > 0 ? (
-          <AnimatePresence mode="popLayout">
-            {brands.map((brand) => (
-              <motion.div
-                layout
-                key={brand.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="group relative bg-white border border-zinc-100 p-8 rounded-[2rem] shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden"
+            ))
+          ) : brands.length === 0 ? (
+            <div className="py-32 flex flex-col items-center gap-3">
+              <AlertTriangle
+                size={40}
+                strokeWidth={1}
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                }}
+              />
+              <span
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                }}
               >
-                <div className="flex justify-between items-start mb-10 relative z-10">
+                Niciun producător găsit
+              </span>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {brands.map((brand) => (
+                <motion.div
+                  layout
+                  key={brand.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="group relative transition-all"
+                >
+                  {/* Gradient Fill pe hover */}
                   <div
-                    className="w-16 h-16 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-center p-2 group-hover:text-white transition-all duration-500 overflow-hidden"
-                    style={{ backgroundColor: "var(--background)" }}
-                  >
-                    {getValidImageUrl(brand.logo_url) ? (
-                      <img
-                        src={getValidImageUrl(brand.logo_url)}
-                        className="w-full h-full object-contain transition-all"
-                        alt={brand.name}
+                    className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                    style={{
+                      background:
+                        "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                    }}
+                  />
+
+                  <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-3.5 gap-4 md:gap-0 relative z-10">
+                    <div className="col-span-6 flex items-center gap-5 w-full pl-2">
+                      <div
+                        className="w-12 h-12 bg-white rounded-xl border flex items-center justify-center p-1.5 shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                        }}
+                      >
+                        {getValidImageUrl(brand.logo_url) ? (
+                          <img
+                            src={getValidImageUrl(brand.logo_url)}
+                            className="w-full h-full object-contain"
+                            alt={brand.name}
+                          />
+                        ) : (
+                          <Award
+                            size={18}
+                            style={{
+                              color:
+                                "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[13px] font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate group-hover:text-[var(--royal-violet)] transition-colors">
+                          {brand.name}
+                        </span>
+                        <div
+                          className="flex items-center gap-1.5 mt-0.5"
+                          style={{
+                            color:
+                              "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                          }}
+                        >
+                          <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">
+                            Catalog Master
+                          </span>
+                          <span
+                            className="w-1 h-1 rounded-full"
+                            style={{
+                              background:
+                                "color-mix(in srgb, var(--royal-violet) 30%, transparent)",
+                            }}
+                          />
+                          <span className="text-[8px] font-mono tracking-widest uppercase">
+                            ID:{brand.id.toString().slice(0, 6)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Produse Count */}
+                    <div className="col-span-3 text-center hidden md:flex items-center justify-center gap-2">
+                      <Package
+                        size={14}
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                        }}
                       />
-                    ) : (
-                      <Award
-                        size={24}
-                        className="transition-colors"
+                      <span
+                        className="text-[11px] font-bold tabular-nums"
                         style={{ color: "var(--dark-amethyst)" }}
-                        strokeWidth={1.5}
-                      />
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <span
-                      className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                      style={{
-                        backgroundColor: "var(--background)",
-                        color: "var(--royal-violet)",
-                      }}
-                    >
-                      Premium Partner
-                    </span>
-                    <div className="flex items-center gap-1.5 text-zinc-400 mt-2">
-                      <Package size={10} />
-                      <span className="text-[10px] font-bold uppercase">
-                        {brand.products_count || 0} Articole
+                      >
+                        {brand.products_count || 0}
                       </span>
                     </div>
+
+                    {/* Actions */}
+                    <div className="col-span-3 flex justify-between md:justify-end gap-2 w-full md:w-auto pr-2">
+                      <div className="md:hidden flex items-center gap-1.5">
+                        <Package
+                          size={12}
+                          style={{
+                            color:
+                              "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                          }}
+                        />
+                        <span
+                          className="text-[10px] font-bold"
+                          style={{ color: "var(--dark-amethyst)" }}
+                        >
+                          {brand.products_count || 0}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
+                        <button
+                          onClick={() => openEdit(brand)}
+                          title="Editează"
+                          className="p-2 bg-white border rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-all shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(brand.id, brand.name)}
+                          title="Șterge"
+                          className="p-2 bg-white border rounded-lg hover:bg-rose-500 hover:text-white transition-all text-rose-500 shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </div>
 
-                <div className="relative z-10 text-left">
-                  <h3 className="text-xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] mb-1 truncate">
-                    {brand.name}
-                  </h3>
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] font-bold italic leading-none">
-                    Catalog Master
-                  </p>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-zinc-100 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-all relative z-10">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEdit(brand)}
-                      className="p-3 rounded-xl bg-white shadow-sm border border-zinc-100 transition-colors text-zinc-600"
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = "var(--royal-violet)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = "#52525b")
-                      }
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(brand.id, brand.name)}
-                      className="p-3 rounded-xl bg-white shadow-sm border border-zinc-100 hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-colors text-rose-500"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <span className="text-[8px] font-black uppercase text-zinc-300 tracking-widest font-mono italic">
-                    ID: {brand.id.toString().slice(0, 8)}
-                  </span>
-                </div>
-
-                {/* Background Decorator */}
-                <div
-                  className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full blur-3xl group-hover:opacity-20 transition-all pointer-events-none opacity-0"
-                  style={{ backgroundColor: "var(--royal-violet)" }}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        ) : (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-zinc-100 rounded-[2rem] bg-zinc-50/50">
-            <AlertTriangle
-              className="mx-auto text-zinc-200 mb-4"
-              size={48}
-              strokeWidth={1}
-            />
-            <p className="text-zinc-400 font-black uppercase tracking-widest text-xs">
-              Registru gol
-            </p>
+        {/* PAGINATION */}
+        {!loading && totalPages > 1 && (
+          <div
+            className="p-4 border-t flex justify-center items-center gap-4 shrink-0 bg-zinc-50/50"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+            }}
+          >
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="p-2 bg-white border rounded-lg hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+            </button>
+            <span
+              className="text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-lg shadow-sm"
+              style={{
+                color: "var(--dark-amethyst)",
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
+              {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="p-2 bg-white border rounded-lg hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <ChevronRight
+                size={14}
+                style={{ color: "var(--royal-violet)" }}
+              />
+            </button>
           </div>
         )}
       </div>
 
-      {/* PAGINATION CONTROLS */}
-      {!loading && totalPages > 1 && (
-        <footer className="flex items-center justify-between p-6 bg-zinc-50/50 rounded-3xl border border-zinc-100">
-          <span className="hidden sm:block text-[10px] font-black text-zinc-300 uppercase tracking-widest">
-            Linea Master Catalog • Branduri
-          </span>
-          <div className="flex items-center gap-4 mx-auto sm:mx-0">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-4 bg-white rounded-2xl border border-zinc-100 disabled:opacity-30 shadow-sm transition-all"
-              onMouseEnter={(e) =>
-                !e.currentTarget.disabled &&
-                (e.currentTarget.style.borderColor = "var(--royal-violet)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor = "#f4f4f5")
-              }
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <div className="text-center px-6">
-              <p className="text-[9px] font-black uppercase text-zinc-400">
-                Pagina
-              </p>
-              <p className="heading-serif text-2xl italic text-[var(--dark-amethyst)]">
-                {currentPage}
-              </p>
-            </div>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-4 bg-white rounded-2xl border border-zinc-100 disabled:opacity-30 shadow-sm transition-all"
-              onMouseEnter={(e) =>
-                !e.currentTarget.disabled &&
-                (e.currentTarget.style.borderColor = "var(--royal-violet)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderColor = "#f4f4f5")
-              }
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </footer>
-      )}
-
-      {/* MODAL CONFIGURATION */}
+      {/* ── MODAL CONFIG (Futuristic) ─────────────────────────────────────── */}
       <AdminDialogShell
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        size="lg"
-        className="bg-[#FBFBFD] font-sans"
+        size="md"
+        mobileVariant="modal"
+        className="sm:h-[80vh] sm:max-h-[80vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
-        <AdminDialogTitle>
-          {editingBrand ? "Revizuire Partener" : "Sincronizare Brand"}
+        <AdminDialogTitle className="sr-only">
+          Configurare Partener
         </AdminDialogTitle>
-        <header className="px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
-          <div className="text-left">
-            <h2 className="heading-serif text-2xl sm:text-3xl italic text-[var(--dark-amethyst)]">
+        <header
+          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
               {editingBrand ? "Revizuire Partener" : "Sincronizare Brand"}
             </h2>
-            <p
-              className="text-[10px] uppercase tracking-widest font-black mt-1"
-              style={{ color: "var(--royal-violet)" }}
-            >
-              Configurare Entitate Master
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--royal-violet)" }}
+              />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Configurare Entitate Master
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setIsModalOpen(false)}
-            className="p-3 bg-zinc-50 hover:bg-rose-500 hover:text-white rounded-full transition-all shadow-sm"
+            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
           >
-            <X size={20} />
+            <X size={14} strokeWidth={2.5} />
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-8 luxury-scrollbar text-left">
-          <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-3">
-            <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">
+        <div className="flex-1 p-6 sm:p-8 space-y-8 overflow-y-auto luxury-scrollbar relative z-10">
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-2 group relative"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <Label
+              className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
+            >
               Denumire Oficială
             </Label>
             <input
+              className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xl font-black uppercase outline-none transition-all text-[var(--dark-amethyst)]"
+              style={{
+                boxShadow:
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
               value={formData.name}
+              placeholder="Ex: EVEM EXCLUSIVE"
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full bg-transparent border-b-2 border-zinc-100 outline-none py-3 text-xl font-black uppercase transition-all"
-              onFocus={(e) =>
-                (e.target.style.borderColor = "var(--royal-violet)")
-              }
-              onBlur={(e) => (e.target.style.borderColor = "#f4f4f5")}
-              placeholder="EX: Evem EXCLUSIVE..."
+              onFocus={(e) => {
+                e.target.style.boxShadow =
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                e.target.style.backgroundColor = "#ffffff";
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow =
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+              }}
             />
           </div>
 
-          <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4">
-            <div className="flex justify-between items-center px-1">
-              <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-4"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <div className="flex justify-between items-center">
+              <Label
+                className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
                 Logo Asset (URL)
               </Label>
               {formData.logo_url && (
@@ -443,7 +607,7 @@ const AdminBrands = () => {
                   href={getValidImageUrl(formData.logo_url)}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[9px] font-black flex items-center gap-1 hover:underline uppercase"
+                  className="text-[8px] font-black uppercase flex items-center gap-1 hover:underline"
                   style={{ color: "var(--royal-violet)" }}
                 >
                   Test Link <ExternalLink size={10} />
@@ -451,50 +615,104 @@ const AdminBrands = () => {
               )}
             </div>
 
-            <div className="flex gap-6 items-center p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
-              <div className="w-20 h-20 bg-white border border-zinc-200 rounded-xl flex items-center justify-center p-3 shadow-sm shrink-0">
+            <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+              <div
+                className="size-20 bg-white rounded-xl shadow-sm border shrink-0 flex items-center justify-center p-2"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
+              >
                 {getValidImageUrl(formData.logo_url) ? (
                   <img
                     src={getValidImageUrl(formData.logo_url)}
                     className="w-full h-full object-contain"
-                    alt="Preview"
+                    alt=""
                   />
                 ) : (
                   <ImageIcon className="text-zinc-200" size={24} />
                 )}
               </div>
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 flex flex-col gap-3 w-full">
                 <input
-                  placeholder="https://image-url.com/logo.png"
+                  className="w-full bg-white/50 rounded-xl p-3.5 text-xs font-mono font-medium outline-none transition-all"
+                  style={{
+                    color: "var(--dark-amethyst)",
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  placeholder="https://link-logo.com/img.png"
                   value={formData.logo_url}
                   onChange={(e) =>
                     setFormData({ ...formData, logo_url: e.target.value })
                   }
-                  className="w-full border-none py-2 text-[11px] font-mono font-bold outline-none bg-transparent"
+                  onFocus={(e) =>
+                    (e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)")
+                  }
+                  onBlur={(e) =>
+                    (e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)")
+                  }
                 />
-                <p className="text-[8px] text-zinc-400 font-bold uppercase italic">
-                  Format recomandat: PNG transparent (400px).
+                <p
+                  className="text-[8px] font-bold uppercase italic"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                  }}
+                >
+                  Format recomandat: PNG Transparent / SVG
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        <footer className="p-6 sm:p-8 bg-white border-t border-zinc-100 shrink-0">
+        <footer
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            onClick={() => setIsModalOpen(false)}
+            className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+            }}
+          >
+            Anulează
+          </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full text-white py-5 rounded-2xl text-[11px] uppercase tracking-[0.4em] font-black shadow-xl hover:brightness-110 active:scale-95 disabled:bg-zinc-200 transition-all flex justify-center items-center gap-3"
+            className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             style={{ background: "var(--primary-gradient)" }}
           >
             {isSaving ? (
-              <Loader2 className="animate-spin" size={16} />
+              <Loader2 className="animate-spin" size={14} />
             ) : (
-              "Salvează Brand în Catalog"
+              <Save size={14} />
             )}
+            Salvare în Catalog
           </button>
         </footer>
       </AdminDialogShell>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `,
+        }}
+      />
     </div>
   );
 };
