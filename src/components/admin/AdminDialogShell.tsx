@@ -8,9 +8,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 /**
  * Premium admin dialog shell — cinematic entrance, asymmetric form,
  * Evem accent bar, glowing halo, mobile drag-to-close sheet.
- *
- * GPU-only animations (transform / opacity / clip-path). No layout reflow.
- * Respects `prefers-reduced-motion` → falls back to a 150ms fade.
  */
 export type AdminDialogShellSize = "sm" | "md" | "lg" | "xl" | "full";
 
@@ -34,9 +31,7 @@ export interface AdminDialogShellProps {
   style?: React.CSSProperties;
   children: React.ReactNode;
   hideOverlay?: boolean;
-  /** Accent color for the left bar + halo. Defaults to royal violet. */
   accentColor?: string;
-  /** Hide the floating external close button (rare). */
   hideClose?: boolean;
 }
 
@@ -56,12 +51,69 @@ export const AdminDialogShell = ({
   const asSheet = isMobile && mobileVariant === "sheet";
   const reduce = useReducedMotion();
 
+  // Defines the animation props explicitly to avoid TS destructuring errors
+  const animationProps = asSheet
+    ? {
+        initial: reduce ? { opacity: 0 } : { y: "100%", opacity: 0.6 },
+        animate: reduce
+          ? { opacity: 1, transition: { duration: 0.15 } }
+          : {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.32, ease: SHEET_EASE },
+            },
+        exit: reduce
+          ? { opacity: 0, transition: { duration: 0.12 } }
+          : {
+              y: "100%",
+              opacity: 0.4,
+              transition: { duration: 0.22, ease: "easeIn" },
+            },
+        drag: "y" as const,
+        dragConstraints: { top: 0, bottom: 0 },
+        dragElastic: { top: 0, bottom: 0.4 },
+        onDragEnd: (_: any, info: any) => {
+          if (info.offset.y > 120 || info.velocity.y > 600) {
+            onOpenChange(false);
+          }
+        },
+      }
+    : {
+        initial: reduce
+          ? { opacity: 0, x: "-50%", y: "-50%" }
+          : {
+              opacity: 0,
+              x: "-50%",
+              y: "-48%",
+              scale: 0.965,
+              clipPath: "inset(30% 30% 30% 30% round 28px)",
+            },
+        animate: reduce
+          ? { opacity: 1, x: "-50%", y: "-50%", transition: { duration: 0.15 } }
+          : {
+              opacity: 1,
+              x: "-50%",
+              y: "-50%",
+              scale: 1,
+              clipPath: "inset(0% 0% 0% 0% round 28px)",
+              transition: { duration: 0.36, ease: EASE },
+            },
+        exit: reduce
+          ? { opacity: 0, x: "-50%", y: "-50%", transition: { duration: 0.12 } }
+          : {
+              opacity: 0,
+              x: "-50%",
+              y: "-48%",
+              scale: 0.97,
+              transition: { duration: 0.18, ease: "easeIn" },
+            },
+      };
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
         {open && (
           <DialogPrimitive.Portal forceMount>
-            {/* Overlay — milky blur fade */}
             {!hideOverlay && (
               <DialogPrimitive.Overlay asChild forceMount>
                 <motion.div
@@ -78,7 +130,6 @@ export const AdminDialogShell = ({
               </DialogPrimitive.Overlay>
             )}
 
-            {/* Halo — pulsing gradient behind the shell (desktop only) */}
             {!asSheet && !reduce && (
               <motion.div
                 aria-hidden
@@ -109,79 +160,11 @@ export const AdminDialogShell = ({
               forceMount
               aria-describedby={undefined}
               onOpenAutoFocus={(e) => {
-                // Avoid initial focus jumping into the first input on mobile
                 if (asSheet) e.preventDefault();
               }}
             >
               <motion.div
-                {...(asSheet
-                  ? {
-                      initial: reduce
-                        ? { opacity: 0 }
-                        : { y: "100%", opacity: 0.6 },
-                      animate: reduce
-                        ? { opacity: 1, transition: { duration: 0.15 } }
-                        : {
-                            y: 0,
-                            opacity: 1,
-                            transition: { duration: 0.32, ease: SHEET_EASE },
-                          },
-                      exit: reduce
-                        ? { opacity: 0, transition: { duration: 0.12 } }
-                        : {
-                            y: "100%",
-                            opacity: 0.4,
-                            transition: { duration: 0.22, ease: "easeIn" },
-                          },
-                      drag: "y" as const,
-                      dragConstraints: { top: 0, bottom: 0 },
-                      dragElastic: { top: 0, bottom: 0.4 },
-                      onDragEnd: (_: any, info: any) => {
-                        if (info.offset.y > 120 || info.velocity.y > 600) {
-                          onOpenChange(false);
-                        }
-                      },
-                    }
-                  : {
-                      initial: reduce
-                        ? { opacity: 0, x: "-50%", y: "-50%" }
-                        : {
-                            opacity: 0,
-                            x: "-50%",
-                            y: "-48%", // ⬇️ Shiftat puțin în jos inițial
-                            scale: 0.965,
-                            clipPath: "inset(30% 30% 30% 30% round 28px)",
-                          },
-                      animate: reduce
-                        ? {
-                            opacity: 1,
-                            x: "-50%",
-                            y: "-50%",
-                            transition: { duration: 0.15 },
-                          }
-                        : {
-                            opacity: 1,
-                            x: "-50%",
-                            y: "-50%", // 🎯 Acum centrează absolut perfect!
-                            scale: 1,
-                            clipPath: "inset(0% 0% 0% 0% round 28px)",
-                            transition: { duration: 0.36, ease: EASE },
-                          },
-                      exit: reduce
-                        ? {
-                            opacity: 0,
-                            x: "-50%",
-                            y: "-50%",
-                            transition: { duration: 0.12 },
-                          }
-                        : {
-                            opacity: 0,
-                            x: "-50%",
-                            y: "-48%",
-                            scale: 0.97,
-                            transition: { duration: 0.18, ease: "easeIn" },
-                          },
-                    })}
+                {...animationProps}
                 style={{
                   willChange: "transform, opacity, clip-path",
                   boxShadow: asSheet
@@ -198,14 +181,13 @@ export const AdminDialogShell = ({
                         "pb-[env(safe-area-inset-bottom)]",
                       ]
                     : [
-                        "left-1/2 top-1/2", // Eliminat vechiul transform manual din Tailwind
+                        "left-1/2 top-1/2",
                         "w-[95vw] max-h-[92vh] rounded-[28px]",
                         sizeClass[size],
                       ],
                   className,
                 )}
               >
-                {/* Accent vertical bar — Evem signature (desktop) */}
                 {!asSheet && (
                   <div
                     aria-hidden
@@ -216,7 +198,6 @@ export const AdminDialogShell = ({
                   />
                 )}
 
-                {/* Aurora wash on header area */}
                 {!asSheet && !reduce && (
                   <div
                     aria-hidden
@@ -227,7 +208,6 @@ export const AdminDialogShell = ({
                   />
                 )}
 
-                {/* Mobile drag handle (also visual pull target) */}
                 {asSheet && (
                   <div className="pt-3 pb-1 flex justify-center shrink-0 cursor-grab active:cursor-grabbing">
                     <motion.span
@@ -248,7 +228,6 @@ export const AdminDialogShell = ({
               </motion.div>
             </DialogPrimitive.Content>
 
-            {/* External floating close (desktop only) */}
             {!asSheet && !hideClose && (
               <motion.button
                 type="button"
@@ -280,7 +259,6 @@ export const AdminDialogShell = ({
   );
 };
 
-/** Hidden-but-accessible title. Use when the caller renders a custom visual header. */
 export const AdminDialogTitle = ({
   children,
   className,

@@ -3,7 +3,7 @@
  * Pagina de administrare branduri - Design Futuristic (Carduri Cochete)
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   ExternalLink,
   Sparkles,
+  Save,
+  UploadCloud,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -35,7 +37,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
-// --- HELPER IMAGINI S3/JSON ---
+// --- HELPER IMAGINI ---
 const getValidImageUrl = (imageSource: any) => {
   if (!imageSource) return null;
   if (typeof imageSource === "string" && imageSource.startsWith("http"))
@@ -57,6 +59,7 @@ const AdminBrands = () => {
   const [brands, setBrands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false); // REPARAT: Adăugat state-ul lipsă
 
   // --- UI STATE (Pagination & Search) ---
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,6 +109,43 @@ const AdminBrands = () => {
       return () => clearTimeout(delayDebounceFn);
     }
   }, [isAdmin, currentPage, searchTerm, fetchBrands]);
+
+  // REPARAT: Adăugat funcția de Upload Imagine pe care o cerea JSX-ul din modal
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      return toast.error("Imaginea este prea mare (maxim 5MB).");
+    }
+
+    const uploadData = new FormData();
+    uploadData.append("file", file);
+
+    setIsUploadingImage(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/upload/image`, {
+        method: "POST",
+        body: uploadData,
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Fallback-uri în caz că API-ul tău returnează url, file_url sau data.url
+        const uploadedUrl = data.url || data.file_url || data.data?.url; 
+        setFormData({ ...formData, logo_url: uploadedUrl });
+        toast.success("Logo procesat și încărcat!");
+      } else {
+        const errData = await res.json();
+        toast.error(errData.detail || "Eroare la încărcarea imaginii.");
+      }
+    } catch (error) {
+      toast.error("Eroare de conexiune cu serverul S3.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.name.trim())
@@ -397,6 +437,23 @@ const AdminBrands = () => {
                 </p>
               </div>
             </div>
+            
+            {/* Butonul modern de upload */}
+            <div className="relative pt-2">
+              <input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploadingImage} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10" />
+              <button
+                type="button"
+                disabled={isUploadingImage}
+                className="w-full h-11 bg-white border border-dashed hover:border-solid hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50 relative z-0"
+                style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 30%, transparent)", color: "var(--royal-violet)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--royal-violet)"; e.currentTarget.style.color = "white"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "white"; e.currentTarget.style.color = "var(--royal-violet)"; }}
+              >
+                {isUploadingImage ? <Loader2 className="animate-spin" size={16} /> : <UploadCloud size={16} />}
+                {isUploadingImage ? "Se încarcă pe S3..." : "Alege fișier local (S3)"}
+              </button>
+            </div>
+
           </div>
 
         </div>
