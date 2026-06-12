@@ -1,105 +1,102 @@
-# Plan: Unify admin modals on AdminDialog (mobile bottom-sheet + premium animations)
+## AdminDialogShell — redesign premium
 
-## Obiectiv
-Toate dialogurile din `/admin` vor folosi o singură componentă `AdminDialog`, cu:
-- pe **mobil** → bottom-sheet (slide up, drag handle, safe-area)
-- pe **desktop** → modal centrat (ca acum, dar fără jitter)
-- animații GPU-only (`transform` + `opacity`), fără layout shifts / scale pe overlay
-- design unitar (eyebrow violet, titlu serif, footer sticky)
+Obiectiv: să nu mai pară un simplu modal Radix. Vrem o "scenă" cu profunzime, intrare cinematică și o formă cu personalitate (asimetrică, cu accente vizuale Evem).
 
-## Scope — fișiere atinse
+### 1. Formă & structură vizuală
 
-Modale rămase de migrat (toate folosesc încă `<Dialog>` direct):
+**Desktop**
+- Renunțăm la dreptunghiul `rounded-[2rem]` plat. Trecem la un container cu:
+  - colț stânga-sus tăiat în unghi (clip-path) — semnătură vizuală Evem
+  - bară verticală subțire `bg-[var(--royal-violet)]` la stânga (4px) cu eyebrow rotit 90°
+  - "halo" gradient extern (un al doilea div absolut, blur 80px, opacitate 0.25, culoare violet/amethyst) care pulsează lent
+- Header cu un `aurora` subtil (gradient animat în fundal, opacitate ~0.06)
+- Footer cu o linie superioară din 1px gradient (în loc de `border-zinc-100` plat)
+- Buton close ca pastilă cu micro-rotație la hover (45°), plasat *în afara* shell-ului (top-right -16/-16) — semnal premium tip Apple/Hermès
 
-1. `src/pages/admin/AdminBrands.tsx` — 1 modal (create/edit brand)
-2. `src/pages/admin/AdminCategories.tsx` — 1 modal (create/edit category)
-3. `src/pages/admin/AdminAttributes.tsx` — 2 modale (usage + create/edit attribute)
-4. `src/pages/admin/AdminCoupons.tsx` — 2 modale (voucher full-screen, banner)
-5. `src/pages/admin/AdminProducts.tsx` — 1 modal mare (product editor full-screen)
+**Mobile (bottom-sheet)**
+- Drag handle real: bară 36×4 cu hover/active feedback + reacție la swipe-down (drag-to-close)
+- Top corners `rounded-t-[28px]` + un al doilea strat "lift" în spate (offset 6px, opacitate 40%) ca să dea senzație de carduri stivuite
+- Safe-area + un mic indicator de scroll (linie gradient când conținutul depășește)
 
-Deja migrate (rămân ca referință, mici ajustări dacă apar): `AdminOrders.tsx`.
+### 2. Animație de intrare (înlocuiește fade + slide-from-top-2)
 
-Componentă centrală:
-- `src/components/admin/AdminDialog.tsx` — extindere (mobile bottom-sheet variant, size `full` pentru editorul de produs/voucher).
+Pe desktop, secvență coregrafiată (toate pe transform/opacity, GPU-only, ~320ms total):
+1. **Overlay**: fade 180ms + `backdrop-blur` de la 0 → 8px (animat via `@property --blur`)
+2. **Halo gradient**: scale 0.6 → 1, opacity 0 → 0.25, 280ms, ease-out
+3. **Shell**: entry de tip "lift & settle"
+   - `clip-path` se deschide din centru (inset 40% → 0) pe 260ms — efect "iris/curtain"
+   - simultan `translateY(20px) scale(0.96) → 0/1` cu `cubic-bezier(0.22, 1, 0.36, 1)`
+4. **Conținut intern** (header → body → footer): stagger 40ms fiecare, `translateY(8px) → 0`, opacity 0 → 1
 
-## Modificări la `AdminDialog`
+Pe mobile: sheet face slide-up 240ms cu `cubic-bezier(0.34, 1.56, 0.64, 1)` (mic overshoot premium, NU bouncy gimicky), + drag-handle pulse o dată la apariție.
 
-Adăugiri (fără breaking changes pe call-site-urile existente):
+`prefers-reduced-motion`: degradare la fade simplu 150ms, fără clip-path/stagger.
 
-- prop nou `size`: adăugat `"full"` (pentru product editor + voucher mare, `sm:max-w-[1200px]` / `h-[94vh]`).
-- prop nou `mobileVariant?: "sheet" | "modal"` (default `"sheet"`).
-  - când `sheet` și viewport `< 768px` (`useIsMobile`):
-    - container ancorat jos: `fixed inset-x-0 bottom-0 top-auto translate-y-0`
-    - colțuri `rounded-t-3xl rounded-b-none`
-    - `max-h-[92vh]`, `pb-[env(safe-area-inset-bottom)]`
-    - drag-handle vizual (bară `h-1.5 w-10 bg-zinc-200 rounded-full` în header)
-    - animație: `y: 100% → 0` (slide-up), 220ms `cubic-bezier(.22,1,.36,1)`
-  - pe desktop: comportament actual (centrat, fade + scale 0.98 → 1).
-- override `DialogContent` animation classes pentru a evita „jitter":
-  - înlocuim default Radix `data-[state=open]:zoom-in-95` cu transform pur (`translate-y`/`opacity`), durata 200ms, `will-change: transform, opacity`.
-  - overlay: doar `opacity` (fără blur animat — evită repaint pe 2G/3G).
-- footer mobil: deja `flex-col-reverse` — păstrat; butoanele primesc `h-12` pe mobil pentru tap-target.
+### 3. Detalii "premium" suplimentare
 
-## Pattern de migrare per modal
+- `box-shadow` în 3 straturi (umbră aproape + umbră difuză + glow violet 0.08) — nu un singur `shadow-2xl` generic
+- Border `1px solid` cu gradient (mask trick) în loc de zinc-100
+- Pe `data-[state=closed]`: closing reverse natural (shell se restrânge spre punctul de origin, NU doar fade-out)
+- Suport `originRef` opțional: dacă pasăm referința butonului care a deschis dialog-ul, animația pornește din coordonatele acelui buton (efect "Apple Magic")
 
-Fiecare ecran trece de la:
-```tsx
-<Dialog open={...}><DialogContent className="...">
-  <header>...</header>
-  <form>...</form>
-  <DialogFooter>...</DialogFooter>
-</DialogContent></Dialog>
-```
-la:
-```tsx
-<AdminDialog
-  open={...}
-  onOpenChange={...}
-  eyebrow="Catalog"
-  title="Brand nou"
-  description="..."
-  size="lg"            // sau "full" pentru products/voucher
-  footer={<>...butoane...</>}
->
-  <form>...</form>
-</AdminDialog>
-```
+### 4. API păstrat compatibil
 
-Reguli:
-- header-ul custom existent (cu badge-uri/tabs) — dacă e bogat (Coupons voucher, Products), îl mutăm în `children` ca prim element sticky, iar `AdminDialog` primește `title` minim + `eyebrow`. Pentru voucher/product editor (care au tab-bar + acțiuni în header) folosim `size="full"` și înlocuim doar shell-ul (overlay, animație, scroll, footer sticky), păstrând conținutul intern intact.
-- footer-ul existent → trecut prin prop `footer`.
-- toate `DialogTitle`/`DialogDescription` interne se elimină (deja oferite de wrapper).
-- importurile vechi `Dialog, DialogContent, DialogFooter, DialogTitle, DialogDescription` se șterg.
+`AdminDialogShell` păstrează exact aceeași semnătură (`open`, `onOpenChange`, `size`, `mobileVariant`, `className`, `children`, `hideOverlay`). Adăugăm doar:
+- `accentColor?: string` (default royal-violet)
+- `originRef?: React.RefObject<HTMLElement>` (opțional, pentru magic-origin animation)
 
-## Per-fișier — detalii cheie
+Toate cele 7 modale admin migrate anterior funcționează fără schimbări.
 
-**AdminBrands.tsx** — size `lg`, footer = Cancel + Save. Conținut: form simplu (nume, slug, logo upload). Eyebrow: "Catalog · Brand".
+---
 
-**AdminCategories.tsx** — size `lg`. Conținut form + parent picker. Eyebrow: "Catalog · Categorie".
+## Ce a mai rămas în AdminLayout
 
-**AdminAttributes.tsx** —
-- Usage modal: size `md`, fără footer. Eyebrow: "Atribut · Utilizare".
-- Edit modal: size `sm`, footer Save/Cancel.
+Recomandări concrete, în ordinea impactului:
 
-**AdminCoupons.tsx** —
-- Voucher modal: size `full`, `mobileVariant="sheet"`. Păstrăm tab-bar-ul intern (Setări / Design / Preview) ca sticky top în `children`. Footer = Save/Delete/Cancel.
-- Banner modal: size `lg`, footer Save/Cancel.
+1. **Sidebar pe desktop — colaps cu jitter**
+   `width` animat prin `transition-all duration-300` pe `<aside>`. Modifică layout-ul → reflow pe fiecare frame. De înlocuit cu `transform: translateX` pe conținut + `width` fixă în 2 stări, sau cu `framer-motion` layout animation.
 
-**AdminProducts.tsx** — Product editor: size `full`. Header intern complex (tabs, status, AI buttons) rămâne ca sticky bar în `children`. Footer = Save / Cancel / Delete.
+2. **Mobile sidebar — buton close suprapus**
+   Butonul `X` e plasat absolute peste primul item din meniu. De mutat în header-ul sidebar-ului (lângă logo).
 
-## Performanță & „premium feel"
+3. **`RouteProgress` — montat hard pe fiecare schimbare**
+   Acum apare 650ms fix, indiferent dacă pagina e deja în cache (instant). De legat de `isValidating` din `useAdminSWR` → bara apare DOAR cât durează revalidarea reală. Altfel pare fake-loading.
 
-- toate animațiile folosesc `transform` + `opacity` (no `width`/`height`/`filter` animate);
-- `will-change` setat doar pe `data-[state=open]` și curățat după 220ms;
-- `useReducedMotion` respectat → fără slide, doar opacity 120ms;
-- conținutul intern primește `content-visibility: auto` pe secțiunile lungi din product/voucher pentru rendering rapid pe 2G/3G;
-- nu se schimbă logica de business / fetch — doar shell-ul UI.
+4. **Tranziția slide între pagini — fără direcție semantică**
+   Mereu intră de la dreapta (`x: 12 → 0`). Mai premium: direcție în funcție de ierarhia meniului (sus/jos sau stânga/dreapta în funcție de grupul activ). Sau simplu: doar opacity + 4px translate, fără direcție, ca să nu pară "swipe" aleator.
 
-## Verificare după implementare
-- build trece;
-- preview: deschis fiecare modal pe mobil (375px) și desktop — fără salt vizual, fără layout shift, footer accesibil deasupra safe-area;
-- nu rămân importuri neutilizate `DialogContent/DialogFooter/...`.
+5. **Logo + eyebrow „Atelier Suite" — alinierea sare** la collapse
+   Când `isSidebarOpen` devine `false`, eyebrow-ul dispare brusc. De adăugat `AnimatePresence` cu fade 150ms.
 
-## Out of scope
-- `OrderReviewModal.tsx` (1084 linii) — rămâne pentru un PR separat (deja notat anterior).
-- modalele frontend (cart, auth, etc.) — neatinse.
+6. **Active item — doar background change**
+   Lipsește un indicator vizual (bară verticală 2px stânga, `bg-[var(--royal-violet)]`) care să gliseze între iteme cu `layoutId` (framer-motion). Detaliu mic, impact mare pe percepție.
+
+7. **Header mobile — gol în mijloc**
+   Logo centrat + două butoane goale (`size-10` placeholder dreapta). De adăugat: buton notificări / quick-search / user avatar (deja avem `user` în context, neutilizat).
+
+8. **`SidebarContent` memo + `useLocation` înăuntru**
+   `useLocation` în interiorul componentei memoizate anulează parțial `memo`. De ridicat `location.pathname` în prop sau de eliminat `memo`.
+
+9. **`menuGroups` recreat la fiecare render**
+   Constă din obiecte noi → fiecare render trimite props noi la `SidebarContent`. De mutat în afara componentei sau în `useMemo`.
+
+10. **Scrollbar — `luxury-scrollbar` doar în sidebar**
+    Main content folosește scrollbar nativ. De aplicat aceeași clasă pe `<main>` pentru consistență.
+
+11. **Footer „Ieșire Site" duce la `/`, nu face logout**
+    Numele sugerează logout, dar doar navighează. De clarificat: fie redenumit "Înapoi la site", fie chemat `signOut()` din `AuthContext`.
+
+---
+
+## Tehnic — fișiere atinse
+
+- `src/components/admin/AdminDialogShell.tsx` — rescris (clip-path, halo, stagger, origin animation)
+- `src/index.css` — câteva keyframes noi (`@keyframes adminShellIn`, `@property --shell-clip`) și un utility `.admin-shell-halo`
+- `src/pages/admin/AdminLayout.tsx` — punctele 1-11 de mai sus, dar într-un PR separat după ce confirmi prioritățile
+
+## Verificare
+
+- Build pass, no TS errors
+- Vizual: deschis 1 modal pe fiecare din cele 7 pagini admin (desktop + mobile 375px)
+- `prefers-reduced-motion: reduce` → fallback fade simplu
+- Performanță: animația rulează pe compositor (DevTools → Performance, nu trebuie să apară layout/paint în frame-uri)
