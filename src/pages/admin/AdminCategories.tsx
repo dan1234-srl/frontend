@@ -23,7 +23,6 @@ import {
   UploadCloud,
   Sparkles,
   EyeOff,
-  Save,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -1022,7 +1021,7 @@ const AdminCategories = () => {
             ) : (
               <Save size={14} />
             )}
-            {editingProduct ? "Salvează Modificări" : "Publică Articol"}
+            {editingCategory ? "Salvează Modificări" : "Publică Colecție"}
           </button>
         </footer>
       </AdminDialogShell>
