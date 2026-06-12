@@ -28,6 +28,7 @@ interface AdminDialogShellProps {
   size?: AdminDialogShellSize;
   mobileVariant?: "sheet" | "modal";
   className?: string;
+  style?: React.CSSProperties;
   children: React.ReactNode;
   hideOverlay?: boolean;
   /** Accent color for the left bar + halo. Defaults to royal violet. */
