@@ -1,26 +1,25 @@
 // pages/admin/AdminWishlistAnalytics.tsx
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Importat pentru navigare
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Heart,
   AlertCircle,
   ShoppingBag,
   ArrowUpRight,
-  Loader2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminSWR } from "@/lib/admin-swr";
+
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
 
 const AdminWishlistAnalytics = () => {
-  const navigate = useNavigate(); // Inițializare navigare
-  const [trends, setTrends] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Stări pentru paginare
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const limit = 20;
 
   const getImageUrl = (imageSource: any) => {
@@ -41,50 +40,30 @@ const AdminWishlistAnalytics = () => {
     return typeof imageSource === "string" ? imageSource : "";
   };
 
-  useEffect(() => {
-    const fetchTrends = async () => {
-      try {
-        setLoading(true);
-        const skip = (page - 1) * limit;
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/admin/analytics/wishlist-trends?skip=${skip}&limit=${limit}`,
-        );
+  const skip = (page - 1) * limit;
+  const { data, loading } = useAdminSWR<{
+    items: any[];
+    pages: number;
+    total: number;
+  }>(
+    `admin:wishlist:trends:skip=${skip}:limit=${limit}`,
+    async () => {
+      const res = await fetch(
+        `${API_BASE}/api/v1/admin/analytics/wishlist-trends?skip=${skip}&limit=${limit}`,
+      );
+      if (!res.ok) throw new Error(`Eroare server: ${res.status}`);
+      return res.json();
+    },
+    { ttl: 60_000 },
+  );
 
-        if (!response.ok) throw new Error(`Eroare server: ${response.status}`);
-
-        const data = await response.json();
-
-        // Backend-ul returnează acum { items: [], total: x, pages: y }
-        setTrends(data.items || []);
-        setTotalPages(data.pages || 1);
-        setError(null);
-      } catch (err: any) {
-        console.error("Fetch error:", err);
-        setError(err.message);
-        setTrends([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTrends();
-  }, [page]);
+  const trends = data?.items || [];
+  const totalPages = data?.pages || 1;
 
   const handleActionClick = (sku: string) => {
-    // Navighează la lista de produse și aplică filtrul de căutare pentru SKU-ul respectiv
     navigate(`/admin/products?search=${sku}`);
   };
 
-  if (loading && page === 1) {
-    return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-left">
-        <Loader2 className="animate-spin text-zinc-300" size={40} />
-        <p className="text-zinc-400 text-xs font-black uppercase tracking-[0.2em]">
-          Sincronizare date...
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-10 text-left animate-in fade-in duration-500">
