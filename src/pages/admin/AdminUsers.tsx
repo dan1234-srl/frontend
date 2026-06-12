@@ -1,22 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
-  Users,
   Search,
   UserPlus,
   MoreHorizontal,
-  Activity,
   ChevronLeft,
   ChevronRight,
   Shield,
   Mail,
   Trash2,
-  UserCog,
-  Loader2,
   ShieldCheck,
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -36,52 +31,55 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminSWR } from "@/lib/admin-swr";
+import { invalidateCache } from "@/lib/swr-cache";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 
 const API_BASE =
   import.meta.env.VITE_API_URL ||
   "https://linea-backend-production.up.railway.app";
 
 const AdminUsers = () => {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
+  const swrKey = `admin:users:p=${page}:q=${searchTerm}:r=${roleFilter}`;
+  const { data, loading, mutate } = useAdminSWR<{
+    items: any[];
+    pages: number;
+    total: number;
+  }>(
+    swrKey,
+    async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         size: "10",
         search: searchTerm,
         role_filter: roleFilter,
       });
-
       const res = await fetch(`${API_BASE}/api/v1/admin/users?${params}`, {
         credentials: "include",
       });
-
       if (!res.ok) throw new Error("Eroare la preluarea utilizatorilor");
+      return res.json();
+    },
+    { ttl: 30_000 },
+  );
 
-      const data = await res.json();
-      setUsers(data.items || []);
-      setTotalPages(data.pages || 1);
-      setTotalItems(data.total || 0);
-    } catch (err) {
-      toast.error("Sincronizarea bazei de date a eșuat");
-    } finally {
-      setLoading(false);
+  const users = data?.items || [];
+  const totalPages = data?.pages || 1;
+  const totalItems = data?.total || 0;
+
+  const invalidateAll = () => {
+    // Coarse invalidation: drop the entire users namespace from cache.
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith("swr:admin:users:")) sessionStorage.removeItem(k);
     }
-  }, [page, searchTerm, roleFilter]);
-
-  useEffect(() => {
-    const delayDebounce = setTimeout(fetchUsers, 400);
-    return () => clearTimeout(delayDebounce);
-  }, [fetchUsers]);
+    mutate(true);
+  };
 
   const handleUpdateRole = async (userId: string, newRole: string) => {
     try {
@@ -94,18 +92,17 @@ const AdminUsers = () => {
 
       if (res.ok) {
         toast.success(`Rang actualizat: ${newRole.toUpperCase()}`);
-        fetchUsers();
+        invalidateAll();
       } else {
         const error = await res.json();
         toast.error(error.detail || "Eroare la actualizare");
       }
-    } catch (err) {
+    } catch {
       toast.error("Eroare server");
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Sigur dorești să dezactivezi acest cont?")) return;
     try {
       const res = await fetch(`${API_BASE}/api/v1/admin/users/${userId}`, {
         method: "DELETE",
@@ -114,10 +111,13 @@ const AdminUsers = () => {
 
       if (res.ok) {
         toast.success("Utilizator dezactivat");
-        fetchUsers();
+        invalidateAll();
+      } else {
+        throw new Error();
       }
-    } catch (err) {
+    } catch {
       toast.error("Eroare la ștergere");
+      throw new Error();
     }
   };
 
