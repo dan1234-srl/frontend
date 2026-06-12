@@ -1,6 +1,6 @@
 /**
  * AdminBrands.tsx
- * Pagina de administrare branduri - Design Futuristic (Isomorphic UI)
+ * Pagina de administrare branduri - Design Futuristic (Carduri Cochete)
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -21,7 +21,6 @@ import {
   AlertTriangle,
   ExternalLink,
   Sparkles,
-  Save,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -152,7 +151,7 @@ const AdminBrands = () => {
         toast.success("Eliminat.");
         fetchBrands();
       } else {
-        toast.error("Nu se poate șterge. Posibil să aibă produse asociate.");
+         toast.error("Nu se poate șterge. Posibil să aibă produse asociate.");
       }
     } catch (error) {
       toast.error("Eroare comunicare.");
@@ -176,32 +175,16 @@ const AdminBrands = () => {
   return (
     <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in">
       {/* ── Header Futuristic ──────────────────────────────────────────────── */}
-      <header
-        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
-        style={{
-          borderColor:
-            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-        }}
-      >
+      <header className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
         <div className="space-y-2">
           <div className="flex items-center gap-2.5">
-            <Sparkles
-              size={12}
-              style={{ color: "var(--royal-violet)" }}
-              className="animate-pulse"
-            />
-            <span
-              className="text-[9px] font-black uppercase tracking-[0.4em]"
-              style={{
-                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
-              }}
-            >
+            <Sparkles size={12} style={{ color: "var(--royal-violet)" }} className="animate-pulse" />
+            <span className="text-[9px] font-black uppercase tracking-[0.4em]" style={{ color: "color-mix(in srgb, var(--royal-violet) 80%, black)" }}>
               Brand Management
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
-            Parteneri{" "}
-            <span style={{ color: "var(--royal-violet)" }}>Atelier</span>
+            Parteneri <span style={{ color: "var(--royal-violet)" }}>Atelier</span>
           </h1>
         </div>
 
@@ -211,19 +194,14 @@ const AdminBrands = () => {
             <Search
               className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
               size={15}
-              style={{
-                color:
-                  "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
-              }}
+              style={{ color: "color-mix(in srgb, var(--royal-violet) 40%, transparent)" }}
             />
             <input
               className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-xl border rounded-xl outline-none transition-all text-sm font-medium placeholder:font-normal"
               style={{
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                 color: "var(--dark-amethyst)",
-                boxShadow:
-                  "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                boxShadow: "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 10%, transparent)"
               }}
               placeholder="Caută producător..."
               value={searchTerm}
@@ -231,13 +209,8 @@ const AdminBrands = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              onFocus={(e) =>
-                (e.target.style.borderColor = "var(--royal-violet)")
-              }
-              onBlur={(e) =>
-                (e.target.style.borderColor =
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)")
-              }
+              onFocus={(e) => e.target.style.borderColor = "var(--royal-violet)"}
+              onBlur={(e) => e.target.style.borderColor = "color-mix(in srgb, var(--royal-violet) 15%, transparent)"}
             />
           </div>
           <button
@@ -250,253 +223,102 @@ const AdminBrands = () => {
         </div>
       </header>
 
-      {/* ── Listă Branduri (Futuristic Data Grid) ──────────────────────────── */}
-      <div
-        className="bg-white rounded-3xl border shadow-xl shadow-black/[0.02] overflow-hidden relative z-10"
-        style={{
-          borderColor:
-            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-        }}
-      >
-        {/* Header Listă */}
-        <div
-          className="hidden md:grid grid-cols-12 bg-zinc-50/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4"
-          style={{
-            borderColor:
-              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
-            color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-          }}
-        >
-          <div className="col-span-6 pl-4">Denumire Oficială</div>
-          <div className="col-span-3 text-center">Articole Asociate</div>
-          <div className="col-span-3 text-right pr-4">Management</div>
-        </div>
-
-        <div
-          className="divide-y min-h-[400px]"
-          style={{
-            divideColor:
-              "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-          }}
-        >
-          {loading ? (
-            [...Array(6)].map((_, i) => (
-              <div key={i} className="px-8 py-4 flex items-center gap-6">
+      {/* ── Grid Carduri Mici & Cochete ───────────────────────────────────── */}
+      <div className="min-h-[400px]">
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="bg-white border rounded-2xl p-5 flex flex-col items-center gap-3" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
                 <Skeleton className="h-12 w-12 rounded-xl" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-2 w-24" />
-                </div>
-                <Skeleton className="h-8 w-16 mx-auto rounded-lg" />
-                <Skeleton className="h-8 w-24 rounded-lg ml-auto" />
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-2 w-1/2" />
+                <Skeleton className="h-8 w-full mt-2 rounded-lg" />
               </div>
             ))
-          ) : brands.length === 0 ? (
-            <div className="py-32 flex flex-col items-center gap-3">
-              <AlertTriangle
-                size={40}
-                strokeWidth={1}
-                style={{
-                  color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
-                }}
-              />
-              <span
-                className="text-[10px] font-black uppercase tracking-widest"
-                style={{
-                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                }}
-              >
-                Niciun producător găsit
-              </span>
-            </div>
-          ) : (
+          </div>
+        ) : brands.length === 0 ? (
+          <div className="py-32 flex flex-col items-center gap-3 bg-white/50 rounded-3xl border border-dashed" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 20%, transparent)" }}>
+            <AlertTriangle size={40} strokeWidth={1} style={{ color: "color-mix(in srgb, var(--royal-violet) 40%, gray)" }} />
+            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: "color-mix(in srgb, var(--royal-violet) 50%, gray)" }}>
+              Niciun producător găsit
+            </span>
+          </div>
+        ) : (
+          <motion.div 
+            layout 
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5"
+          >
             <AnimatePresence mode="popLayout">
               {brands.map((brand) => (
                 <motion.div
                   layout
                   key={brand.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="group relative transition-all"
+                  className="group relative bg-white rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col shadow-sm"
+                  style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}
                 >
-                  {/* Gradient Fill pe hover */}
-                  <div
-                    className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
-                    style={{
-                      background:
-                        "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
-                    }}
-                  />
+                  {/* Background Gradient on Hover */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)" }} />
 
-                  <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-3.5 gap-4 md:gap-0 relative z-10">
-                    <div className="col-span-6 flex items-center gap-5 w-full pl-2">
-                      <div
-                        className="w-12 h-12 bg-white rounded-xl border flex items-center justify-center p-1.5 shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105"
-                        style={{
-                          borderColor:
-                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                        }}
-                      >
-                        {getValidImageUrl(brand.logo_url) ? (
-                          <img
-                            src={getValidImageUrl(brand.logo_url)}
-                            className="w-full h-full object-contain"
-                            alt={brand.name}
-                          />
-                        ) : (
-                          <Award
-                            size={18}
-                            style={{
-                              color:
-                                "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                            }}
-                          />
-                        )}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[13px] font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate group-hover:text-[var(--royal-violet)] transition-colors">
-                          {brand.name}
-                        </span>
-                        <div
-                          className="flex items-center gap-1.5 mt-0.5"
-                          style={{
-                            color:
-                              "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                          }}
-                        >
-                          <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">
-                            Catalog Master
-                          </span>
-                          <span
-                            className="w-1 h-1 rounded-full"
-                            style={{
-                              background:
-                                "color-mix(in srgb, var(--royal-violet) 30%, transparent)",
-                            }}
-                          />
-                          <span className="text-[8px] font-mono tracking-widest uppercase">
-                            ID:{brand.id.toString().slice(0, 6)}
-                          </span>
-                        </div>
-                      </div>
+                  {/* Main Content */}
+                  <div className="p-5 flex flex-col items-center text-center relative z-10 flex-1">
+                    <div className="w-14 h-14 bg-white rounded-xl border flex items-center justify-center p-2 shadow-sm mb-3 group-hover:scale-105 transition-transform duration-500" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}>
+                      {getValidImageUrl(brand.logo_url) ? (
+                        <img src={getValidImageUrl(brand.logo_url)} className="w-full h-full object-contain" alt={brand.name} />
+                      ) : (
+                        <Award size={20} style={{ color: "color-mix(in srgb, var(--royal-violet) 30%, gray)" }} />
+                      )}
                     </div>
-
-                    {/* Produse Count */}
-                    <div className="col-span-3 text-center hidden md:flex items-center justify-center gap-2">
-                      <Package
-                        size={14}
-                        style={{
-                          color:
-                            "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                        }}
-                      />
-                      <span
-                        className="text-[11px] font-bold tabular-nums"
-                        style={{ color: "var(--dark-amethyst)" }}
-                      >
-                        {brand.products_count || 0}
+                    
+                    <h3 className="text-[13px] font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate w-full group-hover:text-[var(--royal-violet)] transition-colors">
+                      {brand.name}
+                    </h3>
+                    
+                    <div className="flex items-center gap-1.5 mt-2" style={{ color: "color-mix(in srgb, var(--royal-violet) 50%, gray)" }}>
+                      <Package size={10} />
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                        {brand.products_count || 0} Articole
                       </span>
                     </div>
+                  </div>
 
-                    {/* Actions */}
-                    <div className="col-span-3 flex justify-between md:justify-end gap-2 w-full md:w-auto pr-2">
-                      <div className="md:hidden flex items-center gap-1.5">
-                        <Package
-                          size={12}
-                          style={{
-                            color:
-                              "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                          }}
-                        />
-                        <span
-                          className="text-[10px] font-bold"
-                          style={{ color: "var(--dark-amethyst)" }}
-                        >
-                          {brand.products_count || 0}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
-                        <button
-                          onClick={() => openEdit(brand)}
-                          title="Editează"
-                          className="p-2 bg-white border rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-all shadow-sm"
-                          style={{
-                            borderColor:
-                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                          }}
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(brand.id, brand.name)}
-                          title="Șterge"
-                          className="p-2 bg-white border rounded-lg hover:bg-rose-500 hover:text-white transition-all text-rose-500 shadow-sm"
-                          style={{
-                            borderColor:
-                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                  {/* Actions / Footer (finuț, la bază) */}
+                  <div className="px-4 py-2.5 border-t flex justify-between items-center relative z-10 bg-zinc-50/50 group-hover:bg-white/50 transition-colors mt-auto" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 6%, transparent)" }}>
+                    <span className="text-[8px] font-mono font-bold tracking-widest uppercase" style={{ color: "color-mix(in srgb, var(--royal-violet) 40%, gray)" }}>
+                      ID:{brand.id.toString().slice(0,5)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(brand)} className="p-1.5 rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)]" title="Editează">
+                        <Edit2 size={12} strokeWidth={2.5} />
+                      </button>
+                      <button onClick={() => handleDelete(brand.id, brand.name)} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors" title="Șterge">
+                        <Trash2 size={12} strokeWidth={2.5} />
+                      </button>
                     </div>
                   </div>
                 </motion.div>
               ))}
             </AnimatePresence>
-          )}
-        </div>
-
-        {/* PAGINATION */}
-        {!loading && totalPages > 1 && (
-          <div
-            className="p-4 border-t flex justify-center items-center gap-4 shrink-0 bg-zinc-50/50"
-            style={{
-              borderColor:
-                "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
-            }}
-          >
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-2 bg-white border rounded-lg hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
-              style={{
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
-            </button>
-            <span
-              className="text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-lg shadow-sm"
-              style={{
-                color: "var(--dark-amethyst)",
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
-              {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-2 bg-white border rounded-lg hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
-              style={{
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              <ChevronRight
-                size={14}
-                style={{ color: "var(--royal-violet)" }}
-              />
-            </button>
-          </div>
+          </motion.div>
         )}
       </div>
+
+      {/* PAGINATION */}
+      {!loading && totalPages > 1 && (
+        <div className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)} className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}>
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-xl shadow-sm" style={{ color: "var(--dark-amethyst)", borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}>
+            {currentPage} <span className="opacity-30 mx-1">/</span> {totalPages}
+          </span>
+          <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}>
+            <ChevronRight size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+        </div>
+      )}
 
       {/* ── MODAL CONFIG (Futuristic) ─────────────────────────────────────── */}
       <AdminDialogShell
@@ -505,215 +327,98 @@ const AdminBrands = () => {
         size="md"
         mobileVariant="modal"
         className="sm:h-[80vh] sm:max-h-[80vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
-        style={{
-          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
-          borderColor:
-            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-        }}
+        style={{ background: "color-mix(in srgb, var(--surface-bg) 95%, white)", borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}
       >
-        <AdminDialogTitle className="sr-only">
-          Configurare Partener
-        </AdminDialogTitle>
-        <header
-          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
-          style={{
-            borderColor:
-              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-          }}
-        >
+        <AdminDialogTitle className="sr-only">Configurare Partener</AdminDialogTitle>
+        <header className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
           <div>
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
               {editingBrand ? "Revizuire Partener" : "Sincronizare Brand"}
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: "var(--royal-violet)" }}
-              />
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--royal-violet)" }} />
               <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
                 Configurare Entitate Master
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setIsModalOpen(false)}
-            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
-            style={{
-              borderColor:
-                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-            }}
-          >
+          <button onClick={() => setIsModalOpen(false)} className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}>
             <X size={14} strokeWidth={2.5} />
           </button>
         </header>
 
         <div className="flex-1 p-6 sm:p-8 space-y-8 overflow-y-auto luxury-scrollbar relative z-10">
-          <div
-            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-2 group relative"
-            style={{
-              borderColor:
-                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-            }}
-          >
-            <Label
-              className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
-              style={{
-                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-              }}
-            >
-              Denumire Oficială
-            </Label>
+          
+          <div className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-2 group relative" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
+            <Label className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors" style={{ color: "color-mix(in srgb, var(--royal-violet) 60%, gray)" }}>Denumire Oficială</Label>
             <input
               className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xl font-black uppercase outline-none transition-all text-[var(--dark-amethyst)]"
-              style={{
-                boxShadow:
-                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
+              style={{ boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}
               value={formData.name}
               placeholder="Ex: EVEM EXCLUSIVE"
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              onFocus={(e) => {
-                e.target.style.boxShadow =
-                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
-                e.target.style.backgroundColor = "#ffffff";
-              }}
-              onBlur={(e) => {
-                e.target.style.boxShadow =
-                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
-                e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
-              }}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onFocus={(e) => { e.target.style.boxShadow = "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)"; e.target.style.backgroundColor = "#ffffff"; }}
+              onBlur={(e) => { e.target.style.boxShadow = "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)"; e.target.style.backgroundColor = "rgba(255,255,255,0.5)"; }}
             />
           </div>
 
-          <div
-            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-4"
-            style={{
-              borderColor:
-                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-            }}
-          >
+          <div className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-4" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
             <div className="flex justify-between items-center">
-              <Label
-                className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
-                style={{
-                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-                }}
-              >
-                Logo Asset (URL)
-              </Label>
-              {formData.logo_url && (
-                <a
-                  href={getValidImageUrl(formData.logo_url)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[8px] font-black uppercase flex items-center gap-1 hover:underline"
-                  style={{ color: "var(--royal-violet)" }}
-                >
+               <Label className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2" style={{ color: "color-mix(in srgb, var(--royal-violet) 60%, gray)" }}>
+                 Logo Asset (URL)
+               </Label>
+               {formData.logo_url && (
+                <a href={getValidImageUrl(formData.logo_url)} target="_blank" rel="noreferrer" className="text-[8px] font-black uppercase flex items-center gap-1 hover:underline" style={{ color: "var(--royal-violet)" }}>
                   Test Link <ExternalLink size={10} />
                 </a>
               )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
-              <div
-                className="size-20 bg-white rounded-xl shadow-sm border shrink-0 flex items-center justify-center p-2"
-                style={{
-                  borderColor:
-                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                }}
-              >
-                {getValidImageUrl(formData.logo_url) ? (
-                  <img
-                    src={getValidImageUrl(formData.logo_url)}
-                    className="w-full h-full object-contain"
-                    alt=""
-                  />
-                ) : (
-                  <ImageIcon className="text-zinc-200" size={24} />
-                )}
+              <div className="size-20 bg-white rounded-xl shadow-sm border shrink-0 flex items-center justify-center p-2" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}>
+                 {getValidImageUrl(formData.logo_url) ? (
+                   <img src={getValidImageUrl(formData.logo_url)} className="w-full h-full object-contain" alt="" />
+                 ) : (
+                   <ImageIcon className="text-zinc-200" size={24} />
+                 )}
               </div>
               <div className="flex-1 flex flex-col gap-3 w-full">
                 <input
                   className="w-full bg-white/50 rounded-xl p-3.5 text-xs font-mono font-medium outline-none transition-all"
-                  style={{
-                    color: "var(--dark-amethyst)",
-                    boxShadow:
-                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                  }}
+                  style={{ color: "var(--dark-amethyst)", boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)" }}
                   placeholder="https://link-logo.com/img.png"
                   value={formData.logo_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, logo_url: e.target.value })
-                  }
-                  onFocus={(e) =>
-                    (e.target.style.boxShadow =
-                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)")
-                  }
-                  onBlur={(e) =>
-                    (e.target.style.boxShadow =
-                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)")
-                  }
+                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                  onFocus={(e) => e.target.style.boxShadow = "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)"}
+                  onBlur={(e) => e.target.style.boxShadow = "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)"}
                 />
-                <p
-                  className="text-[8px] font-bold uppercase italic"
-                  style={{
-                    color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                  }}
-                >
+                 <p className="text-[8px] font-bold uppercase italic" style={{ color: "color-mix(in srgb, var(--royal-violet) 40%, gray)" }}>
                   Format recomandat: PNG Transparent / SVG
                 </p>
               </div>
             </div>
           </div>
+
         </div>
 
-        <footer
-          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20"
-          style={{
-            borderColor:
-              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-          }}
-        >
-          <button
-            onClick={() => setIsModalOpen(false)}
-            className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all"
-            style={{
-              color: "var(--dark-amethyst)",
-              borderColor:
-                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
-            }}
-          >
+        <footer className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20" style={{ borderColor: "color-mix(in srgb, var(--royal-violet) 10%, transparent)" }}>
+          <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all" style={{ color: "var(--dark-amethyst)", borderColor: "color-mix(in srgb, var(--royal-violet) 20%, transparent)" }}>
             Anulează
           </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-            style={{ background: "var(--primary-gradient)" }}
-          >
-            {isSaving ? (
-              <Loader2 className="animate-spin" size={14} />
-            ) : (
-              <Save size={14} />
-            )}
+          <button onClick={handleSave} disabled={isSaving} className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2" style={{ background: "var(--primary-gradient)" }}>
+            {isSaving ? <Loader2 className="animate-spin" size={14}/> : <Save size={14}/>}
             Salvare în Catalog
           </button>
         </footer>
       </AdminDialogShell>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+      <style dangerouslySetInnerHTML={{ __html: `
         .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
         .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `,
-        }}
-      />
+      `}} />
     </div>
   );
 };
