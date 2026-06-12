@@ -1,4 +1,9 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+/**
+ * AdminCoupons.tsx — Bento Neo-Mosaic (Futuristic + Theme Gradient KPIs)
+ * Modul unificat pentru Vouchere (Cupoane Checkout) & Bannere Editoriale.
+ */
+
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Ticket,
   Plus,
@@ -24,16 +29,9 @@ import {
   Globe2,
   AlertCircle,
   ShoppingBag,
-  UploadCloud, // 🚀 REPARAT CHIRURGICAL: Folosit în zona unificată de upload automat
+  UploadCloud,
+  Sparkles,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   AdminDialogShell,
   AdminDialogTitle,
@@ -49,36 +47,16 @@ const API_BASE_URL =
 
 const AdminCoupons = () => {
   // ─────────────────────────────────────────────────────────────────────────────
-  // 1. BRANDING & STYLE ENGINE
-  // ─────────────────────────────────────────────────────────────────────────────
-  const [brand, setBrand] = useState({
-    dark_amethyst: "#001B3D",
-    indigo_ink: "#0055FF",
-    surface_bg: "#FAFAFA",
-    text_primary: "#001B3D",
-    primary_gradient: "linear-gradient(135deg, #0055FF 0%, #001B3D 100%)",
-  });
-
-  const dynamicStyles = useMemo(
-    () =>
-      ({
-        "--brand-primary": brand.indigo_ink,
-        "--brand-dark": brand.dark_amethyst,
-        "--brand-gradient": brand.primary_gradient,
-      }) as React.CSSProperties,
-    [brand],
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // 2. STATE MANAGEMENT GLOBAL & TAB-URI
+  // 1. STATE MANAGEMENT GLOBAL & TAB-URI
   // ─────────────────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"VOUCHERS" | "BANNERS">(
     "VOUCHERS",
   );
+
   const cachedCats = readCache<any[]>("admin:coupons:categories", 120_000);
   const cachedBanners = readCache<any[]>("admin:coupons:banners", 60_000);
   const [categories, setCategories] = useState<any[]>(cachedCats.data || []);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cachedCats.data);
 
   // --- STATE VOUCHERE ---
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -123,11 +101,10 @@ const AdminCoupons = () => {
     is_active: true,
   });
 
-  // 🚀 REFS REIDEEATE: O singură referință ascunsă pentru fișierul master de campanie
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 3. API CONNECTIVITY
+  // 2. API CONNECTIVITY
   // ─────────────────────────────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     const vKey = `admin:coupons:vouchers:${page}`;
@@ -137,11 +114,13 @@ const AdminCoupons = () => {
       setTotalPages(vCached.data.pages || 1);
       setTotalItems(vCached.data.total || 0);
       setLoading(false);
+    } else {
+      setLoading(true);
     }
+
     try {
-      if (!vCached.data && !cachedBanners.data) setLoading(true);
       const [vouchersRes, categoriesRes, bannersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/v1/vouchers/admin?page=${page}&size=10`, {
+        fetch(`${API_BASE_URL}/api/v1/vouchers/admin?page=${page}&size=12`, {
           credentials: "include",
         }),
         fetch(`${API_BASE_URL}/api/v1/categories/`, { credentials: "include" }),
@@ -150,19 +129,25 @@ const AdminCoupons = () => {
         }),
       ]);
 
-      const vouchersData = await vouchersRes.json();
-      setCoupons(vouchersData.items || []);
-      setTotalPages(vouchersData.pages || 1);
-      setTotalItems(vouchersData.total || 0);
-      writeCache(vKey, vouchersData);
+      if (vouchersRes.ok) {
+        const vouchersData = await vouchersRes.json();
+        setCoupons(vouchersData.items || []);
+        setTotalPages(vouchersData.pages || 1);
+        setTotalItems(vouchersData.total || 0);
+        writeCache(vKey, vouchersData);
+      }
 
-      const cats = await categoriesRes.json();
-      setCategories(cats);
-      writeCache("admin:coupons:categories", cats);
+      if (categoriesRes.ok) {
+        const cats = await categoriesRes.json();
+        setCategories(cats);
+        writeCache("admin:coupons:categories", cats);
+      }
 
-      const bannersData = await bannersRes.json();
-      setBanners(bannersData || []);
-      writeCache("admin:coupons:banners", bannersData || []);
+      if (bannersRes.ok) {
+        const bannersData = await bannersRes.json();
+        setBanners(bannersData || []);
+        writeCache("admin:coupons:banners", bannersData || []);
+      }
     } catch (e) {
       if (!vCached.data) toast.error("Eroare de sincronizare cu baza de date.");
     } finally {
@@ -194,7 +179,7 @@ const AdminCoupons = () => {
   }, [productSearchTerm]);
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 4. HANDLERS VOUCHERE
+  // 3. HANDLERS VOUCHERE
   // ─────────────────────────────────────────────────────────────────────────────
   const handleOpenVoucherCreate = () => {
     setIsEditingVoucher(false);
@@ -307,10 +292,8 @@ const AdminCoupons = () => {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // 5. HANDLERS BANNERE EDITORIALE & AUTOMATED PIPELINE
+  // 4. HANDLERS BANNERE EDITORIALE
   // ─────────────────────────────────────────────────────────────────────────────
-
-  // 🚀 REVIZUIT: Flow-ul care trimite poze către noul endpoint asincron /banner
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -334,25 +317,18 @@ const AdminCoupons = () => {
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error("Eroare pe serverul de procesare.");
-      }
-
+      if (!res.ok) throw new Error("Eroare pe serverul de procesare.");
       const data = await res.json();
 
-      // Măpăm ambele variante dintr-un singur răspuns JSON structurat
       setBannerFormData((prev) => ({
         ...prev,
         image_desktop_url: data.desktop_url,
         image_mobile_url: data.mobile_url,
       }));
 
-      toast.success(
-        "Banner mapat și optimizat cu succes pe toate rezoluțiile!",
-        {
-          id: "banner-upload",
-        },
-      );
+      toast.success("Banner optimizat cu succes pe toate rezoluțiile!", {
+        id: "banner-upload",
+      });
     } catch (err) {
       toast.error("Optimizarea imaginii a eșuat. Reîncercați.", {
         id: "banner-upload",
@@ -397,7 +373,10 @@ const AdminCoupons = () => {
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/vouchers/admin/delete-banner/${id}`,
-        { method: "DELETE", credentials: "include" },
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
       );
       if (res.ok) {
         toast.success("Banner șters.");
@@ -446,8 +425,7 @@ const AdminCoupons = () => {
   };
 
   const getCategoryName = (id: string | null) => {
-    if (!id || id === "global_campaign_id")
-      return "🌍 CAMPANIE GLOBALĂ (TOT SITE-UL)";
+    if (!id || id === "global_campaign_id") return "🌍 CAMPANIE GLOBALĂ";
     const cat = categories.find((c) => c.id === id);
     if (cat) return cat.name;
     for (const mainCat of categories) {
@@ -456,1002 +434,1421 @@ const AdminCoupons = () => {
         if (sub) return `${mainCat.name} > ${sub.name}`;
       }
     }
-    return "Categorie ștearsă/necunoscută";
+    return "Categorie Necunoscută";
   };
 
   return (
-    <div
-      style={dynamicStyles}
-      className="w-full space-y-12 pb-24 font-sans text-left overflow-x-hidden bg-[#FAFAFA] min-h-screen"
-    >
-      {/* ── HEADER ULTRA MODERN ── */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-10 border-b border-zinc-200 pb-12 pt-6 px-4 md:px-8">
-        <div className="space-y-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-3"
-          >
-            <span
-              className="w-12 h-[2px]"
-              style={{ backgroundColor: "var(--brand-primary)" }}
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              style={{ color: "var(--royal-violet)" }}
+              className="animate-pulse"
             />
             <span
-              className="text-[10px] font-black uppercase tracking-[0.5em]"
-              style={{ color: "var(--brand-primary)" }}
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
             >
               Revenue & Marketing Engine
             </span>
-          </motion.div>
-          <h1
-            className="text-5xl md:text-7xl font-serif italic tracking-tighter"
-            style={{ color: "var(--brand-dark)" }}
-          >
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
             Promo{" "}
-            <span style={{ color: "var(--brand-primary)" }}>Architect</span>
+            <span style={{ color: "var(--royal-violet)" }}>Architect</span>
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
-          <div className="bg-white border border-zinc-200 px-8 py-5 rounded-[2rem] flex items-center gap-5 shadow-sm w-full sm:w-auto">
-            <Activity size={20} className="text-emerald-500 animate-pulse" />
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          <div
+            className="bg-white/60 backdrop-blur-xl border px-6 py-3 rounded-xl flex items-center gap-4 shadow-sm w-full sm:w-auto"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <Activity size={18} className="text-emerald-500 animate-pulse" />
             <div className="flex flex-col">
-              <span className="text-[9px] font-black uppercase text-zinc-400">
+              <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">
                 Puls Marketing
               </span>
-              <span className="text-sm font-bold text-[var(--brand-dark)]">
-                {totalItems} Promo | {banners.length} Bannere
+              <span className="text-[11px] font-bold text-[var(--dark-amethyst)]">
+                {totalItems} Vouchere | {banners.length} Bannere
               </span>
             </div>
           </div>
 
-          {activeTab === "VOUCHERS" ? (
-            <button
-              onClick={handleOpenVoucherCreate}
-              className="w-full sm:w-auto text-white px-10 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
-              style={{ background: "var(--brand-gradient)" }}
-            >
-              <Plus size={18} /> Generează Voucher
-            </button>
-          ) : (
-            <button
-              onClick={handleOpenBannerCreate}
-              className="w-full sm:w-auto text-white px-10 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
-              style={{ background: "var(--brand-gradient)" }}
-            >
-              <ImageIcon size={18} /> Adaugă Banner
-            </button>
-          )}
+          <button
+            onClick={
+              activeTab === "VOUCHERS"
+                ? handleOpenVoucherCreate
+                : handleOpenBannerCreate
+            }
+            className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            {activeTab === "VOUCHERS" ? (
+              <>
+                <Plus size={14} strokeWidth={2.5} /> Generează Voucher
+              </>
+            ) : (
+              <>
+                <ImageIcon size={14} strokeWidth={2.5} /> Adaugă Banner
+              </>
+            )}
+          </button>
         </div>
       </header>
 
-      <div className="mx-4 md:mx-8 space-y-8">
-        {/* ── TAB-URI DE NAVIGARE ── */}
-        <div className="flex items-center gap-4 border-b border-zinc-200 pb-px">
-          <button
-            onClick={() => setActiveTab("VOUCHERS")}
-            className={`flex items-center gap-2 pb-4 px-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-              activeTab === "VOUCHERS"
-                ? "text-[var(--brand-primary)] border-b-2 border-[var(--brand-primary)]"
-                : "text-zinc-400 hover:text-zinc-700"
-            }`}
-          >
-            <Ticket size={16} /> Vouchere Checkout
-          </button>
-          <button
-            onClick={() => setActiveTab("BANNERS")}
-            className={`flex items-center gap-2 pb-4 px-2 text-[11px] font-black uppercase tracking-widest transition-all ${
-              activeTab === "BANNERS"
-                ? "text-[var(--brand-primary)] border-b-2 border-[var(--brand-primary)]"
-                : "text-zinc-400 hover:text-zinc-700"
-            }`}
-          >
-            <LayoutTemplate size={16} /> Bannere Editoriale
-          </button>
-        </div>
+      {/* ── TAB-URI DE NAVIGARE (Glassmorphism) ──────────────────────────── */}
+      <div
+        className="flex items-center gap-2 bg-zinc-50/50 p-1.5 rounded-2xl w-fit border"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <button
+          onClick={() => setActiveTab("VOUCHERS")}
+          className={`flex items-center gap-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+            activeTab === "VOUCHERS"
+              ? "bg-white shadow-sm text-[var(--royal-violet)]"
+              : "text-zinc-400 hover:text-zinc-700"
+          }`}
+        >
+          <Ticket size={14} /> Vouchere Checkout
+        </button>
+        <button
+          onClick={() => setActiveTab("BANNERS")}
+          className={`flex items-center gap-2 px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+            activeTab === "BANNERS"
+              ? "bg-white shadow-sm text-[var(--royal-violet)]"
+              : "text-zinc-400 hover:text-zinc-700"
+          }`}
+        >
+          <LayoutTemplate size={14} /> Bannere Editoriale
+        </button>
+      </div>
 
-        {/* ── SECȚIUNE TABEL ANALITIC ── */}
-        <div className="bg-white rounded-[3rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] border border-zinc-100 overflow-hidden relative">
-          <div className="overflow-x-auto">
-            <Table className="min-w-[1100px]">
-              <TableHeader className="bg-zinc-50/50">
-                <TableRow className="border-b border-zinc-100">
-                  {activeTab === "VOUCHERS" ? (
-                    <>
-                      <TableHead className="py-8 px-12 text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Identificator
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Mecanism
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Valoare
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Grad Utilizare
-                      </TableHead>
-                      <TableHead className="text-center text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Status
-                      </TableHead>
-                      <TableHead className="text-right px-12 text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Gestiune
-                      </TableHead>
-                    </>
-                  ) : (
-                    <>
-                      <TableHead className="py-8 px-12 text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Imagine / Preview
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Titlu & Text
-                      </TableHead>
-                      <TableHead className="text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Afișare (Target)
-                      </TableHead>
-                      <TableHead className="text-center text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Status
-                      </TableHead>
-                      <TableHead className="text-right px-12 text-[10px] uppercase font-black text-zinc-400 tracking-widest">
-                        Gestiune
-                      </TableHead>
-                    </>
-                  )}
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-40 text-center">
-                      <Loader2
-                        className="animate-spin mx-auto mb-4"
-                        size={40}
-                        style={{ color: "var(--brand-primary)" }}
+      {/* ── BENTO GRID ────────────────────────────────────────────────────── */}
+      <div className="min-h-[400px]">
+        {loading ? (
+          <div className="flex justify-center items-center py-32">
+            <Loader2
+              className="animate-spin"
+              size={32}
+              style={{ color: "var(--royal-violet)" }}
+            />
+          </div>
+        ) : activeTab === "VOUCHERS" ? (
+          // GRID VOUCHERE
+          coupons.length === 0 ? (
+            <div
+              className="py-32 flex flex-col items-center gap-3 bg-white/50 rounded-3xl border border-dashed"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+              }}
+            >
+              <Ticket
+                size={40}
+                strokeWidth={1}
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                }}
+              />
+              <span
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
+                Niciun voucher configurat
+              </span>
+            </div>
+          ) : (
+            <motion.div
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5"
+            >
+              <AnimatePresence mode="popLayout">
+                {coupons.map((c) => {
+                  const usage = c.usage_limit
+                    ? Math.min(100, (c.times_used / c.usage_limit) * 100)
+                    : 0;
+                  return (
+                    <motion.div
+                      layout
+                      key={c.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="group relative bg-white rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col shadow-sm"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                        }}
                       />
-                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em]">
-                        Sincronizare Cloud...
-                      </p>
-                    </TableCell>
-                  </TableRow>
-                ) : activeTab === "VOUCHERS" && coupons.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="py-40 text-center text-zinc-400 font-bold uppercase text-[10px] tracking-widest"
-                    >
-                      Niciun voucher nu a fost găsit în baza de date.
-                    </TableCell>
-                  </TableRow>
-                ) : activeTab === "BANNERS" && banners.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="py-40 text-center text-zinc-400 font-bold uppercase text-[10px] tracking-widest"
-                    >
-                      Niciun banner editorial configurat momentan. Adăugați un
-                      Banner Global pentru a începe.
-                    </TableCell>
-                  </TableRow>
-                ) : activeTab === "VOUCHERS" ? (
-                  coupons.map((c) => {
-                    const usage = c.usage_limit
-                      ? Math.min(100, (c.times_used / c.usage_limit) * 100)
-                      : 0;
-                    return (
-                      <TableRow
-                        key={c.id}
-                        className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50 last:border-none"
+
+                      <div
+                        className="p-5 relative z-10 flex flex-col items-center text-center border-b"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                        }}
                       >
-                        <TableCell className="px-12 py-10">
-                          <div className="flex flex-col gap-1.5">
-                            <span className="text-base font-black text-[var(--brand-dark)] uppercase tracking-tight">
-                              {c.code}
-                            </span>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(c.code);
-                                toast.success("Copiat în clipboard!");
-                              }}
-                              className="flex items-center gap-1.5 text-[9px] text-zinc-400 hover:text-[var(--brand-primary)] font-bold uppercase transition-colors w-fit"
-                            >
-                              <Copy size={10} /> Copiază Codul
-                            </button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {c.discount_type === "PERCENTAGE" ? (
-                              <Percent size={14} className="text-zinc-400" />
-                            ) : (
-                              <Ticket size={14} className="text-zinc-400" />
-                            )}
-                            <span className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">
-                              {c.discount_type === "PERCENTAGE"
-                                ? "Procentual"
-                                : "Sumă Fixă"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-3xl font-serif italic font-black text-[var(--brand-dark)]">
+                        <span className="text-xl font-black uppercase tracking-tight text-[var(--dark-amethyst)] group-hover:text-[var(--royal-violet)] transition-colors">
+                          {c.code}
+                        </span>
+                        <span
+                          className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase mt-2 border"
+                          style={{
+                            backgroundColor: c.is_active
+                              ? "color-mix(in srgb, #10b981 5%, transparent)"
+                              : "color-mix(in srgb, gray 5%, transparent)",
+                            color: c.is_active ? "#10b981" : "gray",
+                            borderColor: c.is_active
+                              ? "color-mix(in srgb, #10b981 20%, transparent)"
+                              : "color-mix(in srgb, gray 20%, transparent)",
+                          }}
+                        >
+                          {c.is_active ? "Activ" : "Inactiv"}
+                        </span>
+                      </div>
+
+                      <div className="p-5 flex-1 relative z-10 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-1.5">
+                            <Percent size={12} /> Reducere
+                          </span>
+                          <span className="text-lg font-black text-[var(--dark-amethyst)]">
                             {c.discount_value}
                             {c.discount_type === "PERCENTAGE" ? "%" : " RON"}
                           </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-2 w-36">
-                            <div className="flex justify-between text-[9px] font-black uppercase text-zinc-400">
-                              <span>Consum Rețea</span>
-                              <span style={{ color: "var(--brand-primary)" }}>
-                                {c.times_used} / {c.usage_limit || "∞"}
-                              </span>
-                            </div>
-                            <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden shadow-inner">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${usage}%` }}
-                                className="h-full rounded-full"
-                                style={{ background: "var(--brand-gradient)" }}
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span
-                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase border shadow-sm ${c.is_active ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-zinc-50 text-zinc-400 border-zinc-200"}`}
-                          >
-                            {c.is_active ? (
-                              <CheckCircle2 size={10} />
-                            ) : (
-                              <Ban size={10} />
-                            )}
-                            {c.is_active ? "Activ" : "Oprit"}
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest flex items-center gap-1.5">
+                            <ShoppingBag size={12} /> Comandă Min.
                           </span>
-                        </TableCell>
-                        <TableCell className="px-12 text-right">
-                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleOpenVoucherEdit(c)}
-                              className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all"
-                              style={{ background: "var(--brand-gradient)" }}
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVoucher(c.id)}
-                              className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all"
-                              style={{ background: "var(--brand-gradient)" }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                          <span className="text-xs font-bold text-[var(--dark-amethyst)]">
+                            {c.min_order_value > 0
+                              ? `${c.min_order_value} RON`
+                              : "0 RON"}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                            <span>Utilizări</span>
+                            <span style={{ color: "var(--royal-violet)" }}>
+                              {c.times_used} / {c.usage_limit || "∞"}
+                            </span>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                ) : (
-                  // RENDERING TABEL BANNERE
-                  banners.map((b) => {
-                    const isGlobal = !b.category_id;
-                    return (
-                      <TableRow
-                        key={b.id}
-                        className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50 last:border-none"
-                      >
-                        <TableCell className="px-12 py-6">
-                          <div className="w-40 h-16 rounded-xl overflow-hidden shadow-sm border border-zinc-100 bg-zinc-100 relative">
-                            <img
-                              src={b.image_desktop_url}
-                              alt="Banner"
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  "https://placehold.co/600x400?text=S3+Secure+Image";
-                              }}
+                          <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${usage}%` }}
+                              className="h-full rounded-full"
+                              style={{ background: "var(--primary-gradient)" }}
                             />
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[11px] font-black text-[var(--brand-dark)] uppercase tracking-widest">
-                              {b.title}
-                            </span>
-                            <span className="text-[10px] text-zinc-400 truncate max-w-[200px]">
-                              {b.subtitle || "Fără subtitlu"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {isGlobal ? (
-                            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 uppercase tracking-wider">
-                              <Globe2 size={12} />
-                              CAMPANIE GLOBALĂ
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-zinc-500 bg-zinc-100 px-3 py-1.5 rounded-md uppercase tracking-wider">
-                              {getCategoryName(b.category_id)}
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span
-                            className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase border shadow-sm ${b.is_active ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-zinc-50 text-zinc-400 border-zinc-200"}`}
-                          >
-                            {b.is_active ? (
-                              <CheckCircle2 size={10} />
-                            ) : (
-                              <Ban size={10} />
-                            )}
-                            {b.is_active ? "Afișat" : "Ascuns"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-12 text-right">
-                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleOpenBannerEdit(b)}
-                              className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all"
-                              style={{ background: "var(--brand-gradient)" }}
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBanner(b.id)}
-                              className="p-4 rounded-2xl text-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all bg-rose-500"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                        </div>
+                      </div>
 
-          {/* PAGINARE DOAR PENTRU VOUCHERE */}
-          {activeTab === "VOUCHERS" && totalPages > 1 && (
-            <footer className="p-10 bg-zinc-50/80 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-8">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                Pagina {page} din {totalPages}{" "}
-                <span className="mx-3 opacity-30">|</span> {totalItems} Unități
-                Indexate
-              </span>
-              <div className="flex items-center gap-3">
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm disabled:opacity-30 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-all"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-                <div className="flex gap-2">
-                  {[...Array(totalPages)]
-                    .map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPage(i + 1)}
-                        className={`w-12 h-12 rounded-2xl text-[11px] font-black transition-all shadow-sm ${page === i + 1 ? "text-white border-transparent" : "bg-white text-zinc-400 border border-zinc-100 hover:bg-zinc-50"}`}
+                      <div
+                        className="px-4 py-2.5 border-t flex justify-between items-center relative z-10 bg-zinc-50/50 group-hover:bg-white/50 transition-colors mt-auto"
                         style={{
-                          background:
-                            page === i + 1
-                              ? "var(--brand-gradient)"
-                              : undefined,
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 6%, transparent)",
                         }}
                       >
-                        {i + 1}
-                      </button>
-                    ))
-                    .slice(
-                      Math.max(0, page - 3),
-                      Math.min(totalPages, page + 2),
-                    )}
-                </div>
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm disabled:opacity-30 hover:border-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-all"
-                >
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-            </footer>
-          )}
-        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(c.code);
+                            toast.success("Copiat!");
+                          }}
+                          className="flex items-center gap-1.5 text-[9px] text-zinc-400 hover:text-[var(--royal-violet)] font-bold uppercase transition-colors"
+                        >
+                          <Copy size={10} /> Copiază
+                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleOpenVoucherEdit(c)}
+                            className="p-1.5 rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)]"
+                            title="Editează"
+                          >
+                            <Edit3 size={12} strokeWidth={2.5} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteVoucher(c.id)}
+                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors"
+                            title="Șterge"
+                          >
+                            <Trash2 size={12} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </motion.div>
+          )
+        ) : // GRID BANNERE
+        banners.length === 0 ? (
+          <div
+            className="py-32 flex flex-col items-center gap-3 bg-white/50 rounded-3xl border border-dashed"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+            }}
+          >
+            <LayoutTemplate
+              size={40}
+              strokeWidth={1}
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+              }}
+            />
+            <span
+              className="text-[10px] font-black uppercase tracking-widest"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+              }}
+            >
+              Niciun banner editorial
+            </span>
+          </div>
+        ) : (
+          <motion.div
+            layout
+            className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+          >
+            <AnimatePresence mode="popLayout">
+              {banners.map((b) => {
+                const isGlobal = !b.category_id;
+                return (
+                  <motion.div
+                    layout
+                    key={b.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="group relative bg-white rounded-[2rem] border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col shadow-sm"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                    }}
+                  >
+                    <div className="h-40 w-full relative overflow-hidden bg-zinc-100">
+                      <img
+                        src={b.image_desktop_url}
+                        alt="Banner"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://placehold.co/600x400?text=S3+Secure+Image";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-4 left-4">
+                        {isGlobal ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8px] font-bold text-white bg-indigo-500/80 backdrop-blur-md uppercase tracking-widest border border-white/20 shadow-sm">
+                            <Globe2 size={10} /> CAMPANIE GLOBALĂ
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8px] font-bold text-white bg-zinc-900/80 backdrop-blur-md uppercase tracking-widest border border-white/20 shadow-sm">
+                            {getCategoryName(b.category_id)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-5 flex-1 relative z-10 flex flex-col justify-center">
+                      <span className="text-[14px] font-bold text-[var(--dark-amethyst)] uppercase tracking-tight line-clamp-1 group-hover:text-[var(--royal-violet)] transition-colors">
+                        {b.title}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 mt-1 line-clamp-1">
+                        {b.subtitle || "Fără subtitlu"}
+                      </span>
+                    </div>
+
+                    <div
+                      className="px-5 py-3 border-t flex justify-between items-center relative z-10 bg-zinc-50/50 transition-colors mt-auto"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 6%, transparent)",
+                      }}
+                    >
+                      <span
+                        className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase border"
+                        style={{
+                          backgroundColor: b.is_active
+                            ? "color-mix(in srgb, #10b981 5%, transparent)"
+                            : "color-mix(in srgb, gray 5%, transparent)",
+                          color: b.is_active ? "#10b981" : "gray",
+                          borderColor: b.is_active
+                            ? "color-mix(in srgb, #10b981 20%, transparent)"
+                            : "color-mix(in srgb, gray 20%, transparent)",
+                        }}
+                      >
+                        {b.is_active ? "Publicat" : "Ascuns"}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleOpenBannerEdit(b)}
+                          className="p-1.5 rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)]"
+                          title="Editează"
+                        >
+                          <Edit3 size={14} strokeWidth={2.5} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBanner(b.id)}
+                          className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors"
+                          title="Șterge"
+                        >
+                          <Trash2 size={14} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        )}
       </div>
+
+      {/* ── PAGINATION (DOAR PENTRU VOUCHERE) ── */}
+      {activeTab === "VOUCHERS" && !loading && totalPages > 1 && (
+        <div
+          className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+
+          <div className="hidden sm:flex gap-1.5">
+            {[...Array(totalPages)]
+              .map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${page === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  style={{
+                    background:
+                      page === i + 1 ? "var(--primary-gradient)" : undefined,
+                    borderColor:
+                      page !== i + 1
+                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                        : undefined,
+                    color: page !== i + 1 ? "var(--dark-amethyst)" : "white",
+                  }}
+                >
+                  {i + 1}
+                </button>
+              ))
+              .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))}
+          </div>
+
+          <span
+            className="sm:hidden text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-xl shadow-sm"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            {page} <span className="opacity-30 mx-1">/</span> {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronRight size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+        </div>
+      )}
 
       {/* ── MODAL CONFIGURARE VOUCHER ── */}
       <AdminDialogShell
         open={isVoucherModalOpen}
         onOpenChange={setIsVoucherModalOpen}
-        size="full"
-        className="bg-[#FBFBFD]"
+        size="xl"
+        mobileVariant="modal"
+        className="sm:h-[90vh] sm:max-h-[90vh] rounded-none sm:rounded-[2.5rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
-        <AdminDialogTitle>
-          {isEditingVoucher ? "Actualizare Voucher" : "Arhitectură Voucher"}
+        <AdminDialogTitle className="sr-only">
+          Arhitectură Voucher
         </AdminDialogTitle>
-        <header className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border-b border-zinc-100 shrink-0">
-          <div className="text-left space-y-2">
-            <h2
-              className="text-3xl sm:text-4xl md:text-5xl font-serif italic tracking-tight"
-              style={{ color: "var(--brand-dark)" }}
-            >
-              {isEditingVoucher
-                ? "Actualizare Voucher"
-                : "Arhitectură Voucher"}
+        <header
+          className="px-6 sm:px-10 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 flex justify-between items-center sticky top-0 z-20"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
+              {isEditingVoucher ? "Actualizare Voucher" : "Arhitectură Voucher"}
             </h2>
-              <div className="flex items-center gap-3">
-                <ShieldCheck
-                  size={14}
-                  style={{ color: "var(--brand-primary)" }}
-                />
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                  Validare Securizată S3 + Bază de date
-                </p>
-              </div>
+            <div className="flex items-center gap-2 mt-1">
+              <ShieldCheck size={12} style={{ color: "var(--royal-violet)" }} />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Validare Securizată Server-Side
+              </p>
             </div>
-
-            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-              <div className="flex items-center gap-4 bg-zinc-50 px-6 py-3 rounded-2xl border border-zinc-100 shadow-inner">
-                <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                  Status Vizibilitate
-                </span>
-                <button
-                  onClick={() =>
-                    setVoucherFormData({
-                      ...voucherFormData,
-                      is_active: !voucherFormData.is_active,
-                    })
-                  }
-                  className={`w-14 h-7 rounded-full transition-all duration-300 relative flex items-center px-1 shadow-inner ${voucherFormData.is_active ? "bg-emerald-500" : "bg-zinc-300"}`}
-                >
-                  <motion.div
-                    layout
-                    className="w-4 h-4 bg-white rounded-full shadow-md"
-                    animate={{ x: voucherFormData.is_active ? 28 : 0 }}
-                  />
-                </button>
-              </div>
-              <button
-                onClick={() => setIsVoucherModalOpen(false)}
-                className="size-14 bg-zinc-50 border border-zinc-100 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm shrink-0"
-              >
-                <X size={24} />
-              </button>
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-y-auto p-6 md:p-12 space-y-12 luxury-scrollbar">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-              <div className="xl:col-span-2 bg-white p-8 md:p-12 rounded-[3rem] border border-zinc-100 shadow-sm space-y-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <Settings2
-                    size={18}
-                    style={{ color: "var(--brand-primary)" }}
-                  />
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400">
-                    Identitate Promoțională
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-4 text-left">
-                    <Label
-                      className="text-[10px] font-black uppercase ml-2 opacity-50"
-                      style={{ color: "var(--brand-dark)" }}
-                    >
-                      Cod Unic (Public)
-                    </Label>
-                    <input
-                      disabled={isEditingVoucher}
-                      className="w-full h-16 bg-zinc-50 border border-transparent rounded-[2rem] px-8 text-2xl font-black uppercase tracking-widest outline-none focus:bg-white focus:border-[var(--brand-primary)]/30 focus:shadow-[0_0_0_4px_rgba(0,85,255,0.05)] transition-all"
-                      style={{ color: "var(--brand-dark)" }}
-                      value={voucherFormData.code}
-                      onChange={(e) =>
-                        setVoucherFormData({
-                          ...voucherFormData,
-                          code: e.target.value.toUpperCase(),
-                        })
-                      }
-                      placeholder="REDUCERE25"
-                    />
-                  </div>
-                  <div className="space-y-4 text-left">
-                    <Label
-                      className="text-[10px] font-black uppercase ml-2 opacity-50"
-                      style={{ color: "var(--brand-dark)" }}
-                    >
-                      Mecanism Calcul
-                    </Label>
-                    <select
-                      className="w-full h-16 bg-zinc-50 border border-zinc-100 rounded-[2rem] px-8 text-[11px] font-black uppercase outline-none shadow-inner"
-                      style={{ color: "var(--brand-dark)" }}
-                      value={voucherFormData.discount_type}
-                      onChange={(e) =>
-                        setVoucherFormData({
-                          ...voucherFormData,
-                          discount_type: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="PERCENTAGE">Procentual %</option>
-                      <option value="FIXED_AMOUNT">Suma Fixă RON</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-12 rounded-[3rem] border border-zinc-100 shadow-sm flex flex-col justify-center items-center text-center space-y-6">
-                <div className="size-24 rounded-[2rem] flex items-center justify-center bg-zinc-50 shadow-inner">
-                  <Percent
-                    size={36}
-                    style={{ color: "var(--brand-primary)" }}
-                  />
-                </div>
-                <div className="space-y-3 w-full">
-                  <Label
-                    className="text-[10px] font-black uppercase opacity-50 tracking-widest"
-                    style={{ color: "var(--brand-dark)" }}
-                  >
-                    Valoare Reducere
-                  </Label>
-                  <input
-                    type="number"
-                    className="w-full text-center text-7xl font-serif italic font-black bg-transparent outline-none"
-                    style={{ color: "var(--brand-dark)" }}
-                    value={voucherFormData.discount_value || ""}
-                    onChange={(e) =>
-                      setVoucherFormData({
-                        ...voucherFormData,
-                        discount_value: Number(e.target.value),
-                      })
-                    }
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-              <div className="bg-white p-10 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 flex flex-col justify-center text-left">
-                <Label className="text-[10px] font-black uppercase flex items-center gap-3 text-zinc-400">
-                  <ShoppingBag size={16} /> Prag Comandă (RON)
-                </Label>
-                <input
-                  type="number"
-                  className="w-full h-16 bg-zinc-50 rounded-3xl text-center text-3xl font-black outline-none border border-transparent focus:border-[var(--brand-primary)]/20 transition-colors"
-                  style={{ color: "var(--brand-dark)" }}
-                  value={voucherFormData.min_order_value || ""}
-                  onChange={(e) =>
-                    setVoucherFormData({
-                      ...voucherFormData,
-                      min_order_value: Number(e.target.value),
-                    })
-                  }
-                  placeholder="0"
-                />
-              </div>
-              <div className="bg-white p-10 rounded-[2.5rem] border border-zinc-100 shadow-sm space-y-6 flex flex-col justify-center text-left">
-                <Label className="text-[10px] font-black uppercase flex items-center gap-3 text-zinc-400">
-                  <Activity size={16} /> Limită Utilizări (Rețea)
-                </Label>
-                <input
-                  type="number"
-                  className="w-full h-16 bg-zinc-50 rounded-3xl text-center text-3xl font-black outline-none border border-transparent focus:border-[var(--brand-primary)]/20 transition-colors"
-                  style={{ color: "var(--brand-dark)" }}
-                  value={voucherFormData.usage_limit || ""}
-                  onChange={(e) =>
-                    setVoucherFormData({
-                      ...voucherFormData,
-                      usage_limit: Number(e.target.value),
-                    })
-                  }
-                  placeholder="∞"
-                />
-              </div>
-              <div
-                className="p-10 rounded-[3rem] flex flex-col justify-center space-y-5"
+          </div>
+          <div className="flex items-center gap-4">
+            <div
+              className="hidden sm:flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-xl border"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <span
+                className="text-[9px] font-black uppercase tracking-widest"
                 style={{
-                  background: "var(--brand-dark)",
-                  boxShadow: "0 20px 40px -10px rgba(0,27,61,0.2)",
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                 }}
               >
-                <div className="flex items-center gap-3">
-                  <AlertCircle
-                    size={22}
-                    style={{ color: "var(--brand-primary)" }}
-                  />
-                  <h4 className="text-[11px] font-black uppercase text-white tracking-widest">
-                    Validare Inteligentă
-                  </h4>
-                </div>
-                <p className="text-[10px] font-bold text-zinc-400 uppercase leading-relaxed opacity-80">
-                  Dacă lăsați câmpurile de segmentare goale, sistemul va aplica
-                  voucherul global pe întreg coșul de cumpărături.
-                </p>
+                Activare
+              </span>
+              <button
+                onClick={() =>
+                  setVoucherFormData({
+                    ...voucherFormData,
+                    is_active: !voucherFormData.is_active,
+                  })
+                }
+                className={`w-10 h-5 rounded-full transition-all duration-300 relative flex items-center px-1 shadow-inner ${voucherFormData.is_active ? "bg-emerald-500" : "bg-zinc-300"}`}
+              >
+                <motion.div
+                  layout
+                  className="w-3.5 h-3.5 bg-white rounded-full shadow-sm"
+                  animate={{ x: voucherFormData.is_active ? 20 : 0 }}
+                />
+              </button>
+            </div>
+            <button
+              onClick={() => setIsVoucherModalOpen(false)}
+              className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <X size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-6 sm:p-10 space-y-8 luxury-scrollbar relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-6"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <h3
+                className="text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 mb-6"
+                style={{ color: "var(--dark-amethyst)" }}
+              >
+                <Settings2 size={14} style={{ color: "var(--royal-violet)" }} />{" "}
+                Identitate Promoțională
+              </h3>
+              <div className="space-y-2 group relative">
+                <Label
+                  className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  Cod Unic (Public)
+                </Label>
+                <input
+                  disabled={isEditingVoucher}
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xl font-black uppercase tracking-widest outline-none transition-all text-[var(--dark-amethyst)] disabled:opacity-50"
+                  style={{
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  value={voucherFormData.code}
+                  placeholder="REDUCERE25"
+                  onChange={(e) =>
+                    setVoucherFormData({
+                      ...voucherFormData,
+                      code: e.target.value.toUpperCase(),
+                    })
+                  }
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                />
+              </div>
+              <div className="space-y-2 group relative">
+                <Label
+                  className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  Mecanism Calcul
+                </Label>
+                <select
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-black uppercase outline-none appearance-none cursor-pointer transition-all"
+                  style={{
+                    color: "var(--dark-amethyst)",
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  value={voucherFormData.discount_type}
+                  onChange={(e) =>
+                    setVoucherFormData({
+                      ...voucherFormData,
+                      discount_type: e.target.value,
+                    })
+                  }
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                >
+                  <option value="PERCENTAGE">Procentual %</option>
+                  <option value="FIXED_AMOUNT">Suma Fixă RON</option>
+                </select>
               </div>
             </div>
 
-            <div className="space-y-10">
-              <div className="flex items-center gap-5">
-                <span
-                  className="w-16 h-[2px]"
-                  style={{ backgroundColor: "var(--brand-primary)" }}
-                />
-                <h3
-                  className="text-sm font-black uppercase tracking-[0.4em]"
-                  style={{ color: "var(--brand-dark)" }}
-                >
-                  Targetare & Segmentare
-                </h3>
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm flex flex-col items-center justify-center text-center space-y-4"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <div
+                className="size-16 rounded-2xl flex items-center justify-center border shadow-sm"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                }}
+              >
+                <Percent size={24} style={{ color: "var(--royal-violet)" }} />
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="flex-1 overflow-y-auto luxury-scrollbar flex flex-wrap gap-4 content-start pr-2">
-                  {categories.map((cat) => {
-                    const active =
-                      voucherFormData.applicable_category_ids.includes(cat.id);
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() =>
-                          setVoucherFormData((p) => ({
-                            ...p,
-                            applicable_category_ids: active
-                              ? p.applicable_category_ids.filter(
-                                  (id) => id !== cat.id,
-                                )
-                              : [...p.applicable_category_ids, cat.id],
-                          }))
-                        }
-                        className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest rounded-[2rem] border-2 transition-all duration-300 shadow-sm ${active ? "text-white border-transparent shadow-lg" : "bg-white text-zinc-400 border-zinc-100 hover:border-zinc-300"}`}
-                        style={{
-                          backgroundColor: active
-                            ? brand.dark_amethyst
-                            : "#FFFFFF",
-                          color: active ? "#FFFFFF" : undefined,
-                        }}
-                      >
-                        {cat.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-zinc-100 shadow-sm space-y-8 h-[550px] flex flex-col text-left">
-                  <Label
-                    className="text-[11px] font-black uppercase flex items-center gap-4"
-                    style={{ color: "var(--brand-primary)" }}
-                  >
-                    <Package size={20} /> Fixare pe Articole
-                  </Label>
-                  <div className="relative">
-                    <Search
-                      className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-400"
-                      size={20}
-                    />
-                    <input
-                      className="w-full h-16 bg-zinc-50 pl-16 rounded-3xl text-[11px] font-bold outline-none border border-transparent focus:border-[var(--brand-primary)]/20 transition-all shadow-inner"
-                      placeholder="Caută în catalogul extins..."
-                      value={productSearchTerm}
-                      onChange={(e) => setProductSearchTerm(e.target.value)}
-                    />
-                    <AnimatePresence>
-                      {searchedProducts.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          className="absolute top-[calc(100%+10px)] left-0 w-full bg-white shadow-2xl rounded-[2.5rem] border border-zinc-100 z-50 overflow-hidden"
-                        >
-                          <div className="max-h-[250px] overflow-y-auto luxury-scrollbar">
-                            {searchedProducts.map((p) => (
-                              <div
-                                key={p.id}
-                                onClick={() => {
-                                  toggleProductSelection(p);
-                                  setProductSearchTerm("");
-                                }}
-                                className="p-5 hover:bg-zinc-50 cursor-pointer flex items-center justify-between border-b border-zinc-50 last:border-none"
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div className="size-12 bg-zinc-100 rounded-2xl overflow-hidden shadow-inner shrink-0">
-                                    <img
-                                      src={p.image_url || "/placeholder.png"}
-                                      className="w-full h-full object-cover"
-                                      alt={p.name}
-                                    />
-                                  </div>
-                                  <span
-                                    className="text-[10px] font-black uppercase tracking-tight line-clamp-2"
-                                    style={{ color: "var(--brand-dark)" }}
-                                  >
-                                    {p.name}
-                                  </span>
-                                </div>
-                                <div className="p-2 bg-zinc-50 rounded-full shrink-0">
-                                  <Plus
-                                    size={16}
-                                    style={{ color: "var(--brand-primary)" }}
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <div className="flex-1 overflow-y-auto luxury-scrollbar space-y-3 pr-2">
-                    {selectedProductsData.length === 0 && (
-                      <div className="h-full flex flex-col items-center justify-center opacity-20">
-                        <Tag size={50} />
-                        <p className="text-[10px] font-black uppercase mt-5 tracking-widest text-center">
-                          Nicio excepție adăugată
-                        </p>
-                      </div>
-                    )}
-                    {selectedProductsData.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex justify-between items-center bg-zinc-50 p-4 rounded-3xl border border-zinc-100 group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <Package
-                            size={16}
-                            className="text-zinc-400 shrink-0"
-                          />
-                          <span
-                            className="text-[10px] font-black uppercase truncate max-w-[250px]"
-                            style={{ color: "var(--brand-dark)" }}
-                          >
-                            {p.name}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => toggleProductSelection(p)}
-                          className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-all shrink-0"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="space-y-1 w-full relative">
+                <Label
+                  className="text-[10px] font-black uppercase tracking-widest"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  Valoare Reducere
+                </Label>
+                <input
+                  type="number"
+                  className="w-full text-center text-6xl sm:text-7xl font-serif italic font-black bg-transparent outline-none py-2"
+                  style={{ color: "var(--dark-amethyst)" }}
+                  value={voucherFormData.discount_value || ""}
+                  placeholder="0"
+                  onChange={(e) =>
+                    setVoucherFormData({
+                      ...voucherFormData,
+                      discount_value: Number(e.target.value),
+                    })
+                  }
+                />
               </div>
             </div>
           </div>
 
-          <footer className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 bg-white border-t border-zinc-100 shrink-0">
-            <button
-              onClick={handleSaveVoucher}
-              className="w-full py-6 sm:py-8 rounded-[3rem] text-white text-[12px] sm:text-[14px] font-black uppercase tracking-[0.4em] sm:tracking-[0.5em] shadow-[0_20px_40px_-15px_rgba(0,85,255,0.4)] hover:shadow-[0_20px_50px_-10px_rgba(0,85,255,0.6)] hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-4 border-none"
-              style={{ background: brand.primary_gradient, color: "#FFFFFF" }}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-4"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
             >
-              <MousePointerClick size={22} color="#FFFFFF" strokeWidth={3} />
-              <span className="drop-shadow-sm">
-                {isEditingVoucher
-                  ? "Confirmă Actualizarea"
-                  : "Lansează Voucherul în Rețea"}
-              </span>
-            </button>
-          </footer>
+              <Label
+                className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                <ShoppingBag size={14} /> Prag Comandă Min. (RON)
+              </Label>
+              <input
+                type="number"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xl font-black text-center outline-none transition-all text-[var(--dark-amethyst)]"
+                style={{
+                  boxShadow:
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
+                value={voucherFormData.min_order_value || ""}
+                placeholder="0"
+                onChange={(e) =>
+                  setVoucherFormData({
+                    ...voucherFormData,
+                    min_order_value: Number(e.target.value),
+                  })
+                }
+                onFocus={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                  e.target.style.backgroundColor = "#ffffff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                  e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                }}
+              />
+            </div>
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-4"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <Label
+                className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                <Activity size={14} /> Limită Utilizări
+              </Label>
+              <input
+                type="number"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xl font-black text-center outline-none transition-all text-[var(--dark-amethyst)]"
+                style={{
+                  boxShadow:
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
+                value={voucherFormData.usage_limit || ""}
+                placeholder="∞"
+                onChange={(e) =>
+                  setVoucherFormData({
+                    ...voucherFormData,
+                    usage_limit: Number(e.target.value),
+                  })
+                }
+                onFocus={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                  e.target.style.backgroundColor = "#ffffff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                  e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                }}
+              />
+            </div>
+          </div>
+
+          <div
+            className="p-6 sm:p-8 rounded-[1.5rem] flex flex-col justify-center space-y-4 shadow-xl"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle size={18} className="text-white" />
+              <h4 className="text-[11px] font-black uppercase text-white tracking-widest">
+                Targetare Avansată
+              </h4>
+            </div>
+            <p className="text-[10px] font-bold text-white/80 uppercase leading-relaxed">
+              Dacă lași selecțiile goale, voucherul se va aplica GLOBAL pe
+              întregul coș. Alege categorii sau produse pentru a crea oferte
+              limitate (Ex: doar pe categoria Rochii).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-4"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <Label
+                className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                Alege Categoriile
+              </Label>
+              <div className="flex flex-wrap gap-2 max-h-[250px] overflow-y-auto luxury-scrollbar pr-2 pt-2">
+                {categories.map((cat) => {
+                  const active =
+                    voucherFormData.applicable_category_ids.includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() =>
+                        setVoucherFormData((p) => ({
+                          ...p,
+                          applicable_category_ids: active
+                            ? p.applicable_category_ids.filter(
+                                (id) => id !== cat.id,
+                              )
+                            : [...p.applicable_category_ids, cat.id],
+                        }))
+                      }
+                      className={`px-4 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg border transition-all ${active ? "text-white shadow-md border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                      style={{
+                        background: active
+                          ? "var(--primary-gradient)"
+                          : undefined,
+                        borderColor: !active
+                          ? "color-mix(in srgb, var(--royal-violet) 15%, transparent)"
+                          : undefined,
+                        color: !active ? "var(--dark-amethyst)" : "white",
+                      }}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-4"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <Label
+                className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                Fixare pe Articole Individuale
+              </Label>
+              <div className="relative">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+                  size={14}
+                  style={{
+                    color:
+                      "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+                  }}
+                />
+                <input
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl pl-10 pr-4 py-3 text-xs font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                  style={{
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  placeholder="Caută în baza de date..."
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                />
+                <AnimatePresence>
+                  {searchedProducts.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute top-[calc(100%+8px)] left-0 w-full bg-white shadow-2xl rounded-xl border z-50 overflow-hidden"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
+                    >
+                      <div className="max-h-[200px] overflow-y-auto luxury-scrollbar">
+                        {searchedProducts.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              toggleProductSelection(p);
+                              setProductSearchTerm("");
+                            }}
+                            className="p-3 hover:bg-zinc-50 cursor-pointer flex items-center justify-between border-b last:border-none"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="size-10 bg-white rounded-lg overflow-hidden border shrink-0 p-1"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                }}
+                              >
+                                <img
+                                  src={p.image_url || "/placeholder.png"}
+                                  className="w-full h-full object-contain"
+                                  alt=""
+                                />
+                              </div>
+                              <span
+                                className="text-[10px] font-bold uppercase tracking-tight line-clamp-1"
+                                style={{ color: "var(--dark-amethyst)" }}
+                              >
+                                {p.name}
+                              </span>
+                            </div>
+                            <div
+                              className="p-1.5 rounded-md"
+                              style={{
+                                background:
+                                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                                color: "var(--royal-violet)",
+                              }}
+                            >
+                              <Plus size={14} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div className="max-h-[150px] overflow-y-auto luxury-scrollbar space-y-2 pr-2">
+                {selectedProductsData.length === 0 && (
+                  <p
+                    className="text-[9px] font-black uppercase tracking-widest text-center py-4"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                    }}
+                  >
+                    Nicio excepție adăugată
+                  </p>
+                )}
+                {selectedProductsData.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex justify-between items-center bg-white p-2 rounded-lg border group"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden pr-2">
+                      <Package
+                        size={12}
+                        className="shrink-0"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                        }}
+                      />
+                      <span
+                        className="text-[9px] font-bold uppercase truncate"
+                        style={{ color: "var(--dark-amethyst)" }}
+                      >
+                        {p.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => toggleProductSelection(p)}
+                      className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all shrink-0"
+                    >
+                      <X size={14} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            onClick={() => setIsVoucherModalOpen(false)}
+            className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+            }}
+          >
+            Anulează
+          </button>
+          <button
+            onClick={handleSaveVoucher}
+            className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            <MousePointerClick size={14} strokeWidth={2.5} />
+            {isEditingVoucher ? "Salvează Modificări" : "Generează Voucher"}
+          </button>
+        </footer>
       </AdminDialogShell>
 
-      {/* ── MODAL CONFIGURARE BANNER EDITORIAL (GLOBAL + LOCAL SUPORT) ── */}
+      {/* ── MODAL CONFIGURARE BANNER ── */}
       <AdminDialogShell
         open={isBannerModalOpen}
         onOpenChange={setIsBannerModalOpen}
-        size="lg"
+        size="md"
+        mobileVariant="modal"
+        className="sm:h-[80vh] sm:max-h-[80vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
-        <AdminDialogTitle>
-          {isEditingBanner ? "Editează Bannerul" : "Banner Nou de Campanie"}
+        <AdminDialogTitle className="sr-only">
+          Configurare Banner
         </AdminDialogTitle>
-        <header className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 flex justify-between items-center bg-white border-b border-zinc-100 shrink-0">
+        <header
+          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           <div>
-            <h2
-              className="text-2xl sm:text-3xl font-serif italic tracking-tight"
-              style={{ color: "var(--brand-dark)" }}
-            >
-              {isEditingBanner
-                ? "Editează Bannerul"
-                  : "Banner Nou de Campanie"}
-              </h2>
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">
-                Sistemul Editorial de Landing Page-uri
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
+              {isEditingBanner ? "Editează Banner" : "Banner Nou"}
+            </h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--royal-violet)" }}
+              />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Sistem Editorial Landing Pages
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 bg-zinc-50 px-5 py-2.5 rounded-2xl border border-zinc-100">
-                <span className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                  Publicat
-                </span>
-                <button
-                  onClick={() =>
-                    setBannerFormData({
-                      ...bannerFormData,
-                      is_active: !bannerFormData.is_active,
-                    })
-                  }
-                  className={`w-12 h-6 rounded-full transition-all duration-300 relative flex items-center px-1 shadow-inner ${bannerFormData.is_active ? "bg-emerald-500" : "bg-zinc-300"}`}
-                >
-                  <motion.div
-                    layout
-                    className="w-4 h-4 bg-white rounded-full shadow-md"
-                    animate={{ x: bannerFormData.is_active ? 24 : 0 }}
-                  />
-                </button>
-              </div>
-              <button
-                onClick={() => setIsBannerModalOpen(false)}
-                className="size-12 bg-zinc-50 border border-zinc-100 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+          </div>
+          <div className="flex items-center gap-3">
+            <div
+              className="hidden sm:flex items-center gap-3 bg-zinc-50 px-3 py-1.5 rounded-xl border"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <span
+                className="text-[8px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
               >
-                <X size={20} />
-              </button>
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-10 luxury-scrollbar bg-[#FAFAFA]">
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                Targetare Afișare *
-              </Label>
-              <select
-                className="w-full h-14 bg-white border border-zinc-200 rounded-2xl px-6 text-xs font-black uppercase outline-none shadow-sm focus:border-[var(--brand-primary)] transition-all"
-                value={bannerFormData.category_id}
-                onChange={(e) =>
+                Afișare
+              </span>
+              <button
+                onClick={() =>
                   setBannerFormData({
                     ...bannerFormData,
-                    category_id: e.target.value,
+                    is_active: !bannerFormData.is_active,
                   })
                 }
+                className={`w-9 h-4.5 rounded-full transition-all duration-300 relative flex items-center px-1 shadow-inner ${bannerFormData.is_active ? "bg-emerald-500" : "bg-zinc-300"}`}
               >
-                <option value="global_campaign_id">
-                  🌍 CAMPANIE GLOBALA (TOT SITE-UL)
-                </option>
-                {(categories || []).map((cat) => (
-                  <optgroup label={cat.name} key={cat.id}>
-                    <option value={cat.id}>Toată secțiunea {cat.name}</option>
-                    {cat.subcategories?.map((sub: any) => (
-                      <option key={sub.id} value={sub.id}>
-                        -- {sub.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-
-            {/* ── ZONA DE UPLOAD UNIFICATĂ (O SINGURĂ IMAGINE -> 2 VERSIUNI GENERATE) ── */}
-            <div className="space-y-4">
-              <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                Imagine Campanie (Automat Desktop Wide & Mobile Portrait) *
-              </Label>
-
-              <input
-                type="file"
-                ref={bannerInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleBannerUpload}
-              />
-
-              <div
-                onClick={() =>
-                  !uploadingImage && bannerInputRef.current?.click()
-                }
-                className="p-6 bg-white border-2 border-dashed border-zinc-200 hover:border-[var(--brand-primary)] rounded-[2.5rem] shadow-sm cursor-pointer transition-all group relative overflow-hidden"
-              >
-                <div className="aspect-[21/7] w-full bg-zinc-50 rounded-2xl overflow-hidden border border-zinc-100 relative flex flex-col items-center justify-center gap-3 text-center p-6">
-                  {uploadingImage ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <Loader2
-                        size={36}
-                        className="text-[var(--brand-primary)] animate-spin"
-                      />
-                      <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                        Se compilează variantele responsive...
-                      </span>
-                    </div>
-                  ) : bannerFormData.image_desktop_url ? (
-                    <div className="absolute inset-0 w-full h-full">
-                      <img
-                        src={bannerFormData.image_desktop_url}
-                        alt="Desktop Dynamic Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white font-black text-[8px] uppercase tracking-widest px-3 py-1.5 rounded-xl border border-white/10">
-                        ✓ Ambele variante stocate asincron
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <UploadCloud
-                        size={36}
-                        className="text-zinc-400 group-hover:text-[var(--brand-primary)] transition-colors"
-                      />
-                      <div className="space-y-1">
-                        <p className="text-[11px] font-black text-zinc-500 uppercase tracking-wider">
-                          Selectează imaginea master pentru banner
-                        </p>
-                        <p className="text-[9px] text-zinc-400 font-medium">
-                          Sistemul S3 generează automat rezoluții diferite
-                          pentru desktop (1600px) și mobil (600px).
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ── ALTE DATE ADMINISTRATIVE CONTEXTUALE ── */}
-            <div className="bg-white p-8 rounded-[2rem] border border-zinc-200 shadow-sm space-y-6">
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                  Titlu Principal (Mare) *
-                </Label>
-                <input
-                  className="w-full h-14 bg-zinc-50 rounded-2xl px-6 text-lg font-black uppercase outline-none focus:border focus:border-[var(--brand-primary)]/30"
-                  placeholder="ex: SEASONAL SALE"
-                  value={bannerFormData.title}
-                  onChange={(e) =>
-                    setBannerFormData({
-                      ...bannerFormData,
-                      title: e.target.value,
-                    })
-                  }
+                <motion.div
+                  layout
+                  className="w-3 h-3 bg-white rounded-full shadow-sm"
+                  animate={{ x: bannerFormData.is_active ? 18 : 0 }}
                 />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                    Subtitlu (Opțional)
-                  </Label>
-                  <input
-                    className="w-full h-12 bg-zinc-50 rounded-xl px-5 text-xs font-bold outline-none focus:border focus:border-[var(--brand-primary)]/30"
-                    placeholder="Până la -30% la selecția de geci."
-                    value={bannerFormData.subtitle}
-                    onChange={(e) =>
-                      setBannerFormData({
-                        ...bannerFormData,
-                        subtitle: e.target.value,
-                      })
-                    }
+              </button>
+            </div>
+            <button
+              onClick={() => setIsBannerModalOpen(false)}
+              className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <X size={14} strokeWidth={2.5} />
+            </button>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-8 luxury-scrollbar relative z-10">
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-2 group relative"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <Label
+              className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
+            >
+              Targetare Afișare *
+            </Label>
+            <select
+              className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-bold uppercase tracking-wider outline-none appearance-none cursor-pointer transition-all"
+              style={{
+                color: "var(--dark-amethyst)",
+                boxShadow:
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+              value={bannerFormData.category_id}
+              onChange={(e) =>
+                setBannerFormData({
+                  ...bannerFormData,
+                  category_id: e.target.value,
+                })
+              }
+              onFocus={(e) => {
+                e.target.style.boxShadow =
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                e.target.style.backgroundColor = "#ffffff";
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow =
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+              }}
+            >
+              <option value="global_campaign_id">
+                🌍 CAMPANIE GLOBALĂ (TOT SITE-UL)
+              </option>
+              {(categories || []).map((cat) => (
+                <optgroup label={cat.name} key={cat.id}>
+                  <option value={cat.id}>Toată secțiunea {cat.name}</option>
+                  {cat.subcategories?.map((sub: any) => (
+                    <option key={sub.id} value={sub.id}>
+                      -- {sub.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-4"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <Label
+              className="text-[9px] font-black uppercase tracking-widest ml-1 flex items-center gap-2"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
+            >
+              <ImageIcon size={13} /> Imagine Campanie (Auto Desktop & Mobile) *
+            </Label>
+            <input
+              type="file"
+              ref={bannerInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleBannerUpload}
+            />
+            <div
+              onClick={() => !uploadingImage && bannerInputRef.current?.click()}
+              className="aspect-[21/7] w-full bg-white rounded-xl overflow-hidden border-2 border-dashed relative flex flex-col items-center justify-center gap-3 text-center p-6 cursor-pointer group transition-all"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+              }}
+            >
+              {uploadingImage ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2
+                    size={24}
+                    className="animate-spin"
+                    style={{ color: "var(--royal-violet)" }}
                   />
+                  <span
+                    className="text-[9px] font-black uppercase tracking-wider"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                    }}
+                  >
+                    Se compilează variantele responsive...
+                  </span>
                 </div>
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-black uppercase ml-2 text-zinc-500 tracking-widest">
-                    Text Buton
-                  </Label>
-                  <input
-                    className="w-full h-12 bg-zinc-50 rounded-xl px-5 text-[10px] font-black uppercase tracking-widest outline-none focus:border focus:border-[var(--brand-primary)]/30"
-                    placeholder="DESCOPERĂ COLECȚIA"
-                    value={bannerFormData.button_text}
-                    onChange={(e) =>
-                      setBannerFormData({
-                        ...bannerFormData,
-                        button_text: e.target.value,
-                      })
-                    }
+              ) : bannerFormData.image_desktop_url ? (
+                <div className="absolute inset-0 w-full h-full">
+                  <img
+                    src={bannerFormData.image_desktop_url}
+                    alt="Preview"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 bg-white/10">
+                      <UploadCloud size={14} /> Schimbă imaginea
+                    </span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <UploadCloud
+                    size={28}
+                    className="transition-colors group-hover:scale-110 duration-300"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                    }}
+                  />
+                  <div className="space-y-1">
+                    <p
+                      className="text-[10px] font-black uppercase tracking-wider"
+                      style={{ color: "var(--dark-amethyst)" }}
+                    >
+                      Apasă pentru Upload
+                    </p>
+                    <p
+                      className="text-[8px] font-medium"
+                      style={{
+                        color:
+                          "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                      }}
+                    >
+                      Sistemul va genera automat rezoluții optime pentru toate
+                      device-urile.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          <footer className="px-6 sm:px-8 md:px-12 py-6 sm:py-8 bg-white border-t border-zinc-100 shrink-0">
-            <button
-              onClick={handleSaveBanner}
-              disabled={uploadingImage}
-              className="w-full py-6 rounded-[2rem] text-white text-xs font-black uppercase tracking-[0.4em] shadow-xl hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-3 border-none disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: brand.primary_gradient }}
-            >
-              <LayoutTemplate size={18} />
-              <span>
-                {isEditingBanner ? "Salvează Modificările" : "Publică Bannerul"}
-              </span>
-            </button>
-          </footer>
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-6"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <div className="space-y-2 group relative">
+              <Label
+                className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                Titlu Principal (Mare) *
+              </Label>
+              <input
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-black uppercase outline-none transition-all text-[var(--dark-amethyst)]"
+                style={{
+                  boxShadow:
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
+                placeholder="EX: SEASONAL SALE"
+                value={bannerFormData.title}
+                onChange={(e) =>
+                  setBannerFormData({
+                    ...bannerFormData,
+                    title: e.target.value,
+                  })
+                }
+                onFocus={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                  e.target.style.backgroundColor = "#ffffff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                  e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 group relative">
+                <Label
+                  className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  Subtitlu (Opțional)
+                </Label>
+                <input
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                  style={{
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  placeholder="Până la -30% la selecție."
+                  value={bannerFormData.subtitle}
+                  onChange={(e) =>
+                    setBannerFormData({
+                      ...bannerFormData,
+                      subtitle: e.target.value,
+                    })
+                  }
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                />
+              </div>
+              <div className="space-y-2 group relative">
+                <Label
+                  className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  Text Buton
+                </Label>
+                <input
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-[10px] font-black uppercase tracking-widest outline-none transition-all text-[var(--dark-amethyst)]"
+                  style={{
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  placeholder="DESCOPERĂ COLECȚIA"
+                  value={bannerFormData.button_text}
+                  onChange={(e) =>
+                    setBannerFormData({
+                      ...bannerFormData,
+                      button_text: e.target.value,
+                    })
+                  }
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            onClick={() => setIsBannerModalOpen(false)}
+            className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+            }}
+          >
+            Anulează
+          </button>
+          <button
+            onClick={handleSaveBanner}
+            disabled={uploadingImage}
+            className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+            style={{ background: "var(--primary-gradient)" }}
+          >
+            <LayoutTemplate size={14} />
+            {isEditingBanner ? "Salvează Modificări" : "Publică Bannerul"}
+          </button>
+        </footer>
       </AdminDialogShell>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
+      `,
+        }}
+      />
     </div>
   );
 };
