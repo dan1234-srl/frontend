@@ -406,7 +406,7 @@ const AdminCategories = () => {
         <div
           className="divide-y"
           style={{
-            divideColor:
+            borderColor:
               "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
           }}
         >
