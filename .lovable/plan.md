@@ -1,102 +1,121 @@
-## AdminDialogShell — redesign premium
+## Optimizare cele 8 pagini admin + AdminOrderDetail
 
-Obiectiv: să nu mai pară un simplu modal Radix. Vrem o "scenă" cu profunzime, intrare cinematică și o formă cu personalitate (asimetrică, cu accente vizuale Evem).
+Toate paginile folosesc deja fetch direct (`API_BASE_URL`), NU Supabase. Niciuna nu are modale Radix — fie nu au modale, fie folosesc panouri full-screen custom (`AdminEmailTemplates`) sau hover-overlays (`AdminThemeSettings`).
 
-### 1. Formă & structură vizuală
+### Pattern aplicat uniform pentru toate
 
-**Desktop**
-- Renunțăm la dreptunghiul `rounded-[2rem]` plat. Trecem la un container cu:
-  - colț stânga-sus tăiat în unghi (clip-path) — semnătură vizuală Evem
-  - bară verticală subțire `bg-[var(--royal-violet)]` la stânga (4px) cu eyebrow rotit 90°
-  - "halo" gradient extern (un al doilea div absolut, blur 80px, opacitate 0.25, culoare violet/amethyst) care pulsează lent
-- Header cu un `aurora` subtil (gradient animat în fundal, opacitate ~0.06)
-- Footer cu o linie superioară din 1px gradient (în loc de `border-zinc-100` plat)
-- Buton close ca pastilă cu micro-rotație la hover (45°), plasat *în afara* shell-ului (top-right -16/-16) — semnal premium tip Apple/Hermès
+**Performanță (SWR + sessionStorage)**
+- Înlocuiesc `useEffect + fetch + setState` cu `useAdminSWR(key, fetcher)` din `src/lib/admin-swr.ts`.
+- Cheia per pagină: `admin:<resource>:<paramsHash>` (de ex. `admin:reviews:status=pending|page=1|q=...`).
+- TTL 60s pentru liste, 120s pentru detalii statice (theme, email templates).
+- Rezultat: pe revisit + 2G/3G pagina apare instant din sessionStorage; revalidare în background.
 
-**Mobile (bottom-sheet)**
-- Drag handle real: bară 36×4 cu hover/active feedback + reacție la swipe-down (drag-to-close)
-- Top corners `rounded-t-[28px]` + un al doilea strat "lift" în spate (offset 6px, opacitate 40%) ca să dea senzație de carduri stivuite
-- Safe-area + un mic indicator de scroll (linie gradient când conținutul depășește)
+**Tematică vizuală — aceeași ca pe Dashboard/Products/Orders**
+- Card containers cu `rounded-[28px] border border-zinc-100 bg-white shadow-[0_1px_0_rgba(0,0,0,0.02),0_30px_60px_-30px_rgba(16,0,43,0.12)]`.
+- Eyebrow `text-[10px] font-black uppercase tracking-[0.4em] text-[var(--royal-violet)]` + heading-serif title.
+- Skeleton-uri în loc de `Loader2` central (zero CLS).
+- Iconițe în pastile colorate cu `bg-[color]/10 text-[color]`, accent `var(--royal-violet)`.
 
-### 2. Animație de intrare (înlocuiește fade + slide-from-top-2)
+**Animații (fără jitter)**
+- Container principal `motion.div` cu fade+`y:8→0`, durată 200ms, ease `[0.22,1,0.36,1]`.
+- Liste cu `staggerChildren: 0.03` pe primele 8 iteme, după care fără animație (pentru perf).
+- `useReducedMotion` respectat.
 
-Pe desktop, secvență coregrafiată (toate pe transform/opacity, GPU-only, ~320ms total):
-1. **Overlay**: fade 180ms + `backdrop-blur` de la 0 → 8px (animat via `@property --blur`)
-2. **Halo gradient**: scale 0.6 → 1, opacity 0 → 0.25, 280ms, ease-out
-3. **Shell**: entry de tip "lift & settle"
-   - `clip-path` se deschide din centru (inset 40% → 0) pe 260ms — efect "iris/curtain"
-   - simultan `translateY(20px) scale(0.96) → 0/1` cu `cubic-bezier(0.22, 1, 0.36, 1)`
-4. **Conținut intern** (header → body → footer): stagger 40ms fiecare, `translateY(8px) → 0`, opacity 0 → 1
-
-Pe mobile: sheet face slide-up 240ms cu `cubic-bezier(0.34, 1.56, 0.64, 1)` (mic overshoot premium, NU bouncy gimicky), + drag-handle pulse o dată la apariție.
-
-`prefers-reduced-motion`: degradare la fade simplu 150ms, fără clip-path/stagger.
-
-### 3. Detalii "premium" suplimentare
-
-- `box-shadow` în 3 straturi (umbră aproape + umbră difuză + glow violet 0.08) — nu un singur `shadow-2xl` generic
-- Border `1px solid` cu gradient (mask trick) în loc de zinc-100
-- Pe `data-[state=closed]`: closing reverse natural (shell se restrânge spre punctul de origin, NU doar fade-out)
-- Suport `originRef` opțional: dacă pasăm referința butonului care a deschis dialog-ul, animația pornește din coordonatele acelui buton (efect "Apple Magic")
-
-### 4. API păstrat compatibil
-
-`AdminDialogShell` păstrează exact aceeași semnătură (`open`, `onOpenChange`, `size`, `mobileVariant`, `className`, `children`, `hideOverlay`). Adăugăm doar:
-- `accentColor?: string` (default royal-violet)
-- `originRef?: React.RefObject<HTMLElement>` (opțional, pentru magic-origin animation)
-
-Toate cele 7 modale admin migrate anterior funcționează fără schimbări.
+**Modale → AdminDialog / AdminDialogShell**
+- Toate panourile/popup-urile devin `AdminDialog` (cu eyebrow/title/footer) sau `AdminDialogShell` (când e nevoie de control total — ex. editor full-screen).
+- Mobile = bottom-sheet cu drag-to-close (deja implementat în shell-ul nou).
+- Confirmări (delete, etc.) folosesc `AdminDialog` size `sm` în loc de `confirm()` native.
 
 ---
 
-## Ce a mai rămas în AdminLayout
+### Per pagină — modificări specifice
 
-Recomandări concrete, în ordinea impactului:
+**1. CollectionsAdmin.tsx** (589 linii)
+- SWR: `admin:collections:list` + `admin:collections:<name>:products?page=N&q=...`.
+- Layout nou: 2 coloane desktop (sidebar listă colecții 320px + panel produse). Mobile = drawer cu lista.
+- Modal nou „Adaugă/Editează colecție" → `AdminDialog` size `md`.
+- Confirmare ștergere → `AdminDialog` size `sm`.
 
-1. **Sidebar pe desktop — colaps cu jitter**
-   `width` animat prin `transition-all duration-300` pe `<aside>`. Modifică layout-ul → reflow pe fiecare frame. De înlocuit cu `transform: translateX` pe conținut + `width` fixă în 2 stări, sau cu `framer-motion` layout animation.
+**2. AdminImportFeed.tsx** (1478 linii — cel mai mare)
+- SWR pentru sursele de import (`admin:import:sources`), preview (`admin:import:preview:<id>`), istoric (`admin:import:history`).
+- WebSocket-ul de progres rămâne (real-time, nu beneficiază de cache).
+- Modale: „Adaugă sursă" + „Editare mapping" + „Preview" → toate `AdminDialog`/`Shell` (size `lg` pentru mapping editor, `full` pentru preview).
+- Split: extrag în 3 sub-componente (`<SourcesList>`, `<MappingEditor>`, `<PreviewPanel>`) — fiecare lazy via `React.lazy` pentru a tăia bundle inițial.
 
-2. **Mobile sidebar — buton close suprapus**
-   Butonul `X` e plasat absolute peste primul item din meniu. De mutat în header-ul sidebar-ului (lângă logo).
+**3. AdminExportFeed.tsx** (295 linii)
+- SWR `admin:export:feeds`.
+- Card-uri cu acțiuni (Google Merchant / Facebook). Modal de configurare → `AdminDialog` size `md`.
 
-3. **`RouteProgress` — montat hard pe fiecare schimbare**
-   Acum apare 650ms fix, indiferent dacă pagina e deja în cache (instant). De legat de `isValidating` din `useAdminSWR` → bara apare DOAR cât durează revalidarea reală. Altfel pare fake-loading.
+**4. AdminReviews.tsx** (427 linii)
+- SWR `admin:reviews:<status>:page=N:q=...`, `refreshInterval: 30s` pe tab Pending.
+- Tab-bar (Pending / Approved / Rejected) cu indicator `layoutId` framer-motion.
+- Modal „Vezi recenzie completă" cu acțiuni (Approve / Reject / Delete) → `AdminDialog` size `lg`.
+- Confirmare ștergere → `AdminDialog` size `sm`.
 
-4. **Tranziția slide între pagini — fără direcție semantică**
-   Mereu intră de la dreapta (`x: 12 → 0`). Mai premium: direcție în funcție de ierarhia meniului (sus/jos sau stânga/dreapta în funcție de grupul activ). Sau simplu: doar opacity + 4px translate, fără direcție, ca să nu pară "swipe" aleator.
+**5. AdminWishlistAnalytics.tsx** (264 linii)
+- SWR `admin:wishlist:trends:<range>`.
+- Layout: KPI cards sus + grafic (Recharts deja folosit?) + tabel top-produse cu virtualizare la >50 rânduri (`@tanstack/react-virtual`).
+- Modal „Detalii produs wishlist" → `AdminDialog` size `md`.
 
-5. **Logo + eyebrow „Atelier Suite" — alinierea sare** la collapse
-   Când `isSidebarOpen` devine `false`, eyebrow-ul dispare brusc. De adăugat `AnimatePresence` cu fade 150ms.
+**6. AdminUsers.tsx** (423 linii)
+- SWR `admin:users:page=N:q=...:role=...`.
+- Modale: „Editare utilizator" (`AdminDialog` lg, cu tab-uri Profil/Rol/Sesiuni), „Resetare parolă" (sm), „Ștergere" (sm).
+- Dropdown actions rămâne `DropdownMenu` shadcn.
 
-6. **Active item — doar background change**
-   Lipsește un indicator vizual (bară verticală 2px stânga, `bg-[var(--royal-violet)]`) care să gliseze între iteme cu `layoutId` (framer-motion). Detaliu mic, impact mare pe percepție.
+**7. AdminThemeSettings.tsx** (617 linii)
+- SWR `admin:theme:current` + cache local pentru preview live.
+- Înlocuiesc hover-overlay-ul de la palete (line 569) cu un `AdminDialog` „Editor paletă" size `lg` care arată color-pickers + preview live.
+- Modal „Aplică temă pe site" cu confirmare (sm).
+- Salvarea folosește `useTransition` pentru a nu bloca UI-ul.
 
-7. **Header mobile — gol în mijloc**
-   Logo centrat + două butoane goale (`size-10` placeholder dreapta). De adăugat: buton notificări / quick-search / user avatar (deja avem `user` în context, neutilizat).
+**8. AdminEmailTemplates.tsx** (409 linii)
+- SWR `admin:email-templates:list` + `admin:email-template:<id>`.
+- Înlocuiesc panoul full-screen custom (line 297 `fixed inset-0`) cu `AdminDialogShell` size `full` (capătă automat shell-ul cinematic — clip-path iris, halo, close extern).
+- Preview live al template-ului în iframe sandbox, lazy-loaded.
+- Modal „Trimite test" → `AdminDialog` size `md`.
 
-8. **`SidebarContent` memo + `useLocation` înăuntru**
-   `useLocation` în interiorul componentei memoizate anulează parțial `memo`. De ridicat `location.pathname` în prop sau de eliminat `memo`.
-
-9. **`menuGroups` recreat la fiecare render**
-   Constă din obiecte noi → fiecare render trimite props noi la `SidebarContent`. De mutat în afara componentei sau în `useMemo`.
-
-10. **Scrollbar — `luxury-scrollbar` doar în sidebar**
-    Main content folosește scrollbar nativ. De aplicat aceeași clasă pe `<main>` pentru consistență.
-
-11. **Footer „Ieșire Site" duce la `/`, nu face logout**
-    Numele sugerează logout, dar doar navighează. De clarificat: fie redenumit "Înapoi la site", fie chemat `signOut()` din `AuthContext`.
+**9. AdminOrderDetail.tsx** (517 linii) — redesign complet
+- SWR `admin:order:<id>` + revalidate pe focus.
+- Layout nou bazat pe pattern Dashboard:
+  - **Hero header**: număr comandă, status pill, dată, total — pe fundal cu aurora subtilă violet.
+  - **Grid 12 coloane**: stânga (8 col) = timeline + lista produse; dreapta (4 col) = client, adresă, plată, livrare, acțiuni.
+  - **Timeline vertical** cu status-uri colorate (pending → confirmed → shipped → delivered).
+  - **Card produse** cu imagini lazy + smart-image, nu Skeleton infinit.
+- Acțiuni rapide („Marchează expediată", „Refund", „Trimite factură", „Vezi în GLS") → `AdminDialog` confirmări.
+- Modal „Refund parțial" cu lista produselor → `AdminDialog` size `lg`.
+- Mobile: sticky bottom action bar cu butoanele principale (în loc de butoane înghesuite în card-uri).
 
 ---
 
-## Tehnic — fișiere atinse
+### Tehnic — fișiere atinse
 
-- `src/components/admin/AdminDialogShell.tsx` — rescris (clip-path, halo, stagger, origin animation)
-- `src/index.css` — câteva keyframes noi (`@keyframes adminShellIn`, `@property --shell-clip`) și un utility `.admin-shell-halo`
-- `src/pages/admin/AdminLayout.tsx` — punctele 1-11 de mai sus, dar într-un PR separat după ce confirmi prioritățile
+- edited `src/pages/admin/CollectionsAdmin.tsx`
+- edited `src/pages/admin/AdminImportFeed.tsx` (+ 3 sub-componente lazy)
+- edited `src/pages/admin/AdminExportFeed.tsx`
+- edited `src/pages/admin/AdminReviews.tsx`
+- edited `src/pages/admin/AdminWishlistAnalytics.tsx`
+- edited `src/pages/admin/AdminUsers.tsx`
+- edited `src/pages/admin/AdminThemeSettings.tsx`
+- edited `src/pages/admin/AdminEmailTemplates.tsx`
+- edited `src/pages/admin/AdminOrderDetail.tsx`
+- (eventual) created `src/components/admin/AdminConfirmDialog.tsx` — wrapper peste `AdminDialog` size sm pentru confirmări (Ștergi? / Aplici? / etc.) ca să nu mai dublez markup-ul
 
-## Verificare
+### Out of scope
+- Nu schimb endpoint-urile API.
+- Nu schimb shape-ul datelor returnate (doar consumarea în UI).
+- Nu ating `AdminMessages`, `AdminGLS`, `AdminPages`, `AdminGeneralSettings` (nu sunt în meniul admin — separat dacă vrei).
 
-- Build pass, no TS errors
-- Vizual: deschis 1 modal pe fiecare din cele 7 pagini admin (desktop + mobile 375px)
-- `prefers-reduced-motion: reduce` → fallback fade simplu
-- Performanță: animația rulează pe compositor (DevTools → Performance, nu trebuie să apară layout/paint în frame-uri)
+### Verificare
+- Build TS pass.
+- Vizual: deschis fiecare din cele 9 pagini desktop (1311px) + mobile (375px).
+- Network throttling 3G: prima vizită = skeleton scurt, a doua vizită = instant din cache.
+- `prefers-reduced-motion: reduce` → fallback fade simplu.
+- Toate modalele se închid cu Esc + click pe overlay + drag-down (mobile).
+
+### Ordine de execuție propusă
+Mergem în 3 loturi paralele logic, ca să poți testa pe parcurs:
+1. **Lot rapid** (mici, impact mare): `AdminExportFeed`, `AdminWishlistAnalytics`, `AdminReviews`, `AdminUsers`
+2. **Lot OrderDetail + Collections** (redesign vizibil): `AdminOrderDetail`, `CollectionsAdmin`
+3. **Lot greu** (editori complexi): `AdminThemeSettings`, `AdminEmailTemplates`, `AdminImportFeed`
+
+Confirmi ordinea sau preferi alta?
