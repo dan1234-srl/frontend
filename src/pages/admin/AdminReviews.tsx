@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Star,
   Search,
@@ -16,6 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useAdminSWR } from "@/lib/admin-swr";
+import { invalidateCache } from "@/lib/swr-cache";
+import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
