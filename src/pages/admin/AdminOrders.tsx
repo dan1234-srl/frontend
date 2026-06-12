@@ -1,10 +1,11 @@
 /**
  * AdminOrders.tsx
- * Pagina de administrare comenzi - Design Futuristic & Glassmorphism
+ * Pagina de administrare comenzi - Design Futuristic (Glassmorphism & Culoare Dinamică)
  */
 
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Search,
   Eye,
@@ -21,21 +22,17 @@ import {
   Database,
   History,
   Sparkles,
+  X,
 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import OrderReviewModal from "@/components/admin/OrderReviewModal";
-import AdminDialog from "@/components/admin/AdminDialog";
+import {
+  AdminDialogShell,
+  AdminDialogTitle,
+} from "@/components/admin/AdminDialogShell";
 import { readCache, writeCache } from "@/lib/swr-cache";
-import { useAuth } from "@/contexts/AuthContext";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -67,6 +64,7 @@ const AdminOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Toate");
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Synchronous hydration from cache
   const initialKey = buildOrdersKey(1, "", "Toate");
@@ -106,7 +104,7 @@ const AdminOrders = () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: "10",
+        limit: itemsPerPage.toString(),
         search: searchTerm,
         status: statusFilter === "Toate" ? "" : statusFilter,
       });
@@ -224,7 +222,7 @@ const AdminOrders = () => {
 
   const getStatusColor = (status: string) => {
     const s = status?.toLowerCase() || "";
-    if (["livrat", "completed", "paid"].includes(s))
+    if (["livrat", "completed", "paid", "delivered"].includes(s))
       return {
         bg: "color-mix(in srgb, #10b981 8%, transparent)",
         text: "#10b981",
@@ -296,9 +294,9 @@ const AdminOrders = () => {
 
   return (
     <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
-      {/* HEADER LUXURY */}
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
       <header
-        className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 pb-6 pt-4 border-b"
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
         style={{
           borderColor:
             "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -329,7 +327,7 @@ const AdminOrders = () => {
         <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
           <button
             onClick={handleFetchGlobalGlsHistory}
-            className="w-full sm:w-auto bg-white/60 backdrop-blur-xl border hover:bg-white text-zinc-600 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+            className="w-full sm:w-auto bg-white/60 backdrop-blur-xl border hover:bg-white text-zinc-600 px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -347,7 +345,7 @@ const AdminOrders = () => {
           </button>
 
           <button
-            className="w-full sm:w-auto text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
+            className="w-full sm:w-auto text-white px-6 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95"
             style={{ background: "var(--primary-gradient)" }}
           >
             <Download size={14} strokeWidth={2.5} /> Export Date CSV
@@ -355,7 +353,7 @@ const AdminOrders = () => {
         </div>
       </header>
 
-      {/* METRICS GRID */}
+      {/* ── METRICS GRID ───────────────────────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {metricCards.map((item, i) => (
           <div
@@ -387,7 +385,7 @@ const AdminOrders = () => {
         ))}
       </section>
 
-      {/* SEARCH & FILTERS - Glassmorphism */}
+      {/* ── SEARCH & FILTERS (Glassmorphism) ──────────────────────────────── */}
       <section
         className="flex flex-col lg:flex-row gap-3 items-center justify-between p-3 rounded-2xl backdrop-blur-xl border"
         style={{
@@ -406,7 +404,7 @@ const AdminOrders = () => {
           />
           <input
             placeholder="Căutare comandă, client..."
-            className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-md border rounded-xl text-sm font-medium outline-none transition-all placeholder:font-normal"
+            className="w-full pl-10 pr-4 py-3.5 bg-white/60 backdrop-blur-md border rounded-xl text-sm font-medium outline-none transition-all placeholder:font-normal"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -446,7 +444,7 @@ const AdminOrders = () => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full bg-white/60 backdrop-blur-md border rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest outline-none appearance-none transition-colors cursor-pointer"
+              className="w-full bg-white/60 backdrop-blur-md border rounded-xl px-4 py-3.5 text-[10px] font-black uppercase tracking-widest outline-none appearance-none transition-colors cursor-pointer"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -473,14 +471,15 @@ const AdminOrders = () => {
         </div>
       </section>
 
-      {/* DATA TABLE (Futuristic Grid) */}
+      {/* ── DATA LIST (Futuristic Grid) ────────────────────────────────────── */}
       <div
-        className="bg-white rounded-[2rem] shadow-xl shadow-black/[0.02] border overflow-hidden relative z-10 min-h-[400px]"
+        className="bg-white rounded-3xl shadow-xl shadow-black/[0.02] border overflow-hidden relative z-10 min-h-[400px]"
         style={{
           borderColor:
             "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
         }}
       >
+        {/* Header Listă */}
         <div
           className="hidden md:grid grid-cols-12 bg-zinc-50/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4"
           style={{
@@ -494,7 +493,7 @@ const AdminOrders = () => {
           <div className="col-span-2">Dată</div>
           <div className="col-span-2 text-center">Status</div>
           <div className="col-span-1 text-center">Total</div>
-          <div className="col-span-2 text-right pr-2">Acțiuni</div>
+          <div className="col-span-2 text-right pr-4">Acțiuni</div>
         </div>
 
         <div
@@ -505,7 +504,7 @@ const AdminOrders = () => {
           }}
         >
           {loading ? (
-            // Skeleton Row (Modernizat)
+            // Skeleton Row Modernizat
             [...Array(6)].map((_, i) => (
               <div
                 key={i}
@@ -514,143 +513,157 @@ const AdminOrders = () => {
                 <div className="col-span-2">
                   <Skeleton className="h-6 w-20 rounded-md" />
                 </div>
-                <div className="col-span-3 space-y-2">
+                <div className="col-span-3 space-y-2 w-full">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-2 w-24" />
                 </div>
                 <div className="col-span-2">
                   <Skeleton className="h-4 w-20" />
                 </div>
-                <div className="col-span-2 mx-auto">
+                <div className="col-span-2 md:mx-auto">
                   <Skeleton className="h-6 w-24 rounded-full" />
                 </div>
-                <div className="col-span-1 mx-auto">
+                <div className="col-span-1 md:mx-auto">
                   <Skeleton className="h-5 w-12" />
                 </div>
-                <div className="col-span-2 ml-auto flex gap-2">
+                <div className="col-span-2 md:ml-auto flex gap-2 w-full md:w-auto">
                   <Skeleton className="h-8 w-8 rounded-lg" />
                   <Skeleton className="h-8 w-8 rounded-lg" />
                 </div>
               </div>
             ))
           ) : orders.length > 0 ? (
-            orders.map((order) => {
-              const badge = getStatusColor(order?.status);
-              return (
-                <div
-                  key={order?.id || Math.random()}
-                  className="group relative transition-all"
-                >
-                  {/* Hover Fill Gradient */}
-                  <div
-                    className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
-                    style={{
-                      background:
-                        "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
-                    }}
-                  />
+            <AnimatePresence mode="popLayout">
+              {orders.map((order) => {
+                const badge = getStatusColor(order?.status);
+                return (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    key={order?.id || Math.random()}
+                    className="group relative transition-all"
+                  >
+                    {/* Hover Fill Gradient */}
+                    <div
+                      className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                      style={{
+                        background:
+                          "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                      }}
+                    />
 
-                  <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-3.5 relative z-10 gap-3 md:gap-0">
-                    <div className="col-span-2 pl-2">
-                      <span
-                        className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-white border"
-                        style={{
-                          color: "var(--dark-amethyst)",
-                          borderColor:
-                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                        }}
-                      >
-                        #
-                        {order?.order_number?.split("-").pop() ||
-                          order?.id?.toString().slice(0, 8)}
-                      </span>
-                    </div>
+                    <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-4 relative z-10 gap-3 md:gap-0">
+                      {/* ID Comanda */}
+                      <div className="col-span-2 pl-2">
+                        <span
+                          className="text-[10px] font-bold px-2.5 py-1.5 rounded-md bg-white border"
+                          style={{
+                            color: "var(--dark-amethyst)",
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
+                        >
+                          #
+                          {order?.order_number?.split("-").pop() ||
+                            order?.id?.toString().slice(0, 8)}
+                        </span>
+                      </div>
 
-                    <div className="col-span-3 flex flex-col">
-                      <span className="text-[13px] font-bold tracking-tight uppercase text-[var(--dark-amethyst)] group-hover:text-[var(--royal-violet)] transition-colors">
-                        {order?.customer_name || "Client Anonim"}
-                      </span>
-                      <span
-                        className="text-[9px] font-semibold lowercase tracking-widest mt-0.5"
+                      {/* Client */}
+                      <div className="col-span-3 flex flex-col w-full pl-2 md:pl-0 mt-2 md:mt-0">
+                        <span className="text-[13px] font-bold tracking-tight uppercase text-[var(--dark-amethyst)] group-hover:text-[var(--royal-violet)] transition-colors">
+                          {order?.customer_name || "Client Anonim"}
+                        </span>
+                        <span
+                          className="text-[9px] font-semibold lowercase tracking-widest mt-0.5"
+                          style={{
+                            color:
+                              "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                          }}
+                        >
+                          {order?.email || "fără@email.com"}
+                        </span>
+                      </div>
+
+                      {/* Data */}
+                      <div
+                        className="col-span-2 text-[10px] font-bold uppercase tracking-wider pl-2 md:pl-0"
                         style={{
                           color:
-                            "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                            "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                         }}
                       >
-                        {order?.email || "fără@email.com"}
-                      </span>
-                    </div>
+                        {order?.created_at
+                          ? new Date(order.created_at).toLocaleDateString(
+                              "ro-RO",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "---"}
+                      </div>
 
-                    <div
-                      className="col-span-2 text-[10px] font-bold uppercase tracking-wider"
-                      style={{
-                        color:
-                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-                      }}
-                    >
-                      {order?.created_at
-                        ? new Date(order.created_at).toLocaleDateString(
-                            "ro-RO",
-                            {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )
-                        : "---"}
-                    </div>
+                      {/* Status */}
+                      <div className="col-span-2 flex justify-start md:justify-center w-full pl-2 md:pl-0 my-1 md:my-0">
+                        <span
+                          className="px-3 py-1.5 border text-[8px] uppercase tracking-[0.2em] font-black rounded-full whitespace-nowrap shadow-sm"
+                          style={{
+                            backgroundColor: badge.bg,
+                            color: badge.text,
+                            borderColor: badge.border,
+                          }}
+                        >
+                          {order?.status || "N/A"}
+                        </span>
+                      </div>
 
-                    <div className="col-span-2 flex justify-start md:justify-center w-full">
-                      <span
-                        className="px-3 py-1.5 border text-[8px] uppercase tracking-[0.2em] font-black rounded-full whitespace-nowrap"
-                        style={{
-                          backgroundColor: badge.bg,
-                          color: badge.text,
-                          borderColor: badge.border,
-                        }}
+                      {/* Total */}
+                      <div
+                        className="col-span-1 text-left md:text-center text-[14px] font-bold tabular-nums pl-2 md:pl-0"
+                        style={{ color: "var(--dark-amethyst)" }}
                       >
-                        {order?.status || "N/A"}
-                      </span>
-                    </div>
+                        {order?.total_amount?.toLocaleString() || 0}
+                        <span className="text-[8px] font-black ml-1 opacity-50 uppercase tracking-widest">
+                          Ron
+                        </span>
+                      </div>
 
-                    <div
-                      className="col-span-1 text-left md:text-center text-[13px] font-bold tabular-nums"
-                      style={{ color: "var(--dark-amethyst)" }}
-                    >
-                      {order?.total_amount?.toLocaleString() || 0}
-                      <span className="text-[8px] font-black ml-1 opacity-50">
-                        RON
-                      </span>
+                      {/* Actiuni */}
+                      <div className="col-span-2 flex justify-start md:justify-end gap-1.5 w-full md:w-auto pr-2 mt-2 md:mt-0 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 lg:translate-x-2 group-hover:translate-x-0">
+                        <button
+                          className="p-2 bg-white border rounded-lg transition-colors text-rose-500 hover:bg-rose-500 hover:text-white shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, #f43f5e 20%, transparent)",
+                          }}
+                          onClick={() => setCancelOrderContext(order)}
+                          title="Anulează eticheta GLS"
+                        >
+                          <PackageX size={14} />
+                        </button>
+                        <button
+                          className="p-2 bg-white border rounded-lg transition-colors text-[var(--dark-amethyst)] hover:bg-[var(--royal-violet)] hover:text-white shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
+                          onClick={() =>
+                            order?.id && setReviewOrderId(order.id)
+                          }
+                          title="Vizualizează & aprobă"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="col-span-2 flex justify-end gap-1.5 w-full md:w-auto pr-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 lg:translate-x-2 group-hover:translate-x-0">
-                      <button
-                        className="p-2 bg-white border rounded-lg transition-colors text-rose-500 hover:bg-rose-500 hover:text-white"
-                        style={{
-                          borderColor:
-                            "color-mix(in srgb, #f43f5e 20%, transparent)",
-                        }}
-                        onClick={() => setCancelOrderContext(order)}
-                        title="Anulează eticheta GLS"
-                      >
-                        <PackageX size={14} />
-                      </button>
-                      <button
-                        className="p-2 bg-white border rounded-lg transition-colors text-[var(--dark-amethyst)] hover:bg-[var(--royal-violet)] hover:text-white hover:border-[var(--royal-violet)]"
-                        style={{
-                          borderColor:
-                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                        }}
-                        onClick={() => order?.id && setReviewOrderId(order.id)}
-                        title="Vizualizează & aprobă"
-                      >
-                        <Eye size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           ) : (
             <div className="py-32 flex flex-col items-center gap-3">
               <AlertTriangle
@@ -673,8 +686,8 @@ const AdminOrders = () => {
         </div>
       </div>
 
-      {/* PAGINATION */}
-      {totalPages > 1 && !loading && (
+      {/* ── PAGINATION ─────────────────────────────────────────────────────── */}
+      {!loading && totalPages > 1 && (
         <div
           className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm"
           style={{
@@ -711,7 +724,9 @@ const AdminOrders = () => {
                         ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
                         : undefined,
                     color:
-                      currentPage !== i + 1 ? "var(--dark-amethyst)" : "white",
+                      currentPage !== i + 1
+                        ? "var(--dark-amethyst)"
+                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                   }}
                 >
                   {i + 1}
@@ -748,120 +763,131 @@ const AdminOrders = () => {
         </div>
       )}
 
-      {/* --- MODALE --- */}
+      {/* ── MODALE FUTURISTICE ───────────────────────────────────────────── */}
       <OrderReviewModal
         orderId={reviewOrderId}
         onClose={() => setReviewOrderId(null)}
         onActionComplete={fetchOrders}
       />
 
-      <AdminDialog
+      <AdminDialogShell
         open={showGlsHistory}
         onOpenChange={(o) => !o && setShowGlsHistory(false)}
-        eyebrow="Tranzacțional · GLS"
-        title="Istoric GLS"
-        description="Toate coletele din ultimele 60 de zile"
         size="lg"
+        className="sm:h-[80vh] sm:max-h-[80vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
-        {isFetchingHistory ? (
-          <div className="flex flex-col items-center justify-center h-64 opacity-50">
-            <Loader2
-              size={32}
-              className="animate-spin mb-4"
-              style={{ color: "var(--royal-violet)" }}
-            />
-            <p
-              className="text-[9px] font-black uppercase tracking-widest"
-              style={{ color: "var(--dark-amethyst)" }}
-            >
-              Se interoghează GLS...
-            </p>
+        <AdminDialogTitle className="sr-only">Istoric GLS</AdminDialogTitle>
+        <header
+          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
+              Istoric GLS
+            </h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--royal-violet)" }}
+              />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Colete Ultimele 60 de Zile
+              </p>
+            </div>
           </div>
-        ) : glsHistoryData.length > 0 ? (
-          <div className="overflow-x-auto -mx-6 sm:-mx-8 px-6 sm:px-8 custom-scrollbar">
-            <Table className="min-w-[640px]">
-              <TableHeader
-                className="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm border-b"
+          <button
+            onClick={() => setShowGlsHistory(false)}
+            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <X size={14} strokeWidth={2.5} />
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto luxury-scrollbar relative z-10 bg-white/50">
+          {isFetchingHistory ? (
+            <div className="flex flex-col items-center justify-center h-64 opacity-50">
+              <Loader2
+                size={32}
+                className="animate-spin mb-4"
+                style={{ color: "var(--royal-violet)" }}
+              />
+              <p
+                className="text-[9px] font-black uppercase tracking-widest"
+                style={{ color: "var(--dark-amethyst)" }}
+              >
+                Se interoghează GLS...
+              </p>
+            </div>
+          ) : glsHistoryData.length > 0 ? (
+            <div className="w-full">
+              <div
+                className="grid grid-cols-12 bg-white/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4 sticky top-0 z-10"
                 style={{
                   borderColor:
-                    "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                    "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                 }}
               >
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead
-                    className="text-[9px] font-black uppercase tracking-widest py-4"
-                    style={{
-                      color:
-                        "color-mix(in srgb, var(--royal-violet) 50%, gray)",
-                    }}
-                  >
-                    ID Intern
-                  </TableHead>
-                  <TableHead
-                    className="text-[9px] font-black uppercase tracking-widest"
-                    style={{
-                      color:
-                        "color-mix(in srgb, var(--royal-violet) 50%, gray)",
-                    }}
-                  >
-                    AWB
-                  </TableHead>
-                  <TableHead
-                    className="text-[9px] font-black uppercase tracking-widest"
-                    style={{
-                      color:
-                        "color-mix(in srgb, var(--royal-violet) 50%, gray)",
-                    }}
-                  >
-                    Referință Client
-                  </TableHead>
-                  <TableHead
-                    className="text-[9px] font-black uppercase tracking-widest"
-                    style={{
-                      color:
-                        "color-mix(in srgb, var(--royal-violet) 50%, gray)",
-                    }}
-                  >
-                    Data AWB
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+                <div className="col-span-3">ID Intern</div>
+                <div className="col-span-3">AWB</div>
+                <div className="col-span-3 text-center">Ref. Client</div>
+                <div className="col-span-3 text-right">Data AWB</div>
+              </div>
+              <div
+                className="divide-y"
+                style={{
+                  divideColor:
+                    "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                }}
+              >
                 {glsHistoryData.map((parcel, idx) => (
-                  <TableRow
+                  <div
                     key={idx}
-                    className="hover:bg-zinc-50/50 border-b transition-colors"
-                    style={{
-                      borderColor:
-                        "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                    }}
+                    className="grid grid-cols-12 px-8 py-4 items-center hover:bg-white transition-colors"
                   >
-                    <TableCell className="font-bold text-[var(--dark-amethyst)] text-xs">
+                    <div
+                      className="col-span-3 font-bold text-[var(--dark-amethyst)] text-xs truncate pr-2"
+                      title={parcel.ParcelId}
+                    >
                       {parcel.ParcelId}
-                    </TableCell>
-                    <TableCell
-                      className="text-[11px] font-mono font-bold"
+                    </div>
+                    <div
+                      className="col-span-3 text-[11px] font-mono font-bold truncate pr-2"
                       style={{
                         color:
                           "color-mix(in srgb, var(--royal-violet) 70%, gray)",
                       }}
+                      title={parcel.ParcelNumber}
                     >
                       {parcel.ParcelNumber}
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                    <div className="col-span-3 text-center">
                       <span
-                        className="bg-white border px-2.5 py-1 rounded-md text-[9px] font-bold tracking-widest uppercase"
+                        className="bg-white border px-2.5 py-1 rounded-md text-[9px] font-bold tracking-widest uppercase truncate max-w-full inline-block"
                         style={{
                           color: "var(--dark-amethyst)",
                           borderColor:
                             "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                         }}
+                        title={parcel.ClientReference || "N/A"}
                       >
                         {parcel.ClientReference || "N/A"}
                       </span>
-                    </TableCell>
-                    <TableCell
-                      className="text-[10px] font-bold"
+                    </div>
+                    <div
+                      className="col-span-3 text-right text-[10px] font-bold"
                       style={{
                         color:
                           "color-mix(in srgb, var(--royal-violet) 50%, gray)",
@@ -874,30 +900,30 @@ const AdminOrders = () => {
                             ),
                           ).toLocaleDateString("ro-RO")
                         : "N/A"}
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-64 opacity-30">
-            <Database
-              size={40}
-              className="mb-4"
-              style={{ color: "var(--dark-amethyst)" }}
-            />
-            <p
-              className="text-[10px] font-black uppercase tracking-widest"
-              style={{ color: "var(--dark-amethyst)" }}
-            >
-              Nu există colete recente.
-            </p>
-          </div>
-        )}
-      </AdminDialog>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 opacity-30">
+              <Database
+                size={40}
+                className="mb-4"
+                style={{ color: "var(--dark-amethyst)" }}
+              />
+              <p
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{ color: "var(--dark-amethyst)" }}
+              >
+                Nu există colete recente.
+              </p>
+            </div>
+          )}
+        </div>
+      </AdminDialogShell>
 
-      <AdminDialog
+      <AdminDialogShell
         open={!!cancelOrderContext}
         onOpenChange={(o) => {
           if (!o) {
@@ -906,50 +932,53 @@ const AdminOrders = () => {
             setGlsParcels(null);
           }
         }}
-        eyebrow="Acțiune critică"
-        title="Anulare AWB GLS"
-        description={
-          cancelOrderContext
-            ? `Comanda: ${cancelOrderContext.order_number}`
-            : undefined
-        }
         size="md"
-        footer={
-          <>
-            <button
-              onClick={() => {
-                setCancelOrderContext(null);
-                setCustomParcelId("");
-                setGlsParcels(null);
-              }}
-              disabled={isCancelingGls}
-              className="sm:flex-1 py-3.5 px-6 bg-white border hover:bg-zinc-50 text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors disabled:opacity-50"
-              style={{
-                color: "var(--dark-amethyst)",
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              Renunță
-            </button>
-            <button
-              onClick={handleCancelGlsLabel}
-              disabled={isCancelingGls}
-              className="sm:flex-1 py-3.5 px-6 bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
-            >
-              {isCancelingGls ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                "Confirmă Ștergerea"
-              )}
-            </button>
-          </>
-        }
+        className="sm:max-w-xl rounded-none sm:rounded-[2rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
+        <AdminDialogTitle className="sr-only">Anulare AWB GLS</AdminDialogTitle>
+        <header
+          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 flex justify-between items-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
+              Anulare AWB GLS
+            </h2>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Comanda: {cancelOrderContext?.order_number || "N/A"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setCancelOrderContext(null);
+              setCustomParcelId("");
+              setGlsParcels(null);
+            }}
+            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <X size={14} strokeWidth={2.5} />
+          </button>
+        </header>
+
         {cancelOrderContext && (
-          <div className="space-y-6">
+          <div className="p-6 sm:p-8 space-y-6 bg-white/50">
             <div
-              className="flex items-center gap-4 p-4 rounded-2xl border"
+              className="flex items-center gap-4 p-5 rounded-2xl border shadow-sm"
               style={{
                 background: "color-mix(in srgb, #f43f5e 3%, white)",
                 borderColor: "color-mix(in srgb, #f43f5e 15%, transparent)",
@@ -960,18 +989,18 @@ const AdminOrders = () => {
               </div>
               <p className="text-[11px] text-rose-600 font-bold leading-relaxed">
                 Această acțiune anulează eticheta GLS și nu poate fi reluată
-                fără regenerare manuală.
+                fără regenerare manuală din sistemul lor.
               </p>
             </div>
 
             <div
-              className="bg-white border p-5 rounded-2xl shadow-sm"
+              className="bg-white border p-6 rounded-[1.5rem] shadow-sm space-y-4"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <p
                   className="text-[10px] font-black uppercase tracking-widest"
                   style={{
@@ -983,7 +1012,7 @@ const AdminOrders = () => {
                 <button
                   onClick={handleSearchGlsParcels}
                   disabled={isSearchingParcels}
-                  className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest bg-white border px-4 py-2.5 rounded-xl transition-all disabled:opacity-50 shadow-sm"
+                  className="flex items-center justify-center gap-2 text-[9px] font-black uppercase tracking-widest bg-white border px-5 py-3 rounded-xl transition-all disabled:opacity-50 shadow-sm w-full sm:w-auto"
                   style={{
                     color: "var(--royal-violet)",
                     borderColor:
@@ -999,31 +1028,31 @@ const AdminOrders = () => {
                   }}
                 >
                   {isSearchingParcels ? (
-                    <Loader2 size={13} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <Database size={13} />
+                    <Database size={14} />
                   )}
                   Caută în GLS
                 </button>
               </div>
 
               {glsParcels && glsParcels.length > 0 && (
-                <div className="space-y-2 mt-2 max-h-48 overflow-y-auto luxury-scrollbar pr-2">
+                <div className="space-y-3 mt-2 max-h-48 overflow-y-auto luxury-scrollbar pr-2">
                   {glsParcels.map((parcel: any, idx: number) => (
                     <div
                       key={idx}
-                      className="bg-white p-3 border rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 transition-colors hover:shadow-sm"
+                      className="bg-zinc-50/50 p-4 border rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 transition-colors hover:shadow-sm hover:bg-white"
                       style={{
                         borderColor:
                           "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
                       }}
                     >
                       <div>
-                        <p className="font-bold text-[11px] text-[var(--dark-amethyst)]">
+                        <p className="font-bold text-xs text-[var(--dark-amethyst)]">
                           ID Intern: {parcel.ParcelId}
                         </p>
                         <p
-                          className="text-[10px] font-mono mt-0.5"
+                          className="text-[10px] font-mono mt-1 font-bold"
                           style={{
                             color:
                               "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -1036,7 +1065,7 @@ const AdminOrders = () => {
                         onClick={() =>
                           setCustomParcelId(parcel.ParcelId.toString())
                         }
-                        className="px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors"
+                        className="px-5 py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors w-full sm:w-auto text-center"
                         style={{
                           background:
                             "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
@@ -1050,13 +1079,19 @@ const AdminOrders = () => {
                 </div>
               )}
               {glsParcels && glsParcels.length === 0 && (
-                <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest text-center py-2">
+                <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest text-center py-4 bg-rose-50 rounded-xl">
                   Niciun colet găsit pentru comandă.
                 </p>
               )}
             </div>
 
-            <div className="space-y-2 relative group">
+            <div
+              className="space-y-2 relative group bg-white p-6 rounded-[1.5rem] border shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
               <label
                 className="block text-[9px] uppercase tracking-widest font-black ml-1 transition-colors"
                 style={{
@@ -1072,7 +1107,7 @@ const AdminOrders = () => {
                 placeholder={
                   cancelOrderContext.gls_parcel_id?.toString() || "Ex: 12345678"
                 }
-                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1"
                 style={{
                   boxShadow:
                     "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -1089,7 +1124,7 @@ const AdminOrders = () => {
                 }}
               />
               <p
-                className="text-[9px] font-bold italic pt-1 ml-1"
+                className="text-[9px] font-bold italic pt-2 ml-1"
                 style={{
                   color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
                 }}
@@ -1100,7 +1135,56 @@ const AdminOrders = () => {
             </div>
           </div>
         )}
-      </AdminDialog>
+
+        <footer
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 rounded-b-[2rem]"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            onClick={() => {
+              setCancelOrderContext(null);
+              setCustomParcelId("");
+              setGlsParcels(null);
+            }}
+            disabled={isCancelingGls}
+            className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all disabled:opacity-50"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+            }}
+          >
+            Renunță
+          </button>
+          <button
+            onClick={handleCancelGlsLabel}
+            disabled={isCancelingGls}
+            className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600"
+          >
+            {isCancelingGls ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            Confirmă Ștergerea
+          </button>
+        </footer>
+      </AdminDialogShell>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `,
+        }}
+      />
     </div>
   );
 };
