@@ -52,7 +52,7 @@ export const AdminDialogShell = ({
   const reduce = useReducedMotion();
 
   // Defines the animation props explicitly to avoid TS destructuring errors
-  const animationProps = asSheet
+  const animationProps: any = asSheet
     ? {
         initial: reduce ? { opacity: 0 } : { y: "100%", opacity: 0.6 },
         animate: reduce
@@ -67,7 +67,7 @@ export const AdminDialogShell = ({
           : {
               y: "100%",
               opacity: 0.4,
-              transition: { duration: 0.22, ease: "easeIn" },
+              transition: { duration: 0.22, ease: [0.4, 0, 1, 1] },
             },
         drag: "y" as const,
         dragConstraints: { top: 0, bottom: 0 },
@@ -105,7 +105,7 @@ export const AdminDialogShell = ({
               x: "-50%",
               y: "-48%",
               scale: 0.97,
-              transition: { duration: 0.18, ease: "easeIn" },
+              transition: { duration: 0.18, ease: [0.4, 0, 1, 1] },
             },
       };
 
