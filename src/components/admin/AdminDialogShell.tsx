@@ -260,8 +260,16 @@ export const AdminDialogShell = ({
 };
 
 /** Hidden-but-accessible title. Use when the caller renders a custom visual header. */
-export const AdminDialogTitle = ({ children }: { children: React.ReactNode }) => (
-  <DialogPrimitive.Title className="sr-only">{children}</DialogPrimitive.Title>
+export const AdminDialogTitle = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <DialogPrimitive.Title className={cn("sr-only", className)}>
+    {children}
+  </DialogPrimitive.Title>
 );
 
 export default AdminDialogShell;
