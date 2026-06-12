@@ -48,6 +48,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+// --- Funcția PURĂ de aplicare a temei globale ---
 const applyToDOM = (t: ThemeColors) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;

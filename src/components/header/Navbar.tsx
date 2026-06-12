@@ -12,7 +12,6 @@ import {
   MapPin,
   Settings,
   X,
-  SlidersHorizontal,
   Loader2,
   RotateCcw,
   ArrowRight,
@@ -35,15 +34,12 @@ import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 import SearchModal from "./SearchModal";
 import { FilterSidebar } from "../shop/FilterSidebar";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
-
 /* ─────────────────────────────────────────────────────────────
-   FILTER DRAWER — Modern, Luminous Glassmorphism
+   FILTER DRAWER
 ───────────────────────────────────────────────────────────── */
 const FilterDrawer = () => {
   const { filtersOpen, filtersData, closeFilters, onReset } = useFilters();
 
-  // Lock scroll când drawer-ul e deschis
   useEffect(() => {
     if (filtersOpen) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "unset";
@@ -56,7 +52,6 @@ const FilterDrawer = () => {
     <AnimatePresence>
       {filtersOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end font-sans">
-          {/* Luminous Colorful Blur Backdrop */}
           <motion.div
             key="filter-backdrop"
             initial={{ opacity: 0 }}
@@ -66,7 +61,6 @@ const FilterDrawer = () => {
             onClick={closeFilters}
             className="absolute inset-0 bg-white/20 backdrop-blur-2xl overflow-hidden"
           >
-            {/* Ambient Colorful Orbs */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 0.15 }}
@@ -81,7 +75,6 @@ const FilterDrawer = () => {
             />
           </motion.div>
 
-          {/* Filter Panel (Micuț și elegant) */}
           <motion.div
             key="filter-panel"
             initial={{ x: "100%" }}
@@ -90,7 +83,6 @@ const FilterDrawer = () => {
             transition={{ type: "spring", damping: 32, stiffness: 280 }}
             className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[400px] flex-col bg-white shadow-2xl"
           >
-            {/* Header */}
             <header className="flex items-center justify-between px-6 py-6 border-b border-zinc-100 shrink-0">
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5">
@@ -118,7 +110,6 @@ const FilterDrawer = () => {
               </button>
             </header>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {filtersData &&
               filtersData.brands !== undefined &&
@@ -144,7 +135,6 @@ const FilterDrawer = () => {
               )}
             </div>
 
-            {/* Footer CTA - Design Modern */}
             <div className="shrink-0 px-6 py-6 border-t border-zinc-100 bg-white">
               <div className="flex items-center gap-3">
                 <button
@@ -192,7 +182,6 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Global hook: allow any component (e.g. add-to-cart toasts) to open the cart
   useEffect(() => {
     const openCart = () => setBagOpen(true);
     window.addEventListener("evem:open-cart", openCart);
@@ -217,48 +206,6 @@ const Navbar = () => {
     ],
   );
 
-  // Fetch Theme Variables
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/themes/active`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Theme fetch failed");
-        return res.json();
-      })
-      .then((theme) => {
-        if (!theme) return;
-        const root = document.documentElement;
-
-        if (theme.dark_amethyst)
-          root.style.setProperty("--dark-amethyst", theme.dark_amethyst);
-        if (theme.dark_amethyst_2)
-          root.style.setProperty("--dark-amethyst-2", theme.dark_amethyst_2);
-        if (theme.indigo_ink)
-          root.style.setProperty("--indigo-ink", theme.indigo_ink);
-        if (theme.indigo_velvet)
-          root.style.setProperty("--indigo-velvet", theme.indigo_velvet);
-        if (theme.royal_violet)
-          root.style.setProperty("--royal-violet", theme.royal_violet);
-        if (theme.lavender_purple)
-          root.style.setProperty("--lavender-purple", theme.lavender_purple);
-        if (theme.mauve_magic)
-          root.style.setProperty("--mauve-magic", theme.mauve_magic);
-        if (theme.mauve) root.style.setProperty("--mauve", theme.mauve);
-        if (theme.text_primary)
-          root.style.setProperty("--text-primary", theme.text_primary);
-        if (theme.surface_bg)
-          root.style.setProperty("--surface-bg", theme.surface_bg);
-        if (theme.primary_gradient)
-          root.style.setProperty("--primary-gradient", theme.primary_gradient);
-      })
-      .catch((err) => {
-        console.warn(
-          "Could not load dynamic theme, falling back to CSS defaults:",
-          err,
-        );
-      });
-  }, []);
-
-  // Închide user menu la click outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -308,7 +255,7 @@ const Navbar = () => {
           }}
           className="relative flex w-full items-center justify-between px-4 sm:px-6 lg:px-12 transform-gpu"
         >
-          {/* LEFT — SEARCH (icon only; hidden while modal is open to avoid duplicate lupa) */}
+          {/* LEFT — SEARCH */}
           <div className="flex flex-1 items-center justify-start">
             <motion.button
               whileHover={{ y: -2 }}
@@ -316,7 +263,10 @@ const Navbar = () => {
               aria-label="Caută"
               aria-hidden={searchOpen}
               tabIndex={searchOpen ? -1 : 0}
-              animate={{ opacity: searchOpen ? 0 : 1, scale: searchOpen ? 0.85 : 1 }}
+              animate={{
+                opacity: searchOpen ? 0 : 1,
+                scale: searchOpen ? 0.85 : 1,
+              }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               style={{ pointerEvents: searchOpen ? "none" : "auto" }}
               className="flex items-center justify-center h-10 w-10 rounded-full text-zinc-700 hover:bg-zinc-50 transition-colors"
@@ -460,7 +410,7 @@ const Navbar = () => {
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
 
-      {/* FILTER DRAWER — montat global în Navbar, citește din FiltersContext */}
+      {/* FILTER DRAWER */}
       <FilterDrawer />
 
       <Login

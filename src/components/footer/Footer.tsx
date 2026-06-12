@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   Instagram,
@@ -88,47 +88,6 @@ const Footer = () => {
     }
   };
 
-  // Preia și aplică tema activă independent
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/themes/active`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Theme fetch failed");
-        return res.json();
-      })
-      .then((theme) => {
-        if (!theme) return;
-        const root = document.documentElement;
-
-        if (theme.dark_amethyst)
-          root.style.setProperty("--dark-amethyst", theme.dark_amethyst);
-        if (theme.dark_amethyst_2)
-          root.style.setProperty("--dark-amethyst-2", theme.dark_amethyst_2);
-        if (theme.indigo_ink)
-          root.style.setProperty("--indigo-ink", theme.indigo_ink);
-        if (theme.indigo_velvet)
-          root.style.setProperty("--indigo-velvet", theme.indigo_velvet);
-        if (theme.royal_violet)
-          root.style.setProperty("--royal-violet", theme.royal_violet);
-        if (theme.lavender_purple)
-          root.style.setProperty("--lavender-purple", theme.lavender_purple);
-        if (theme.mauve_magic)
-          root.style.setProperty("--mauve-magic", theme.mauve_magic);
-        if (theme.mauve) root.style.setProperty("--mauve", theme.mauve);
-        if (theme.text_primary)
-          root.style.setProperty("--text_primary", theme.text_primary);
-        if (theme.surface_bg)
-          root.style.setProperty("--surface_bg", theme.surface_bg);
-        if (theme.primary_gradient)
-          root.style.setProperty("--primary-gradient", theme.primary_gradient);
-      })
-      .catch((err) => {
-        console.warn(
-          "Could not load dynamic theme in Footer, falling back to CSS defaults:",
-          err,
-        );
-      });
-  }, []);
-
   // --- SECȚIUNI NAVIGARE ACTUALIZATE ---
   const exploreLinks = [
     { name: t("Acasă", "Home"), path: "/" },
@@ -181,7 +140,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="w-full mt-8 relative bg-transparent selection:bg-zinc-900 selection:text-white">
+    <footer className="w-full mt-20 relative bg-transparent selection:bg-zinc-900 selection:text-white">
       {/* 1. HIGH-END NEWSLETTER (Minimal & Floating Above) */}
       <div className="max-w-[1400px] mx-auto px-6 md:px-12 relative z-20 mb-[-4rem]">
         <div className="bg-white rounded-[3rem] border border-zinc-100 p-10 md:p-16 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.05)] overflow-hidden relative">
@@ -271,16 +230,17 @@ const Footer = () => {
 
       {/* 2. THE GEOMETRIC CHASM & MAIN INTERIOR */}
       <div
-        className="pt-36 pb-12 px-6 md:px-12 relative z-10"
+        className="pt-28 pb-12 px-6 md:px-12 relative z-10"
         style={{
-          backgroundColor: "var(--dark-amethyst)",
+          background: "var(--primary-gradient)", // AICI ESTE FIX-UL CRITIC (înainte era backgroundColor: var(--dark-amethyst))
           clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
         }}
       >
+        {/* Linie albă semi-transparentă care separă secțiunile vizual */}
         <div
-          className="absolute top-0 left-0 right-0 h-[2px] opacity-70 z-20 pointer-events-none"
+          className="absolute top-0 left-0 right-0 h-[1px] opacity-20 z-20 pointer-events-none"
           style={{
-            background: "var(--primary-gradient)",
+            background: "#ffffff",
             clipPath: "polygon(0 6rem, 100% 0, 100% 100%, 0 100%)",
           }}
         />
@@ -311,7 +271,7 @@ const Footer = () => {
                   }}
                 />
               </Link>
-              <p className="text-xs text-white/40 leading-relaxed max-w-sm font-medium tracking-wide">
+              <p className="text-xs text-white/60 leading-relaxed max-w-sm font-medium tracking-wide">
                 {t(
                   "Tot ce ai nevoie, într-un singur loc. Produse selectate inteligent, livrate într-o experiență simplă, rapidă și modernă.",
                   "Fully integrated digital architecture. A timeless vision joining the noble matter of global contemporary design under a single technological ecosystem.",
@@ -328,11 +288,11 @@ const Footer = () => {
                     aria-label={label}
                     whileHover={{
                       y: -3,
-                      backgroundColor: "rgba(255,255,255,0.08)",
-                      borderColor: "rgba(255,255,255,0.3)",
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      borderColor: "rgba(255,255,255,0.4)",
                     }}
-                    className="size-10 rounded-xl border border-white/10 flex items-center justify-center text-white/50 hover:text-white backdrop-blur-xl transition-all duration-300"
-                    style={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+                    className="size-10 rounded-xl border border-white/20 flex items-center justify-center text-white/80 hover:text-white backdrop-blur-xl transition-all duration-300"
+                    style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
                   >
                     <Icon size={15} strokeWidth={2.5} />
                   </motion.a>
@@ -343,10 +303,10 @@ const Footer = () => {
             {/* NAVIGATION LINKS CONTAINER */}
             <div className="lg:col-span-4 grid grid-cols-2 gap-8 text-left">
               <div className="space-y-6">
-                <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-40 text-white">
                   {t("Navigare", "Explore")}
                 </span>
-                <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/50">
+                <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/70">
                   {exploreLinks.map((link) => (
                     <li key={link.name}>
                       <Link
@@ -365,10 +325,10 @@ const Footer = () => {
               </div>
 
               <div className="space-y-6">
-                <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-40 text-white">
                   {t("Legalitate", "Legal")}
                 </span>
-                <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/50">
+                <ul className="flex flex-col gap-3 text-xs font-semibold tracking-wide text-white/70">
                   {supportLinks.map((link) => (
                     <li key={link.name}>
                       <Link
@@ -385,43 +345,36 @@ const Footer = () => {
 
             {/* METROPOLITAN STUDIO HUB */}
             <div className="lg:col-span-3 space-y-5 lg:text-right text-left">
-              <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-30 text-white">
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] block opacity-40 text-white">
                 {t("Contact", "Hub")}
               </span>
-              <div className="space-y-3 text-xs font-semibold tracking-wide text-white/60 leading-relaxed">
-                <p className="opacity-70">Tufan Logistic Expert SRL</p>
-                <p className="opacity-50 text-[10px]">
+              <div className="space-y-3 text-xs font-semibold tracking-wide text-white/80 leading-relaxed">
+                <p className="opacity-90">Tufan Logistic Expert SRL</p>
+                <p className="opacity-60 text-[10px]">
                   CUI: RO51574431 · Reg. Com.: J2025024172009
                 </p>
-                <p className="opacity-70">
+                <p className="opacity-80">
                   Prelungirea Ghencea 124D, Sector 6, București
                 </p>
                 <a
                   href="mailto:daniel.tufan@consultant.com"
-                  className="inline-block font-bold hover:underline bg-clip-text text-transparent"
-                  style={{
-                    backgroundImage: "var(--primary-gradient)",
-                    WebkitBackgroundClip: "text",
-                  }}
+                  className="inline-block font-bold hover:underline text-white transition-colors"
                 >
                   daniel.tufan@consultant.com
                 </a>
-                <p className="opacity-50 text-[10px]">+40 735 928 664</p>
-                <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-40">
+                <p className="opacity-60 text-[10px]">+40 735 928 664</p>
+                <div className="flex items-center gap-2 lg:justify-end pt-1 text-[10px] font-black uppercase tracking-widest opacity-50">
                   <Globe size={11} /> <span>România</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* LOWER META BAR (Isomorphic Floating Card Layout) */}
-          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 backdrop-blur-md">
+          {/* LOWER META BAR */}
+          <div className="bg-white/10 border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-6 backdrop-blur-md">
             <div className="flex items-center gap-3">
-              <span
-                className="size-1.5 rounded-full"
-                style={{ background: "var(--primary-gradient)" }}
-              />
-              <p className="text-[9px] font-bold tracking-widest text-white/30 uppercase">
+              <span className="size-1.5 rounded-full bg-white" />
+              <p className="text-[9px] font-bold tracking-widest text-white/50 uppercase">
                 © {new Date().getFullYear()} Tufan Logistic Expert SRL.{" "}
                 {t("Toate drepturile rezervate.", "All rights reserved.")}
               </p>
@@ -435,7 +388,7 @@ const Footer = () => {
                     href={link.path}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[9px] font-bold uppercase tracking-wider text-white/30 hover:text-white/70 transition-colors"
+                    className="text-[9px] font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors"
                   >
                     {link.name}
                   </a>
@@ -443,7 +396,7 @@ const Footer = () => {
                   <Link
                     key={link.name}
                     to={link.path}
-                    className="text-[9px] font-bold uppercase tracking-wider text-white/30 hover:text-white/70 transition-colors"
+                    className="text-[9px] font-bold uppercase tracking-wider text-white/50 hover:text-white transition-colors"
                   >
                     {link.name}
                   </Link>
