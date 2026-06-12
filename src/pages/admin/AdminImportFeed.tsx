@@ -1,3 +1,9 @@
+/**
+ * AdminImportFeed.tsx
+ * Pagina de administrare Import / Sincronizare Feed-uri
+ * Design Futuristic & Glassmorphism (Bento Neo-Mosaic)
+ */
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Trash2,
@@ -10,9 +16,11 @@ import {
   Plus,
   Edit3,
   Zap,
-  Eye,
   Activity,
   RefreshCw,
+  Sparkles,
+  Server,
+  Network,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -89,38 +97,11 @@ const INITIAL_FORM_STATE: FeedFormState = {
   quick_stock_mapping_config: {},
 };
 
-const surfaceStyle = {
-  backgroundColor: "var(--surface-bg)",
-};
-
-const surfaceSecondaryStyle = {
-  backgroundColor: "var(--surface-secondary)",
-};
-
-const borderStyle = {
-  borderColor: "var(--border-color)",
-};
-
-const inputStyle = {
-  backgroundColor: "var(--input-bg)",
-  borderColor: "var(--border-color)",
-  color: "var(--text-primary)",
-};
-
 const normalizeKey = (v: string) =>
   v
     ?.toLowerCase()
     ?.replace(/[\s_\-]/g, "")
     ?.trim();
-
-const statusCard = (active: boolean) => ({
-  backgroundColor: active
-    ? "color-mix(in srgb, var(--warning-color) 10%, transparent)"
-    : "color-mix(in srgb, var(--success-color) 10%, transparent)",
-  border: `1px solid ${
-    active ? "var(--warning-color)" : "var(--success-color)"
-  }`,
-});
 
 const AdminImportFeed = () => {
   const [showConfig, setShowConfig] = useState(false);
@@ -133,28 +114,20 @@ const AdminImportFeed = () => {
   });
 
   const [progress, setProgress] = useState<ProgressMap>({});
-
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
   const [quickStockColumns, setQuickStockColumns] = useState<string[]>([]);
-
   const [isInspecting, setIsInspecting] = useState(false);
   const [isInspectingQuick, setIsInspectingQuick] = useState(false);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [masterSyncLoading, setMasterSyncLoading] = useState(false);
-
   const [masterSyncStatus, setMasterSyncStatus] = useState<any>(null);
-
   const [formData, setFormData] = useState<FeedFormState>(INITIAL_FORM_STATE);
 
   const wsRef = useRef<WebSocket | null>(null);
-
   const reconnectAttemptsRef = useRef(0);
 
   const cleanFid = (id: unknown) => {
     if (!id) return null;
-
     return String(id)
       .replace(/^b['"]/, "")
       .replace(/['"]$/, "")
@@ -175,7 +148,6 @@ const AdminImportFeed = () => {
   const fetchMasterSyncStatus = useCallback(async () => {
     try {
       const res = await apiFetch("/admin/master-sync/status");
-
       if (res.ok) {
         const data = await res.json();
         setMasterSyncStatus(data);
@@ -192,16 +164,10 @@ const AdminImportFeed = () => {
       )
     )
       return;
-
     setMasterSyncLoading(true);
-
     try {
-      const res = await apiFetch("/admin/master-sync/run", {
-        method: "POST",
-      });
-
+      const res = await apiFetch("/admin/master-sync/run", { method: "POST" });
       const data = await res.json();
-
       if (res.ok) {
         toast.success(data.message || "Heavy sync pornit.");
         fetchMasterSyncStatus();
@@ -209,7 +175,6 @@ const AdminImportFeed = () => {
         toast.error(data.detail || "Sync failed.");
       }
     } catch (err) {
-      console.error(err);
       toast.error("Network error.");
     } finally {
       setMasterSyncLoading(false);
@@ -227,7 +192,6 @@ const AdminImportFeed = () => {
       const statusData = await statusRes.json();
 
       setFeeds(feedsData.items || []);
-
       const activeFid = cleanFid(statusData.active_feed_id);
 
       setGlobalLock({
@@ -245,7 +209,6 @@ const AdminImportFeed = () => {
         }));
       }
     } catch (error) {
-      console.error(error);
       toast.error("Eroare la încărcarea feed-urilor.");
     } finally {
       setLoading(false);
@@ -254,11 +217,9 @@ const AdminImportFeed = () => {
 
   useEffect(() => {
     fetchMasterSyncStatus();
-
     const interval = setInterval(() => {
       fetchMasterSyncStatus();
     }, 5000);
-
     return () => clearInterval(interval);
   }, [fetchMasterSyncStatus]);
 
@@ -267,14 +228,11 @@ const AdminImportFeed = () => {
 
     const connectWS = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) return;
-
       const ws = new WebSocket(`${WS_BASE_URL}/api/v1/ws/import-progress`);
-
       wsRef.current = ws;
 
       ws.onopen = () => {
         reconnectAttemptsRef.current = 0;
-
         heartbeat = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send("ping");
@@ -284,10 +242,8 @@ const AdminImportFeed = () => {
 
       ws.onmessage = (event) => {
         if (event.data === "pong") return;
-
         try {
           const msg = JSON.parse(event.data);
-
           const fid = cleanFid(msg.feed_id);
 
           if (msg.type === "IMPORT_PROGRESS" || msg.type === "IMPORT_STARTED") {
@@ -298,12 +254,8 @@ const AdminImportFeed = () => {
                 total: msg.total || 0,
               },
             }));
-
             if (fid) {
-              setGlobalLock({
-                is_locked: true,
-                locked_by: fid,
-              });
+              setGlobalLock({ is_locked: true, locked_by: fid });
             }
           }
 
@@ -319,11 +271,8 @@ const AdminImportFeed = () => {
 
       ws.onclose = () => {
         clearInterval(heartbeat);
-
         reconnectAttemptsRef.current += 1;
-
         const timeout = Math.min(30000, reconnectAttemptsRef.current * 3000);
-
         setTimeout(connectWS, timeout);
       };
     };
@@ -346,14 +295,11 @@ const AdminImportFeed = () => {
   ) => {
     const urlToInspect =
       specificUrl || (target === "main" ? formData.url : formData.stock_url);
-
     const typeToInspect = formData.feed_type;
 
     if (!urlToInspect) {
       toast.error(
-        `Introdu URL pentru ${
-          target === "main" ? "Feed Principal" : "Quick Stock"
-        }.`,
+        `Introdu URL pentru ${target === "main" ? "Feed Principal" : "Quick Stock"}.`,
       );
       return;
     }
@@ -362,13 +308,9 @@ const AdminImportFeed = () => {
 
     try {
       const res = await apiFetch(
-        `/feeds/inspect?url=${encodeURIComponent(
-          urlToInspect,
-        )}&feed_type=${typeToInspect}`,
+        `/feeds/inspect?url=${encodeURIComponent(urlToInspect)}&feed_type=${typeToInspect}`,
       );
-
       const data = await res.json();
-
       const cols = data.columns ?? [];
 
       if (target === "main") {
@@ -379,15 +321,12 @@ const AdminImportFeed = () => {
 
       if (cols.length > 0) {
         toast.success(
-          `${cols.length} coloane detectate pentru ${
-            target === "main" ? "Feed" : "Stoc"
-          }.`,
+          `${cols.length} coloane detectate pentru ${target === "main" ? "Feed" : "Stoc"}.`,
         );
       } else {
         toast.error("Nu s-au detectat coloane.");
       }
     } catch (error) {
-      console.error(error);
       toast.error("Inspect failed.");
     } finally {
       target === "main" ? setIsInspecting(false) : setIsInspectingQuick(false);
@@ -423,7 +362,6 @@ const AdminImportFeed = () => {
     const missingMain = MAPPING_FIELDS.filter(
       (f) => f.required && !formData.mapping_config[f.key],
     );
-
     if (missingMain.length > 0) {
       toast.error(
         `Mapează feed principal: ${missingMain.map((m) => m.label).join(", ")}`,
@@ -435,7 +373,6 @@ const AdminImportFeed = () => {
       const missingQuick = QUICK_MAPPING_FIELDS.filter(
         (f) => f.required && !formData.quick_stock_mapping_config[f.key],
       );
-
       if (missingQuick.length > 0) {
         toast.error(
           `Mapează Quick Stock: ${missingQuick.map((m) => m.label).join(", ")}`,
@@ -445,18 +382,11 @@ const AdminImportFeed = () => {
     }
 
     setIsSubmitting(true);
-
     try {
       const isEdit = !!formData.id;
-
       const endpoint = isEdit ? `/feeds/${formData.id}` : "/feeds/";
-
       const method = isEdit ? "PUT" : "POST";
-
-      const payload = {
-        ...formData,
-        stock_url: formData.stock_url || null,
-      };
+      const payload = { ...formData, stock_url: formData.stock_url || null };
 
       const res = await apiFetch(endpoint, {
         method,
@@ -465,21 +395,16 @@ const AdminImportFeed = () => {
 
       if (res.ok) {
         toast.success(isEdit ? "Feed actualizat." : "Feed creat cu succes.");
-
         setFormData(INITIAL_FORM_STATE);
-
         setDetectedColumns([]);
         setQuickStockColumns([]);
-
         setShowConfig(false);
-
         refreshData();
       } else {
         const err = await res.json();
         toast.error(err.detail || "Save failed.");
       }
     } catch (error) {
-      console.error(error);
       toast.error("Network error.");
     } finally {
       setIsSubmitting(false);
@@ -488,12 +413,8 @@ const AdminImportFeed = () => {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Ștergi feed-ul?")) return;
-
     try {
-      const res = await apiFetch(`/feeds/${id}`, {
-        method: "DELETE",
-      });
-
+      const res = await apiFetch(`/feeds/${id}`, { method: "DELETE" });
       if (res.ok) {
         toast.success("Feed șters.");
         refreshData();
@@ -501,19 +422,14 @@ const AdminImportFeed = () => {
         toast.error("Delete failed.");
       }
     } catch (error) {
-      console.error(error);
       toast.error("Network error.");
     }
   };
 
   const handleForceUnlock = async () => {
     if (!window.confirm("Resetezi lock-urile Redis?")) return;
-
     try {
-      const res = await apiFetch("/feeds/force-unlock", {
-        method: "POST",
-      });
-
+      const res = await apiFetch("/feeds/force-unlock", { method: "POST" });
       if (res.ok) {
         toast.success("Lock resetat.");
         setProgress({});
@@ -522,253 +438,61 @@ const AdminImportFeed = () => {
         toast.error("Unlock failed.");
       }
     } catch (error) {
-      console.error(error);
       toast.error("Network error.");
     }
   };
 
   if (loading) {
     return (
-      <div
-        className="h-screen flex items-center justify-center"
-        style={surfaceSecondaryStyle}
-      >
+      <div className="h-[80vh] flex items-center justify-center">
         <Loader2
           className="animate-spin"
-          size={36}
-          style={{
-            color: "var(--royal-violet)",
-          }}
+          size={32}
+          style={{ color: "var(--royal-violet)" }}
         />
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-10 pb-20">
-      {/* HEAVY SYNC PANEL */}
-
-      <div
-        className="rounded-[2.5rem] border p-8 md:p-10 shadow-2xl"
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ─────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pt-4 pb-6 border-b"
         style={{
-          ...surfaceStyle,
-          ...borderStyle,
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
         }}
       >
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Activity
-                size={18}
-                style={{
-                  color: "var(--royal-violet)",
-                }}
-              />
-
-              <span
-                className="uppercase text-[11px] font-black tracking-[0.3em]"
-                style={{
-                  color: "var(--royal-violet)",
-                }}
-              >
-                System Monitoring
-              </span>
-            </div>
-
-            <h2
-              className="text-4xl font-black tracking-tight"
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              className="animate-pulse"
+              style={{ color: "var(--royal-violet)" }}
+            />
+            <span
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
               style={{
-                color: "var(--dark-amethyst)",
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
               }}
             >
-              Master Heavy Sync
-            </h2>
-
-            <p
-              className="max-w-3xl text-sm leading-relaxed"
-              style={{
-                color: "var(--text-secondary)",
-              }}
-            >
-              Rulează sincronizarea completă enterprise: feed-uri, categorii,
-              atribute, rebuild filtre, invalidare cache și reindexare completă
-              Meilisearch.
-            </p>
+              Data & Import Engine
+            </span>
           </div>
-
-          <div className="flex gap-4 flex-wrap">
-            <button
-              onClick={fetchMasterSyncStatus}
-              className="px-6 py-4 rounded-2xl border flex items-center gap-2 font-black uppercase text-[11px]"
-              style={{
-                ...surfaceSecondaryStyle,
-                ...borderStyle,
-                color: "var(--text-primary)",
-              }}
-            >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
-
-            <button
-              onClick={handleRunHeavySync}
-              disabled={masterSyncLoading}
-              className="text-white px-8 py-4 rounded-2xl font-black uppercase flex items-center gap-2 disabled:opacity-50"
-              style={{
-                background: "var(--primary-gradient)",
-              }}
-            >
-              {masterSyncLoading ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Zap size={16} />
-              )}
-              Run Heavy Sync
-            </button>
-          </div>
+          <h1 className="heading-serif text-3xl sm:text-4xl md:text-5xl tracking-tighter text-[var(--dark-amethyst)] font-medium leading-[0.95]">
+            Sincronizare{" "}
+            <span style={{ color: "var(--royal-violet)" }}>Feed-uri</span>
+          </h1>
         </div>
 
-        {masterSyncStatus && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-10">
-              {[
-                {
-                  label: "MASTER SYNC",
-                  active: masterSyncStatus.master_sync_running,
-                },
-                {
-                  label: "SEARCH REINDEX",
-                  active: masterSyncStatus.search_reindex_running,
-                },
-                {
-                  label: "FILTER REBUILD",
-                  active: masterSyncStatus.filters_rebuild_running,
-                },
-                {
-                  label: "SEARCH SETUP",
-                  active: masterSyncStatus.search_setup_running,
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl p-6"
-                  style={statusCard(item.active)}
-                >
-                  <div
-                    className="text-[10px] uppercase tracking-widest font-black"
-                    style={{
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {item.label}
-                  </div>
-
-                  <div className="mt-5 flex items-center gap-3">
-                    <div
-                      className="size-3 rounded-full animate-pulse"
-                      style={{
-                        backgroundColor: item.active
-                          ? "var(--warning-color)"
-                          : "var(--success-color)",
-                      }}
-                    />
-
-                    <span
-                      className="font-black text-sm"
-                      style={{
-                        color: item.active
-                          ? "var(--warning-color)"
-                          : "var(--success-color)",
-                      }}
-                    >
-                      {item.active ? "RUNNING" : "READY"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
-              {[
-                {
-                  label: "Catalog",
-                  value: masterSyncStatus.catalog_version,
-                },
-                {
-                  label: "Categories",
-                  value: masterSyncStatus.categories_version,
-                },
-                {
-                  label: "Listing",
-                  value: masterSyncStatus.listing_version,
-                },
-                {
-                  label: "Filters",
-                  value: masterSyncStatus.filters_version,
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border p-5"
-                  style={{
-                    ...surfaceSecondaryStyle,
-                    ...borderStyle,
-                  }}
-                >
-                  <div
-                    className="text-[10px] uppercase tracking-widest font-black"
-                    style={{
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {item.label}
-                  </div>
-
-                  <div
-                    className="mt-3 text-2xl font-black"
-                    style={{
-                      color: "var(--royal-violet)",
-                    }}
-                  >
-                    v{item.value ?? 0}
-                  </div>
-                </div>
-              ))}
-            </div>
-
+        {!showConfig && (
+          <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3">
             <div
-              className="mt-8 text-xs"
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/60 backdrop-blur-md border text-[10px] font-black uppercase tracking-[0.2em]"
               style={{
-                color: "var(--text-secondary)",
-              }}
-            >
-              Ultima actualizare:{" "}
-              {masterSyncStatus.updated_at
-                ? new Date(masterSyncStatus.updated_at).toLocaleString()
-                : "-"}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* EXISTING UI */}
-
-      <header
-        className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 pb-12 border-b"
-        style={borderStyle}
-      >
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-12 h-[1px]"
-              style={{
-                backgroundColor: "var(--royal-violet)",
-              }}
-            />
-
-            <span
-              className="text-[10px] font-black uppercase tracking-[0.5em] flex items-center gap-2"
-              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                 color: "var(--royal-violet)",
               }}
             >
@@ -777,290 +501,356 @@ const AdminImportFeed = () => {
                 style={{
                   backgroundColor: globalLock.is_locked
                     ? "var(--warning-color)"
-                    : "var(--success-color)",
+                    : "color-mix(in srgb, #10b981 80%, black)",
                 }}
               />
-
-              {globalLock.is_locked ? "Sincronizare activă" : "Catalog Feeds"}
-            </span>
-          </div>
-
-          <h1
-            className="heading-serif text-5xl md:text-6xl italic tracking-tighter"
-            style={{
-              color: "var(--dark-amethyst)",
-            }}
-          >
-            External{" "}
-            <span
-              style={{
-                color: "var(--royal-violet)",
+              {globalLock.is_locked ? "Procesare Activă" : "Catalog Liber"}
+            </div>
+            <button
+              onClick={() => {
+                setFormData(INITIAL_FORM_STATE);
+                setDetectedColumns([]);
+                setQuickStockColumns([]);
+                setShowConfig(true);
               }}
+              disabled={globalLock.is_locked}
+              className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-[0.98] disabled:opacity-50 whitespace-nowrap"
+              style={{ background: "var(--primary-gradient)" }}
             >
-              Feeds
-            </span>
-          </h1>
-        </div>
-
-        {!showConfig && (
-          <button
-            onClick={() => {
-              setFormData(INITIAL_FORM_STATE);
-              setDetectedColumns([]);
-              setQuickStockColumns([]);
-              setShowConfig(true);
-            }}
-            disabled={globalLock.is_locked}
-            className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl disabled:opacity-50"
-            style={{
-              background: "var(--primary-gradient)",
-            }}
-          >
-            <Plus size={16} />
-            Configurare Sursă Nouă
-          </button>
+              <Plus size={14} strokeWidth={2.5} /> Configurare Sursă
+            </button>
+          </div>
         )}
       </header>
 
+      {/* ── MASTER HEAVY SYNC BENTO CARD ─────────────────────────────────── */}
+      <AnimatePresence mode="wait">
+        {!showConfig && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-[2.5rem] border bg-white/60 backdrop-blur-xl p-6 sm:p-10 shadow-xl shadow-black/[0.02]"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <Activity
+                    size={16}
+                    style={{ color: "var(--royal-violet)" }}
+                  />
+                  <span
+                    className="uppercase text-[10px] font-black tracking-[0.3em]"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 70%, gray)",
+                    }}
+                  >
+                    Infrastructură Core
+                  </span>
+                </div>
+                <h2 className="text-3xl font-black tracking-tight text-[var(--dark-amethyst)]">
+                  Master Heavy Sync
+                </h2>
+                <p
+                  className="max-w-2xl text-[13px] leading-relaxed"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                  }}
+                >
+                  Rulează sincronizarea completă enterprise: importuri,
+                  recalibrare categorii, rebuild filtre avansate și reindexare
+                  completă Meilisearch.
+                </p>
+              </div>
+
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={fetchMasterSyncStatus}
+                  className="px-6 py-3.5 rounded-xl border flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] bg-white hover:bg-zinc-50 transition-colors shadow-sm"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                    color: "var(--dark-amethyst)",
+                  }}
+                >
+                  <RefreshCw size={14} /> Actualizează Status
+                </button>
+                <button
+                  onClick={handleRunHeavySync}
+                  disabled={masterSyncLoading || globalLock.is_locked}
+                  className="text-white px-8 py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-md hover:shadow-lg active:scale-95"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  {masterSyncLoading ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Zap size={14} />
+                  )}
+                  Rulează Heavy Sync
+                </button>
+              </div>
+            </div>
+
+            {masterSyncStatus && (
+              <div
+                className="mt-8 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                }}
+              >
+                {[
+                  {
+                    label: "Bază Date Core",
+                    key: "master_sync_running",
+                    active: masterSyncStatus.master_sync_running,
+                    version: masterSyncStatus.catalog_version,
+                  },
+                  {
+                    label: "Index Căutare",
+                    key: "search_reindex_running",
+                    active: masterSyncStatus.search_reindex_running,
+                    version: masterSyncStatus.listing_version,
+                  },
+                  {
+                    label: "Arbore Categorii",
+                    key: "categories_sync_running",
+                    active: masterSyncStatus.search_setup_running,
+                    version: masterSyncStatus.categories_version,
+                  },
+                  {
+                    label: "Matrice Filtre",
+                    key: "filters_rebuild_running",
+                    active: masterSyncStatus.filters_rebuild_running,
+                    version: masterSyncStatus.filters_version,
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    className="bg-white p-5 rounded-2xl border shadow-sm flex flex-col justify-between"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                    }}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--dark-amethyst)]">
+                        {item.label}
+                      </span>
+                      <div
+                        className="flex items-center gap-1.5 bg-zinc-50 border px-2 py-1 rounded-md"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                        }}
+                      >
+                        <div
+                          className={`size-1.5 rounded-full ${item.active ? "animate-pulse" : ""}`}
+                          style={{
+                            backgroundColor: item.active
+                              ? "var(--warning-color)"
+                              : "color-mix(in srgb, #10b981 80%, black)",
+                          }}
+                        />
+                        <span
+                          className="text-[8px] font-black uppercase tracking-wider"
+                          style={{
+                            color: item.active
+                              ? "var(--warning-color)"
+                              : "color-mix(in srgb, #10b981 80%, black)",
+                          }}
+                        >
+                          {item.active ? "Rulare" : "Ready"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <span
+                        className="text-[10px] font-black uppercase tracking-widest"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                        }}
+                      >
+                        Versiune
+                      </span>
+                      <span
+                        className="text-xl font-black font-mono"
+                        style={{ color: "var(--royal-violet)" }}
+                      >
+                        v{item.version ?? 0}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── LISTĂ FEED-URI ─────────────────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         {!showConfig ? (
           <motion.div
             key="list"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-[2.5rem] shadow-2xl border overflow-hidden"
+            className="bg-white rounded-[2rem] shadow-xl shadow-black/[0.02] border overflow-hidden relative z-10 min-h-[300px]"
             style={{
-              ...surfaceStyle,
-              ...borderStyle,
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
             }}
           >
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1200px]">
-                <thead
-                  className="border-b"
-                  style={{
-                    ...surfaceSecondaryStyle,
-                    ...borderStyle,
-                  }}
-                >
-                  <tr
-                    className="text-[10px] uppercase tracking-widest"
+            <div
+              className="hidden md:grid grid-cols-12 bg-zinc-50/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
+            >
+              <div className="col-span-4 pl-2">Sursă Feed</div>
+              <div className="col-span-3 text-center">Quick Stock</div>
+              <div className="col-span-3 text-center">Progres Sincronizare</div>
+              <div className="col-span-2 text-right pr-2">Management</div>
+            </div>
+
+            <div
+              className="divide-y"
+              style={{
+                divideColor:
+                  "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+              }}
+            >
+              {feeds.length === 0 ? (
+                <div className="py-24 flex flex-col items-center gap-3">
+                  <Network
+                    size={40}
+                    strokeWidth={1}
                     style={{
-                      color: "var(--text-secondary)",
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                    }}
+                  />
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 40%, gray)",
                     }}
                   >
-                    <th className="p-8 px-10 text-left">Feed</th>
-                    <th className="p-8 text-left">Quick Stock Mapping</th>
-                    <th className="p-8 text-center">Status</th>
-                    <th className="p-8 px-10 text-right">Acțiuni</th>
-                  </tr>
-                </thead>
+                    Niciun feed configurat
+                  </span>
+                </div>
+              ) : (
+                feeds.map((feed) => {
+                  const isProcessing =
+                    globalLock.is_locked && globalLock.locked_by === feed.id;
+                  const prog = progress[feed.id];
+                  const pct =
+                    prog && prog.total > 0
+                      ? Math.min(
+                          100,
+                          Math.round((prog.current / prog.total) * 100),
+                        )
+                      : 0;
 
-                <tbody>
-                  {feeds.map((feed) => {
-                    const isProcessing =
-                      globalLock.is_locked && globalLock.locked_by === feed.id;
+                  return (
+                    <div
+                      key={feed.id}
+                      className="group relative transition-all"
+                    >
+                      <div
+                        className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                        style={{
+                          background:
+                            "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                        }}
+                      />
 
-                    const prog = progress[feed.id];
-
-                    const pct =
-                      prog && prog.total > 0
-                        ? Math.min(
-                            100,
-                            Math.round((prog.current / prog.total) * 100),
-                          )
-                        : 0;
-
-                    // Extragem maparea rapida (fallback la maparea principala daca e vechi)
-                    const mapping =
-                      feed.quick_stock_mapping_config ||
-                      feed.mapping_config ||
-                      {};
-
-                    const skuField = mapping.cod_produs || "NESELECTAT";
-                    const stockField = mapping.stoc || "IGNORAT";
-                    const priceField = mapping.pret || "IGNORAT";
-
-                    return (
-                      <tr
-                        key={feed.id}
-                        className="border-b"
-                        style={borderStyle}
-                      >
-                        <td className="p-8 px-10 align-top">
-                          <div className="flex items-start gap-4">
-                            <div
-                              className="size-12 rounded-2xl border flex items-center justify-center shrink-0"
-                              style={{
-                                ...surfaceSecondaryStyle,
-                                ...borderStyle,
-                                color: "var(--royal-violet)",
-                              }}
-                            >
-                              <Database size={20} />
-                            </div>
-
-                            <div className="space-y-2">
-                              <div
-                                className="font-black text-lg"
+                      <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-5 gap-4 md:gap-0 relative z-10">
+                        {/* Denumire & Detalii */}
+                        <div className="col-span-4 flex items-center gap-4 w-full pl-2">
+                          <div
+                            className="w-12 h-12 bg-white rounded-xl border flex items-center justify-center shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            }}
+                          >
+                            <Database
+                              size={18}
+                              style={{ color: "var(--royal-violet)" }}
+                            />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[14px] font-bold text-[var(--dark-amethyst)] tracking-tight truncate group-hover:text-[var(--royal-violet)] transition-colors">
+                              {feed.name}
+                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span
+                                className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border bg-white"
                                 style={{
-                                  color: "var(--text-primary)",
+                                  color: "var(--dark-amethyst)",
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                                 }}
                               >
-                                {feed.name}
-                              </div>
-
-                              <div
-                                className="text-[10px] uppercase tracking-widest flex gap-3 flex-wrap"
-                                style={{
-                                  color: "var(--text-secondary)",
-                                }}
-                              >
-                                <span>{feed.feed_type}</span>
-
-                                {feed.stock_url && (
-                                  <span
-                                    className="flex items-center gap-1"
-                                    style={{
-                                      color: "var(--success-color)",
-                                    }}
-                                  >
-                                    <Zap size={10} />
-                                    QUICK STOCK
-                                  </span>
-                                )}
-
-                                {feed.auto_sync && (
-                                  <span
-                                    style={{
-                                      color: "var(--royal-violet)",
-                                    }}
-                                  >
-                                    AUTO SYNC
-                                  </span>
-                                )}
-                              </div>
-
-                              {feed.stock_url && (
-                                <div
-                                  className="mt-4 rounded-2xl border p-4 text-[11px]"
+                                {feed.feed_type}
+                              </span>
+                              {feed.auto_sync && (
+                                <span
+                                  className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border"
                                   style={{
-                                    ...surfaceSecondaryStyle,
-                                    ...borderStyle,
+                                    background:
+                                      "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                                    color: "var(--royal-violet)",
+                                    borderColor:
+                                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                                   }}
                                 >
-                                  <div
-                                    className="font-black uppercase tracking-wider mb-3 flex items-center gap-2"
-                                    style={{
-                                      color: "var(--royal-violet)",
-                                    }}
-                                  >
-                                    <Eye size={12} />
-                                    Quick Feed Detect
-                                  </div>
-
-                                  <div
-                                    className="grid grid-cols-1 gap-2"
-                                    style={{
-                                      color: "var(--text-secondary)",
-                                    }}
-                                  >
-                                    <div className="flex justify-between gap-4">
-                                      <span>SKU:</span>
-                                      <span
-                                        className="font-black"
-                                        style={{
-                                          color: "var(--success-color)",
-                                        }}
-                                      >
-                                        {skuField}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between gap-4">
-                                      <span>PREȚ:</span>
-                                      <span
-                                        className="font-black"
-                                        style={{
-                                          color:
-                                            priceField === "IGNORAT"
-                                              ? "var(--warning-color)"
-                                              : "var(--success-color)",
-                                        }}
-                                      >
-                                        {priceField}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between gap-4">
-                                      <span>STOC:</span>
-                                      <span
-                                        className="font-black"
-                                        style={{
-                                          color:
-                                            stockField === "IGNORAT"
-                                              ? "var(--warning-color)"
-                                              : "var(--success-color)",
-                                        }}
-                                      >
-                                        {stockField}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
+                                  Auto Sync
+                                </span>
                               )}
                             </div>
                           </div>
-                        </td>
+                        </div>
 
-                        <td className="p-8 align-top">
+                        {/* Quick Stock Status */}
+                        <div className="col-span-3 flex justify-start md:justify-center w-full pl-2 md:pl-0">
                           {feed.stock_url ? (
-                            <div className="space-y-3">
-                              {Object.entries(mapping)
-                                .filter(
-                                  ([key, value]) =>
-                                    value &&
-                                    QUICK_MAPPING_FIELDS.map(
-                                      (f) => f.key,
-                                    ).includes(key),
-                                )
-                                .map(([key, value]) => (
-                                  <div
-                                    key={key}
-                                    className="rounded-xl border px-4 py-3 text-[11px]"
-                                    style={{
-                                      ...surfaceSecondaryStyle,
-                                      ...borderStyle,
-                                    }}
-                                  >
-                                    <div
-                                      className="uppercase font-black mb-1"
-                                      style={{ color: "var(--royal-violet)" }}
-                                    >
-                                      {key}
-                                    </div>
-                                    <div
-                                      style={{ color: "var(--text-primary)" }}
-                                    >
-                                      {String(value)}
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-                          ) : (
-                            <div
-                              className="text-xs italic"
-                              style={{ color: "var(--text-secondary)" }}
+                            <span
+                              className="text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-sm"
+                              style={{
+                                background:
+                                  "color-mix(in srgb, #10b981 5%, transparent)",
+                                color: "#10b981",
+                                borderColor:
+                                  "color-mix(in srgb, #10b981 20%, transparent)",
+                              }}
                             >
-                              Fără Quick Stock URL
-                            </div>
+                              <Zap size={10} /> Configurat
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                              Neconfigurat
+                            </span>
                           )}
-                        </td>
+                        </div>
 
-                        <td className="p-8 align-top">
+                        {/* Progres */}
+                        <div className="col-span-3 w-full pr-4">
                           {isProcessing ? (
-                            <div className="space-y-3">
+                            <div className="space-y-1.5">
                               <div
-                                className="flex justify-between text-[10px] uppercase font-black"
+                                className="flex justify-between text-[9px] font-black uppercase tracking-widest"
                                 style={{ color: "var(--royal-violet)" }}
                               >
                                 <span>
@@ -1068,12 +858,7 @@ const AdminImportFeed = () => {
                                 </span>
                                 <span>{pct}%</span>
                               </div>
-                              <div
-                                className="h-2 rounded-full overflow-hidden"
-                                style={{
-                                  backgroundColor: "var(--surface-secondary)",
-                                }}
-                              >
+                              <div className="h-1.5 rounded-full overflow-hidden bg-zinc-100">
                                 <motion.div
                                   initial={{ width: 0 }}
                                   animate={{ width: `${pct}%` }}
@@ -1087,74 +872,77 @@ const AdminImportFeed = () => {
                           ) : (
                             <div className="flex justify-center">
                               <span
-                                className="px-4 py-1 rounded-full text-[10px] uppercase border"
+                                className="px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border shadow-sm"
                                 style={{
                                   backgroundColor:
                                     feed.status === "SUCCESS"
-                                      ? "color-mix(in srgb, var(--success-color) 10%, transparent)"
-                                      : "var(--surface-secondary)",
+                                      ? "color-mix(in srgb, #10b981 5%, transparent)"
+                                      : "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
                                   color:
                                     feed.status === "SUCCESS"
-                                      ? "var(--success-color)"
-                                      : "var(--text-secondary)",
-                                  borderColor: "var(--border-color)",
+                                      ? "#10b981"
+                                      : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                                  borderColor:
+                                    feed.status === "SUCCESS"
+                                      ? "color-mix(in srgb, #10b981 20%, transparent)"
+                                      : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                                 }}
                               >
                                 {feed.status || "IDLE"}
                               </span>
                             </div>
                           )}
-                        </td>
+                        </div>
 
-                        <td className="p-8 px-10 align-top">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => handleEditIntent(feed)}
-                              className="p-3 rounded-xl border hover:opacity-80 transition-opacity"
-                              style={{
-                                ...surfaceStyle,
-                                ...borderStyle,
-                                color: "var(--royal-violet)",
-                              }}
-                            >
-                              <Edit3 size={16} />
-                            </button>
-                            <button
-                              onClick={handleForceUnlock}
-                              className="p-3 rounded-xl border hover:opacity-80 transition-opacity"
-                              style={{
-                                ...surfaceStyle,
-                                ...borderStyle,
-                                color: "var(--warning-color)",
-                              }}
-                            >
-                              <Unlock size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(feed.id)}
-                              className="p-3 rounded-xl border hover:opacity-80 transition-opacity"
-                              style={{
-                                ...surfaceStyle,
-                                ...borderStyle,
-                                color: "var(--danger-color)",
-                              }}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        {/* Actiuni */}
+                        <div className="col-span-2 flex justify-start md:justify-end gap-1.5 w-full md:w-auto pr-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 lg:translate-x-2 group-hover:translate-x-0 mt-3 md:mt-0">
+                          <button
+                            onClick={() => handleEditIntent(feed)}
+                            className="p-2 bg-white border rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)] shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            }}
+                            title="Editează"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            onClick={handleForceUnlock}
+                            className="p-2 bg-white border rounded-lg hover:bg-amber-500 hover:text-white transition-colors text-amber-500 shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--warning-color) 20%, transparent)",
+                            }}
+                            title="Unlock Manual"
+                          >
+                            <Unlock size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(feed.id)}
+                            className="p-2 bg-white border rounded-lg hover:bg-rose-500 hover:text-white transition-colors text-rose-500 shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, #f43f5e 20%, transparent)",
+                            }}
+                            title="Șterge"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </motion.div>
         ) : (
+          /* ── FORMULAR CONFIGURARE (Bento Layout) ─────────────────────────── */
           <motion.div
             key="config"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className="space-y-6"
           >
@@ -1165,32 +953,67 @@ const AdminImportFeed = () => {
                 setDetectedColumns([]);
                 setQuickStockColumns([]);
               }}
-              className="flex items-center gap-2 text-[10px] uppercase font-black"
-              style={{ color: "var(--text-secondary)" }}
+              className="flex items-center gap-2 text-[10px] uppercase font-black px-4 py-2 rounded-lg hover:bg-white transition-colors"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
             >
-              <ChevronLeft size={14} /> Înapoi
+              <ChevronLeft size={14} /> Înapoi la listă
             </button>
 
             <div
-              className="rounded-[2.5rem] shadow-2xl border overflow-hidden pb-12"
-              style={{ ...surfaceStyle, ...borderStyle }}
+              className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-xl border overflow-hidden"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
             >
-              <div className="p-10 md:p-16 space-y-12">
+              <div className="p-8 md:p-12 space-y-10">
+                {/* General Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <Label>Nume Furnizor</Label>
+                  <div className="space-y-2 group relative">
+                    <Label
+                      className="text-[9px] font-black uppercase tracking-widest ml-1"
+                      style={{
+                        color:
+                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                      }}
+                    >
+                      Nume Furnizor
+                    </Label>
                     <input
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
-                      className="w-full rounded-2xl px-6 py-4 border"
-                      style={inputStyle}
+                      className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                      style={{
+                        boxShadow:
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                        e.target.style.backgroundColor = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                        e.target.style.backgroundColor =
+                          "rgba(255,255,255,0.5)";
+                      }}
                     />
                   </div>
-
-                  <div className="space-y-3">
-                    <Label>Adaos %</Label>
+                  <div className="space-y-2 group relative">
+                    <Label
+                      className="text-[9px] font-black uppercase tracking-widest ml-1"
+                      style={{
+                        color:
+                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                      }}
+                    >
+                      Adaos Comercial (%)
+                    </Label>
                     <input
                       type="number"
                       value={formData.markup_percentage}
@@ -1200,101 +1023,169 @@ const AdminImportFeed = () => {
                           markup_percentage: parseFloat(e.target.value) || 0,
                         })
                       }
-                      className="w-full rounded-2xl px-6 py-4 border"
-                      style={inputStyle}
+                      className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                      style={{
+                        boxShadow:
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                        e.target.style.backgroundColor = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                        e.target.style.backgroundColor =
+                          "rgba(255,255,255,0.5)";
+                      }}
                     />
-                  </div>
-
-                  <div className="space-y-3 col-span-1 md:col-span-2">
-                    <Label className="flex gap-2 items-center">
-                      <Database size={14} /> URL Feed Principal (Catalog
-                      Complet)
-                    </Label>
-                    <div className="flex gap-2">
-                      <input
-                        value={formData.url}
-                        onChange={(e) =>
-                          setFormData({ ...formData, url: e.target.value })
-                        }
-                        className="flex-1 rounded-2xl px-6 py-4 border"
-                        style={inputStyle}
-                        placeholder="Ex: https://furnizor.ro/feed.csv"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleInspect("main")}
-                        disabled={isInspecting}
-                        className="text-white px-8 py-4 rounded-2xl font-black uppercase flex items-center gap-2"
-                        style={{ background: "var(--primary-gradient)" }}
-                      >
-                        {isInspecting ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Search size={16} />
-                        )}
-                        Inspectează
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 col-span-1 md:col-span-2">
-                    <Label className="flex gap-2 items-center">
-                      <Zap
-                        size={14}
-                        style={{ color: "var(--warning-color)" }}
-                      />{" "}
-                      Quick Stock URL (Doar Stoc & Preț - Opțional)
-                    </Label>
-                    <div className="flex gap-2">
-                      <input
-                        value={formData.stock_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            stock_url: e.target.value,
-                          })
-                        }
-                        className="flex-1 rounded-2xl px-6 py-4 border"
-                        style={inputStyle}
-                        placeholder="Ex: https://furnizor.ro/stock.csv"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleInspect("quick")}
-                        disabled={isInspectingQuick || !formData.stock_url}
-                        className="text-white px-8 py-4 rounded-2xl font-black uppercase flex items-center gap-2 disabled:opacity-50"
-                        style={{ background: "var(--dark-amethyst)" }}
-                      >
-                        {isInspectingQuick ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Search size={16} />
-                        )}
-                        Inspectează Stoc
-                      </button>
-                    </div>
                   </div>
                 </div>
 
-                {/* Mapare Feed Principal */}
+                {/* Main Feed URL */}
+                <div className="space-y-3">
+                  <Label
+                    className="flex gap-2 items-center text-[10px] font-black uppercase tracking-widest ml-1"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                    }}
+                  >
+                    <Server
+                      size={14}
+                      style={{ color: "var(--royal-violet)" }}
+                    />{" "}
+                    URL Feed Principal (Catalog Complet)
+                  </Label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      value={formData.url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, url: e.target.value })
+                      }
+                      placeholder="Ex: https://furnizor.ro/feed.csv"
+                      className="flex-1 bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-medium outline-none transition-all text-[var(--dark-amethyst)]"
+                      style={{
+                        boxShadow:
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                        e.target.style.backgroundColor = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                        e.target.style.backgroundColor =
+                          "rgba(255,255,255,0.5)";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleInspect("main")}
+                      disabled={isInspecting}
+                      className="text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-50"
+                      style={{ background: "var(--primary-gradient)" }}
+                    >
+                      {isInspecting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Search size={16} strokeWidth={2.5} />
+                      )}
+                      Inspectează Structură
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Stock URL */}
+                <div className="space-y-3">
+                  <Label
+                    className="flex gap-2 items-center text-[10px] font-black uppercase tracking-widest ml-1"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                    }}
+                  >
+                    <Zap size={14} style={{ color: "var(--warning-color)" }} />{" "}
+                    Quick Stock URL (Stoc/Preț - Opțional)
+                  </Label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      value={formData.stock_url}
+                      onChange={(e) =>
+                        setFormData({ ...formData, stock_url: e.target.value })
+                      }
+                      placeholder="Ex: https://furnizor.ro/stock.csv"
+                      className="flex-1 bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-medium outline-none transition-all text-[var(--dark-amethyst)]"
+                      style={{
+                        boxShadow:
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                        e.target.style.backgroundColor = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                        e.target.style.backgroundColor =
+                          "rgba(255,255,255,0.5)";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleInspect("quick")}
+                      disabled={isInspectingQuick || !formData.stock_url}
+                      className="bg-white border text-[var(--dark-amethyst)] px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-zinc-50 shadow-sm active:scale-95 disabled:opacity-50"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+                      }}
+                    >
+                      {isInspectingQuick ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Search size={16} strokeWidth={2.5} />
+                      )}
+                      Inspectează Stoc
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mapare Main */}
                 {detectedColumns.length > 0 && (
-                  <div className="space-y-8 pt-8 border-t" style={borderStyle}>
-                    <div className="flex items-center justify-between">
-                      <h3
-                        className="text-xs uppercase font-black"
-                        style={{ color: "var(--dark-amethyst)" }}
-                      >
+                  <div
+                    className="space-y-6 pt-10 border-t"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                    }}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--dark-amethyst)] flex items-center gap-2">
+                        <Database
+                          size={14}
+                          style={{ color: "var(--royal-violet)" }}
+                        />{" "}
                         Mapare Feed Principal
                       </h3>
-                      <div
-                        className="text-[11px]"
-                        style={{ color: "var(--text-secondary)" }}
+                      <span
+                        className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-md border bg-white"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                        }}
                       >
-                        {detectedColumns.length} coloane detectate
-                      </div>
+                        {detectedColumns.length} Coloane Detectate
+                      </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {MAPPING_FIELDS.map((field) => {
                         const selectedValue =
                           formData.mapping_config[field.key] ?? "";
@@ -1306,12 +1197,23 @@ const AdminImportFeed = () => {
                         return (
                           <div
                             key={field.key}
-                            className="rounded-2xl border p-5"
-                            style={{ ...surfaceSecondaryStyle, ...borderStyle }}
+                            className="bg-white rounded-[1.2rem] border p-4 shadow-sm relative overflow-hidden transition-all focus-within:shadow-md"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                            }}
                           >
+                            {selectedValue && isMatched && (
+                              <div className="absolute top-0 right-0 w-8 h-8 bg-emerald-50 rounded-bl-[1.2rem] flex items-center justify-center">
+                                <div className="size-2 rounded-full bg-emerald-500" />
+                              </div>
+                            )}
                             <Label
-                              className="text-[10px]"
-                              style={{ color: "var(--royal-violet)" }}
+                              className="text-[9px] font-black uppercase tracking-widest block mb-3"
+                              style={{
+                                color:
+                                  "color-mix(in srgb, var(--royal-violet) 70%, gray)",
+                              }}
                             >
                               {field.label}
                             </Label>
@@ -1326,8 +1228,20 @@ const AdminImportFeed = () => {
                                   },
                                 })
                               }
-                              className="w-full mt-3 rounded-xl px-4 py-3 border"
-                              style={inputStyle}
+                              className="w-full bg-zinc-50/50 rounded-xl px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none appearance-none cursor-pointer border transition-colors"
+                              style={{
+                                color: "var(--dark-amethyst)",
+                                borderColor:
+                                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                              }}
+                              onFocus={(e) =>
+                                (e.target.style.borderColor =
+                                  "var(--royal-violet)")
+                              }
+                              onBlur={(e) =>
+                                (e.target.style.borderColor =
+                                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)")
+                              }
                             >
                               <option value="">Ignoră</option>
                               {detectedColumns.map((c) => (
@@ -1336,22 +1250,6 @@ const AdminImportFeed = () => {
                                 </option>
                               ))}
                             </select>
-                            <div
-                              className="mt-3 text-[10px] uppercase font-black"
-                              style={{
-                                color: selectedValue
-                                  ? isMatched
-                                    ? "var(--success-color)"
-                                    : "var(--warning-color)"
-                                  : "var(--text-secondary)",
-                              }}
-                            >
-                              {!selectedValue
-                                ? "IGNORAT"
-                                : isMatched
-                                  ? "MAPAT"
-                                  : "NEDETECTAT"}
-                            </div>
                           </div>
                         );
                       })}
@@ -1359,25 +1257,36 @@ const AdminImportFeed = () => {
                   </div>
                 )}
 
-                {/* Mapare Feed Secundar (Quick Stock) */}
+                {/* Mapare Quick Stock */}
                 {quickStockColumns.length > 0 && formData.stock_url && (
-                  <div className="space-y-8 pt-8 border-t" style={borderStyle}>
-                    <div className="flex items-center justify-between">
+                  <div
+                    className="space-y-6 pt-10 border-t"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                    }}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <h3
-                        className="text-xs uppercase font-black flex items-center gap-2"
+                        className="text-[11px] font-black uppercase tracking-[0.2em] flex items-center gap-2"
                         style={{ color: "var(--warning-color)" }}
                       >
                         <Zap size={14} /> Mapare Quick Stock
                       </h3>
-                      <div
-                        className="text-[11px]"
-                        style={{ color: "var(--text-secondary)" }}
+                      <span
+                        className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-md border bg-white"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                        }}
                       >
-                        {quickStockColumns.length} coloane detectate în stoc
-                      </div>
+                        {quickStockColumns.length} Coloane Detectate
+                      </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {QUICK_MAPPING_FIELDS.map((field) => {
                         const selectedValue =
                           formData.quick_stock_mapping_config[field.key] ?? "";
@@ -1389,12 +1298,23 @@ const AdminImportFeed = () => {
                         return (
                           <div
                             key={`quick_${field.key}`}
-                            className="rounded-2xl border p-5"
-                            style={{ ...surfaceStyle, ...borderStyle }}
+                            className="bg-white rounded-[1.2rem] border p-4 shadow-sm relative overflow-hidden transition-all focus-within:shadow-md"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                            }}
                           >
+                            {selectedValue && isMatched && (
+                              <div className="absolute top-0 right-0 w-8 h-8 bg-amber-50 rounded-bl-[1.2rem] flex items-center justify-center">
+                                <div className="size-2 rounded-full bg-amber-500" />
+                              </div>
+                            )}
                             <Label
-                              className="text-[10px]"
-                              style={{ color: "var(--warning-color)" }}
+                              className="text-[9px] font-black uppercase tracking-widest block mb-3"
+                              style={{
+                                color:
+                                  "color-mix(in srgb, var(--royal-violet) 70%, gray)",
+                              }}
                             >
                               {field.label}
                             </Label>
@@ -1409,8 +1329,20 @@ const AdminImportFeed = () => {
                                   },
                                 })
                               }
-                              className="w-full mt-3 rounded-xl px-4 py-3 border"
-                              style={inputStyle}
+                              className="w-full bg-zinc-50/50 rounded-xl px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none appearance-none cursor-pointer border transition-colors"
+                              style={{
+                                color: "var(--dark-amethyst)",
+                                borderColor:
+                                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                              }}
+                              onFocus={(e) =>
+                                (e.target.style.borderColor =
+                                  "var(--royal-violet)")
+                              }
+                              onBlur={(e) =>
+                                (e.target.style.borderColor =
+                                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)")
+                              }
                             >
                               <option value="">Ignoră</option>
                               {quickStockColumns.map((c) => (
@@ -1419,22 +1351,6 @@ const AdminImportFeed = () => {
                                 </option>
                               ))}
                             </select>
-                            <div
-                              className="mt-3 text-[10px] uppercase font-black"
-                              style={{
-                                color: selectedValue
-                                  ? isMatched
-                                    ? "var(--success-color)"
-                                    : "var(--danger-color)"
-                                  : "var(--text-secondary)",
-                              }}
-                            >
-                              {!selectedValue
-                                ? "IGNORAT"
-                                : isMatched
-                                  ? "MAPAT"
-                                  : "NEDETECTAT"}
-                            </div>
                           </div>
                         );
                       })}
@@ -1442,10 +1358,8 @@ const AdminImportFeed = () => {
                   </div>
                 )}
 
-                <div
-                  className="pt-8 border-t flex justify-end"
-                  style={borderStyle}
-                >
+                {/* Save Footer */}
+                <div className="pt-8 flex justify-end">
                   <button
                     type="button"
                     onClick={handleSave}
@@ -1453,17 +1367,17 @@ const AdminImportFeed = () => {
                       isSubmitting ||
                       (detectedColumns.length === 0 && !formData.id)
                     }
-                    className="text-white px-16 py-6 rounded-2xl uppercase font-black flex items-center gap-3 disabled:opacity-50"
+                    className="w-full md:w-auto text-white px-10 py-4 rounded-2xl text-[10px] uppercase font-black tracking-widest flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl active:scale-95 disabled:opacity-50 transition-all"
                     style={{ background: "var(--primary-gradient)" }}
                   >
                     {isSubmitting ? (
-                      <Loader2 size={18} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" />
                     ) : (
-                      <DownloadCloud size={18} />
+                      <DownloadCloud size={16} strokeWidth={2.5} />
                     )}
                     {formData.id
                       ? "Actualizează Configurația"
-                      : "Salvează & Inițiază"}
+                      : "Salvează & Inițiază Import"}
                   </button>
                 </div>
               </div>
