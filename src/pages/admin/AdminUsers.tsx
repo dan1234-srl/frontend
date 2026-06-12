@@ -416,6 +416,19 @@ const AdminUsers = () => {
           </footer>
         )}
       </div>
+
+      <AdminConfirmDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(v) => !v && setConfirmDeleteId(null)}
+        eyebrow="Suspendare cont"
+        title="Suspendezi acest utilizator?"
+        description="Contul va fi dezactivat și nu va mai putea autentifica. Acțiunea poate fi reversată din baza de date."
+        confirmLabel="Suspendă"
+        destructive
+        onConfirm={async () => {
+          if (confirmDeleteId) await handleDeleteUser(confirmDeleteId);
+        }}
+      />
     </div>
   );
 };
