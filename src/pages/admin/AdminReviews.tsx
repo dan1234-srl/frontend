@@ -419,6 +419,19 @@ const AdminReviews = () => {
           </div>
         </div>
       )}
+
+      <AdminConfirmDialog
+        open={confirmDelete !== null}
+        onOpenChange={(v) => !v && setConfirmDelete(null)}
+        eyebrow="Ștergere recenzie"
+        title="Ștergi această recenzie?"
+        description="Acțiunea este permanentă. Recenzia nu va mai apărea în niciun raport."
+        confirmLabel="Șterge"
+        destructive
+        onConfirm={async () => {
+          if (confirmDelete !== null) await removeReview(confirmDelete);
+        }}
+      />
     </div>
   );
 };
