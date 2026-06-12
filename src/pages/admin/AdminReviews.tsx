@@ -376,7 +376,7 @@ const AdminReviews = () => {
                       )}
                       <Button
                         disabled={busyId === review.id}
-                        onClick={() => removeReview(review.id)}
+                        onClick={() => setConfirmDelete(review.id)}
                         variant="ghost"
                         className="flex-1 lg:flex-none rounded-xl bg-zinc-50 text-zinc-400 hover:text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] h-12 gap-2"
                       >
