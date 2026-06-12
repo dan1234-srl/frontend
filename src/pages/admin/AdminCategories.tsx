@@ -1,3 +1,8 @@
+/**
+ * AdminCategories.tsx
+ * Pagina de administrare categorii - Design Futuristic (Isomorphic UI)
+ */
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -16,6 +21,7 @@ import {
   ShieldCheck,
   ChevronLeft,
   UploadCloud,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -55,9 +61,7 @@ const OptimizedImage = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 
-  const cleanSrc = getValidImageUrl(src);
-  // S3 livrează deja imagini optimizate
-  const optimizedSrc = cleanSrc || null;
+  const optimizedSrc = getValidImageUrl(src) || null;
 
   if (!optimizedSrc || error)
     return (
@@ -101,7 +105,9 @@ interface Category {
 const AdminCategories = () => {
   const { isAdmin, isLoading: authLoading } = useAuth();
   const cachedCats = readCache<Category[]>("admin:categories", 60_000);
-  const [categories, setCategories] = useState<Category[]>(cachedCats.data || []);
+  const [categories, setCategories] = useState<Category[]>(
+    cachedCats.data || [],
+  );
   const [loading, setLoading] = useState(!cachedCats.data);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -155,7 +161,7 @@ const AdminCategories = () => {
     });
   }, [categories, searchTerm]);
 
-  const totalPages = Math.ceil(filteredRootCats.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredRootCats.length / itemsPerPage) || 1;
   const paginatedCats = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredRootCats.slice(start, start + itemsPerPage);
@@ -190,7 +196,6 @@ const AdminCategories = () => {
 
     setIsUploadingImage(true);
     try {
-      // APELĂM ENDPOINT-UL NOU DE IMAGINI S3
       const res = await fetch(`${API_BASE_URL}/api/v1/images/image`, {
         method: "POST",
         body: uploadData,
@@ -199,19 +204,15 @@ const AdminCategories = () => {
 
       if (res.ok) {
         const data = await res.json();
-        // Construim un obiect JSON pentru a pastra variantele large/medium/small
-        // Acesta va fi parsat la afișare de OptimizedImage
         const imageObj = JSON.stringify({
           main: data.versions,
           url: data.url,
         });
         setFormData({ ...formData, image_url: imageObj });
-        toast.success("Imagine procesată S3 și încărcată cu succes!");
+        toast.success("Imagine procesată și încărcată!");
       } else {
         const errData = await res.json();
-        toast.error(
-          errData.detail || "A apărut o eroare la încărcarea imaginii.",
-        );
+        toast.error(errData.detail || "Eroare la încărcarea imaginii.");
       }
     } catch (error) {
       toast.error("Eroare de conexiune cu serverul.");
@@ -305,63 +306,111 @@ const AdminCategories = () => {
   if (authLoading || !isAdmin) return null;
 
   return (
-    <div className="w-full space-y-10 pb-20 font-sans text-left">
-      {/* HEADER */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-12 h-[1px]"
-              style={{ backgroundColor: "var(--royal-violet)" }}
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left selection:bg-[var(--royal-violet)] selection:text-white animate-fade-in">
+      {/* ── Header Futuristic ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              style={{ color: "var(--royal-violet)" }}
+              className="animate-pulse"
             />
             <span
-              className="text-[10px] font-black uppercase tracking-[0.5em]"
-              style={{ color: "var(--royal-violet)" }}
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
             >
-              Arhitectură Catalog
+              Arhitectură
             </span>
           </div>
-          <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
-            Ierarhie{" "}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
+            Master{" "}
             <span style={{ color: "var(--royal-violet)" }}>Categorii</span>
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-          <div className="relative group flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 sm:w-80 group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
-              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+              size={15}
+              style={{
+                color:
+                  "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+              }}
             />
             <input
-              className="w-full sm:w-[350px] pl-12 pr-6 py-4 bg-zinc-50 border-none rounded-2xl focus:ring-2 focus:ring-[var(--royal-violet)]/10 outline-none transition-all text-sm font-bold shadow-inner"
+              className="w-full pl-10 pr-4 py-3 bg-white/40 backdrop-blur-xl border rounded-xl outline-none transition-all text-[13px] font-medium placeholder:font-normal"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 12%, transparent)",
+                color: "var(--dark-amethyst)",
+                boxShadow:
+                  "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
               placeholder="Filtrează ierarhia..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "var(--royal-violet)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor =
+                  "color-mix(in srgb, var(--royal-violet) 12%, transparent)")
+              }
             />
           </div>
           <button
             onClick={() => openEdit()}
-            className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 whitespace-nowrap"
+            className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
             style={{ background: "var(--primary-gradient)" }}
           >
-            <Plus size={16} /> Adaugă Colecție
+            <Plus size={14} strokeWidth={2.5} /> Adaugă Colecție
           </button>
         </div>
       </header>
 
-      {/* TABLE BODY */}
-      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-zinc-200/50 border border-zinc-100 overflow-hidden relative min-h-[400px]">
-        <div className="hidden md:grid grid-cols-12 bg-zinc-50/50 border-b border-zinc-100 text-[10px] uppercase tracking-[0.2em] font-black text-zinc-400 px-10 py-6">
-          <div className="col-span-6 pl-12">Denumire & Slug</div>
-          <div className="col-span-2 text-center">Total Produse</div>
-          <div className="col-span-4 text-right pr-6">Acțiuni</div>
+      {/* ── Listă Categorii (Futuristic Design) ──────────────────────────── */}
+      <div
+        className="bg-white rounded-[2rem] border overflow-hidden shadow-2xl shadow-zinc-200/20"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+        }}
+      >
+        {/* Header Listă */}
+        <div
+          className="hidden md:grid grid-cols-12 bg-white/50 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-10 py-5"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+            color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+          }}
+        >
+          <div className="col-span-6 pl-12">Denumire & Structură</div>
+          <div className="col-span-2 text-center">Articole Indexate</div>
+          <div className="col-span-4 text-right pr-6">Status / Acțiuni</div>
         </div>
 
-        <div className="divide-y divide-zinc-50">
+        <div
+          className="divide-y"
+          style={{
+            divideColor:
+              "color-mix(in srgb, var(--royal-violet) 4%, transparent)",
+          }}
+        >
           {loading ? (
             [...Array(5)].map((_, i) => (
-              <div key={i} className="px-10 py-8 flex items-center gap-10">
+              <div key={i} className="px-10 py-6 flex items-center gap-8">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <Skeleton className="h-16 w-16 rounded-xl" />
                 <div className="space-y-2 flex-1">
@@ -372,21 +421,38 @@ const AdminCategories = () => {
               </div>
             ))
           ) : paginatedCats.length === 0 ? (
-            <div className="py-32 flex flex-col items-center gap-2">
+            <div className="py-24 flex flex-col items-center gap-3">
               <Layers
-                className="text-zinc-200 mb-2"
-                size={48}
+                size={40}
                 strokeWidth={1}
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                }}
               />
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+              <span
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                }}
+              >
                 Nicio colecție găsită
               </span>
             </div>
           ) : (
-            paginatedCats.map((cat) => (
-              <div key={cat.id} className="group">
-                <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-6 md:px-10 py-6 hover:bg-zinc-50/50 transition-colors gap-4 md:gap-0">
-                  <div className="col-span-6 flex items-center gap-6 w-full">
+            paginatedCats.map((cat, index) => (
+              <div key={cat.id} className="group relative">
+                {/* Gradient Fill pe hover (Root Category) */}
+                <div
+                  className="absolute inset-x-2 inset-y-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                  style={{
+                    background:
+                      "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 4%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 2%, transparent) 100%)",
+                  }}
+                />
+
+                <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-6 md:px-10 py-5 transition-colors gap-4 md:gap-0 relative z-10">
+                  <div className="col-span-6 flex items-center gap-5 w-full">
+                    {/* Expand Button */}
                     <button
                       onClick={() =>
                         setExpanded((prev) =>
@@ -395,11 +461,17 @@ const AdminCategories = () => {
                             : [...prev, cat.id],
                         )
                       }
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 ${expanded.includes(cat.id) ? "text-white shadow-md" : "bg-zinc-50 text-zinc-400 hover:bg-zinc-100"}`}
+                      className={`size-10 rounded-full flex items-center justify-center transition-all shrink-0 border ${expanded.includes(cat.id) ? "text-white shadow-md" : "bg-white"}`}
                       style={{
                         backgroundColor: expanded.includes(cat.id)
                           ? "var(--dark-amethyst)"
-                          : undefined,
+                          : "transparent",
+                        borderColor: expanded.includes(cat.id)
+                          ? "transparent"
+                          : "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+                        color: expanded.includes(cat.id)
+                          ? "white"
+                          : "var(--royal-violet)",
                       }}
                     >
                       {expanded.includes(cat.id) ? (
@@ -408,99 +480,166 @@ const AdminCategories = () => {
                         <ChevronRight size={16} />
                       )}
                     </button>
+
+                    {/* Image */}
                     <OptimizedImage
                       src={cat.image_url}
-                      className="w-16 h-16 rounded-xl border border-zinc-100 shadow-sm shrink-0"
+                      className="w-14 h-14 rounded-xl border shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105"
                     />
+
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate">
+                      <span className="text-[13px] font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate group-hover:text-[var(--royal-violet)] transition-colors">
                         {cat.name}
                       </span>
-                      <span className="text-[10px] font-bold text-zinc-400 truncate">
+                      <span
+                        className="text-[9px] font-black uppercase tracking-[0.2em] truncate mt-0.5"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                        }}
+                      >
                         /{cat.slug}
                       </span>
                     </div>
                   </div>
+
                   <div className="col-span-2 text-center hidden md:block">
-                    <span className="text-xl font-serif italic font-bold text-[var(--dark-amethyst)]">
+                    <span
+                      className="text-sm font-black tabular-nums"
+                      style={{ color: "var(--dark-amethyst)" }}
+                    >
                       {cat.product_count || 0}
                     </span>
                   </div>
+
                   <div className="col-span-4 flex justify-end gap-2 w-full md:w-auto">
+                    {/* Status Badge inline for mobile */}
+                    <div className="md:hidden flex items-center mr-auto">
+                      <span
+                        className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border"
+                        style={{
+                          backgroundColor: cat.is_active
+                            ? "color-mix(in srgb, var(--royal-violet) 5%, transparent)"
+                            : "color-mix(in srgb, gray 5%, transparent)",
+                          color: cat.is_active ? "var(--royal-violet)" : "gray",
+                          borderColor: cat.is_active
+                            ? "color-mix(in srgb, var(--royal-violet) 15%, transparent)"
+                            : "color-mix(in srgb, gray 15%, transparent)",
+                        }}
+                      >
+                        {cat.is_active ? "Activ" : "Inactiv"}
+                      </span>
+                    </div>
+
                     <button
                       onClick={() => toggleVisibility(cat)}
-                      className={`p-3 rounded-xl border transition-all ${cat.is_active ? "text-emerald-500 bg-emerald-50 border-emerald-100" : "text-zinc-300 bg-zinc-50 border-zinc-100"}`}
+                      className={`p-2.5 rounded-xl border transition-all ${cat.is_active ? "text-emerald-600 bg-emerald-50/50 hover:bg-emerald-100" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
+                      style={{
+                        borderColor: cat.is_active
+                          ? "color-mix(in srgb, #059669 20%, transparent)"
+                          : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
                     >
-                      <Eye size={16} />
+                      {cat.is_active ? <Eye size={15} /> : <EyeOff size={15} />}
                     </button>
                     <button
                       onClick={() => openEdit(cat)}
-                      className="p-3 bg-white border border-zinc-100 rounded-xl hover:text-[var(--royal-violet)] transition-all"
+                      className="p-2.5 bg-white border rounded-xl hover:bg-[var(--royal-violet)] hover:text-white transition-all shadow-sm"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
                     >
-                      <Edit2 size={16} />
+                      <Edit2 size={15} />
                     </button>
                     <button
                       onClick={() => handleDelete(cat.id)}
-                      className="p-3 bg-white border border-zinc-100 rounded-xl hover:bg-rose-500 hover:text-white transition-all text-rose-500"
+                      className="p-2.5 bg-white border rounded-xl hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all text-rose-500 shadow-sm"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
 
-                {/* SUBCATEGORIES */}
+                {/* SUBCATEGORII (Animated & Nested) */}
                 <AnimatePresence>
                   {expanded.includes(cat.id) && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="bg-zinc-50/50 border-l-4 ml-10 rounded-bl-xl mb-4"
-                      style={{ borderLeftColor: "var(--royal-violet)" }}
+                      className="bg-white/40 backdrop-blur-sm border-l-2 ml-[3.2rem] mr-2 rounded-br-2xl mb-3 overflow-hidden relative z-10"
+                      style={{
+                        borderLeftColor: "var(--royal-violet)",
+                        borderBottom:
+                          "1px solid color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                        borderRight:
+                          "1px solid color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                      }}
                     >
                       {cat.subcategories?.length > 0 ? (
                         cat.subcategories.map((sub) => (
                           <div
                             key={sub.id}
-                            className="flex flex-col md:grid md:grid-cols-12 items-center px-12 py-4 border-b border-white last:border-0"
+                            className="flex flex-col md:grid md:grid-cols-12 items-center px-6 md:px-12 py-4 border-b last:border-0 hover:bg-white/60 transition-colors"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 6%, transparent)",
+                            }}
                           >
-                            <div className="col-span-6 flex items-center gap-4">
-                              <MoveRight size={14} className="text-zinc-300" />
+                            <div className="col-span-6 flex items-center gap-4 w-full">
+                              <MoveRight
+                                size={14}
+                                style={{
+                                  color:
+                                    "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                                }}
+                              />
                               <div className="flex flex-col">
-                                <span className="text-[12px] font-bold text-[var(--dark-amethyst)] uppercase">
+                                <span className="text-xs font-bold text-[var(--dark-amethyst)] uppercase tracking-tight">
                                   {sub.name}
                                 </span>
-                                <span className="text-[9px] font-bold text-zinc-400">
+                                <span
+                                  className="text-[9px] font-black uppercase tracking-[0.2em] mt-0.5"
+                                  style={{
+                                    color:
+                                      "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                                  }}
+                                >
                                   /{cat.slug}/{sub.slug}
                                 </span>
                               </div>
                             </div>
                             <div
-                              className="col-span-2 text-center text-[11px] font-black"
+                              className="col-span-2 text-center text-[10px] font-black tabular-nums hidden md:block"
                               style={{ color: "var(--royal-violet)" }}
                             >
                               {sub.product_count || 0} ARTICOLE
                             </div>
-                            <div className="col-span-4 flex justify-end gap-3">
+                            <div className="col-span-4 flex justify-end gap-2 w-full md:w-auto mt-3 md:mt-0">
                               <button
                                 onClick={() => toggleVisibility(sub)}
-                                className={
-                                  sub.is_active
-                                    ? "text-emerald-500"
-                                    : "text-zinc-300"
-                                }
+                                className={`p-2 rounded-lg transition-all ${sub.is_active ? "text-emerald-500 hover:bg-emerald-50" : "text-zinc-300 hover:bg-zinc-50"}`}
                               >
-                                <Eye size={14} />
+                                {sub.is_active ? (
+                                  <Eye size={14} />
+                                ) : (
+                                  <EyeOff size={14} />
+                                )}
                               </button>
                               <button
                                 onClick={() => openEdit(sub)}
-                                className="text-[var(--dark-amethyst)] hover:text-[var(--royal-violet)]"
+                                className="p-2 rounded-lg hover:bg-[var(--royal-violet)] hover:text-white text-[var(--dark-amethyst)] transition-colors"
                               >
                                 <Edit2 size={14} />
                               </button>
                               <button
                                 onClick={() => handleDelete(sub.id)}
-                                className="text-rose-400 hover:text-rose-600"
+                                className="p-2 rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -508,9 +647,15 @@ const AdminCategories = () => {
                           </div>
                         ))
                       ) : (
-                        <div className="p-8 text-[10px] font-black uppercase text-zinc-400 flex items-center gap-2">
-                          <ShieldCheck size={14} /> Fără subdiviziuni
-                          înregistrate
+                        <div
+                          className="px-12 py-6 text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
+                          style={{
+                            color:
+                              "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                          }}
+                        >
+                          <ShieldCheck size={14} /> Nicio sub-colecție
+                          înregistrată
                         </div>
                       )}
                     </motion.div>
@@ -523,130 +668,266 @@ const AdminCategories = () => {
 
         {/* PAGINATION */}
         {!loading && totalPages > 1 && (
-          <footer className="p-6 bg-zinc-50 border-t flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-              Pagina {currentPage} / {totalPages}
+          <div
+            className="p-5 border-t flex justify-center items-center gap-4 shrink-0"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+              background: "color-mix(in srgb, var(--royal-violet) 2%, white)",
+            }}
+          >
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <ChevronLeft size={15} style={{ color: "var(--royal-violet)" }} />
+            </button>
+            <span
+              className="text-[10px] font-black uppercase tracking-[0.3em] bg-white border px-5 py-2.5 rounded-xl shadow-sm"
+              style={{
+                color: "var(--dark-amethyst)",
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
+              {totalPages}
             </span>
-            <div className="flex gap-2">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="p-3 bg-white rounded-xl border hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="p-3 bg-white rounded-xl border hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </footer>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <ChevronRight
+                size={15}
+                style={{ color: "var(--royal-violet)" }}
+              />
+            </button>
+          </div>
         )}
       </div>
 
-      {/* MODAL CONFIG */}
+      {/* ── MODAL CONFIG (Futuristic) ─────────────────────────────────────── */}
       <AdminDialogShell
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         size="lg"
-        className="bg-[#FBFBFD]"
+        mobileVariant="modal"
+        className="h-[100dvh] sm:h-[94vh] sm:max-h-[94vh] rounded-none sm:rounded-[2.5rem] border"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+        }}
       >
-        <AdminDialogTitle>
-          {editingCategory ? "Editează Parametrii" : "Colecție Nouă"}
-        </AdminDialogTitle>
-        <header className="px-6 sm:px-10 py-6 sm:py-8 flex justify-between items-center bg-white border-b shrink-0">
+        <AdminDialogTitle className="sr-only">Configurare</AdminDialogTitle>
+        <header
+          className="px-6 sm:px-10 py-6 sm:py-8 flex justify-between items-center bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           <div>
-            <h2 className="heading-serif text-2xl sm:text-3xl italic text-[var(--dark-amethyst)]">
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
               {editingCategory ? "Editează Parametrii" : "Colecție Nouă"}
             </h2>
-            <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-black mt-1">
-              Configurare Ierarhie Master
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--royal-violet)" }}
+              />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Configurare Ierarhie Master
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setIsModalOpen(false)}
-            className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+            className="size-10 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
           >
-            <X size={20} />
+            <X size={15} strokeWidth={2.5} />
           </button>
         </header>
 
-        <div className="flex-1 p-6 sm:p-10 space-y-8 sm:space-y-10 overflow-y-auto luxury-scrollbar">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-                Denumire
+        <div className="flex-1 p-6 sm:p-10 space-y-8 sm:space-y-10 overflow-y-auto luxury-scrollbar relative z-10">
+          {/* Identificatori */}
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[2rem] border shadow-sm space-y-6"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+              <div className="space-y-2 group relative">
+                <Label
+                  className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  Denumire
+                </Label>
+                <input
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                  style={{
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      name: e.target.value,
+                      slug: generateSlug(e.target.value),
+                    })
+                  }
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 40%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                />
+              </div>
+              <div className="space-y-2 group relative">
+                <Label
+                  className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  URL Slug
+                </Label>
+                <input
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-mono font-bold outline-none transition-all text-zinc-500"
+                  style={{
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                  value={formData.slug}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
+                  onFocus={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 40%, transparent)";
+                    e.target.style.backgroundColor = "#ffffff";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)";
+                    e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2 group relative">
+              <Label
+                className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                Părinte Ierarhic (Opțional)
               </Label>
-              <input
-                className="w-full bg-white rounded-2xl p-4 text-sm font-bold border border-zinc-100 outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all"
-                value={formData.name}
+              <select
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-black outline-none appearance-none cursor-pointer transition-all"
+                style={{
+                  color: "var(--dark-amethyst)",
+                  boxShadow:
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                }}
+                value={formData.parent_id || ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    name: e.target.value,
-                    slug: generateSlug(e.target.value),
+                    parent_id: e.target.value || null,
                   })
                 }
-              />
-            </div>
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-                URL Slug
-              </Label>
-              <input
-                className="w-full bg-white rounded-2xl p-4 text-sm font-mono font-bold border border-zinc-100 outline-none focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all"
-                value={formData.slug}
-                onChange={(e) =>
-                  setFormData({ ...formData, slug: e.target.value })
-                }
-              />
+                onFocus={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 40%, transparent)";
+                  e.target.style.backgroundColor = "#ffffff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)";
+                  e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                }}
+              >
+                <option value="">COLECȚIE PRINCIPALĂ (ROOT)</option>
+                {categories
+                  .filter((c) => !c.parent_id && c.id !== editingCategory?.id)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name.toUpperCase()}
+                    </option>
+                  ))}
+              </select>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-              Părinte Ierarhic (Optional)
-            </Label>
-            <select
-              className="w-full bg-white rounded-2xl p-4 text-xs font-black border border-zinc-100 outline-none appearance-none"
-              value={formData.parent_id || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  parent_id: e.target.value || null,
-                })
-              }
+          {/* Media */}
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[2rem] border shadow-sm space-y-4"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <Label
+              className="text-[9px] font-black uppercase tracking-[0.3em] flex items-center gap-2"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
             >
-              <option value="">COLECȚIE PRINCIPALĂ (ROOT)</option>
-              {categories
-                .filter((c) => !c.parent_id && c.id !== editingCategory?.id)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name.toUpperCase()}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
-              Imagine Prezentare
+              <ImageIcon size={13} /> Imagine Prezentare
             </Label>
-            <div className="flex gap-6 items-center">
+            <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
               <OptimizedImage
                 src={formData.image_url}
-                className="size-24 rounded-2xl shadow-md border shrink-0"
+                className="size-28 rounded-2xl shadow-sm border shrink-0"
               />
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex-1 flex flex-col gap-3 w-full">
                 <input
-                  className="w-full bg-zinc-50 rounded-xl p-3 text-xs font-medium border border-zinc-100 outline-none focus:bg-white focus:border-[var(--royal-violet)] transition-colors"
+                  className="w-full bg-white/50 rounded-xl p-3.5 text-xs font-medium outline-none transition-all"
+                  style={{
+                    color: "var(--dark-amethyst)",
+                    boxShadow:
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
                   placeholder="Paste image link..."
                   value={formData.image_url}
                   onChange={(e) =>
                     setFormData({ ...formData, image_url: e.target.value })
+                  }
+                  onFocus={(e) =>
+                    (e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 40%, transparent)")
+                  }
+                  onBlur={(e) =>
+                    (e.target.style.boxShadow =
+                      "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 10%, transparent)")
                   }
                 />
                 <div className="relative">
@@ -655,12 +936,25 @@ const AdminCategories = () => {
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={isUploadingImage}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
                   />
                   <button
                     type="button"
                     disabled={isUploadingImage}
-                    className="w-full h-10 bg-white border border-zinc-200 hover:border-[var(--royal-violet)] hover:text-[var(--royal-violet)] text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    className="w-full h-11 bg-white border border-dashed hover:border-solid hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50 relative z-0"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 30%, transparent)",
+                      color: "var(--royal-violet)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--royal-violet)";
+                      e.currentTarget.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "white";
+                      e.currentTarget.style.color = "var(--royal-violet)";
+                    }}
                   >
                     {isUploadingImage ? (
                       <Loader2 className="animate-spin" size={16} />
@@ -677,21 +971,41 @@ const AdminCategories = () => {
           </div>
         </div>
 
-        <footer className="p-6 sm:p-8 bg-white border-t shrink-0">
+        <footer
+          className="p-6 sm:p-8 bg-white/80 backdrop-blur-xl border-t shrink-0 flex gap-4 sticky bottom-0 z-20"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full text-white py-5 rounded-2xl text-[11px] uppercase tracking-[0.4em] font-black shadow-xl hover:brightness-110 active:scale-95 disabled:bg-zinc-200 transition-all"
+            className="w-full text-white py-4 rounded-2xl text-[11px] uppercase tracking-[0.3em] font-black shadow-lg hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             style={{ background: "var(--primary-gradient)" }}
           >
             {isSaving ? (
               <Loader2 className="animate-spin mx-auto" />
             ) : (
-              "Salvează Modificările"
+              <>
+                <Save size={16} strokeWidth={2.5} /> Salvează Modificările
+              </>
             )}
           </button>
         </footer>
       </AdminDialogShell>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `,
+        }}
+      />
     </div>
   );
 };
