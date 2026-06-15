@@ -500,9 +500,9 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-zinc-50 flex flex-col"
+            className="fixed inset-0 z-[1000] bg-white flex flex-col"
           >
-            {/* Header Consolă pentru Editor (Aerisit și flexibil) */}
+            {/* Header Consolă pentru Editor */}
             <header
               className="w-full bg-white border-b flex flex-col lg:flex-row items-center justify-between px-6 py-4 gap-4 shrink-0 shadow-sm z-30"
               style={{
@@ -524,7 +524,7 @@ const AdminEmailTemplates = () => {
                 </button>
               </div>
 
-              {/* Input-urile au lățime flexibilă și spațiu generos */}
+              {/* Input-urile flexibile */}
               <div className="flex flex-1 w-full lg:max-w-6xl xl:max-w-7xl mx-auto gap-4 overflow-x-auto luxury-scrollbar pb-2 lg:pb-0">
                 <div className="min-w-[200px] flex-[1.5] group relative">
                   <Label
@@ -649,42 +649,41 @@ const AdminEmailTemplates = () => {
               </div>
             </header>
 
-            {/* Email Editor Canvas: Setat cu height specific matematic pentru a preveni colapsarea Iframe-ului */}
-            <div
-              className="flex-1 w-full bg-zinc-50 relative overflow-hidden"
-              style={{ height: "calc(100vh - 88px)" }}
-            >
-              <EmailEditor
-                ref={emailEditorRef}
-                onReady={onReady}
-                minHeight="100%"
-                options={{
-                  locale: "ro",
-                  appearance: {
-                    theme: "light",
-                    panels: { tools: { dock: "left" } },
-                  },
-                  mergeTags: {
-                    customerName: {
-                      name: "Nume Client",
-                      value: "{{customerName}}",
+            {/* Email Editor Canvas Fixat folosind absolut position */}
+            <div className="flex-1 w-full relative bg-zinc-50 overflow-hidden">
+              <div className="absolute inset-0 w-full h-full">
+                <EmailEditor
+                  ref={emailEditorRef}
+                  onReady={onReady}
+                  minHeight="100%"
+                  options={{
+                    locale: "ro",
+                    appearance: {
+                      theme: "light",
+                      panels: { tools: { dock: "left" } },
                     },
-                    orderNumber: {
-                      name: "Număr Comandă",
-                      value: "{{orderNumber}}",
+                    mergeTags: {
+                      customerName: {
+                        name: "Nume Client",
+                        value: "{{customerName}}",
+                      },
+                      orderNumber: {
+                        name: "Număr Comandă",
+                        value: "{{orderNumber}}",
+                      },
+                      totalAmount: {
+                        name: "Total Plată",
+                        value: "{{totalAmount}}",
+                      },
+                      trackingUrl: {
+                        name: "Link AWB (Curier)",
+                        value: "{{trackingUrl}}",
+                      },
                     },
-                    totalAmount: {
-                      name: "Total Plată",
-                      value: "{{totalAmount}}",
-                    },
-                    trackingUrl: {
-                      name: "Link AWB (Curier)",
-                      value: "{{trackingUrl}}",
-                    },
-                  },
-                }}
-                style={{ width: "100%", height: "100%" }}
-              />
+                  }}
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </div>
             </div>
           </motion.div>
         )}
