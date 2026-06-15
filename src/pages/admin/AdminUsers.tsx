@@ -1,12 +1,11 @@
 /**
  * AdminUsers.tsx
- * Pagina de administrare utilizatori - Design Futuristic (Glassmorphism & SWR)
+ * Pagina de administrare utilizatori - Design Futuristic (Glassmorphism)
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Search,
-  UserPlus,
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
@@ -38,8 +37,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminSWR } from "@/lib/admin-swr";
-import { invalidateCache } from "@/lib/swr-cache";
+import { readCache, writeCache } from "@/lib/swr-cache";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 
 const API_BASE =
@@ -53,45 +51,74 @@ const AdminUsers = () => {
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // --- DATA STATE ---
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => setSearchTerm(searchInput), 400);
+    const t = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setPage(1);
+    }, 400);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const swrKey = `admin:users:p=${page}:q=${searchTerm}:r=${roleFilter}`;
+  // Fetch stabil cu Cache integrat
+  const fetchUsers = useCallback(async () => {
+    const cacheKey = `admin:users:p=${page}:q=${searchTerm}:r=${roleFilter}`;
+    const cached = readCache<any>(cacheKey, 60_000).data;
 
-  const fetcher = useCallback(async () => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      size: "10",
-      search: searchTerm,
-      role_filter: roleFilter,
-    });
-    const res = await fetch(`${API_BASE}/api/v1/admin/users?${params}`, {
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error("Eroare la preluarea utilizatorilor");
-    return res.json();
+    if (cached) {
+      setUsers(cached.items || []);
+      setTotalPages(cached.pages || 1);
+      setTotalItems(cached.total || 0);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        size: "10",
+        search: searchTerm,
+        role_filter: roleFilter === "ALL" ? "" : roleFilter,
+      });
+
+      const res = await fetch(`${API_BASE}/api/v1/admin/users?${params}`, {
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Eroare la preluarea utilizatorilor");
+
+      const data = await res.json();
+      setUsers(data.items || []);
+      setTotalPages(data.pages || 1);
+      setTotalItems(data.total || 0);
+      writeCache(cacheKey, data);
+    } catch (err) {
+      if (!cached) toast.error("Eroare la încărcarea utilizatorilor");
+    } finally {
+      setLoading(false);
+    }
   }, [page, searchTerm, roleFilter]);
 
-  const { data, loading, mutate } = useAdminSWR<{
-    items: any[];
-    pages: number;
-    total: number;
-  }>(swrKey, fetcher, { ttl: 60_000 }); // Am crescut TTL-ul la 60s pentru stabilitate la navigație
-
-  const users = useMemo(() => data?.items || [], [data]);
-  const totalPages = data?.pages || 1;
-  const totalItems = data?.total || 0;
+  // Declansare automata la schimbarea parametrilor
+  useEffect(() => {
+    const t = setTimeout(fetchUsers, 300);
+    return () => clearTimeout(t);
+  }, [fetchUsers]);
 
   const invalidateAll = useCallback(() => {
     for (let i = 0; i < sessionStorage.length; i++) {
       const k = sessionStorage.key(i);
       if (k && k.startsWith("swr:admin:users:")) sessionStorage.removeItem(k);
     }
-    mutate(true);
-  }, [mutate]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleUpdateRole = async (userId: string, newRole: string) => {
     try {
@@ -185,12 +212,9 @@ const AdminUsers = () => {
                 boxShadow:
                   "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
-              placeholder="Identifică utilizator..."
+              placeholder="Caută utilizator (nume, email)..."
               value={searchInput}
-              onChange={(e) => {
-                setSearchInput(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => setSearchInput(e.target.value)}
               onFocus={(e) =>
                 (e.target.style.borderColor = "var(--royal-violet)")
               }
@@ -200,12 +224,6 @@ const AdminUsers = () => {
               }
             />
           </div>
-          <button
-            className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
-            style={{ background: "var(--primary-gradient)" }}
-          >
-            <UserPlus size={14} strokeWidth={2.5} /> Invită Membru
-          </button>
         </div>
       </header>
 
@@ -292,7 +310,7 @@ const AdminUsers = () => {
         >
           <AnimatePresence mode="wait">
             {loading ? (
-              // Skeleton Loader - Fără "clipire" urâtă
+              // Skeleton Loader
               <motion.div
                 key="skeleton"
                 initial={{ opacity: 0 }}
