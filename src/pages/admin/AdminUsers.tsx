@@ -512,16 +512,6 @@ const AdminUsers = () => {
                             align="end"
                             className="w-56 p-2 rounded-2xl border-zinc-100 shadow-2xl bg-white"
                           >
-                            <DropdownMenuLabel
-                              className="text-[9px] font-black uppercase tracking-widest px-3 py-2"
-                              style={{
-                                color:
-                                  "color-mix(in srgb, var(--royal-violet) 50%, gray)",
-                              }}
-                            >
-                              Contact Membru
-                            </DropdownMenuLabel>
-
                             <DropdownMenuSeparator className="bg-zinc-50" />
                             <DropdownMenuLabel
                               className="text-[9px] font-black uppercase tracking-widest px-3 py-2"
