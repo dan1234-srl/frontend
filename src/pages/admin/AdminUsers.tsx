@@ -561,7 +561,7 @@ const AdminUsers = () => {
       </div>
 
       {/* ── PAGINATION ─────────────────────────────────────── */}
-      {!loading && totalPages > 1 && (
+      {!loading && totalPages > 0 && (
         <div
           className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm"
           style={{
