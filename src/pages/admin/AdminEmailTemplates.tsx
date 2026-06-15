@@ -1,7 +1,6 @@
 /**
  * AdminEmailTemplates.tsx
  * Sistem Editorial Mail - Design Futuristic (Bento Neo-Mosaic & SWR Cache)
- * Complet optimizat pentru Mobile / Tablet / Desktop
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -494,216 +493,199 @@ const AdminEmailTemplates = () => {
           </motion.div>
         )}
 
-        {/* ─── VEDEREA 3: EDITORUL COMPLET UNLAYER (TOTAL RESPONSIVE) ─── */}
+        {/* ─── VEDEREA 3: EDITORUL COMPLET UNLAYER ────────────────────── */}
         {view === "editor" && (
           <motion.div
             key="editor"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-white flex flex-col h-[100dvh]"
+            className="fixed inset-0 z-[1000] bg-white flex flex-col"
           >
-            {/* Header Consolă pentru Editor (Aerisit și flexibil pe rânduri) */}
+            {/* Header Consolă pentru Editor */}
             <header
-              className="w-full bg-white border-b shrink-0 shadow-sm z-30 p-4 sm:px-6"
+              className="w-full bg-white border-b flex flex-col lg:flex-row items-center justify-between px-6 py-4 gap-4 shrink-0 shadow-sm z-30"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
             >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full">
-                {/* 1. Butoane Acțiune (Pe mobil stau sus, pe desktop stânga/dreapta) */}
-                <div className="flex items-center justify-between w-full lg:w-auto">
-                  <button
-                    onClick={() => setView("list")}
-                    className="flex items-center justify-center size-10 md:size-12 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
+              <div className="flex w-full lg:w-auto items-center justify-between lg:justify-start gap-4">
+                <button
+                  onClick={() => setView("list")}
+                  className="flex items-center justify-center size-12 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  title="Renunță"
+                >
+                  <X size={18} strokeWidth={2.5} />
+                </button>
+              </div>
+
+              {/* Input-urile flexibile */}
+              <div className="flex flex-1 w-full lg:max-w-6xl xl:max-w-7xl mx-auto gap-4 overflow-x-auto luxury-scrollbar pb-2 lg:pb-0">
+                <div className="min-w-[200px] flex-[1.5] group relative">
+                  <Label
+                    className="text-[9px] font-black uppercase ml-1 transition-colors"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                    }}
+                  >
+                    Nume Intern
+                  </Label>
+                  <input
+                    value={currentTemplate.title}
+                    onChange={(e) =>
+                      setCurrentTemplate({
+                        ...currentTemplate,
+                        title: e.target.value,
+                      })
+                    }
+                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
                     }}
-                    title="Renunță"
-                  >
-                    <X size={18} strokeWidth={2.5} />
-                  </button>
-
-                  {/* Buton Salvare strict pentru Mobil */}
-                  <button
-                    onClick={saveTemplate}
-                    disabled={isSaving}
-                    className="lg:hidden text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all shrink-0"
-                    style={{ background: "var(--primary-gradient)" }}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="animate-spin" size={14} />
-                    ) : (
-                      <Save size={14} />
-                    )}
-                    Salvează
-                  </button>
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "var(--royal-violet)";
+                      e.target.style.backgroundColor = "#ffffff";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor =
+                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                      e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                    }}
+                  />
                 </div>
 
-                {/* 2. Grid-ul cu Input-uri (Se rupe pe mobil, stă frumos pe desktop) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full lg:flex-1 lg:mx-6">
-                  <div className="group relative">
-                    <Label
-                      className="text-[9px] font-black uppercase ml-1 transition-colors"
-                      style={{
-                        color:
-                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-                      }}
-                    >
-                      Nume Intern
-                    </Label>
-                    <input
-                      value={currentTemplate.title}
-                      onChange={(e) =>
-                        setCurrentTemplate({
-                          ...currentTemplate,
-                          title: e.target.value,
-                        })
-                      }
-                      className="w-full bg-zinc-50/50 rounded-xl px-4 py-2.5 sm:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
-                      style={{
-                        borderColor:
-                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "var(--royal-violet)";
-                        e.target.style.backgroundColor = "#ffffff";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor =
-                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
-                        e.target.style.backgroundColor =
-                          "rgba(255,255,255,0.5)";
-                      }}
-                    />
-                  </div>
-
-                  <div className="group relative">
-                    <Label
-                      className="text-[9px] font-black uppercase ml-1 transition-colors flex items-center gap-1.5"
-                      style={{ color: "var(--royal-violet)" }}
-                    >
-                      <Activity size={12} /> Trigger Event
-                    </Label>
-                    <input
-                      value={currentTemplate.event_name}
-                      onChange={(e) =>
-                        setCurrentTemplate({
-                          ...currentTemplate,
-                          event_name: e.target.value,
-                        })
-                      }
-                      className="w-full bg-zinc-50/50 rounded-xl px-4 py-2.5 sm:py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
-                      style={{
-                        borderColor:
-                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "var(--royal-violet)";
-                        e.target.style.backgroundColor = "#ffffff";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor =
-                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
-                        e.target.style.backgroundColor =
-                          "rgba(255,255,255,0.5)";
-                      }}
-                    />
-                  </div>
-
-                  <div className="group relative">
-                    <Label
-                      className="text-[9px] font-black uppercase ml-1 transition-colors"
-                      style={{
-                        color:
-                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-                      }}
-                    >
-                      Subiect Email (Public)
-                    </Label>
-                    <input
-                      value={currentTemplate.subject}
-                      onChange={(e) =>
-                        setCurrentTemplate({
-                          ...currentTemplate,
-                          subject: e.target.value,
-                        })
-                      }
-                      className="w-full bg-zinc-50/50 rounded-xl px-4 py-2.5 sm:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
-                      style={{
-                        borderColor:
-                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "var(--royal-violet)";
-                        e.target.style.backgroundColor = "#ffffff";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor =
-                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
-                        e.target.style.backgroundColor =
-                          "rgba(255,255,255,0.5)";
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* 3. Buton Salvare Desktop (Invizibil pe mobil pt spațiu) */}
-                <div className="hidden lg:flex w-full lg:w-auto">
-                  <button
-                    onClick={saveTemplate}
-                    disabled={isSaving}
-                    className="text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all shrink-0 whitespace-nowrap"
-                    style={{ background: "var(--primary-gradient)" }}
+                <div className="min-w-[200px] flex-1 group relative">
+                  <Label
+                    className="text-[9px] font-black uppercase ml-1 transition-colors flex items-center gap-1.5"
+                    style={{ color: "var(--royal-violet)" }}
                   >
-                    {isSaving ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : (
-                      <Save size={16} />
-                    )}
-                    Actualizează Design
-                  </button>
+                    <Activity size={12} /> Trigger Event
+                  </Label>
+                  <input
+                    value={currentTemplate.event_name}
+                    onChange={(e) =>
+                      setCurrentTemplate({
+                        ...currentTemplate,
+                        event_name: e.target.value,
+                      })
+                    }
+                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "var(--royal-violet)";
+                      e.target.style.backgroundColor = "#ffffff";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor =
+                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                      e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                    }}
+                  />
                 </div>
+
+                <div className="min-w-[300px] flex-[2.5] group relative">
+                  <Label
+                    className="text-[9px] font-black uppercase ml-1 transition-colors"
+                    style={{
+                      color:
+                        "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                    }}
+                  >
+                    Subiect Email (Public)
+                  </Label>
+                  <input
+                    value={currentTemplate.subject}
+                    onChange={(e) =>
+                      setCurrentTemplate({
+                        ...currentTemplate,
+                        subject: e.target.value,
+                      })
+                    }
+                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "var(--royal-violet)";
+                      e.target.style.backgroundColor = "#ffffff";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor =
+                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                      e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex w-full lg:w-auto">
+                <button
+                  onClick={saveTemplate}
+                  disabled={isSaving}
+                  className="w-full sm:w-auto text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all shrink-0 whitespace-nowrap"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Save size={16} />
+                  )}
+                  Actualizează Design
+                </button>
               </div>
             </header>
 
-            {/* Email Editor Canvas Fixat absolut pentru a umple spațiul rămas, rezolvând eroarea de iframe */}
-            <div className="flex-1 w-full bg-zinc-50 relative overflow-hidden">
-              <div className="absolute inset-0 w-full h-full">
-                <EmailEditor
-                  ref={emailEditorRef}
-                  onReady={onReady}
-                  minHeight="100%"
-                  options={{
-                    locale: "ro",
-                    appearance: {
-                      theme: "light",
-                      panels: { tools: { dock: "left" } },
+            {/* Email Editor Canvas Fixat folosind absolut position */}
+            {/* Email Editor Canvas Fixat folosind calcul matematic direct pe componentă */}
+            <div
+              className="w-full bg-zinc-50"
+              style={{ height: "calc(100dvh - 88px)" }}
+            >
+              <EmailEditor
+                ref={emailEditorRef}
+                onReady={onReady}
+                minHeight="calc(100dvh - 88px)" // 🚀 AICI ESTE CHEIA CARE FORȚEAZĂ IFRAME-UL SĂ SE ÎNTINDĂ
+                options={{
+                  locale: "ro",
+                  appearance: {
+                    theme: "light",
+                    panels: { tools: { dock: "left" } },
+                  },
+                  mergeTags: {
+                    customerName: {
+                      name: "Nume Client",
+                      value: "{{customerName}}",
                     },
-                    mergeTags: {
-                      customerName: {
-                        name: "Nume Client",
-                        value: "{{customerName}}",
-                      },
-                      orderNumber: {
-                        name: "Număr Comandă",
-                        value: "{{orderNumber}}",
-                      },
-                      totalAmount: {
-                        name: "Total Plată",
-                        value: "{{totalAmount}}",
-                      },
-                      trackingUrl: {
-                        name: "Link AWB (Curier)",
-                        value: "{{trackingUrl}}",
-                      },
+                    orderNumber: {
+                      name: "Număr Comandă",
+                      value: "{{orderNumber}}",
                     },
-                  }}
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </div>
+                    totalAmount: {
+                      name: "Total Plată",
+                      value: "{{totalAmount}}",
+                    },
+                    trackingUrl: {
+                      name: "Link AWB (Curier)",
+                      value: "{{trackingUrl}}",
+                    },
+                  },
+                }}
+                style={{ width: "100%", height: "calc(100dvh - 88px)" }} // Și aici dăm override la stilurile default ale librăriei
+              />
             </div>
           </motion.div>
         )}
