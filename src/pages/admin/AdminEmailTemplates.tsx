@@ -500,7 +500,7 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-white flex flex-col"
+            className="fixed inset-0 z-[1000] bg-zinc-50 flex flex-col"
           >
             {/* Header Consolă pentru Editor (Aerisit și flexibil) */}
             <header
@@ -649,11 +649,15 @@ const AdminEmailTemplates = () => {
               </div>
             </header>
 
-            {/* Email Editor Canvas */}
-            <div className="flex-1 w-full relative bg-zinc-50 overflow-hidden">
+            {/* Email Editor Canvas: Setat cu height specific matematic pentru a preveni colapsarea Iframe-ului */}
+            <div
+              className="flex-1 w-full bg-zinc-50 relative overflow-hidden"
+              style={{ height: "calc(100vh - 88px)" }}
+            >
               <EmailEditor
                 ref={emailEditorRef}
                 onReady={onReady}
+                minHeight="100%"
                 options={{
                   locale: "ro",
                   appearance: {
@@ -679,7 +683,7 @@ const AdminEmailTemplates = () => {
                     },
                   },
                 }}
-                style={{ height: "100%", minHeight: "100%" }}
+                style={{ width: "100%", height: "100%" }}
               />
             </div>
           </motion.div>
