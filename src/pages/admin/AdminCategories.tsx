@@ -308,8 +308,8 @@ const AdminCategories = () => {
   if (authLoading || !isAdmin) return null;
 
   return (
-    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in">
-      {/* ── Header Futuristic ──────────────────────────────────────────────── */}
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
       <header
         className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
         style={{
@@ -383,7 +383,7 @@ const AdminCategories = () => {
 
       {/* ── Listă Categorii (Futuristic Data Grid) ──────────────────────────── */}
       <div
-        className="bg-white rounded-3xl border shadow-xl shadow-black/[0.02] overflow-hidden relative z-10"
+        className="bg-white rounded-3xl border shadow-xl shadow-black/[0.02] overflow-hidden relative z-10 min-h-[400px]"
         style={{
           borderColor:
             "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -399,349 +399,422 @@ const AdminCategories = () => {
           }}
         >
           <div className="col-span-7 pl-4">Denumire & Ierarhie</div>
-          <div className="col-span-2 text-center">Probleme</div>
+          <div className="col-span-2 text-center">Produse (Count)</div>
           <div className="col-span-3 text-right pr-4">Management</div>
         </div>
 
         <div
           className="divide-y"
           style={{
-            borderColor:
+            divideColor:
               "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
           }}
         >
-          {loading ? (
-            [...Array(5)].map((_, i) => (
-              <div key={i} className="px-8 py-4 flex items-center gap-6">
-                <Skeleton className="h-8 w-8 rounded-lg" />
-                <Skeleton className="h-12 w-12 rounded-xl" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-3 w-40" />
-                  <Skeleton className="h-2 w-24" />
-                </div>
-                <Skeleton className="h-8 w-24 rounded-lg" />
-              </div>
-            ))
-          ) : paginatedCats.length === 0 ? (
-            <div className="py-24 flex flex-col items-center gap-3">
-              <Layers
-                size={40}
-                strokeWidth={1}
-                style={{
-                  color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
-                }}
-              />
-              <span
-                className="text-[10px] font-black uppercase tracking-widest"
-                style={{
-                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                }}
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               >
-                Nicio colecție găsită
-              </span>
-            </div>
-          ) : (
-            paginatedCats.map((cat) => (
-              <div key={cat.id} className="group relative transition-all">
-                {/* Gradient Fill pe hover (Root Category) */}
-                <div
-                  className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="px-8 py-4 flex items-center gap-6 border-b last:border-none"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                    }}
+                  >
+                    <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                    <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-2 w-24" />
+                    </div>
+                    <Skeleton className="h-8 w-24 rounded-lg ml-auto" />
+                  </div>
+                ))}
+              </motion.div>
+            ) : paginatedCats.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-32 flex flex-col items-center gap-3"
+              >
+                <Layers
+                  size={40}
+                  strokeWidth={1}
                   style={{
-                    background:
-                      "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                    color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
                   }}
                 />
-
-                <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-3.5 gap-4 md:gap-0 relative z-10">
-                  <div className="col-span-7 flex items-center gap-4 w-full">
-                    {/* Expand Button */}
-                    <button
-                      onClick={() =>
-                        setExpanded((prev) =>
-                          prev.includes(cat.id)
-                            ? prev.filter((i) => i !== cat.id)
-                            : [...prev, cat.id],
-                        )
-                      }
-                      className={`size-8 rounded-lg flex items-center justify-center transition-all shrink-0 border ${expanded.includes(cat.id) ? "text-white shadow-md" : "bg-white"}`}
+                <span
+                  className="text-[10px] font-black uppercase tracking-widest"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                  }}
+                >
+                  Nicio colecție găsită
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="data"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {paginatedCats.map((cat) => (
+                  <div key={cat.id} className="group relative transition-all">
+                    {/* Gradient Fill pe hover (Root Category) */}
+                    <div
+                      className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
                       style={{
-                        backgroundColor: expanded.includes(cat.id)
-                          ? "var(--dark-amethyst)"
-                          : "transparent",
-                        borderColor: expanded.includes(cat.id)
-                          ? "transparent"
-                          : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                        color: expanded.includes(cat.id)
-                          ? "white"
-                          : "var(--royal-violet)",
+                        background:
+                          "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
                       }}
-                    >
-                      {expanded.includes(cat.id) ? (
-                        <ChevronDown size={14} />
-                      ) : (
-                        <ChevronRight size={14} />
-                      )}
-                    </button>
-
-                    {/* Image */}
-                    <OptimizedImage
-                      src={cat.image_url}
-                      className="w-12 h-12 rounded-xl border shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105 bg-white"
                     />
 
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-[var(--dark-amethyst)] tracking-tight truncate group-hover:text-[var(--royal-violet)] transition-colors">
-                        {cat.name}
-                      </span>
-                      <span
-                        className="text-[9px] font-semibold uppercase tracking-[0.2em] truncate mt-0.5"
-                        style={{
-                          color:
-                            "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                        }}
-                      >
-                        /{cat.slug}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Produse Count */}
-                  <div className="col-span-2 text-center hidden md:block">
-                    <span
-                      className="text-[11px] font-bold tabular-nums px-3 py-1.5 rounded-lg border bg-white/50"
+                    <div
+                      className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-3.5 gap-4 md:gap-0 relative z-10 border-b last:border-none"
                       style={{
-                        color: "var(--dark-amethyst)",
                         borderColor:
-                          "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                          "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
                       }}
                     >
-                      {cat.product_count || 0}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="col-span-3 flex justify-between md:justify-end gap-2 w-full md:w-auto pr-2">
-                    {/* Status mobile */}
-                    <div className="md:hidden flex items-center">
-                      <span
-                        className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border"
-                        style={{
-                          backgroundColor: cat.is_active
-                            ? "color-mix(in srgb, #10b981 5%, transparent)"
-                            : "color-mix(in srgb, gray 5%, transparent)",
-                          color: cat.is_active ? "#10b981" : "gray",
-                          borderColor: cat.is_active
-                            ? "color-mix(in srgb, #10b981 20%, transparent)"
-                            : "color-mix(in srgb, gray 20%, transparent)",
-                        }}
-                      >
-                        {cat.is_active ? "Activ" : "Inactiv"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
-                      <button
-                        onClick={() => toggleVisibility(cat)}
-                        title={cat.is_active ? "Dezactivează" : "Activează"}
-                        className={`p-2 rounded-lg border transition-all ${cat.is_active ? "text-emerald-600 bg-emerald-50/50 border-emerald-100 hover:bg-emerald-100" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
-                        style={
-                          !cat.is_active
-                            ? {
-                                borderColor:
-                                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                              }
-                            : {}
-                        }
-                      >
-                        {cat.is_active ? (
-                          <Eye size={14} />
-                        ) : (
-                          <EyeOff size={14} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => openEdit(cat)}
-                        title="Editează"
-                        className="p-2 bg-white border rounded-lg hover:bg-[var(--royal-violet)] hover:text-white transition-all shadow-sm"
-                        style={{
-                          borderColor:
-                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                        }}
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(cat.id)}
-                        title="Șterge"
-                        className="p-2 bg-white border rounded-lg hover:bg-rose-500 hover:text-white transition-all text-rose-500 shadow-sm"
-                        style={{
-                          borderColor:
-                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SUBCATEGORII (Animated & Nested) */}
-                <AnimatePresence>
-                  {expanded.includes(cat.id) && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="bg-zinc-50/30 border-l-2 ml-[2.6rem] mr-4 rounded-br-2xl mb-2 overflow-hidden relative z-10"
-                      style={{
-                        borderLeftColor: "var(--royal-violet)",
-                        borderBottom:
-                          "1px solid color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                        borderRight:
-                          "1px solid color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                      }}
-                    >
-                      {cat.subcategories?.length > 0 ? (
-                        cat.subcategories.map((sub) => (
-                          <div
-                            key={sub.id}
-                            className="flex flex-col md:grid md:grid-cols-12 items-center px-4 md:px-8 py-3 border-b last:border-0 hover:bg-white/60 transition-colors group/sub"
-                            style={{
-                              borderColor:
-                                "color-mix(in srgb, var(--royal-violet) 4%, transparent)",
-                            }}
-                          >
-                            <div className="col-span-7 flex items-center gap-3 w-full">
-                              <MoveRight
-                                size={12}
-                                style={{
-                                  color:
-                                    "color-mix(in srgb, var(--royal-violet) 30%, gray)",
-                                }}
-                              />
-                              <div className="flex flex-col">
-                                <span className="text-xs font-bold text-[var(--dark-amethyst)] tracking-tight">
-                                  {sub.name}
-                                </span>
-                                <span
-                                  className="text-[9px] font-medium uppercase tracking-[0.2em] mt-[1px]"
-                                  style={{
-                                    color:
-                                      "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                                  }}
-                                >
-                                  /{cat.slug}/{sub.slug}
-                                </span>
-                              </div>
-                            </div>
-                            <div
-                              className="col-span-2 text-center text-[10px] font-black tabular-nums hidden md:block"
-                              style={{ color: "var(--royal-violet)" }}
-                            >
-                              {sub.product_count || 0} ARTICOLE
-                            </div>
-                            <div className="col-span-3 flex justify-end gap-1.5 w-full md:w-auto mt-2 md:mt-0 opacity-100 lg:opacity-0 group-hover/sub:opacity-100 transition-all pr-2">
-                              <button
-                                onClick={() => toggleVisibility(sub)}
-                                className={`p-1.5 rounded-lg transition-all ${sub.is_active ? "text-emerald-500 hover:bg-emerald-50" : "text-zinc-400 hover:bg-zinc-100"}`}
-                              >
-                                {sub.is_active ? (
-                                  <Eye size={13} />
-                                ) : (
-                                  <EyeOff size={13} />
-                                )}
-                              </button>
-                              <button
-                                onClick={() => openEdit(sub)}
-                                className="p-1.5 rounded-lg hover:bg-[var(--royal-violet)] hover:text-white text-[var(--dark-amethyst)] transition-colors"
-                              >
-                                <Edit2 size={13} />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(sub.id)}
-                                className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div
-                          className="px-8 py-4 text-[9px] font-bold uppercase tracking-widest flex items-center gap-2"
+                      <div className="col-span-7 flex items-center gap-4 w-full pl-2">
+                        {/* Expand Button */}
+                        <button
+                          onClick={() =>
+                            setExpanded((prev) =>
+                              prev.includes(cat.id)
+                                ? prev.filter((i) => i !== cat.id)
+                                : [...prev, cat.id],
+                            )
+                          }
+                          className={`size-8 rounded-lg flex items-center justify-center transition-all shrink-0 border shadow-sm ${expanded.includes(cat.id) ? "text-white" : "bg-white"}`}
                           style={{
-                            color:
-                              "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                            backgroundColor: expanded.includes(cat.id)
+                              ? "var(--dark-amethyst)"
+                              : "transparent",
+                            borderColor: expanded.includes(cat.id)
+                              ? "transparent"
+                              : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            color: expanded.includes(cat.id)
+                              ? "white"
+                              : "var(--royal-violet)",
                           }}
                         >
-                          <ShieldCheck size={14} /> Nicio sub-colecție
-                          înregistrată
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))
-          )}
-        </div>
+                          {expanded.includes(cat.id) ? (
+                            <ChevronDown size={14} />
+                          ) : (
+                            <ChevronRight size={14} />
+                          )}
+                        </button>
 
-        {/* PAGINATION */}
-        {!loading && totalPages > 1 && (
-          <div
-            className="p-4 border-t flex justify-center items-center gap-4 shrink-0 bg-zinc-50/50"
+                        {/* Image */}
+                        <OptimizedImage
+                          src={cat.image_url}
+                          className="w-12 h-12 rounded-xl border shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105 bg-white"
+                        />
+
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[13px] font-bold text-[var(--dark-amethyst)] tracking-tight truncate uppercase group-hover:text-[var(--royal-violet)] transition-colors">
+                            {cat.name}
+                          </span>
+                          <span
+                            className="text-[9px] font-semibold lowercase tracking-widest truncate mt-0.5"
+                            style={{
+                              color:
+                                "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                            }}
+                          >
+                            /{cat.slug}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Produse Count */}
+                      <div className="col-span-2 text-center hidden md:block">
+                        <span
+                          className="text-[10px] font-bold tabular-nums px-3 py-1.5 rounded-lg border bg-white/50"
+                          style={{
+                            color: "var(--dark-amethyst)",
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                          }}
+                        >
+                          {cat.product_count || 0} Articole
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="col-span-3 flex justify-between md:justify-end gap-1.5 w-full md:w-auto pr-2">
+                        {/* Status mobile */}
+                        <div className="md:hidden flex items-center">
+                          <span
+                            className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border"
+                            style={{
+                              backgroundColor: cat.is_active
+                                ? "color-mix(in srgb, #10b981 5%, transparent)"
+                                : "color-mix(in srgb, gray 5%, transparent)",
+                              color: cat.is_active ? "#10b981" : "gray",
+                              borderColor: cat.is_active
+                                ? "color-mix(in srgb, #10b981 20%, transparent)"
+                                : "color-mix(in srgb, gray 20%, transparent)",
+                            }}
+                          >
+                            {cat.is_active ? "Activ" : "Inactiv"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
+                          <button
+                            onClick={() => toggleVisibility(cat)}
+                            title={cat.is_active ? "Dezactivează" : "Activează"}
+                            className={`p-2 rounded-lg border transition-all shadow-sm ${cat.is_active ? "text-emerald-500 bg-emerald-50/50 hover:bg-emerald-100" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
+                            style={{
+                              borderColor: cat.is_active
+                                ? "color-mix(in srgb, #10b981 20%, transparent)"
+                                : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            }}
+                          >
+                            {cat.is_active ? (
+                              <Eye size={14} />
+                            ) : (
+                              <EyeOff size={14} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => openEdit(cat)}
+                            title="Editează"
+                            className="p-2 bg-white border rounded-lg hover:bg-[var(--royal-violet)] hover:text-white text-[var(--dark-amethyst)] transition-colors shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            }}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(cat.id)}
+                            title="Șterge"
+                            className="p-2 bg-white border rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, #f43f5e 20%, transparent)",
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SUBCATEGORII (Animated & Nested) */}
+                    <AnimatePresence>
+                      {expanded.includes(cat.id) && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="bg-zinc-50/30 border-l-[3px] ml-[2.2rem] mr-4 mb-2 overflow-hidden relative z-10 rounded-br-2xl"
+                          style={{
+                            borderLeftColor: "var(--royal-violet)",
+                            borderBottom:
+                              "1px solid color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                            borderRight:
+                              "1px solid color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                          }}
+                        >
+                          {cat.subcategories?.length > 0 ? (
+                            cat.subcategories.map((sub) => (
+                              <div
+                                key={sub.id}
+                                className="flex flex-col md:grid md:grid-cols-12 items-center px-4 md:px-8 py-3.5 border-b last:border-0 hover:bg-white/60 transition-colors group/sub"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 4%, transparent)",
+                                }}
+                              >
+                                <div className="col-span-7 flex items-center gap-4 w-full">
+                                  <MoveRight
+                                    size={14}
+                                    style={{
+                                      color:
+                                        "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                                    }}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="text-[12px] font-bold text-[var(--dark-amethyst)] tracking-tight uppercase">
+                                      {sub.name}
+                                    </span>
+                                    <span
+                                      className="text-[9px] font-medium lowercase tracking-widest mt-0.5"
+                                      style={{
+                                        color:
+                                          "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                                      }}
+                                    >
+                                      /{cat.slug}/{sub.slug}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div
+                                  className="col-span-2 text-center text-[10px] font-black tabular-nums hidden md:block"
+                                  style={{ color: "var(--royal-violet)" }}
+                                >
+                                  {sub.product_count || 0} ARTICOLE
+                                </div>
+                                <div className="col-span-3 flex justify-end gap-1.5 w-full md:w-auto mt-2 md:mt-0 opacity-100 lg:opacity-0 group-hover/sub:opacity-100 transition-all pr-2">
+                                  <button
+                                    onClick={() => toggleVisibility(sub)}
+                                    className={`p-1.5 rounded-lg border transition-all shadow-sm ${sub.is_active ? "text-emerald-500 bg-emerald-50/50 hover:bg-emerald-100" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
+                                    style={{
+                                      borderColor: sub.is_active
+                                        ? "color-mix(in srgb, #10b981 20%, transparent)"
+                                        : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                    }}
+                                  >
+                                    {sub.is_active ? (
+                                      <Eye size={12} />
+                                    ) : (
+                                      <EyeOff size={12} />
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => openEdit(sub)}
+                                    className="p-1.5 rounded-lg bg-white border hover:bg-[var(--royal-violet)] hover:text-white text-[var(--dark-amethyst)] transition-colors shadow-sm"
+                                    style={{
+                                      borderColor:
+                                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                    }}
+                                  >
+                                    <Edit2 size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(sub.id)}
+                                    className="p-1.5 rounded-lg bg-white border text-rose-400 hover:bg-rose-500 hover:text-white transition-colors shadow-sm"
+                                    style={{
+                                      borderColor:
+                                        "color-mix(in srgb, #f43f5e 20%, transparent)",
+                                    }}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div
+                              className="px-8 py-5 text-[9px] font-bold uppercase tracking-widest flex items-center gap-2"
+                              style={{
+                                color:
+                                  "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                              }}
+                            >
+                              <ShieldCheck size={14} /> Nicio sub-colecție
+                              înregistrată
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* PAGINATION */}
+      {!loading && totalPages > 1 && (
+        <div
+          className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm mt-6"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
             style={{
               borderColor:
-                "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
             }}
           >
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="p-2 bg-white border rounded-lg hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
-              style={{
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
-            </button>
-            <span
-              className="text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-lg shadow-sm"
-              style={{
-                color: "var(--dark-amethyst)",
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
-              {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="p-2 bg-white border rounded-lg hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
-              style={{
-                borderColor:
-                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-              }}
-            >
-              <ChevronRight
-                size={14}
-                style={{ color: "var(--royal-violet)" }}
-              />
-            </button>
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+
+          <div className="hidden sm:flex gap-1.5">
+            {[...Array(totalPages)].map((_, i) => {
+              const p = i + 1;
+              if (p < currentPage - 2 || p > currentPage + 2) return null;
+              return (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === p ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  style={{
+                    background:
+                      currentPage === p ? "var(--primary-gradient)" : undefined,
+                    borderColor:
+                      currentPage !== p
+                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                        : undefined,
+                    color:
+                      currentPage !== p
+                        ? "var(--dark-amethyst)"
+                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  {p}
+                </button>
+              );
+            })}
           </div>
-        )}
-      </div>
+
+          <span
+            className="sm:hidden text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-xl shadow-sm"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
+            {totalPages}
+          </span>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronRight size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+        </div>
+      )}
 
       {/* ── MODAL CONFIG (Futuristic) ─────────────────────────────────────── */}
       <AdminDialogShell
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        size="lg"
+        size="md"
         mobileVariant="modal"
-        className="h-[100dvh] sm:h-[90vh] sm:max-h-[90vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        className="sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
         style={{
           background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
           borderColor:
@@ -784,7 +857,7 @@ const AdminCategories = () => {
           </button>
         </header>
 
-        <div className="flex-1 p-6 sm:p-8 space-y-8 overflow-y-auto luxury-scrollbar relative z-10">
+        <div className="flex-1 p-6 sm:p-8 space-y-8 overflow-y-auto luxury-scrollbar relative z-10 bg-white/50">
           {/* Identificatori */}
           <div
             className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-6"
@@ -804,7 +877,7 @@ const AdminCategories = () => {
                   Denumire Colecție
                 </Label>
                 <input
-                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-3.5 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold uppercase outline-none transition-all text-[var(--dark-amethyst)]"
                   style={{
                     boxShadow:
                       "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -840,7 +913,7 @@ const AdminCategories = () => {
                   URL Slug
                 </Label>
                 <input
-                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-3.5 text-xs font-mono font-bold outline-none transition-all text-zinc-500"
+                  className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-mono font-bold outline-none transition-all text-[var(--royal-violet)]"
                   style={{
                     boxShadow:
                       "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -873,7 +946,7 @@ const AdminCategories = () => {
                 Părinte Ierarhic (Opțional)
               </Label>
               <select
-                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-3.5 text-xs font-bold outline-none appearance-none cursor-pointer transition-all"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-bold outline-none appearance-none cursor-pointer transition-all"
                 style={{
                   color: "var(--dark-amethyst)",
                   boxShadow:
@@ -918,7 +991,7 @@ const AdminCategories = () => {
             }}
           >
             <Label
-              className="text-[9px] font-black uppercase tracking-[0.3em] flex items-center gap-2"
+              className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
               style={{
                 color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
               }}
@@ -928,17 +1001,17 @@ const AdminCategories = () => {
             <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
               <OptimizedImage
                 src={formData.image_url}
-                className="size-24 rounded-xl shadow-sm border shrink-0 bg-white"
+                className="size-20 rounded-xl shadow-sm border shrink-0 bg-white"
               />
               <div className="flex-1 flex flex-col gap-3 w-full">
                 <input
-                  className="w-full bg-white/50 rounded-xl p-3 text-xs font-medium outline-none transition-all"
+                  className="w-full bg-white/50 rounded-xl p-3 text-xs font-mono font-medium outline-none transition-all"
                   style={{
                     color: "var(--dark-amethyst)",
                     boxShadow:
                       "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                   }}
-                  placeholder="Paste image link..."
+                  placeholder="https://link-logo.com/img.png"
                   value={formData.image_url}
                   onChange={(e) =>
                     setFormData({ ...formData, image_url: e.target.value })
@@ -952,7 +1025,7 @@ const AdminCategories = () => {
                       "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)")
                   }
                 />
-                <div className="relative">
+                <div className="relative pt-1">
                   <input
                     type="file"
                     accept="image/*"
@@ -963,7 +1036,7 @@ const AdminCategories = () => {
                   <button
                     type="button"
                     disabled={isUploadingImage}
-                    className="w-full h-10 bg-white border hover:border-solid rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50 relative z-0"
+                    className="w-full h-10 bg-white border border-dashed hover:border-solid rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50 relative z-0"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 30%, transparent)",
@@ -985,7 +1058,7 @@ const AdminCategories = () => {
                     )}
                     {isUploadingImage
                       ? "Se încarcă pe S3..."
-                      : "Alege fișier (S3)"}
+                      : "Alege fișier local (S3)"}
                   </button>
                 </div>
               </div>
@@ -994,7 +1067,7 @@ const AdminCategories = () => {
         </div>
 
         <footer
-          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20"
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20 rounded-b-[2rem]"
           style={{
             borderColor:
               "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -1020,7 +1093,7 @@ const AdminCategories = () => {
             {isSaving ? (
               <Loader2 className="animate-spin" size={14} />
             ) : (
-              <Save size={14} />
+              <Save size={14} strokeWidth={2.5} />
             )}
             {editingCategory ? "Salvează Modificări" : "Publică Colecție"}
           </button>
@@ -1033,8 +1106,6 @@ const AdminCategories = () => {
         .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
         .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `,
         }}
       />
