@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+/**
+ * AdminUsers.tsx
+ * Pagina de administrare utilizatori - Design Futuristic (Glassmorphism & SWR)
+ */
+
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Search,
   UserPlus,
@@ -10,6 +15,8 @@ import {
   Trash2,
   ShieldCheck,
   User,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,48 +53,45 @@ const AdminUsers = () => {
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // Debounce search → SWR key changes only after 400ms idle
+  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setSearchTerm(searchInput), 400);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-
   const swrKey = `admin:users:p=${page}:q=${searchTerm}:r=${roleFilter}`;
+
+  const fetcher = useCallback(async () => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: "10",
+      search: searchTerm,
+      role_filter: roleFilter,
+    });
+    const res = await fetch(`${API_BASE}/api/v1/admin/users?${params}`, {
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error("Eroare la preluarea utilizatorilor");
+    return res.json();
+  }, [page, searchTerm, roleFilter]);
+
   const { data, loading, mutate } = useAdminSWR<{
     items: any[];
     pages: number;
     total: number;
-  }>(
-    swrKey,
-    async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        size: "10",
-        search: searchTerm,
-        role_filter: roleFilter,
-      });
-      const res = await fetch(`${API_BASE}/api/v1/admin/users?${params}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Eroare la preluarea utilizatorilor");
-      return res.json();
-    },
-    { ttl: 30_000 },
-  );
+  }>(swrKey, fetcher, { ttl: 60_000 }); // Am crescut TTL-ul la 60s pentru stabilitate la navigație
 
-  const users = data?.items || [];
+  const users = useMemo(() => data?.items || [], [data]);
   const totalPages = data?.pages || 1;
   const totalItems = data?.total || 0;
 
-  const invalidateAll = () => {
-    // Coarse invalidation: drop the entire users namespace from cache.
+  const invalidateAll = useCallback(() => {
     for (let i = 0; i < sessionStorage.length; i++) {
       const k = sessionStorage.key(i);
       if (k && k.startsWith("swr:admin:users:")) sessionStorage.removeItem(k);
     }
     mutate(true);
-  };
+  }, [mutate]);
 
   const handleUpdateRole = async (userId: string, newRole: string) => {
     try {
@@ -130,308 +134,501 @@ const AdminUsers = () => {
   };
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER LUXURY */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-12 h-[1px]"
-              style={{ backgroundColor: "var(--royal-violet)" }}
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              className="animate-pulse"
+              style={{ color: "var(--royal-violet)" }}
             />
             <span
-              className="text-[10px] font-black uppercase tracking-[0.5em]"
-              style={{ color: "var(--royal-violet)" }}
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
             >
               Identitate & Securitate
             </span>
           </div>
-          <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
             Management{" "}
             <span style={{ color: "var(--royal-violet)" }}>Membri</span>
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-          <div className="relative group flex-1">
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 sm:w-80 group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
-              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+              size={15}
+              style={{
+                color:
+                  "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+              }}
             />
             <input
-              className="w-full sm:w-[350px] pl-12 pr-6 py-4 bg-zinc-50 border-none rounded-2xl focus:ring-2 focus:ring-[var(--royal-violet)]/10 outline-none transition-all text-sm font-bold shadow-inner"
+              className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-xl border rounded-xl outline-none transition-all text-sm font-medium placeholder:font-normal"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                color: "var(--dark-amethyst)",
+                boxShadow:
+                  "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
               placeholder="Identifică utilizator..."
               value={searchInput}
               onChange={(e) => {
                 setSearchInput(e.target.value);
                 setPage(1);
               }}
+              onFocus={(e) =>
+                (e.target.style.borderColor = "var(--royal-violet)")
+              }
+              onBlur={(e) =>
+                (e.target.style.borderColor =
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)")
+              }
             />
           </div>
           <button
-            className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 whitespace-nowrap"
+            className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
             style={{ background: "var(--primary-gradient)" }}
           >
-            <UserPlus size={16} /> Invită Membru
+            <UserPlus size={14} strokeWidth={2.5} /> Invită Membru
           </button>
         </div>
       </header>
 
-      {/* FILTERS BAR */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+      {/* ── FILTERS BAR (Glassmorphism) ──────────────────────────── */}
+      <section
+        className="flex items-center gap-3 p-3 rounded-2xl backdrop-blur-xl border bg-white/40 overflow-x-auto no-scrollbar w-fit"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+        }}
+      >
         {[
           { label: "Toți Membrii", val: "ALL" },
           { label: "Administratori", val: "ADMIN" },
           { label: "Clienți Retail", val: "USER" },
-        ].map((f) => (
-          <button
-            key={f.val}
-            onClick={() => {
-              setRoleFilter(f.val);
-              setPage(1);
-            }}
-            className={`px-6 py-3 rounded-full text-[10px] font-black tracking-widest uppercase transition-all border shrink-0 ${
-              roleFilter === f.val
-                ? "text-white border-transparent shadow-md"
-                : "bg-white text-zinc-400 border-zinc-100 hover:border-[var(--royal-violet)]"
-            }`}
-            style={{
-              backgroundColor:
-                roleFilter === f.val ? "var(--dark-amethyst)" : undefined,
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+        ].map((f) => {
+          const active = roleFilter === f.val;
+          return (
+            <button
+              key={f.val}
+              onClick={() => {
+                setRoleFilter(f.val);
+                setPage(1);
+              }}
+              className={`relative px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-sm shrink-0 ${
+                active
+                  ? "text-white border-transparent"
+                  : "text-zinc-500 hover:text-[var(--dark-amethyst)] bg-white border"
+              }`}
+              style={{
+                borderColor: !active
+                  ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                  : undefined,
+              }}
+            >
+              {active && (
+                <motion.span
+                  layoutId="users-filter-chip"
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: "var(--primary-gradient)" }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 380,
+                    damping: 32,
+                  }}
+                />
+              )}
+              <span className="relative z-10">{f.label}</span>
+            </button>
+          );
+        })}
+      </section>
 
-      {/* DATA TABLE */}
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 overflow-hidden relative min-h-[500px]">
-        <Table className="w-full">
-          <TableHeader className="bg-zinc-50/50">
-            <TableRow className="border-b border-zinc-100 hover:bg-transparent">
-              <TableHead className="py-6 px-10 text-[10px] uppercase tracking-widest font-black text-zinc-400">
-                Identitate Utilizator
-              </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400">
-                Rang Sistem
-              </TableHead>
-              <TableHead className="text-[10px] uppercase tracking-widest font-black text-zinc-400">
-                Înregistrare
-              </TableHead>
-              <TableHead className="text-center text-[10px] uppercase tracking-widest font-black text-zinc-400">
-                Status
-              </TableHead>
-              <TableHead className="text-right px-10 text-[10px] uppercase tracking-widest font-black text-zinc-400">
-                Gestiune
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <AnimatePresence mode="popLayout">
-              {loading ? (
-                [...Array(6)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="px-10 py-6">
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="size-11 rounded-2xl" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-40" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
+      {/* ── DATA GRID MODERN ─────────────────────────────────────── */}
+      <div
+        className="bg-white rounded-[2rem] shadow-xl shadow-black/[0.02] border overflow-hidden relative z-10 min-h-[500px]"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        {/* Header Listă */}
+        <div
+          className="hidden md:grid grid-cols-12 bg-zinc-50/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+            color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+          }}
+        >
+          <div className="col-span-4 pl-2">Identitate Utilizator</div>
+          <div className="col-span-2">Rang Sistem</div>
+          <div className="col-span-3">Dată Înregistrare</div>
+          <div className="col-span-2 text-center">Status</div>
+          <div className="col-span-1 text-right pr-4">Gestiune</div>
+        </div>
+
+        <div
+          className="divide-y"
+          style={{
+            divideColor:
+              "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+          }}
+        >
+          <AnimatePresence mode="wait">
+            {loading ? (
+              // Skeleton Loader - Fără "clipire" urâtă
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="w-full"
+              >
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col md:grid md:grid-cols-12 px-6 md:px-10 py-5 items-start md:items-center gap-4 md:gap-0 border-b last:border-0"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                    }}
+                  >
+                    <div className="col-span-4 flex items-center gap-4 w-full">
+                      <Skeleton className="size-11 rounded-2xl shrink-0" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-2 w-24" />
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-7 w-24 rounded-full" />
-                    </TableCell>
-                    <TableCell>
+                    </div>
+                    <div className="col-span-2">
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                    <div className="col-span-3">
                       <Skeleton className="h-4 w-20" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-3 w-3 mx-auto rounded-full" />
-                    </TableCell>
-                    <TableCell className="px-10 text-right">
-                      <Skeleton className="size-10 ml-auto rounded-xl" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="py-32 text-center text-zinc-300 text-[10px] font-black uppercase tracking-widest"
-                  >
-                    Niciun profil identificat conform filtrării.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((u) => (
-                  <motion.tr
-                    layout
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    key={u.id}
-                    className="group hover:bg-zinc-50/50 transition-colors border-b border-zinc-50/50 last:border-0"
-                  >
-                    <TableCell className="py-6 px-10">
-                      <div className="flex items-center gap-4">
+                    </div>
+                    <div className="col-span-2 md:mx-auto">
+                      <Skeleton className="h-3 w-10 rounded-full" />
+                    </div>
+                    <div className="col-span-1 md:ml-auto">
+                      <Skeleton className="h-9 w-9 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            ) : users.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-32 flex flex-col items-center gap-3"
+              >
+                <AlertTriangle
+                  size={40}
+                  strokeWidth={1}
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                  }}
+                />
+                <span
+                  className="text-[10px] font-black uppercase tracking-widest"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                  }}
+                >
+                  Niciun profil identificat
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="data"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="w-full"
+              >
+                {users.map((u) => (
+                  <div key={u.id} className="group relative transition-all">
+                    {/* Hover Fill Gradient (Invizibil în mod normal) */}
+                    <div
+                      className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                      style={{
+                        background:
+                          "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                      }}
+                    />
+
+                    <div
+                      className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-4 relative z-10 gap-4 md:gap-0 border-b last:border-0"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                      }}
+                    >
+                      {/* Identitate */}
+                      <div className="col-span-4 flex items-center gap-4 w-full pl-2">
                         <div
-                          className="size-11 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-md uppercase transition-all"
+                          className="size-11 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-sm uppercase group-hover:scale-105 transition-transform duration-500 shrink-0"
                           style={{ background: "var(--primary-gradient)" }}
                         >
                           {u.first_name?.[0] || ""}
-                          {u.last_name?.[0] || <User size={14} />}
+                          {u.last_name?.[0] ||
+                            (!u.first_name && <User size={14} />)}
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-[var(--dark-amethyst)] uppercase tracking-tight">
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[13px] font-bold tracking-tight uppercase text-[var(--dark-amethyst)] group-hover:text-[var(--royal-violet)] transition-colors truncate">
                             {u.first_name} {u.last_name}
                           </span>
-                          <span className="text-[10px] text-zinc-400 font-medium lowercase italic">
+                          <span
+                            className="text-[9px] font-semibold lowercase tracking-widest mt-0.5 truncate"
+                            style={{
+                              color:
+                                "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                            }}
+                          >
                             {u.email}
                           </span>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shadow-sm ${
-                          u.role === "admin"
-                            ? "bg-[var(--dark-amethyst)] text-white border-transparent"
-                            : "bg-white text-zinc-500 border-zinc-200"
-                        }`}
-                      >
-                        {u.role === "admin" ? (
-                          <Shield size={10} strokeWidth={3} />
-                        ) : (
-                          <User size={10} />
-                        )}
-                        {u.role}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
-                      {u.created_at
-                        ? new Date(u.created_at).toLocaleDateString("ro-RO", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "---"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <div
-                          className={`size-2 rounded-full ${u.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "bg-zinc-300"}`}
-                        />
-                        <span className="text-[8px] font-black uppercase text-zinc-300">
-                          {u.is_active ? "LIVE" : "BAN"}
+
+                      {/* Rang */}
+                      <div className="col-span-2 pl-2 md:pl-0">
+                        <span
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border shadow-sm whitespace-nowrap"
+                          style={{
+                            backgroundColor:
+                              u.role === "admin"
+                                ? "var(--dark-amethyst)"
+                                : "white",
+                            color:
+                              u.role === "admin"
+                                ? "white"
+                                : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                            borderColor:
+                              u.role === "admin"
+                                ? "transparent"
+                                : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
+                        >
+                          {u.role === "admin" ? (
+                            <Shield size={10} strokeWidth={2.5} />
+                          ) : (
+                            <User size={10} strokeWidth={2.5} />
+                          )}
+                          {u.role}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right px-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-xl hover:bg-white hover:shadow-md transition-all text-zinc-400 hover:text-[var(--dark-amethyst)]"
-                          >
-                            <MoreHorizontal size={18} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-56 p-2 rounded-2xl border-zinc-100 shadow-2xl"
-                        >
-                          <DropdownMenuLabel className="text-[9px] font-black uppercase text-zinc-400 px-3 py-2">
-                            Contact Membru
-                          </DropdownMenuLabel>
-                          <DropdownMenuItem className="rounded-xl gap-3 py-3 cursor-pointer">
-                            <Mail size={14} /> Trimite Mesaj Direct
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-zinc-50" />
-                          <DropdownMenuLabel className="text-[9px] font-black uppercase text-zinc-400 px-3 py-2">
-                            Privilegii Sistem
-                          </DropdownMenuLabel>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleUpdateRole(
-                                u.id,
-                                u.role === "admin" ? "user" : "admin",
-                              )
-                            }
-                            className="rounded-xl gap-3 py-3 cursor-pointer font-bold"
-                            style={{ color: "var(--royal-violet)" }}
-                          >
-                            <ShieldCheck size={14} />{" "}
-                            {u.role === "admin"
-                              ? "Elimină Acces Admin"
-                              : "Acordă Acces Admin"}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-zinc-50" />
-                          <DropdownMenuItem
-                            onClick={() => setConfirmDeleteId(u.id)}
-                            className="rounded-xl gap-3 py-3 cursor-pointer text-rose-500 font-bold focus:bg-rose-50 focus:text-rose-600"
-                          >
-                            <Trash2 size={14} /> Suspendă Contul
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </motion.tr>
-                ))
-              )}
-            </AnimatePresence>
-          </TableBody>
-        </Table>
 
-        {/* PAGINATION */}
-        {totalPages > 1 && !loading && (
-          <footer className="p-8 bg-zinc-50/50 border-t border-zinc-100 flex items-center justify-between">
-            <span className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-zinc-400">
-              Total Database Hub:{" "}
-              <span style={{ color: "var(--royal-violet)" }}>
-                {totalItems} profile
-              </span>
-            </span>
-            <div className="flex items-center gap-4 mx-auto sm:mx-0">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="p-4 bg-white rounded-2xl border border-zinc-100 hover:border-[var(--royal-violet)] disabled:opacity-30 shadow-sm transition-all"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <div className="text-center min-w-24">
-                <p className="text-[9px] font-black uppercase text-zinc-300 tracking-widest">
-                  Pagina
-                </p>
-                <p className="heading-serif text-2xl italic font-bold text-[var(--dark-amethyst)]">
-                  {page}{" "}
-                  <span className="text-xs font-sans text-zinc-300 not-italic">
-                    / {totalPages}
-                  </span>
-                </p>
-              </div>
-              <button
-                disabled={page === totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="p-4 bg-white rounded-2xl border border-zinc-100 hover:border-[var(--royal-violet)] disabled:opacity-30 shadow-sm transition-all"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </footer>
-        )}
+                      {/* Dată */}
+                      <div
+                        className="col-span-3 text-[10px] font-bold uppercase tracking-wider pl-2 md:pl-0"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                        }}
+                      >
+                        {u.created_at
+                          ? new Date(u.created_at).toLocaleDateString("ro-RO", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "---"}
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-2 flex justify-start md:justify-center w-full pl-2 md:pl-0">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`size-2 rounded-full ${u.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "bg-zinc-300"}`}
+                          />
+                          <span
+                            className="text-[9px] font-black uppercase tracking-widest"
+                            style={{
+                              color: u.is_active
+                                ? "#10b981"
+                                : "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                            }}
+                          >
+                            {u.is_active ? "LIVE" : "BAN"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Acțiuni (Gestiune) */}
+                      <div className="col-span-1 flex justify-end w-full md:w-auto pr-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-9 rounded-full hover:bg-white hover:shadow-md transition-all border"
+                              style={{
+                                color: "var(--dark-amethyst)",
+                                borderColor:
+                                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                              }}
+                            >
+                              <MoreHorizontal size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-56 p-2 rounded-2xl border-zinc-100 shadow-2xl bg-white"
+                          >
+                            <DropdownMenuLabel
+                              className="text-[9px] font-black uppercase tracking-widest px-3 py-2"
+                              style={{
+                                color:
+                                  "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                              }}
+                            >
+                              Contact Membru
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem className="rounded-xl gap-3 py-3 cursor-pointer text-xs font-bold text-[var(--dark-amethyst)] focus:bg-zinc-50">
+                              <Mail size={14} /> Trimite Mesaj
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-zinc-50" />
+                            <DropdownMenuLabel
+                              className="text-[9px] font-black uppercase tracking-widest px-3 py-2"
+                              style={{
+                                color:
+                                  "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                              }}
+                            >
+                              Privilegii Sistem
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleUpdateRole(
+                                  u.id,
+                                  u.role === "admin" ? "user" : "admin",
+                                )
+                              }
+                              className="rounded-xl gap-3 py-3 cursor-pointer text-xs font-bold focus:bg-zinc-50"
+                              style={{ color: "var(--royal-violet)" }}
+                            >
+                              <ShieldCheck size={14} />
+                              {u.role === "admin"
+                                ? "Revocă Drepturi Admin"
+                                : "Promovează la Admin"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-zinc-50" />
+                            <DropdownMenuItem
+                              onClick={() => setConfirmDeleteId(u.id)}
+                              className="rounded-xl gap-3 py-3 cursor-pointer text-rose-500 text-xs font-bold focus:bg-rose-50 focus:text-rose-600"
+                            >
+                              <Trash2 size={14} /> Suspendă Contul
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
+      {/* ── PAGINATION ─────────────────────────────────────── */}
+      {!loading && totalPages > 1 && (
+        <div
+          className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+
+          <div className="hidden sm:flex gap-1.5">
+            {[...Array(totalPages)]
+              .map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${page === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  style={{
+                    background:
+                      page === i + 1 ? "var(--primary-gradient)" : undefined,
+                    borderColor:
+                      page !== i + 1
+                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                        : undefined,
+                    color:
+                      page !== i + 1
+                        ? "var(--dark-amethyst)"
+                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  {i + 1}
+                </button>
+              ))
+              .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))}
+          </div>
+
+          <span
+            className="sm:hidden text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-xl shadow-sm"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            {page} <span className="opacity-30 mx-1">/</span> {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronRight size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+        </div>
+      )}
+
+      {/* ── MODAL DE CONFIRMARE ȘTERGERE ── */}
       <AdminConfirmDialog
         open={confirmDeleteId !== null}
         onOpenChange={(v) => !v && setConfirmDeleteId(null)}
-        eyebrow="Suspendare cont"
+        eyebrow="Avertisment Securitate"
         title="Suspendezi acest utilizator?"
-        description="Contul va fi dezactivat și nu va mai putea autentifica. Acțiunea poate fi reversată din baza de date."
-        confirmLabel="Suspendă"
+        description="Contul va fi dezactivat și nu se va mai putea autentifica pe platformă. Acțiunea poate fi reversată ulterior doar de un alt administrator."
+        confirmLabel="Confirmă Suspendarea"
         destructive
         onConfirm={async () => {
           if (confirmDeleteId) await handleDeleteUser(confirmDeleteId);
