@@ -415,12 +415,7 @@ const AdminBrands = () => {
                         color:
                           "color-mix(in srgb, var(--royal-violet) 50%, gray)",
                       }}
-                    >
-                      <Package size={12} />
-                      <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-                        {brand.products_count || 0} Articole
-                      </span>
-                    </div>
+                    ></div>
                   </div>
 
                   {/* Actions Footer */}
