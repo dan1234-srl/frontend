@@ -521,9 +521,7 @@ const AdminUsers = () => {
                             >
                               Contact Membru
                             </DropdownMenuLabel>
-                            <DropdownMenuItem className="rounded-xl gap-3 py-3 cursor-pointer text-xs font-bold text-[var(--dark-amethyst)] focus:bg-zinc-50">
-                              <Mail size={14} /> Trimite Mesaj
-                            </DropdownMenuItem>
+
                             <DropdownMenuSeparator className="bg-zinc-50" />
                             <DropdownMenuLabel
                               className="text-[9px] font-black uppercase tracking-widest px-3 py-2"
@@ -550,12 +548,6 @@ const AdminUsers = () => {
                                 : "Promovează la Admin"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-zinc-50" />
-                            <DropdownMenuItem
-                              onClick={() => setConfirmDeleteId(u.id)}
-                              className="rounded-xl gap-3 py-3 cursor-pointer text-rose-500 text-xs font-bold focus:bg-rose-50 focus:text-rose-600"
-                            >
-                              <Trash2 size={14} /> Suspendă Contul
-                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
