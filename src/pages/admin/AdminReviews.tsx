@@ -1,3 +1,8 @@
+/**
+ * AdminReviews.tsx
+ * Moderare Recenzii - Design Futuristic (Bento Neo-Mosaic & Glassmorphism)
+ */
+
 import { useMemo, useState } from "react";
 import {
   Star,
@@ -11,9 +16,9 @@ import {
   Loader2,
   Inbox,
   Trash2,
+  Sparkles,
+  MessageSquareQuote,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAdminSWR } from "@/lib/admin-swr";
@@ -61,13 +66,17 @@ const AdminReviews = () => {
   const [ratingFilter, setRatingFilter] = useState<string>("Toate");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [confirmDelete, setConfirmDelete] = useState<
-    string | number | null
-  >(null);
-  const perPage = 8;
+  const [confirmDelete, setConfirmDelete] = useState<string | number | null>(
+    null,
+  );
+  const perPage = 10;
 
   const swrKey = `admin:reviews:status=${statusFilter}`;
-  const { data: reviews = [], loading, mutate, setData } = useAdminSWR<AdminReview[]>(
+  const {
+    data: rawData,
+    loading,
+    setData,
+  } = useAdminSWR<any>(
     swrKey,
     async () => {
       const url = new URL(`${API_BASE_URL}/api/v1/reviews/admin`);
@@ -78,8 +87,13 @@ const AdminReviews = () => {
       const json = await res.json();
       return Array.isArray(json) ? json : json?.items || [];
     },
-    { ttl: 30_000, refreshInterval: statusFilter === "pending" ? 30_000 : undefined },
+    {
+      ttl: 30_000,
+      refreshInterval: statusFilter === "pending" ? 30_000 : undefined,
+    },
   );
+
+  const reviews: AdminReview[] = Array.isArray(rawData) ? rawData : [];
 
   const updateStatus = async (id: string | number, status: ReviewStatus) => {
     setBusyId(id);
@@ -97,18 +111,16 @@ const AdminReviews = () => {
 
       if (!res.ok) throw new Error();
 
-      // Optimistic update
-      setData(((reviews || []) as AdminReview[]).map((r) =>
-        r.id === id ? { ...r, status } : r,
-      ));
-      // Invalidate all status caches since item may move tabs
+      setData(reviews.map((r) => (r.id === id ? { ...r, status } : r)));
+
       ["pending", "approved", "rejected", "Toate"].forEach((s) =>
         invalidateCache(`admin:reviews:status=${s}`),
       );
+
       toast.success(
         status === "approved"
-          ? "Recenzia a fost aprobată."
-          : "Recenzia a fost respinsă.",
+          ? "Recenzia a fost aprobată public."
+          : "Recenzia a fost ascunsă/respinsă.",
       );
     } catch {
       toast.error("Operațiunea a eșuat.");
@@ -122,25 +134,23 @@ const AdminReviews = () => {
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/reviews/admin/${id}/reject`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
+        { method: "DELETE", credentials: "include" },
       );
       if (!res.ok) throw new Error();
-      setData(((reviews || []) as AdminReview[]).filter((r) => r.id !== id));
+
+      setData(reviews.filter((r) => r.id !== id));
+
       ["pending", "approved", "rejected", "Toate"].forEach((s) =>
         invalidateCache(`admin:reviews:status=${s}`),
       );
-      toast.success("Recenzia a fost ștearsă.");
+
+      toast.success("Recenzia a fost ștearsă definitiv.");
     } catch {
       toast.error("Nu am putut șterge recenzia.");
-      throw new Error();
     } finally {
       setBusyId(null);
     }
   };
-
 
   const filtered = useMemo(() => {
     return reviews.filter((r) => {
@@ -171,7 +181,7 @@ const AdminReviews = () => {
     Array.from({ length: 5 }).map((_, i) => (
       <Star
         key={i}
-        size={12}
+        size={14}
         className={
           i < count
             ? "text-[var(--royal-violet)] fill-[var(--royal-violet)]"
@@ -181,252 +191,509 @@ const AdminReviews = () => {
     ));
 
   return (
-    <div className="space-y-8 pb-16 text-left font-sans">
-      {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-zinc-100 pb-8">
-        <div className="flex items-center gap-3">
-          <div
-            className="p-2 rounded-lg text-white"
-            style={{ background: "var(--primary-gradient)" }}
-          >
-            <Activity size={14} />
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              className="animate-pulse"
+              style={{ color: "var(--royal-violet)" }}
+            />
+            <span
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
+            >
+              Feedback Clienți
+            </span>
           </div>
-          <span className="text-[10px] uppercase tracking-[0.4em] font-black text-[var(--royal-violet)]">
-            Feedback Clienți
-          </span>
-        </div>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <h1 className="text-3xl md:text-5xl font-serif italic tracking-tighter text-[var(--dark-amethyst)]">
-            Moderare Recenzii
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
+            Moderare{" "}
+            <span style={{ color: "var(--royal-violet)" }}>Recenzii</span>
           </h1>
-          <div className="bg-white border border-zinc-100 px-6 py-3 flex items-center gap-6 shadow-sm rounded-2xl">
-            <div className="text-center border-r border-zinc-50 pr-6">
-              <p className="text-[8px] uppercase text-zinc-400 font-bold tracking-widest">
-                Rating Mediu
-              </p>
-              <p className="text-lg font-black text-[var(--dark-amethyst)]">
-                {stats.avg.toFixed(1)} / 5
-              </p>
+        </div>
+      </header>
+
+      {/* ── KPI STRIP ANIMATED ──────────────────────────────────────── */}
+      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+        <motion.div
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="relative overflow-hidden rounded-[20px] p-5 sm:p-6 shadow-lg shadow-black/[0.04] group border border-white/10"
+          style={{ background: "var(--primary-gradient)" }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md border border-white/20 text-white shadow-sm w-fit transition-transform group-hover:scale-105">
+              <Star size={18} fill="currentColor" />
             </div>
-            <div className="text-center">
-              <p className="text-[8px] uppercase text-zinc-400 font-bold tracking-widest">
-                Total
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/70 mb-1">
+                Rating Global
               </p>
-              <p className="text-lg font-black text-[var(--dark-amethyst)]">
-                {stats.total}
-              </p>
+              <h4 className="heading-serif text-2xl sm:text-[32px] tracking-tight text-white font-medium leading-none drop-shadow-sm">
+                {stats.avg.toFixed(1)}{" "}
+                <span className="text-lg opacity-60">/ 5</span>
+              </h4>
             </div>
           </div>
-        </div>
-      </div>
+          <div
+            aria-hidden
+            className="absolute -right-6 -bottom-6 size-28 rounded-full pointer-events-none mix-blend-overlay transition-transform duration-700 group-hover:scale-150"
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              filter: "blur(20px)",
+            }}
+          />
+        </motion.div>
 
-      {/* Filters */}
-      <div className="bg-white border border-zinc-100 p-4 shadow-sm rounded-[1.5rem] flex flex-col md:flex-row gap-4 justify-between">
-        <div className="relative flex-1 max-w-md">
+        <motion.div
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="relative overflow-hidden rounded-[20px] p-5 sm:p-6 shadow-lg shadow-black/[0.04] group border border-white/10 bg-white"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+            <div
+              className="p-3 bg-zinc-50 rounded-2xl border text-zinc-400 shadow-sm w-fit transition-transform group-hover:scale-105 group-hover:text-[var(--royal-violet)] group-hover:border-[var(--royal-violet)]"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
+            >
+              <MessageSquareQuote size={18} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400 mb-1">
+                Volum Analizat
+              </p>
+              <h4 className="heading-serif text-2xl sm:text-[32px] tracking-tight text-[var(--dark-amethyst)] font-medium leading-none">
+                {stats.total}
+              </h4>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── Search + filter chips (Glassmorphism) ──────────────────────────── */}
+      <section
+        className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between p-3 rounded-[1.5rem] backdrop-blur-xl border bg-white/40"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+        }}
+      >
+        <div className="relative w-full lg:w-[420px] group">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300"
-            size={16}
+            className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+            style={{
+              color: "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+            }}
+            size={14}
           />
-          <Input
+          <input
+            placeholder="Căutare după conținut, client, produs..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="CAUTĂ ÎN RECENZII..."
-            className="pl-12 rounded-xl border-zinc-50 bg-zinc-50/50 text-[10px] uppercase tracking-widest h-12 focus:ring-2 focus:ring-[var(--royal-violet)]/10"
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-md border rounded-xl text-sm font-medium outline-none transition placeholder:text-zinc-400 placeholder:font-normal text-[var(--dark-amethyst)]"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "var(--royal-violet)";
+              e.target.style.backgroundColor = "#ffffff";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor =
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)";
+              e.target.style.backgroundColor = "rgba(255,255,255,0.6)";
+            }}
           />
         </div>
-        <div className="flex gap-3">
+
+        <div className="flex flex-wrap gap-2 relative">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-12 border border-zinc-100 bg-zinc-50/50 text-[10px] uppercase tracking-widest px-6 outline-none rounded-xl text-[var(--dark-amethyst)] font-bold"
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bg-white/80 backdrop-blur-md border rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer shadow-sm transition-colors text-[var(--dark-amethyst)]"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
           >
-            <option value="Toate">Toate statusurile</option>
-            <option value="pending">În așteptare</option>
-            <option value="approved">Aprobate</option>
-            <option value="rejected">Respinse</option>
+            <option value="Toate">Toate Statusurile</option>
+            <option value="pending">În așteptare (Necesită Acțiune)</option>
+            <option value="approved">Aprobate (Live pe site)</option>
+            <option value="rejected">Respinse (Ascunse)</option>
           </select>
+
           <select
             value={ratingFilter}
-            onChange={(e) => setRatingFilter(e.target.value)}
-            className="h-12 border border-zinc-100 bg-zinc-50/50 text-[10px] uppercase tracking-widest px-6 outline-none rounded-xl text-[var(--dark-amethyst)] font-bold"
+            onChange={(e) => {
+              setRatingFilter(e.target.value);
+              setPage(1);
+            }}
+            className="bg-white/80 backdrop-blur-md border rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer shadow-sm transition-colors text-[var(--dark-amethyst)]"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
           >
-            <option value="Toate">Toate ratingurile</option>
-            <option value="5">5 Stele</option>
-            <option value="sub3">Sub 3 Stele</option>
+            <option value="Toate">Toate Scorurile</option>
+            <option value="5">Doar 5 Stele</option>
+            <option value="sub3">Problematice (Sub 3 stele)</option>
           </select>
         </div>
-      </div>
+      </section>
 
-      {/* List */}
-      <div className="space-y-4 min-h-[300px]">
-        {loading ? (
-          <div className="flex items-center justify-center py-24 text-[var(--royal-violet)]">
-            <Loader2 className="animate-spin" size={28} />
-          </div>
-        ) : paged.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-zinc-400">
-            <Inbox size={36} strokeWidth={1} />
-            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.4em]">
-              Nicio recenzie de afișat
-            </p>
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {paged.map((review) => {
-              const status =
-                (review.status as ReviewStatus) || ("pending" as ReviewStatus);
-              const customer =
-                review.user_name || review.customer_name || "Client";
-              return (
-                <motion.div
-                  key={review.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="bg-white border border-zinc-100 p-6 md:p-8 shadow-sm hover:shadow-md transition-all rounded-[2rem]"
+      {/* ── LISTA DE CARDURI (BENTO STYLE) ─────────────────────────────────── */}
+      <div className="min-h-[400px]">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-5"
+            >
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-[2rem] border p-6 md:p-8 space-y-6"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                    <div className="lg:col-span-3 lg:border-r lg:border-zinc-50 lg:pr-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm"
-                          style={{ background: "var(--primary-gradient)" }}
-                        >
-                          {initials(customer)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
-                            {customer}
-                          </p>
-                          <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
-                            {new Date(review.created_at).toLocaleDateString(
-                              "ro-RO",
-                              {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              },
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      {review.product_name && (
-                        <a
-                          href={
-                            review.product_slug
-                              ? `/produs/${review.product_slug}`
-                              : "#"
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:underline"
-                          style={{ color: "var(--royal-violet)" }}
-                        >
-                          {review.product_name} <ExternalLink size={12} />
-                        </a>
-                      )}
-                    </div>
-
-                    <div className="lg:col-span-6 space-y-4">
-                      <div className="flex items-center gap-1">
-                        {renderStars(review.rating)}
-                      </div>
-                      <p className="text-[14px] text-zinc-600 leading-relaxed italic font-medium">
-                        "{review.comment}"
-                      </p>
-                      <span
-                        className={`inline-block text-[9px] font-black uppercase px-3 py-1 border rounded-full shadow-sm ${
-                          status === "approved"
-                            ? "border-emerald-100 bg-emerald-50 text-emerald-600"
-                            : status === "pending"
-                              ? "border-amber-100 bg-amber-50 text-amber-600"
-                              : "border-rose-100 bg-rose-50 text-rose-600"
-                        }`}
-                      >
-                        {STATUS_LABEL[status] || status}
-                      </span>
-                    </div>
-
-                    <div className="lg:col-span-3 flex flex-row lg:flex-col justify-start lg:justify-center gap-3">
-                      {status !== "approved" && (
-                        <button
-                          disabled={busyId === review.id}
-                          onClick={() => updateStatus(review.id, "approved")}
-                          className="flex-1 lg:flex-none rounded-xl text-white text-[10px] font-black uppercase tracking-[0.2em] h-12 flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all disabled:opacity-50"
-                          style={{ background: "var(--primary-gradient)" }}
-                        >
-                          {busyId === review.id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <CheckCircle2 size={16} />
-                          )}{" "}
-                          Aprobă
-                        </button>
-                      )}
-                      {status !== "rejected" && (
-                        <Button
-                          disabled={busyId === review.id}
-                          onClick={() => updateStatus(review.id, "rejected")}
-                          variant="outline"
-                          className="flex-1 lg:flex-none rounded-xl border-zinc-200 text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] h-12 gap-2"
-                        >
-                          <XCircle size={16} /> Respinge
-                        </Button>
-                      )}
-                      <Button
-                        disabled={busyId === review.id}
-                        onClick={() => setConfirmDelete(review.id)}
-                        variant="ghost"
-                        className="flex-1 lg:flex-none rounded-xl bg-zinc-50 text-zinc-400 hover:text-rose-500 text-[10px] font-black uppercase tracking-[0.2em] h-12 gap-2"
-                      >
-                        <Trash2 size={16} /> Șterge
-                      </Button>
+                  <div className="flex gap-4">
+                    <div className="size-12 bg-zinc-100 rounded-2xl animate-pulse shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 w-32 bg-zinc-100 rounded animate-pulse" />
+                      <div className="h-2 w-24 bg-zinc-100 rounded animate-pulse" />
                     </div>
                   </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        )}
+                  <div className="space-y-2">
+                    <div className="h-3 w-full bg-zinc-100 rounded animate-pulse" />
+                    <div className="h-3 w-3/4 bg-zinc-100 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          ) : paged.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-32 flex flex-col items-center gap-3 bg-white/50 rounded-[28px] border border-dashed"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+              }}
+            >
+              <Inbox
+                size={40}
+                strokeWidth={1}
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                }}
+              />
+              <span
+                className="text-[10px] font-black uppercase tracking-[0.3em]"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
+                Nicio recenzie găsită
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="data"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-5"
+            >
+              {paged.map((review) => {
+                const status = (review.status as ReviewStatus) || "pending";
+                const customer =
+                  review.user_name || review.customer_name || "Client Anonim";
+
+                return (
+                  <div
+                    key={review.id}
+                    className="group relative bg-white border rounded-[2rem] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl shadow-sm flex flex-col overflow-hidden"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                    }}
+                  >
+                    {/* Background Hover Gradient */}
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                      }}
+                    />
+                    <div className="absolute inset-1 rounded-[1.8rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0 bg-white/95" />
+
+                    <div className="p-6 md:p-8 flex flex-col h-full relative z-10">
+                      {/* Top Info */}
+                      <div className="flex justify-between items-start mb-6 gap-4">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="size-12 rounded-[1rem] flex items-center justify-center text-sm font-black text-white shadow-sm shrink-0"
+                            style={{ background: "var(--primary-gradient)" }}
+                          >
+                            {initials(customer)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold uppercase tracking-tight text-[var(--dark-amethyst)] group-hover:text-[var(--royal-violet)] transition-colors">
+                              {customer}
+                            </p>
+                            <p
+                              className="text-[9px] font-black uppercase tracking-widest mt-0.5"
+                              style={{
+                                color:
+                                  "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                              }}
+                            >
+                              {new Date(review.created_at).toLocaleDateString(
+                                "ro-RO",
+                                {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                },
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <span
+                          className="px-3 py-1.5 rounded-md text-[8px] font-black uppercase tracking-[0.2em] whitespace-nowrap border shadow-sm"
+                          style={{
+                            backgroundColor:
+                              status === "approved"
+                                ? "color-mix(in srgb, #10b981 5%, transparent)"
+                                : status === "pending"
+                                  ? "color-mix(in srgb, #f59e0b 5%, transparent)"
+                                  : "color-mix(in srgb, #f43f5e 5%, transparent)",
+                            color:
+                              status === "approved"
+                                ? "#10b981"
+                                : status === "pending"
+                                  ? "#d97706"
+                                  : "#e11d48",
+                            borderColor:
+                              status === "approved"
+                                ? "color-mix(in srgb, #10b981 20%, transparent)"
+                                : status === "pending"
+                                  ? "color-mix(in srgb, #f59e0b 20%, transparent)"
+                                  : "color-mix(in srgb, #f43f5e 20%, transparent)",
+                          }}
+                        >
+                          {STATUS_LABEL[status]}
+                        </span>
+                      </div>
+
+                      {/* Continut Recenzie */}
+                      <div className="flex-1 space-y-4 mb-8">
+                        <div className="flex items-center gap-1">
+                          {renderStars(review.rating)}
+                        </div>
+                        <p
+                          className="text-[13px] leading-relaxed italic font-medium"
+                          style={{
+                            color:
+                              "color-mix(in srgb, var(--royal-violet) 70%, black)",
+                          }}
+                        >
+                          „{review.comment}”
+                        </p>
+                        {review.product_name && (
+                          <a
+                            href={
+                              review.product_slug
+                                ? `/produs/${review.product_slug}`
+                                : "#"
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-50 border transition-all hover:bg-white"
+                            style={{
+                              color: "var(--royal-violet)",
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            }}
+                          >
+                            <ExternalLink size={12} /> {review.product_name}
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Bottom Actions */}
+                      <div
+                        className="pt-5 border-t flex justify-end gap-2"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
+                        }}
+                      >
+                        {status !== "approved" && (
+                          <button
+                            disabled={busyId === review.id}
+                            onClick={() => updateStatus(review.id, "approved")}
+                            className="flex-1 md:flex-none px-6 py-3 rounded-xl text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                            style={{ background: "var(--primary-gradient)" }}
+                          >
+                            {busyId === review.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <CheckCircle2 size={14} strokeWidth={2.5} />
+                            )}{" "}
+                            Publică
+                          </button>
+                        )}
+                        {status !== "rejected" && (
+                          <button
+                            disabled={busyId === review.id}
+                            onClick={() => updateStatus(review.id, "rejected")}
+                            className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-white border hover:bg-rose-50 text-rose-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, #f43f5e 20%, transparent)",
+                            }}
+                          >
+                            <XCircle size={14} strokeWidth={2.5} /> Ascunde
+                          </button>
+                        )}
+                        <button
+                          disabled={busyId === review.id}
+                          onClick={() => setConfirmDelete(review.id)}
+                          className="px-4 py-3 rounded-xl bg-white border hover:bg-rose-500 hover:text-white hover:border-rose-500 text-rose-500 transition-all disabled:opacity-50 shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, #f43f5e 20%, transparent)",
+                          }}
+                          title="Ștergere Definitivă"
+                        >
+                          <Trash2 size={14} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Pagination */}
-      {!loading && filtered.length > perPage && (
-        <div className="flex justify-between items-center pt-8 border-t border-zinc-100">
-          <p className="text-[10px] text-zinc-400 uppercase tracking-[0.3em] font-black">
-            Pagina {page} din {totalPages}
-          </p>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="h-10 w-10 rounded-xl border-zinc-200 hover:border-[var(--royal-violet)]"
-            >
-              <ChevronLeft size={18} />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="h-10 w-10 rounded-xl border-zinc-200 hover:border-[var(--royal-violet)]"
-            >
-              <ChevronRight size={18} />
-            </Button>
+      {/* ── PAGINATION ─────────────────────────────────────── */}
+      {!loading && totalPages > 1 && (
+        <div
+          className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+
+          <div className="hidden sm:flex gap-1.5">
+            {[...Array(totalPages)]
+              .map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${page === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  style={{
+                    background:
+                      page === i + 1 ? "var(--primary-gradient)" : undefined,
+                    borderColor:
+                      page !== i + 1
+                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                        : undefined,
+                    color:
+                      page !== i + 1
+                        ? "var(--dark-amethyst)"
+                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  {i + 1}
+                </button>
+              ))
+              .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))}
           </div>
+
+          <span
+            className="sm:hidden text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-xl shadow-sm"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            {page} <span className="opacity-30 mx-1">/</span> {totalPages}
+          </span>
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronRight size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
         </div>
       )}
 
+      {/* ── MODAL DE CONFIRMARE ȘTERGERE ── */}
       <AdminConfirmDialog
         open={confirmDelete !== null}
         onOpenChange={(v) => !v && setConfirmDelete(null)}
-        eyebrow="Ștergere recenzie"
+        eyebrow="Ștergere Definitivă"
         title="Ștergi această recenzie?"
-        description="Acțiunea este permanentă. Recenzia nu va mai apărea în niciun raport."
-        confirmLabel="Șterge"
+        description="Acțiunea este ireversibilă. Recenzia va fi eliminată complet din baza de date și nu va mai putea fi recuperată."
+        confirmLabel="Confirmă Ștergerea"
         destructive
         onConfirm={async () => {
           if (confirmDelete !== null) await removeReview(confirmDelete);
