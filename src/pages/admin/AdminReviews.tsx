@@ -3,7 +3,7 @@
  * Moderare Recenzii - Design Futuristic (Bento Neo-Mosaic & Glassmorphism)
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Star,
   Search,
@@ -21,8 +21,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { useAdminSWR } from "@/lib/admin-swr";
-import { invalidateCache } from "@/lib/swr-cache";
+import { readCache, writeCache } from "@/lib/swr-cache";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 
 const API_BASE_URL =
@@ -71,29 +70,53 @@ const AdminReviews = () => {
   );
   const perPage = 10;
 
-  const swrKey = `admin:reviews:status=${statusFilter}`;
-  const {
-    data: rawData,
-    loading,
-    setData,
-  } = useAdminSWR<any>(
-    swrKey,
-    async () => {
+  // --- DATA STATE ---
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch stabil cu Cache integrat (Evită spam-ul de rețea)
+  const fetchReviews = useCallback(async () => {
+    const cacheKey = `admin:reviews:status=${statusFilter}`;
+    const cached = readCache<any>(cacheKey, 30_000).data;
+
+    if (cached) {
+      setReviews(Array.isArray(cached) ? cached : cached.items || []);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    try {
       const url = new URL(`${API_BASE_URL}/api/v1/reviews/admin`);
       if (statusFilter !== "Toate")
         url.searchParams.set("status", statusFilter);
-      const res = await fetch(url.toString(), { credentials: "include" });
-      if (!res.ok) throw new Error();
-      const json = await res.json();
-      return Array.isArray(json) ? json : json?.items || [];
-    },
-    {
-      ttl: 30_000,
-      refreshInterval: statusFilter === "pending" ? 30_000 : undefined,
-    },
-  );
 
-  const reviews: AdminReview[] = Array.isArray(rawData) ? rawData : [];
+      const res = await fetch(url.toString(), { credentials: "include" });
+      if (!res.ok) throw new Error("Eroare la preluarea recenziilor");
+
+      const json = await res.json();
+      const data = Array.isArray(json) ? json : json?.items || [];
+
+      setReviews(data);
+      writeCache(cacheKey, data);
+    } catch (err) {
+      if (!cached) toast.error("Eroare la încărcarea recenziilor.");
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(fetchReviews, 300);
+    return () => clearTimeout(t);
+  }, [fetchReviews]);
+
+  const invalidateAllTabs = useCallback(() => {
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith("swr:admin:reviews:")) sessionStorage.removeItem(k);
+    }
+  }, []);
 
   const updateStatus = async (id: string | number, status: ReviewStatus) => {
     setBusyId(id);
@@ -111,11 +134,19 @@ const AdminReviews = () => {
 
       if (!res.ok) throw new Error();
 
-      setData(reviews.map((r) => (r.id === id ? { ...r, status } : r)));
+      // Actualizare optimistă perfectă:
+      // Dacă suntem pe un filtru specific (ex: În așteptare), eliminăm instant recenzia vizual.
+      // Dacă suntem pe "Toate", doar îi schimbăm badge-ul de status.
+      if (statusFilter !== "Toate") {
+        setReviews((prev) => prev.filter((r) => r.id !== id));
+      } else {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, status } : r)),
+        );
+      }
 
-      ["pending", "approved", "rejected", "Toate"].forEach((s) =>
-        invalidateCache(`admin:reviews:status=${s}`),
-      );
+      // Ștergem cache-ul global pentru ca celelalte tab-uri să se actualizeze la vizitare
+      invalidateAllTabs();
 
       toast.success(
         status === "approved"
@@ -138,11 +169,8 @@ const AdminReviews = () => {
       );
       if (!res.ok) throw new Error();
 
-      setData(reviews.filter((r) => r.id !== id));
-
-      ["pending", "approved", "rejected", "Toate"].forEach((s) =>
-        invalidateCache(`admin:reviews:status=${s}`),
-      );
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+      invalidateAllTabs();
 
       toast.success("Recenzia a fost ștearsă definitiv.");
     } catch {
@@ -238,7 +266,7 @@ const AdminReviews = () => {
             </div>
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-white/70 mb-1">
-                Rating Global
+                Rating Global ({statusFilter})
               </p>
               <h4 className="heading-serif text-2xl sm:text-[32px] tracking-tight text-white font-medium leading-none drop-shadow-sm">
                 {stats.avg.toFixed(1)}{" "}
@@ -277,7 +305,7 @@ const AdminReviews = () => {
             </div>
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400 mb-1">
-                Volum Analizat
+                Volum Analizat ({statusFilter})
               </p>
               <h4 className="heading-serif text-2xl sm:text-[32px] tracking-tight text-[var(--dark-amethyst)] font-medium leading-none">
                 {stats.total}
