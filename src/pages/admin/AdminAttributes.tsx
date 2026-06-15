@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+/**
+ * AdminAttributes.tsx
+ * Pagina de administrare Atribute - Design Futuristic (Glassmorphism & Bento Neo-Mosaic)
+ */
+
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Trash2,
-  Loader2,
   Layers,
-  Tag,
   Plus,
   X,
   LayoutGrid,
@@ -13,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
-  Save,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -173,145 +176,257 @@ const AdminAttributes = () => {
   };
 
   return (
-    <div className="w-full space-y-10 pb-20 animate-in fade-in duration-700 font-sans text-left">
-      {/* HEADER */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-8 border-b border-zinc-100 pb-12">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <span
-              className="w-12 h-[1px]"
-              style={{ backgroundColor: "var(--royal-violet)" }}
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              className="animate-pulse"
+              style={{ color: "var(--royal-violet)" }}
             />
             <span
-              className="text-[10px] font-black uppercase tracking-[0.5em]"
-              style={{ color: "var(--royal-violet)" }}
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
             >
               Data Intelligence
             </span>
           </div>
-          <h1 className="heading-serif text-5xl md:text-6xl italic tracking-tighter text-[var(--dark-amethyst)]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
             Dicționar{" "}
             <span style={{ color: "var(--royal-violet)" }}>Atribute</span>
           </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
           <button
             onClick={() => setIsAttrModalOpen(true)}
-            className="text-white px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-xl active:scale-95 whitespace-nowrap"
+            className="text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
             style={{ background: "var(--primary-gradient)" }}
           >
-            <Plus size={16} /> Adaugă Manual
+            <Plus size={14} strokeWidth={2.5} /> Adaugă Manual
           </button>
         </div>
       </header>
 
-      {/* CONTROALE TAB & SEARCH */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex p-1 bg-zinc-100 rounded-full w-full md:w-auto">
+      {/* ── CONTROALE TAB & SEARCH (Glassmorphism) ──────────────────────────── */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div
+          className="flex items-center gap-2 bg-zinc-50/50 p-1.5 rounded-2xl w-full md:w-auto border"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           {["APPROVED", "DRAFT"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className="relative px-8 py-3 text-[10px] font-black uppercase tracking-widest rounded-full w-full md:w-auto transition-all"
+              className="relative flex-1 md:flex-none px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+              style={{
+                color:
+                  activeTab === tab
+                    ? "var(--royal-violet)"
+                    : "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+              }}
             >
-              <span
-                className={`relative z-10 ${activeTab === tab ? "text-[var(--dark-amethyst)]" : "text-zinc-400"}`}
-              >
-                {tab === "APPROVED" ? "Aprobate (Live)" : "Noi (Detectate)"}
-              </span>
               {activeTab === tab && (
                 <motion.div
-                  layoutId="activeTabPill"
-                  className="absolute inset-0 bg-white rounded-full shadow-sm"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  layoutId="attributes-tab"
+                  className="absolute inset-0 bg-white rounded-xl shadow-sm border"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                  }}
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {tab === "APPROVED" ? "Aprobate (Live)" : "Noi (Detectate)"}
+              </span>
             </button>
           ))}
         </div>
 
-        <div className="relative group w-full md:w-80">
+        <div className="relative w-full md:w-80 group">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
-            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+            size={14}
+            style={{
+              color: "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+            }}
           />
           <input
             placeholder="Filtrează dicționarul..."
-            className="w-full pl-12 pr-6 py-4 bg-zinc-50 border-none rounded-2xl focus:ring-2 focus:ring-[var(--royal-violet)]/10 outline-none transition-all text-sm font-bold shadow-inner"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-white/60 backdrop-blur-md border rounded-xl text-sm font-medium outline-none transition placeholder:text-zinc-400 placeholder:font-normal text-[var(--dark-amethyst)]"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              boxShadow: "inset 0 2px 4px 0 rgba(0,0,0,0.02)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "var(--royal-violet)";
+              e.target.style.backgroundColor = "#ffffff";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor =
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)";
+              e.target.style.backgroundColor = "rgba(255,255,255,0.6)";
+            }}
           />
         </div>
       </div>
 
-      {/* DATA LIST */}
-      <div className="bg-white border border-zinc-100 rounded-[2.5rem] shadow-sm overflow-hidden min-h-[400px]">
-        <div className="divide-y divide-zinc-50">
-          <AnimatePresence mode="popLayout">
-            {loading ? (
-              [...Array(6)].map((_, i) => (
-                <div key={i} className="p-8 px-10 flex items-center gap-10">
-                  <Skeleton className="size-14 rounded-2xl" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                  <Skeleton className="h-12 w-64 rounded-xl" />
-                  <Skeleton className="h-10 w-24 rounded-lg" />
-                </div>
-              ))
-            ) : attributes.length === 0 ? (
-              <div className="py-32 flex flex-col items-center gap-2 text-zinc-300">
-                <Database size={48} strokeWidth={1} />
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  Niciun parametru găsit
-                </span>
-              </div>
-            ) : (
-              attributes.map((attr) => (
-                <motion.div
-                  layout
-                  key={attr.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 px-10 gap-6 hover:bg-zinc-50/50 transition-colors group"
+      {/* ── DATA LIST (BENTO STYLE) ────────────────────────────────────────── */}
+      <div className="min-h-[400px]">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl border p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center gap-6"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
                 >
-                  <div className="flex items-center gap-6 w-full md:w-1/3 text-left">
+                  <div className="flex items-center gap-4 w-full md:w-1/3">
+                    <Skeleton className="size-12 rounded-xl shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-2 w-20" />
+                    </div>
+                  </div>
+                  <div className="w-full md:w-1/3 space-y-2">
+                    <Skeleton className="h-2 w-20" />
+                    <Skeleton className="h-10 w-full rounded-xl" />
+                  </div>
+                  <div className="w-full md:w-auto flex gap-2 justify-end ml-auto">
+                    <Skeleton className="size-10 rounded-xl" />
+                    <Skeleton className="h-10 w-24 rounded-xl" />
+                    <Skeleton className="size-10 rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          ) : attributes.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-32 flex flex-col items-center gap-3 bg-white/50 rounded-3xl border border-dashed"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+              }}
+            >
+              <Database
+                size={40}
+                strokeWidth={1}
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                }}
+              />
+              <span
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
+                Niciun atribut găsit
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="data"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              {attributes.map((attr) => (
+                <div
+                  key={attr.id}
+                  className="group relative bg-white border rounded-[1.5rem] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between p-5 sm:p-6 gap-6"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                >
+                  {/* Background Hover Gradient */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                    }}
+                  />
+
+                  {/* IDENTITATE Sursă */}
+                  <div className="flex items-center gap-5 w-full md:w-1/3 relative z-10">
                     <div
-                      className="p-4 bg-zinc-50 rounded-2xl text-zinc-400 group-hover:text-white transition-all shrink-0"
-                      style={{ backgroundColor: "var(--background)" }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "var(--royal-violet)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "var(--background)")
-                      }
+                      className="size-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm border transition-transform duration-500 group-hover:scale-105"
+                      style={{
+                        background: "var(--surface-bg)",
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                        color: "var(--royal-violet)",
+                      }}
                     >
                       <Layers size={18} />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-[var(--dark-amethyst)] truncate uppercase">
+                      <span className="text-sm font-bold text-[var(--dark-amethyst)] truncate uppercase group-hover:text-[var(--royal-violet)] transition-colors">
                         {attr.original_key}
                       </span>
-                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                      <span
+                        className="text-[9px] font-black uppercase tracking-widest mt-0.5"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                        }}
+                      >
                         Cheie Sursă
                       </span>
                     </div>
                   </div>
 
-                  <div className="w-full md:w-1/3 flex flex-col text-left">
+                  {/* ETICHETĂ Website */}
+                  <div className="w-full md:w-1/3 flex flex-col text-left relative z-10">
                     <span
-                      className="text-[9px] font-black uppercase tracking-widest mb-2 pl-3"
-                      style={{ color: "var(--royal-violet)" }}
+                      className="text-[9px] font-black uppercase tracking-widest mb-2 pl-1 transition-colors"
+                      style={{
+                        color:
+                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                      }}
                     >
-                      Etichetă Website
+                      Etichetă Afișată pe Website
                     </span>
                     <input
-                      className="bg-zinc-50 border border-zinc-100 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[var(--royal-violet)] transition-all w-full text-[var(--dark-amethyst)] shadow-inner"
+                      className="w-full bg-white/50 backdrop-blur-sm border rounded-xl px-4 py-3 text-xs font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+                      style={{
+                        boxShadow:
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
                       value={editingLabel[attr.id] || ""}
                       onChange={(e) =>
                         setEditingLabel({
@@ -320,21 +435,37 @@ const AdminAttributes = () => {
                         })
                       }
                       placeholder="Ex: Material Principal"
+                      onFocus={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                        e.target.style.backgroundColor = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.boxShadow =
+                          "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                        e.target.style.backgroundColor =
+                          "rgba(255,255,255,0.5)";
+                      }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-end w-full md:w-auto gap-3">
+                  {/* ACȚIUNI */}
+                  <div className="flex items-center justify-end w-full md:w-auto gap-2 relative z-10">
                     <button
                       onClick={() => checkUsage(attr.original_key)}
-                      className="p-3 text-zinc-300 hover:text-[var(--royal-violet)] hover:bg-zinc-100 rounded-xl transition-all"
+                      className="p-3 bg-white border rounded-xl hover:bg-[var(--royal-violet)] hover:text-white transition-colors shadow-sm text-[var(--dark-amethyst)]"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
                       title="Analiză utilizare"
                     >
-                      <LayoutGrid size={18} />
+                      <LayoutGrid size={16} />
                     </button>
 
                     <button
                       onClick={() => handleApprove(attr.id, attr.original_key)}
-                      className="flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-md active:scale-95"
+                      className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all shadow-md hover:shadow-lg active:scale-95"
                       style={{
                         background:
                           activeTab === "DRAFT"
@@ -353,118 +484,176 @@ const AdminAttributes = () => {
 
                     <button
                       onClick={() => handleDelete(attr.id)}
-                      className="p-3 text-zinc-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      className="p-3 bg-white border rounded-xl hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-colors shadow-sm text-rose-400"
+                      style={{
+                        borderColor:
+                          "color-mix(in srgb, #f43f5e 20%, transparent)",
+                      }}
+                      title="Șterge Atribut"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
-                </motion.div>
-              ))
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* PAGINATION FOOTER */}
-        {totalPages > 1 && (
-          <footer className="p-8 bg-zinc-50/50 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
-              Afișate {(currentPage - 1) * itemsPerPage + 1}-
-              {Math.min(currentPage * itemsPerPage, totalItems)} din{" "}
-              {totalItems} atribute
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-                className="p-3 bg-white rounded-xl border border-zinc-200 hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all shadow-sm"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              <div className="flex gap-1">
-                {/* Generăm butoane pentru pagini ( maxim 5 butoane vizibile ) */}
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  // Afișăm paginile din vecinătatea paginii curente
-                  if (pageNum < currentPage - 2 || pageNum > currentPage + 2)
-                    return null;
-
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
-                        currentPage === pageNum
-                          ? "text-white shadow-lg"
-                          : "text-zinc-400 bg-white hover:bg-zinc-100 border border-zinc-100"
-                      }`}
-                      style={{
-                        background:
-                          currentPage === pageNum
-                            ? "var(--primary-gradient)"
-                            : undefined,
-                      }}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-                className="p-3 bg-white rounded-xl border border-zinc-200 hover:border-[var(--royal-violet)] disabled:opacity-20 transition-all shadow-sm"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </footer>
-        )}
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* MODAL UTILIZARE */}
+      {/* ── PAGINATION FOOTER ────────────────────────────────────────── */}
+      {!loading && totalPages > 1 && (
+        <div
+          className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm mt-8"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+
+          <div className="hidden sm:flex gap-1.5">
+            {[...Array(totalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              if (pageNum < currentPage - 2 || pageNum > currentPage + 2)
+                return null;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === pageNum ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  style={{
+                    background:
+                      currentPage === pageNum
+                        ? "var(--primary-gradient)"
+                        : undefined,
+                    borderColor:
+                      currentPage !== pageNum
+                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                        : undefined,
+                    color:
+                      currentPage !== pageNum
+                        ? "var(--dark-amethyst)"
+                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                  }}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+
+          <span
+            className="sm:hidden text-[10px] font-black uppercase tracking-[0.2em] bg-white border px-4 py-2 rounded-xl shadow-sm"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
+            {totalPages}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
+          >
+            <ChevronRight size={14} style={{ color: "var(--royal-violet)" }} />
+          </button>
+        </div>
+      )}
+
+      {/* ── MODAL UTILIZARE (Glassmorphism Shell) ────────────────────── */}
       <AdminDialogShell
         open={isUsageModalOpen}
         onOpenChange={setIsUsageModalOpen}
         size="md"
-        className="bg-[#FBFBFD] font-sans"
+        className="sm:h-[80vh] sm:max-h-[80vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
-        <AdminDialogTitle>Utilizare atribut</AdminDialogTitle>
-        <header className="px-6 sm:px-10 py-6 sm:py-8 flex justify-between items-center bg-white border-b shrink-0">
+        <AdminDialogTitle className="sr-only">
+          Utilizare Atribut
+        </AdminDialogTitle>
+        <header
+          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           <div>
-            <h2 className="text-2xl sm:text-3xl italic font-serif text-[var(--dark-amethyst)]">
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
               Utilizare:{" "}
               <span style={{ color: "var(--royal-violet)" }}>
                 {usageData?.key}
               </span>
             </h2>
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-2">
-              Harta distribuției în catalog
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--royal-violet)" }}
+              />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Harta distribuției în catalog
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setIsUsageModalOpen(false)}
-            className="size-12 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
           >
-            <X size={20} />
+            <X size={14} strokeWidth={2.5} />
           </button>
         </header>
-        <div className="flex-1 p-6 sm:p-10 space-y-6 overflow-y-auto luxury-scrollbar text-left">
-          {usageData?.categories.length > 0 ? (
+
+        <div className="flex-1 p-6 sm:p-8 space-y-6 overflow-y-auto luxury-scrollbar relative z-10">
+          {usageData?.categories?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {usageData.categories.map((cat: any, i: number) => (
                 <div
                   key={i}
-                  className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-4"
+                  className="bg-white p-6 rounded-[1.5rem] border shadow-sm space-y-4"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
                 >
-                  <div className="flex items-center gap-2 border-b border-zinc-50 pb-3">
+                  <div
+                    className="flex items-center gap-2 border-b pb-3"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                    }}
+                  >
                     <Layers
                       size={14}
                       style={{ color: "var(--royal-violet)" }}
                     />
-                    <h4 className="text-[11px] font-black uppercase text-[var(--dark-amethyst)]">
+                    <h4 className="text-[11px] font-black uppercase text-[var(--dark-amethyst)] truncate">
                       {cat.name}
                     </h4>
                   </div>
@@ -472,7 +661,13 @@ const AdminAttributes = () => {
                     {cat.values.map((v: any, idx: number) => (
                       <span
                         key={idx}
-                        className="bg-zinc-50 px-3 py-1.5 rounded-lg text-[10px] font-bold text-zinc-500 border border-zinc-100"
+                        className="bg-zinc-50/50 px-3 py-1.5 rounded-lg text-[10px] font-bold border"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                        }}
                       >
                         {v}
                       </span>
@@ -482,12 +677,26 @@ const AdminAttributes = () => {
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center bg-zinc-50 rounded-3xl border-2 border-dashed">
+            <div
+              className="py-24 text-center bg-white/50 rounded-[2rem] border border-dashed"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+              }}
+            >
               <AlertTriangle
                 size={32}
-                className="mx-auto text-zinc-300 mb-3"
+                className="mx-auto mb-3"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                }}
               />
-              <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+              <p
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
                 Atributul nu are instanțe active.
               </p>
             </div>
@@ -495,40 +704,77 @@ const AdminAttributes = () => {
         </div>
       </AdminDialogShell>
 
-      {/* MODAL ADAUGARE MANUALA */}
+      {/* ── MODAL ADĂUGARE MANUALĂ ────────────────────────────────────── */}
       <AdminDialogShell
         open={isAttrModalOpen}
         onOpenChange={setIsAttrModalOpen}
-        size="sm"
+        size="md"
+        mobileVariant="modal"
+        className="sm:h-auto sm:max-h-[80vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        style={{
+          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+        }}
       >
-        <AdminDialogTitle>Creează atribut</AdminDialogTitle>
-        <header className="px-6 sm:px-8 py-6 sm:py-8 border-b flex justify-between items-start">
+        <AdminDialogTitle className="sr-only">Creează Atribut</AdminDialogTitle>
+        <header
+          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           <div>
-            <h2 className="text-2xl sm:text-3xl italic font-serif text-[var(--dark-amethyst)]">
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-[var(--dark-amethyst)]">
               Creează Atribut
             </h2>
-            <p
-              className="text-[10px] font-black uppercase tracking-widest mt-2"
-              style={{ color: "var(--royal-violet)" }}
-            >
-              Setare Dicționar Manual
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: "var(--royal-violet)" }}
+              />
+              <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] font-black">
+                Setare Dicționar Manual
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setIsAttrModalOpen(false)}
-            className="size-10 bg-zinc-50 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all"
+            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            }}
           >
-            <X size={18} />
+            <X size={14} strokeWidth={2.5} />
           </button>
         </header>
-        <div className="flex-1 p-6 sm:p-8 space-y-6 bg-[#FBFBFD] overflow-y-auto luxury-scrollbar">
-          <div className="bg-white p-6 rounded-3xl border border-zinc-100 shadow-sm space-y-2">
-            <Label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">
-              Nume Website
+
+        <div className="flex-1 p-6 sm:p-8 space-y-6 overflow-y-auto luxury-scrollbar relative z-10 bg-white/50">
+          <div
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-2 group relative"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <Label
+              className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+              }}
+            >
+              Etichetă Website
             </Label>
             <input
-              className="w-full bg-transparent border-b-2 border-zinc-100 focus:border-[var(--royal-violet)] py-2 font-bold text-lg text-[var(--dark-amethyst)] outline-none transition-all"
+              className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)]"
+              style={{
+                boxShadow:
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+              }}
               value={formData.name}
+              placeholder="Ex: Material, Culoare..."
               onChange={(e) =>
                 setFormData({
                   ...formData,
@@ -538,45 +784,113 @@ const AdminAttributes = () => {
                     .replace(/[^a-z0-9]+/g, "_"),
                 })
               }
+              onFocus={(e) => {
+                e.target.style.boxShadow =
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                e.target.style.backgroundColor = "#ffffff";
+              }}
+              onBlur={(e) => {
+                e.target.style.boxShadow =
+                  "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+              }}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-1">
-              <Label className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                Slug Intern
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-2"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <Label
+                className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                Slug Intern (Generat Auto)
               </Label>
               <input
-                className="w-full bg-transparent border-b border-zinc-100 py-1 font-mono text-[11px] font-bold text-[var(--royal-violet)] outline-none"
+                className="w-full bg-zinc-50/50 rounded-xl p-3 text-xs font-mono font-bold outline-none text-[var(--royal-violet)] border"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                }}
                 value={formData.slug}
-                onChange={(e) =>
-                  setFormData({ ...formData, slug: e.target.value })
-                }
+                readOnly
               />
             </div>
-            <div className="bg-white p-5 rounded-3xl border border-zinc-100 shadow-sm space-y-1">
-              <Label className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
-                Control
+
+            <div
+              className="bg-white/80 backdrop-blur-md p-6 rounded-[1.5rem] border shadow-sm space-y-2 group relative"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+              }}
+            >
+              <Label
+                className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                }}
+              >
+                Tip Control Interfață
               </Label>
               <select
-                className="w-full bg-transparent border-b border-zinc-100 py-1 text-[11px] font-black uppercase text-[var(--dark-amethyst)] outline-none appearance-none"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-3 text-xs font-black uppercase tracking-wider outline-none appearance-none cursor-pointer transition-all text-[var(--dark-amethyst)]"
+                style={{
+                  boxShadow:
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
                 value={formData.type}
                 onChange={(e) =>
                   setFormData({ ...formData, type: e.target.value })
                 }
+                onFocus={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px color-mix(in srgb, var(--royal-violet) 50%, transparent)";
+                  e.target.style.backgroundColor = "#ffffff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                  e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                }}
               >
-                <option value="Select">Dropdown</option>
-                <option value="Color">Swatch</option>
+                <option value="Select">Dropdown Simplu</option>
+                <option value="Color">Culoare / Swatch Visual</option>
               </select>
             </div>
           </div>
         </div>
-        <footer className="p-6 sm:p-8 bg-white border-t">
+
+        <footer
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 rounded-b-[2rem]"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <button
+            onClick={() => setIsAttrModalOpen(false)}
+            className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all"
+            style={{
+              color: "var(--dark-amethyst)",
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+            }}
+          >
+            Anulează
+          </button>
           <button
             onClick={handleCreateAttribute}
-            className="w-full h-16 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all"
+            className="text-white px-8 py-3 rounded-xl text-[10px] uppercase tracking-widest font-bold shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             style={{ background: "var(--primary-gradient)" }}
           >
-            Creează și Activează
+            <Plus size={14} strokeWidth={2.5} /> Salvează și Activează
           </button>
         </footer>
       </AdminDialogShell>
