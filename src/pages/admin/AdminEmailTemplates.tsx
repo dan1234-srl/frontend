@@ -650,40 +650,42 @@ const AdminEmailTemplates = () => {
             </header>
 
             {/* Email Editor Canvas Fixat folosind absolut position */}
-            <div className="flex-1 w-full relative bg-zinc-50 overflow-hidden">
-              <div className="absolute inset-0 w-full h-full">
-                <EmailEditor
-                  ref={emailEditorRef}
-                  onReady={onReady}
-                  minHeight="100%"
-                  options={{
-                    locale: "ro",
-                    appearance: {
-                      theme: "light",
-                      panels: { tools: { dock: "left" } },
+            {/* Email Editor Canvas Fixat folosind calcul matematic direct pe componentă */}
+            <div
+              className="w-full bg-zinc-50"
+              style={{ height: "calc(100dvh - 88px)" }}
+            >
+              <EmailEditor
+                ref={emailEditorRef}
+                onReady={onReady}
+                minHeight="calc(100dvh - 88px)" // 🚀 AICI ESTE CHEIA CARE FORȚEAZĂ IFRAME-UL SĂ SE ÎNTINDĂ
+                options={{
+                  locale: "ro",
+                  appearance: {
+                    theme: "light",
+                    panels: { tools: { dock: "left" } },
+                  },
+                  mergeTags: {
+                    customerName: {
+                      name: "Nume Client",
+                      value: "{{customerName}}",
                     },
-                    mergeTags: {
-                      customerName: {
-                        name: "Nume Client",
-                        value: "{{customerName}}",
-                      },
-                      orderNumber: {
-                        name: "Număr Comandă",
-                        value: "{{orderNumber}}",
-                      },
-                      totalAmount: {
-                        name: "Total Plată",
-                        value: "{{totalAmount}}",
-                      },
-                      trackingUrl: {
-                        name: "Link AWB (Curier)",
-                        value: "{{trackingUrl}}",
-                      },
+                    orderNumber: {
+                      name: "Număr Comandă",
+                      value: "{{orderNumber}}",
                     },
-                  }}
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </div>
+                    totalAmount: {
+                      name: "Total Plată",
+                      value: "{{totalAmount}}",
+                    },
+                    trackingUrl: {
+                      name: "Link AWB (Curier)",
+                      value: "{{trackingUrl}}",
+                    },
+                  },
+                }}
+                style={{ width: "100%", height: "calc(100dvh - 88px)" }} // Și aici dăm override la stilurile default ale librăriei
+              />
             </div>
           </motion.div>
         )}
