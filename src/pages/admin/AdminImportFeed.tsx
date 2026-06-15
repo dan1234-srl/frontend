@@ -1,7 +1,7 @@
 /**
  * AdminImportFeed.tsx
  * Pagina de administrare Import / Sincronizare Feed-uri
- * Design Futuristic & Glassmorphism (Bento Neo-Mosaic)
+ * Design Futuristic & Glassmorphism (Bento Neo-Mosaic) - Fully Optimized
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -21,6 +21,7 @@ import {
   Sparkles,
   Server,
   Network,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -126,8 +127,9 @@ const AdminImportFeed = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
 
+  // Funcție esențială pentru a asigura compatibilitatea ID-urilor (Stringificare sigură)
   const cleanFid = (id: unknown) => {
-    if (!id) return null;
+    if (id === null || id === undefined) return null;
     return String(id)
       .replace(/^b['"]/, "")
       .replace(/['"]$/, "")
@@ -153,14 +155,14 @@ const AdminImportFeed = () => {
         setMasterSyncStatus(data);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Eroare status master sync:", err);
     }
   }, [apiFetch]);
 
   const handleRunHeavySync = async () => {
     if (
       !window.confirm(
-        "Pornești Heavy Sync global? Acest proces poate dura foarte mult.",
+        "Atenție: Pornești Heavy Sync global. Acest proces blochează temporar baza de date și poate dura zeci de minute. Continuăm?",
       )
     )
       return;
@@ -169,13 +171,13 @@ const AdminImportFeed = () => {
       const res = await apiFetch("/admin/master-sync/run", { method: "POST" });
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message || "Heavy sync pornit.");
+        toast.success(data.message || "Heavy sync a fost inițiat cu succes.");
         fetchMasterSyncStatus();
       } else {
-        toast.error(data.detail || "Sync failed.");
+        toast.error(data.detail || "Inițierea sync-ului a eșuat.");
       }
     } catch (err) {
-      toast.error("Network error.");
+      toast.error("Eroare de comunicare cu serverul.");
     } finally {
       setMasterSyncLoading(false);
     }
@@ -188,28 +190,36 @@ const AdminImportFeed = () => {
         apiFetch("/feeds/status"),
       ]);
 
-      const feedsData = await feedsRes.json();
-      const statusData = await statusRes.json();
+      if (feedsRes.ok) {
+        const feedsData = await feedsRes.json();
+        // Fallback robust pentru a preveni map-uri pe undefined
+        const feedsArray = Array.isArray(feedsData)
+          ? feedsData
+          : feedsData?.items || [];
+        setFeeds(feedsArray);
+      }
 
-      setFeeds(feedsData.items || []);
-      const activeFid = cleanFid(statusData.active_feed_id);
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        const activeFid = cleanFid(statusData.active_feed_id);
 
-      setGlobalLock({
-        is_locked: !!statusData.is_locked,
-        locked_by: activeFid,
-      });
+        setGlobalLock({
+          is_locked: !!statusData.is_locked,
+          locked_by: activeFid,
+        });
 
-      if (activeFid && statusData.progress) {
-        setProgress((prev) => ({
-          ...prev,
-          [activeFid]: {
-            current: statusData.progress.current || 0,
-            total: statusData.progress.total || 0,
-          },
-        }));
+        if (activeFid && statusData.progress) {
+          setProgress((prev) => ({
+            ...prev,
+            [activeFid]: {
+              current: statusData.progress.current || 0,
+              total: statusData.progress.total || 0,
+            },
+          }));
+        }
       }
     } catch (error) {
-      toast.error("Eroare la încărcarea feed-urilor.");
+      toast.error("Nu s-au putut încărca datele feed-urilor.");
     } finally {
       setLoading(false);
     }
@@ -260,12 +270,12 @@ const AdminImportFeed = () => {
           }
 
           if (msg.type === "IMPORT_COMPLETED") {
-            toast.success("Sincronizare finalizată.");
+            toast.success("Sincronizare de date finalizată cu succes.");
             refreshData();
             fetchMasterSyncStatus();
           }
         } catch (e) {
-          console.error(e);
+          console.error("WS Parse error:", e);
         }
       };
 
@@ -299,7 +309,7 @@ const AdminImportFeed = () => {
 
     if (!urlToInspect) {
       toast.error(
-        `Introdu URL pentru ${target === "main" ? "Feed Principal" : "Quick Stock"}.`,
+        `Te rugăm să introduci URL-ul pentru ${target === "main" ? "Feed-ul Principal" : "Quick Stock"}.`,
       );
       return;
     }
@@ -321,13 +331,15 @@ const AdminImportFeed = () => {
 
       if (cols.length > 0) {
         toast.success(
-          `${cols.length} coloane detectate pentru ${target === "main" ? "Feed" : "Stoc"}.`,
+          `Succes: ${cols.length} coloane identificate pentru mapare.`,
         );
       } else {
-        toast.error("Nu s-au detectat coloane.");
+        toast.error(
+          "Structura URL-ului nu a putut fi descifrată (0 coloane găsite).",
+        );
       }
     } catch (error) {
-      toast.error("Inspect failed.");
+      toast.error("Inspecția fișierului sursă a eșuat.");
     } finally {
       target === "main" ? setIsInspecting(false) : setIsInspectingQuick(false);
     }
@@ -359,23 +371,24 @@ const AdminImportFeed = () => {
   };
 
   const handleSave = async () => {
+    // Validare de siguranță folosind Optional Chaining
     const missingMain = MAPPING_FIELDS.filter(
-      (f) => f.required && !formData.mapping_config[f.key],
+      (f) => f.required && !formData.mapping_config?.[f.key],
     );
     if (missingMain.length > 0) {
       toast.error(
-        `Mapează feed principal: ${missingMain.map((m) => m.label).join(", ")}`,
+        `Necesar pentru Feed Principal: Mapează coloanele ${missingMain.map((m) => m.label).join(", ")}`,
       );
       return;
     }
 
     if (formData.stock_url) {
       const missingQuick = QUICK_MAPPING_FIELDS.filter(
-        (f) => f.required && !formData.quick_stock_mapping_config[f.key],
+        (f) => f.required && !formData.quick_stock_mapping_config?.[f.key],
       );
       if (missingQuick.length > 0) {
         toast.error(
-          `Mapează Quick Stock: ${missingQuick.map((m) => m.label).join(", ")}`,
+          `Necesar pentru Quick Stock: Mapează coloanele ${missingQuick.map((m) => m.label).join(", ")}`,
         );
         return;
       }
@@ -394,7 +407,11 @@ const AdminImportFeed = () => {
       });
 
       if (res.ok) {
-        toast.success(isEdit ? "Feed actualizat." : "Feed creat cu succes.");
+        toast.success(
+          isEdit
+            ? "Sursa de date a fost actualizată."
+            : "Noua sursă de date a fost configurată activ.",
+        );
         setFormData(INITIAL_FORM_STATE);
         setDetectedColumns([]);
         setQuickStockColumns([]);
@@ -402,57 +419,55 @@ const AdminImportFeed = () => {
         refreshData();
       } else {
         const err = await res.json();
-        toast.error(err.detail || "Save failed.");
+        toast.error(err.detail || "Eroare la salvarea setărilor.");
       }
     } catch (error) {
-      toast.error("Network error.");
+      toast.error("Eroare de comunicare cu serverul de rețea.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Ștergi feed-ul?")) return;
+    if (
+      !window.confirm(
+        "Ștergerea acestui feed este definitivă. Dorești să continui?",
+      )
+    )
+      return;
     try {
       const res = await apiFetch(`/feeds/${id}`, { method: "DELETE" });
       if (res.ok) {
-        toast.success("Feed șters.");
+        toast.success("Feed-ul a fost eliminat cu succes.");
         refreshData();
       } else {
-        toast.error("Delete failed.");
+        toast.error("Ștergerea a fost respinsă de server.");
       }
     } catch (error) {
-      toast.error("Network error.");
+      toast.error("Eroare de comunicare cu serverul de rețea.");
     }
   };
 
   const handleForceUnlock = async () => {
-    if (!window.confirm("Resetezi lock-urile Redis?")) return;
+    if (
+      !window.confirm(
+        "Forțarea deblocării va întrerupe orice sarcină rămasă agățată în fundal. Sigur vrei să continui?",
+      )
+    )
+      return;
     try {
       const res = await apiFetch("/feeds/force-unlock", { method: "POST" });
       if (res.ok) {
-        toast.success("Lock resetat.");
+        toast.success("Sistemul a fost deblocat manual.");
         setProgress({});
         refreshData();
       } else {
-        toast.error("Unlock failed.");
+        toast.error("Eșec la deblocarea manuală.");
       }
     } catch (error) {
-      toast.error("Network error.");
+      toast.error("Eroare de rețea.");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="h-[80vh] flex items-center justify-center">
-        <Loader2
-          className="animate-spin"
-          size={32}
-          style={{ color: "var(--royal-violet)" }}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
@@ -694,7 +709,7 @@ const AdminImportFeed = () => {
         )}
       </AnimatePresence>
 
-      {/* ── LISTĂ FEED-URI ─────────────────────────────────────────────────── */}
+      {/* ── LISTĂ FEED-URI (BENTO STYLE) ─────────────────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         {!showConfig ? (
           <motion.div
@@ -729,7 +744,14 @@ const AdminImportFeed = () => {
                   "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
               }}
             >
-              {feeds.length === 0 ? (
+              {loading ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2
+                    className="animate-spin text-[var(--royal-violet)]"
+                    size={28}
+                  />
+                </div>
+              ) : feeds.length === 0 ? (
                 <div className="py-24 flex flex-col items-center gap-3">
                   <Network
                     size={40}
@@ -751,9 +773,10 @@ const AdminImportFeed = () => {
                 </div>
               ) : (
                 feeds.map((feed) => {
+                  const feedIdStr = cleanFid(feed.id) || "fallback"; // Safely stringify ID
                   const isProcessing =
-                    globalLock.is_locked && globalLock.locked_by === feed.id;
-                  const prog = progress[feed.id];
+                    globalLock.is_locked && globalLock.locked_by === feedIdStr;
+                  const prog = progress[feedIdStr] || progress["global"]; // Fallback robust
                   const pct =
                     prog && prog.total > 0
                       ? Math.min(
@@ -765,15 +788,10 @@ const AdminImportFeed = () => {
                   return (
                     <div
                       key={feed.id}
-                      className="group relative transition-all"
+                      className="group relative transition-all hover:bg-zinc-50/50"
                     >
-                      <div
-                        className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
-                        style={{
-                          background:
-                            "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
-                        }}
-                      />
+                      {/* Subtil Hover Line Indicator */}
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-transparent group-hover:bg-[var(--royal-violet)] transition-colors duration-300" />
 
                       <div className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-5 gap-4 md:gap-0 relative z-10">
                         {/* Denumire & Detalii */}
@@ -796,7 +814,7 @@ const AdminImportFeed = () => {
                             </span>
                             <div className="flex items-center gap-2 mt-1">
                               <span
-                                className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border bg-white"
+                                className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border bg-white shadow-sm"
                                 style={{
                                   color: "var(--dark-amethyst)",
                                   borderColor:
@@ -807,7 +825,7 @@ const AdminImportFeed = () => {
                               </span>
                               {feed.auto_sync && (
                                 <span
-                                  className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border"
+                                  className="text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border shadow-sm"
                                   style={{
                                     background:
                                       "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
@@ -888,7 +906,13 @@ const AdminImportFeed = () => {
                                       : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                                 }}
                               >
-                                {feed.status || "IDLE"}
+                                {feed.status === "SUCCESS" ? (
+                                  <span className="flex items-center gap-1">
+                                    <CheckCircle2 size={10} /> SUCCES
+                                  </span>
+                                ) : (
+                                  feed.status || "IDLE"
+                                )}
                               </span>
                             </div>
                           )}
@@ -973,7 +997,7 @@ const AdminImportFeed = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2 group relative">
                     <Label
-                      className="text-[9px] font-black uppercase tracking-widest ml-1"
+                      className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
                       style={{
                         color:
                           "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -1006,7 +1030,7 @@ const AdminImportFeed = () => {
                   </div>
                   <div className="space-y-2 group relative">
                     <Label
-                      className="text-[9px] font-black uppercase tracking-widest ml-1"
+                      className="text-[9px] font-black uppercase tracking-widest ml-1 transition-colors"
                       style={{
                         color:
                           "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -1046,7 +1070,7 @@ const AdminImportFeed = () => {
                 {/* Main Feed URL */}
                 <div className="space-y-3">
                   <Label
-                    className="flex gap-2 items-center text-[10px] font-black uppercase tracking-widest ml-1"
+                    className="flex gap-2 items-center text-[10px] font-black uppercase tracking-widest ml-1 transition-colors"
                     style={{
                       color:
                         "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -1102,7 +1126,7 @@ const AdminImportFeed = () => {
                 {/* Quick Stock URL */}
                 <div className="space-y-3">
                   <Label
-                    className="flex gap-2 items-center text-[10px] font-black uppercase tracking-widest ml-1"
+                    className="flex gap-2 items-center text-[10px] font-black uppercase tracking-widest ml-1 transition-colors"
                     style={{
                       color:
                         "color-mix(in srgb, var(--royal-violet) 60%, gray)",
@@ -1186,9 +1210,9 @@ const AdminImportFeed = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {MAPPING_FIELDS.map((field) => {
+                      {MAPPING_FIELDS.map((field, idx) => {
                         const selectedValue =
-                          formData.mapping_config[field.key] ?? "";
+                          formData.mapping_config?.[field.key] ?? "";
                         const isMatched = detectedColumns.some(
                           (c) =>
                             normalizeKey(c) === normalizeKey(selectedValue),
@@ -1196,7 +1220,7 @@ const AdminImportFeed = () => {
 
                         return (
                           <div
-                            key={field.key}
+                            key={`${field.key}_${idx}`}
                             className="bg-white rounded-[1.2rem] border p-4 shadow-sm relative overflow-hidden transition-all focus-within:shadow-md"
                             style={{
                               borderColor:
@@ -1209,7 +1233,7 @@ const AdminImportFeed = () => {
                               </div>
                             )}
                             <Label
-                              className="text-[9px] font-black uppercase tracking-widest block mb-3"
+                              className="text-[9px] font-black uppercase tracking-widest block mb-3 transition-colors"
                               style={{
                                 color:
                                   "color-mix(in srgb, var(--royal-violet) 70%, gray)",
@@ -1220,13 +1244,13 @@ const AdminImportFeed = () => {
                             <select
                               value={selectedValue}
                               onChange={(e) =>
-                                setFormData({
-                                  ...formData,
+                                setFormData((prev) => ({
+                                  ...prev,
                                   mapping_config: {
-                                    ...formData.mapping_config,
+                                    ...prev.mapping_config,
                                     [field.key]: e.target.value,
                                   },
-                                })
+                                }))
                               }
                               className="w-full bg-zinc-50/50 rounded-xl px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none appearance-none cursor-pointer border transition-colors"
                               style={{
@@ -1244,8 +1268,8 @@ const AdminImportFeed = () => {
                               }
                             >
                               <option value="">Ignoră</option>
-                              {detectedColumns.map((c) => (
-                                <option key={c} value={c}>
+                              {detectedColumns.map((c, i) => (
+                                <option key={`${c}_${i}`} value={c}>
                                   {c}
                                 </option>
                               ))}
@@ -1287,9 +1311,10 @@ const AdminImportFeed = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {QUICK_MAPPING_FIELDS.map((field) => {
+                      {QUICK_MAPPING_FIELDS.map((field, idx) => {
                         const selectedValue =
-                          formData.quick_stock_mapping_config[field.key] ?? "";
+                          formData.quick_stock_mapping_config?.[field.key] ??
+                          "";
                         const isMatched = quickStockColumns.some(
                           (c) =>
                             normalizeKey(c) === normalizeKey(selectedValue),
@@ -1297,7 +1322,7 @@ const AdminImportFeed = () => {
 
                         return (
                           <div
-                            key={`quick_${field.key}`}
+                            key={`quick_${field.key}_${idx}`}
                             className="bg-white rounded-[1.2rem] border p-4 shadow-sm relative overflow-hidden transition-all focus-within:shadow-md"
                             style={{
                               borderColor:
@@ -1310,7 +1335,7 @@ const AdminImportFeed = () => {
                               </div>
                             )}
                             <Label
-                              className="text-[9px] font-black uppercase tracking-widest block mb-3"
+                              className="text-[9px] font-black uppercase tracking-widest block mb-3 transition-colors"
                               style={{
                                 color:
                                   "color-mix(in srgb, var(--royal-violet) 70%, gray)",
@@ -1321,13 +1346,13 @@ const AdminImportFeed = () => {
                             <select
                               value={selectedValue}
                               onChange={(e) =>
-                                setFormData({
-                                  ...formData,
+                                setFormData((prev) => ({
+                                  ...prev,
                                   quick_stock_mapping_config: {
-                                    ...formData.quick_stock_mapping_config,
+                                    ...prev.quick_stock_mapping_config,
                                     [field.key]: e.target.value,
                                   },
-                                })
+                                }))
                               }
                               className="w-full bg-zinc-50/50 rounded-xl px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider outline-none appearance-none cursor-pointer border transition-colors"
                               style={{
@@ -1345,8 +1370,8 @@ const AdminImportFeed = () => {
                               }
                             >
                               <option value="">Ignoră</option>
-                              {quickStockColumns.map((c) => (
-                                <option key={c} value={c}>
+                              {quickStockColumns.map((c, i) => (
+                                <option key={`q_${c}_${i}`} value={c}>
                                   {c}
                                 </option>
                               ))}
