@@ -301,13 +301,8 @@ const AdminUsers = () => {
           <div className="col-span-1 text-right pr-4">Gestiune</div>
         </div>
 
-        <div
-          className="divide-y"
-          style={{
-            divideColor:
-              "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-          }}
-        >
+        <div className="divide-y">
+
           <AnimatePresence mode="wait">
             {loading ? (
               // Skeleton Loader
