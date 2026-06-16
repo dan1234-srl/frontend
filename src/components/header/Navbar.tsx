@@ -811,8 +811,8 @@ const Navbar = () => {
           }}
           className="relative flex items-center justify-between pointer-events-auto transform-gpu transition-all"
         >
-          {/* LEFT — SEARCH (Aici integrăm modalul absolut!) */}
-          <div className="flex flex-1 items-center justify-start relative">
+          {/* LEFT — SEARCH */}
+          <div className="flex flex-1 items-center justify-start">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setSearchOpen(true)}
@@ -829,14 +829,8 @@ const Navbar = () => {
             >
               <Search size={18} strokeWidth={2} className="relative z-10" />
             </motion.button>
-
-            {/* Inserăm SearchModal aici pentru aliniere matematică */}
-            <SearchModal
-              isOpen={searchOpen}
-              onClose={() => setSearchOpen(false)}
-              isScrolled={isScrolled}
-            />
           </div>
+
 
           {/* CENTER — LOGO */}
           <div className="flex-shrink-0 flex items-center justify-center px-4">
