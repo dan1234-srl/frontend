@@ -258,10 +258,12 @@ const SearchModal = ({
   isOpen,
   onClose,
   isScrolled = false,
+  navRect,
 }: {
   isOpen: boolean;
   onClose: () => void;
   isScrolled?: boolean;
+  navRect: { left: number; right: number; bottom: number } | null;
 }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
@@ -369,37 +371,49 @@ const SearchModal = ({
     initialSearchDone && !isCurrentlySearching && hits.length === 0;
   const showInitialState = !initialSearchDone && !isCurrentlySearching;
 
+  // Coordonatele exacte ale navbar-ului — aliniere matematică pixel-perfect
+  const panelLeft = navRect?.left ?? 0;
+  const panelRight =
+    typeof window !== "undefined" && navRect
+      ? Math.max(0, window.innerWidth - navRect.right)
+      : 0;
+  const panelTop = navRect?.bottom ?? 0;
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop cu blur pe tot ecranul */}
+          {/* Backdrop pe tot ecranul (în portal-context viewport, NU în interiorul nav) */}
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[190] bg-zinc-900/10 backdrop-blur-sm pointer-events-auto"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[180] bg-zinc-950/20 pointer-events-auto"
             onClick={handleClose}
           />
 
-          {/* Panel — se întinde pe toată lățimea navbar-ului și mulează forma acestuia (full-bleed la top, capsulă la scroll) */}
+          {/* Panel — fixed cu coordonatele exacte ale navbar-ului → continuă perfect forma */}
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: -10, scaleY: 0.94 }}
+            initial={{ opacity: 0, y: -12, scaleY: 0.94 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
             exit={{ opacity: 0, y: -8, scaleY: 0.96 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className={`absolute z-[200] flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl border border-zinc-100/80 overflow-hidden pointer-events-auto origin-top ${
+            className={`fixed z-[210] flex flex-col bg-white border border-zinc-100 overflow-hidden pointer-events-auto origin-top ${
               isScrolled
-                ? "left-0 right-0 top-[calc(100%+0.5rem)] rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.22)]"
-                : "left-0 right-0 top-full mt-0 rounded-t-none rounded-b-[2rem] shadow-[0_40px_70px_-20px_rgba(123,44,191,0.18)] border-t-0"
+                ? "rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.28)]"
+                : "rounded-b-[2rem] rounded-t-none border-t-0 shadow-[0_40px_70px_-20px_rgba(123,44,191,0.2)]"
             }`}
             style={{
+              left: panelLeft,
+              right: panelRight,
+              top: isScrolled ? panelTop + 8 : panelTop,
               maxHeight: "min(75vh, calc(100vh - 8rem))",
             }}
           >
+
 
 
             {/* Cap gradient decorativ */}
@@ -694,12 +708,44 @@ const Navbar = () => {
   }, []);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const { scrollY } = useScroll();
 
   // Detectare scroll pentru plierea benzii de promo
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 30);
   });
+
+  // --- Măsurăm bounding-box-ul navbar-ului ca SearchModal să i se alinieze pixel-perfect ---
+  const [navRect, setNavRect] = useState<{
+    left: number;
+    right: number;
+    bottom: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const measure = () => {
+      if (!navRef.current) return;
+      const r = navRef.current.getBoundingClientRect();
+      setNavRect({ left: r.left, right: r.right, bottom: r.bottom });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+    };
+  }, [searchOpen]);
+
+  // Re-measure pe schimbare de scroll/isScrolled (forma navbar-ului se animează)
+  useMotionValueEvent(scrollY, "change", () => {
+    if (!searchOpen || !navRef.current) return;
+    const r = navRef.current.getBoundingClientRect();
+    setNavRect({ left: r.left, right: r.right, bottom: r.bottom });
+  });
+
 
   // --- MATEMATICA FLUIDĂ PENTRU FLOATING PILL ---
   // Aici garantăm că la scroll 0 are lățime 100%, iar apoi devine o capsulă
@@ -797,6 +843,7 @@ const Navbar = () => {
 
         {/* ── NAV CONTAINER (The Floating Pill) ── */}
         <motion.nav
+          ref={navRef}
           style={{
             width: navWidth,
             maxWidth: navMaxWidth,
@@ -805,11 +852,10 @@ const Navbar = () => {
             backgroundColor: navBg,
             boxShadow: navShadow,
             border: navBorder,
-            backdropFilter: navBackdrop,
             padding: navPadding,
             gap: navGap,
           }}
-          className="relative flex items-center justify-between pointer-events-auto transform-gpu transition-all"
+          className="relative flex items-center justify-between pointer-events-auto transition-[width,max-width,padding,gap] duration-300"
         >
           {/* LEFT — SEARCH */}
           <div className="flex flex-1 items-center justify-start">
@@ -1016,19 +1062,22 @@ const Navbar = () => {
               </AnimatePresence>
             </motion.button>
           </div>
-
-          {/* SearchModal — copil direct al nav-ului, ca să se întindă pe toată lățimea acestuia (continuă forma) */}
-          <SearchModal
-            isOpen={searchOpen}
-            onClose={() => setSearchOpen(false)}
-            isScrolled={isScrolled}
-          />
         </motion.nav>
       </header>
+
+      {/* SearchModal — RENDERAT IN AFARA nav-ului ca să evite stacking context-ul creat
+          de transform/backdrop-filter; aliniat la nav via navRect (pixel-perfect, urmează forma) */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        isScrolled={isScrolled}
+        navRect={navRect}
+      />
 
       {/* ── MODALS & OVERLAYS ── */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
+
 
       {/* FILTER DRAWER */}
 
