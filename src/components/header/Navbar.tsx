@@ -1062,19 +1062,22 @@ const Navbar = () => {
               </AnimatePresence>
             </motion.button>
           </div>
-
-          {/* SearchModal — copil direct al nav-ului, ca să se întindă pe toată lățimea acestuia (continuă forma) */}
-          <SearchModal
-            isOpen={searchOpen}
-            onClose={() => setSearchOpen(false)}
-            isScrolled={isScrolled}
-          />
         </motion.nav>
       </header>
+
+      {/* SearchModal — RENDERAT IN AFARA nav-ului ca să evite stacking context-ul creat
+          de transform/backdrop-filter; aliniat la nav via navRect (pixel-perfect, urmează forma) */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        isScrolled={isScrolled}
+        navRect={navRect}
+      />
 
       {/* ── MODALS & OVERLAYS ── */}
       <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
+
 
       {/* FILTER DRAWER */}
 
