@@ -258,10 +258,12 @@ const SearchModal = ({
   isOpen,
   onClose,
   isScrolled = false,
+  navRect,
 }: {
   isOpen: boolean;
   onClose: () => void;
   isScrolled?: boolean;
+  navRect: { left: number; right: number; bottom: number } | null;
 }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
