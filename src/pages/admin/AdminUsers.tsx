@@ -573,27 +573,34 @@ const AdminUsers = () => {
 
           <div className="hidden sm:flex gap-1.5">
             {[...Array(totalPages)]
-              .map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${page === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
-                  style={{
-                    background:
-                      page === i + 1 ? "var(--primary-gradient)" : undefined,
-                    borderColor:
-                      page !== i + 1
+              .map((_, i) => {
+                const pageNum = i + 1;
+                const isActive = page === pageNum;
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setPage(pageNum)}
+                    className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
+                      isActive
+                        ? "text-white border-transparent !text-white"
+                        : "bg-white hover:bg-zinc-50"
+                    }`}
+                    style={{
+                      background: isActive
+                        ? "var(--primary-gradient)"
+                        : undefined,
+                      borderColor: !isActive
                         ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
                         : undefined,
-                    color:
-                      page !== i + 1
-                        ? "var(--dark-amethyst)"
-                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-                  }}
-                >
-                  {i + 1}
-                </button>
-              ))
+                      // Aici este modificarea pentru culoarea textului:
+                      color: isActive ? "#ffffff" : "var(--dark-amethyst)",
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })
               .slice(Math.max(0, page - 3), Math.min(totalPages, page + 2))}
           </div>
 
