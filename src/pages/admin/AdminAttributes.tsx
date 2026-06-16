@@ -522,29 +522,36 @@ const AdminAttributes = () => {
             <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
           </button>
 
-          <div className="hidden sm:flex gap-1.5">
+          <div className="flex gap-1.5">
             {[...Array(totalPages)].map((_, i) => {
               const pageNum = i + 1;
               if (pageNum < currentPage - 2 || pageNum > currentPage + 2)
                 return null;
+
+              const isSelected = currentPage === pageNum;
+
               return (
                 <button
                   key={pageNum}
                   onClick={() => handlePageChange(pageNum)}
-                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === pageNum ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
+                    isSelected
+                      ? "border-transparent !text-white"
+                      : "bg-white hover:bg-zinc-50"
+                  }`}
                   style={{
-                    background:
-                      currentPage === pageNum
-                        ? "var(--primary-gradient)"
-                        : undefined,
-                    borderColor:
-                      currentPage !== pageNum
-                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
-                        : undefined,
-                    color:
-                      currentPage !== pageNum
-                        ? "var(--dark-amethyst)"
-                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                    // Aplicăm gradientul doar dacă este selectat
+                    background: isSelected
+                      ? "var(--primary-gradient)"
+                      : undefined,
+
+                    // Bordura gri/violet pentru paginile neactive
+                    borderColor: !isSelected
+                      ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                      : "transparent",
+
+                    // FORȚĂM ALBUL AICI:
+                    color: isSelected ? "#ffffff" : "var(--dark-amethyst)",
                   }}
                 >
                   {pageNum}
