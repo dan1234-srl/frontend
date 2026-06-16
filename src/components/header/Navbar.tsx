@@ -61,7 +61,7 @@ const FilterDrawer = () => {
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
             onClick={closeFilters}
-            className="absolute inset-0 bg-zinc-900/20 overflow-hidden cursor-pointer"
+            className="absolute inset-0 bg-zinc-900/30 overflow-hidden cursor-pointer"
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -84,7 +84,7 @@ const FilterDrawer = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0.5 }}
             transition={{ type: "spring", damping: 30, stiffness: 250 }}
-            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[420px] flex-col bg-white/95 backdrop-blur-3xl shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.1)] sm:rounded-l-[2.5rem] border-l border-white overflow-hidden"
+            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[420px] flex-col bg-white/95 backdrop-blur-3xl shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.15)] sm:rounded-l-[2.5rem] border-l border-white overflow-hidden"
           >
             <header className="relative flex items-center justify-between px-8 py-8 border-b border-zinc-100/50 shrink-0 bg-white/50">
               <div className="space-y-1.5">
@@ -220,40 +220,60 @@ const Navbar = () => {
     navigate("/");
   };
 
-  // Clase unificate pentru butoanele de navigare (Fără background-uri inestetice)
+  // Clase unificate pentru butoanele de navigare (Ultra Minimalist)
   const navBtnClass =
-    "relative flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-full text-zinc-600 bg-transparent hover:text-[var(--royal-violet)] transition-colors duration-300 before:absolute before:inset-0 before:rounded-full before:bg-zinc-100 before:scale-0 hover:before:scale-100 before:transition-transform before:duration-300 before:ease-out";
+    "relative flex items-center justify-center size-10 sm:size-11 rounded-full text-zinc-600 transition-colors duration-300 hover:text-[var(--royal-violet)] before:absolute before:inset-0 before:rounded-full before:bg-zinc-100/60 before:scale-0 hover:before:scale-100 before:transition-transform before:duration-300 before:ease-out";
 
   return (
     <>
       <header className="fixed top-0 inset-x-0 z-[200] flex flex-col pointer-events-none">
-        {/* TOP BAR — PROMO (Se pliază la scroll) */}
+        {/* TOP BAR — PROMO (Animată & Elegantă) */}
         <motion.div
           animate={{
-            height: isScrolled ? 0 : 32,
+            height: isScrolled ? 0 : 36,
             opacity: isScrolled ? 0 : 1,
           }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="w-full flex items-center justify-center px-4 text-center text-white overflow-hidden pointer-events-auto shadow-sm"
-          style={{ background: "var(--primary-gradient)" }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className="w-full flex items-center justify-center overflow-hidden pointer-events-auto relative bg-[#150f24]"
         >
-          <div className="flex items-center gap-2">
-            <Sparkles size={11} className="text-white/80" />
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] drop-shadow-sm whitespace-nowrap">
-              Standardul Evem • Eleganță & Performanță
+          {/* Gradient animat în fundal pentru efect de lux */}
+          <motion.div
+            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+            transition={{ duration: 8, ease: "linear", repeat: Infinity }}
+            className="absolute inset-0 opacity-50"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(123,44,191,0) 0%, rgba(123,44,191,0.6) 50%, rgba(123,44,191,0) 100%)",
+              backgroundSize: "200% 100%",
+            }}
+          />
+          <div className="flex items-center gap-2.5 relative z-10 px-4">
+            <Sparkles size={11} className="text-white/70" />
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/90 drop-shadow-sm whitespace-nowrap">
+              Standardul Evem <span className="opacity-40 mx-1">•</span>{" "}
+              Eleganță & Performanță
             </p>
           </div>
         </motion.div>
 
-        {/* NAV CONTAINER (Seamless Glass Transformation) */}
+        {/* NAV CONTAINER (Seamless Full Width) */}
         <div className="w-full pointer-events-auto">
           <motion.nav
-            layout
-            className={`w-full flex items-center justify-between px-4 sm:px-8 lg:px-12 transition-all duration-400 ease-out ${
-              isScrolled
-                ? "h-16 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)]"
-                : "h-20 bg-white border-b border-transparent"
-            }`}
+            animate={{
+              height: isScrolled ? 64 : 84,
+              backgroundColor: isScrolled
+                ? "rgba(255, 255, 255, 0.85)"
+                : "rgba(255, 255, 255, 1)",
+              backdropFilter: isScrolled ? "blur(20px)" : "blur(0px)",
+              borderBottom: isScrolled
+                ? "1px solid rgba(0, 0, 0, 0.05)"
+                : "1px solid rgba(0, 0, 0, 0)",
+              boxShadow: isScrolled
+                ? "0 10px 40px -10px rgba(0, 0, 0, 0.05)"
+                : "none",
+            }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full flex items-center justify-between px-4 sm:px-6 lg:px-10"
           >
             {/* LEFT — SEARCH */}
             <div className="flex flex-1 items-center justify-start">
@@ -268,24 +288,20 @@ const Navbar = () => {
                 }}
                 className={navBtnClass}
               >
-                <Search
-                  size={18}
-                  strokeWidth={1.75}
-                  className="relative z-10"
-                />
+                <Search size={18} strokeWidth={2} className="relative z-10" />
               </button>
             </div>
 
             {/* CENTER — LOGO */}
-            <div className="flex-shrink-0 flex items-center justify-center px-4">
+            <div className="flex-shrink-0 flex items-center justify-center px-2 sm:px-4">
               <Link to="/" className="group relative block">
                 <motion.img
                   whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileTap={{ scale: 0.97 }}
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
                   className={`w-auto object-contain transition-all duration-400 ease-out ${
-                    isScrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"
+                    isScrolled ? "h-5 sm:h-6" : "h-6 sm:h-8"
                   }`}
                 />
               </Link>
@@ -299,7 +315,7 @@ const Navbar = () => {
                 aria-label="Lista de dorințe"
                 className={navBtnClass}
               >
-                <Heart size={18} strokeWidth={1.75} className="relative z-10" />
+                <Heart size={18} strokeWidth={2} className="relative z-10" />
               </button>
 
               {/* User menu */}
@@ -309,13 +325,13 @@ const Navbar = () => {
                     user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                   }
                   aria-label="Contul meu"
-                  className={navBtnClass}
+                  className={`${navBtnClass} ${
+                    userMenuOpen
+                      ? "text-[var(--royal-violet)] before:scale-100"
+                      : ""
+                  }`}
                 >
-                  <User
-                    size={18}
-                    strokeWidth={1.75}
-                    className="relative z-10"
-                  />
+                  <User size={18} strokeWidth={2} className="relative z-10" />
                 </button>
 
                 {/* Dropdown Menu (Bento Design) */}
@@ -345,10 +361,10 @@ const Navbar = () => {
                         damping: 25,
                         stiffness: 350,
                       }}
-                      className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/90 backdrop-blur-3xl shadow-[0_30px_60px_-15px_rgba(123,44,191,0.15)] p-2 z-50"
+                      className="absolute right-0 sm:right-[-10px] mt-4 w-[280px] sm:w-[320px] overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.15)] p-2 z-50 origin-top-right"
                     >
-                      <div className="bg-zinc-50/80 p-4 rounded-[1rem] mb-2 border border-zinc-100">
-                        <p className="text-[9px] font-black uppercase text-[var(--royal-violet)] tracking-[0.3em] mb-1">
+                      <div className="bg-zinc-50/80 p-5 rounded-[1.25rem] mb-2 border border-zinc-100">
+                        <p className="text-[8px] font-black uppercase text-[var(--royal-violet)] tracking-[0.3em] mb-1">
                           Conectat ca
                         </p>
                         <p className="truncate text-sm font-bold text-[var(--dark-amethyst)]">
@@ -356,12 +372,12 @@ const Navbar = () => {
                         </p>
                       </div>
 
-                      <div className="space-y-1 p-1">
+                      <div className="space-y-0.5 p-1">
                         {isAdmin && (
                           <Link
                             to="/admin"
                             onClick={() => setUserMenuOpen(false)}
-                            className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
+                            className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
                           >
                             <span className="flex items-center gap-3">
                               <ShieldCheck
@@ -379,7 +395,7 @@ const Navbar = () => {
                         <Link
                           to="/account/orders"
                           onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
+                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
                         >
                           <span className="flex items-center gap-3">
                             <Package
@@ -396,7 +412,7 @@ const Navbar = () => {
                         <Link
                           to="/account/addresses"
                           onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
+                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
                         >
                           <span className="flex items-center gap-3">
                             <MapPin
@@ -413,7 +429,7 @@ const Navbar = () => {
                         <Link
                           to="/account/settings"
                           onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
+                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
                         >
                           <span className="flex items-center gap-3">
                             <Settings
@@ -429,7 +445,7 @@ const Navbar = () => {
                         </Link>
                       </div>
 
-                      <div className="h-px bg-zinc-100 my-1 mx-2" />
+                      <div className="h-px bg-zinc-100 my-1 mx-3" />
 
                       <button
                         onClick={handleLogout}
@@ -448,7 +464,8 @@ const Navbar = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setBagOpen(true)}
                 aria-label="Coș de cumpărături"
-                className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full ml-1 md:ml-2 bg-[var(--dark-amethyst)] text-white shadow-md transition-colors hover:bg-black"
+                className="relative flex size-10 sm:size-11 items-center justify-center rounded-full ml-1 md:ml-2 text-white shadow-lg transition-colors hover:brightness-110"
+                style={{ background: "var(--primary-gradient)" }}
               >
                 <BagIcon size={18} strokeWidth={2} />
                 <AnimatePresence>
@@ -458,7 +475,7 @@ const Navbar = () => {
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
-                      className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full border-2 border-white bg-[var(--royal-violet)] text-[9px] font-black"
+                      className="absolute -right-1 -top-1 flex h-5 min-w-[20px] px-1 items-center justify-center rounded-full border-[2px] border-white bg-zinc-900 text-[9px] font-black shadow-sm"
                     >
                       {totalItems}
                     </motion.span>
