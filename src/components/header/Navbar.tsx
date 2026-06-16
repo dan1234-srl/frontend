@@ -711,7 +711,8 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["20px 32px", "8px 24px"]);
+  const navPadding = useTransform(scrollY, [0, 60], ["22px 56px", "8px 24px"]);
+  const navGap = useTransform(scrollY, [0, 60], ["48px", "16px"]);
 
   // Efectele de sticlă
   const navBg = useTransform(
