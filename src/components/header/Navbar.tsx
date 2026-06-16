@@ -708,12 +708,44 @@ const Navbar = () => {
   }, []);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const { scrollY } = useScroll();
 
   // Detectare scroll pentru plierea benzii de promo
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 30);
   });
+
+  // --- Măsurăm bounding-box-ul navbar-ului ca SearchModal să i se alinieze pixel-perfect ---
+  const [navRect, setNavRect] = useState<{
+    left: number;
+    right: number;
+    bottom: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const measure = () => {
+      if (!navRef.current) return;
+      const r = navRef.current.getBoundingClientRect();
+      setNavRect({ left: r.left, right: r.right, bottom: r.bottom });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure);
+    };
+  }, [searchOpen]);
+
+  // Re-measure pe schimbare de scroll/isScrolled (forma navbar-ului se animează)
+  useMotionValueEvent(scrollY, "change", () => {
+    if (!searchOpen || !navRef.current) return;
+    const r = navRef.current.getBoundingClientRect();
+    setNavRect({ left: r.left, right: r.right, bottom: r.bottom });
+  });
+
 
   // --- MATEMATICA FLUIDĂ PENTRU FLOATING PILL ---
   // Aici garantăm că la scroll 0 are lățime 100%, iar apoi devine o capsulă
