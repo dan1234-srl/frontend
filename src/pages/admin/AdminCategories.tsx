@@ -612,6 +612,7 @@ const AdminCategories = () => {
       </div>
 
       {/* ── PAGINATION ─────────────────────────────────────── */}
+      {/* ── PAGINATION ─────────────────────────────────────── */}
       {!loading && totalPages > 1 && (
         <div
           className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm mt-6"
@@ -621,52 +622,47 @@ const AdminCategories = () => {
           }}
         >
           <button
-            key={p}
-            onClick={() => setCurrentPage(p)}
-            className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
-              currentPage === p
-                ? "text-white border-transparent" // Text alb când e selectat
-                : "bg-white hover:bg-zinc-50"
-            }`}
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
             style={{
-              // Dacă pagina e activă, folosim gradientul, altfel fundal alb
-              background:
-                currentPage === p ? "var(--primary-gradient)" : undefined,
-              // Bordura apare doar pentru paginile inactive
               borderColor:
-                currentPage !== p
-                  ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
-                  : undefined,
-              // Culoarea textului pentru paginile inactive
-              color: currentPage !== p ? "var(--dark-amethyst)" : undefined,
+                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
             }}
           >
-            {p}
+            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
           </button>
 
           <div className="hidden sm:flex gap-1.5">
             {[...Array(totalPages)].map((_, i) => {
-              const p = i + 1;
-              if (p < currentPage - 2 || p > currentPage + 2) return null;
+              const pageNum = i + 1;
+              if (pageNum < currentPage - 2 || pageNum > currentPage + 2)
+                return null;
               return (
                 <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === p ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
+                    currentPage === pageNum
+                      ? "text-white border-transparent"
+                      : "bg-white hover:bg-zinc-50"
+                  }`}
                   style={{
                     background:
-                      currentPage === p ? "var(--primary-gradient)" : undefined,
+                      currentPage === pageNum
+                        ? "var(--primary-gradient)"
+                        : undefined,
                     borderColor:
-                      currentPage !== p
+                      currentPage !== pageNum
                         ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
                         : undefined,
                     color:
-                      currentPage !== p
+                      currentPage !== pageNum
                         ? "var(--dark-amethyst)"
-                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                        : undefined,
                   }}
                 >
-                  {p}
+                  {pageNum}
                 </button>
               );
             })}
@@ -683,9 +679,12 @@ const AdminCategories = () => {
             {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
             {totalPages}
           </span>
+
           <button
             disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
             style={{
               borderColor:
