@@ -864,7 +864,7 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["12px 16px", "8px 20px"]);
+  const navPadding = useTransform(scrollY, [0, 60], ["0px 28px", "0px 20px"]);
 
   const navBg = useTransform(
     scrollY,
@@ -947,10 +947,10 @@ const Navbar = () => {
               backdropFilter: navBackdrop,
               padding: navPadding,
             }}
-            className="relative flex items-center justify-between transform-gpu transition-all w-full h-[3.5rem] sm:h-[4.5rem]"
+            className="relative grid grid-cols-[1fr_auto_1fr] items-center transform-gpu transition-all w-full h-[3.5rem] sm:h-[4.5rem]"
           >
             {/* LEFT — SEARCH */}
-            <div className="flex flex-1 items-center justify-start relative">
+            <div className="flex items-center justify-start">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSearchOpen(true)}
@@ -970,7 +970,7 @@ const Navbar = () => {
             </div>
 
             {/* CENTER — LOGO */}
-            <div className="flex-shrink-0 flex items-center justify-center px-1 sm:px-4 absolute left-1/2 -translate-x-1/2">
+            <div className="flex items-center justify-center px-2 sm:px-6">
               <Link to="/" className="group relative block">
                 <motion.img
                   whileHover={{ scale: 1.04 }}
@@ -983,7 +983,7 @@ const Navbar = () => {
             </div>
 
             {/* RIGHT — ACTIONS */}
-            <div className="flex flex-1 items-center justify-end gap-0 sm:gap-1.5">
+            <div className="flex items-center justify-end gap-0 sm:gap-1.5">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setWishOpen(true)}
