@@ -522,7 +522,7 @@ const AdminAttributes = () => {
             <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
           </button>
 
-          <div className="flex gap-1.5">
+          <div className="hidden sm:flex gap-1.5">
             {[...Array(totalPages)].map((_, i) => {
               const pageNum = i + 1;
               if (pageNum < currentPage - 2 || pageNum > currentPage + 2)
