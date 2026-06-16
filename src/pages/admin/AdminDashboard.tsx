@@ -436,13 +436,8 @@ const AdminDashboard = () => {
           <div className="col-span-2 text-right pr-2">Total Ofertă</div>
         </div>
 
-        <div
-          className="divide-y"
-          style={{
-            divideColor:
-              "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-          }}
-        >
+        <div className="divide-y">
+
           <AnimatePresence mode="wait">
             {isGlobalLoading ? (
               <motion.div
