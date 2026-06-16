@@ -631,34 +631,36 @@ const AdminDashboard = () => {
           </button>
 
           <div className="hidden sm:flex gap-1.5">
-            {[...Array(totalPages)]
-              .map((_, i) => (
+            {[...Array(totalPages)].map((_, i) => {
+              const p = i + 1;
+              if (p < currentPage - 2 || p > currentPage + 2) return null;
+
+              const isCurrent = currentPage === p;
+
+              return (
                 <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-9 h-9 rounded-xl text-[10px] font-black transition-all border flex items-center justify-center
+          ${
+            isCurrent
+              ? "text-white border-transparent shadow-lg shadow-purple-500/20"
+              : "bg-white hover:bg-zinc-50 text-[var(--dark-amethyst)]"
+          }`}
                   style={{
-                    background:
-                      currentPage === i + 1
-                        ? "var(--primary-gradient)"
-                        : undefined,
-                    borderColor:
-                      currentPage !== i + 1
-                        ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
-                        : undefined,
-                    color:
-                      currentPage !== i + 1
-                        ? "var(--dark-amethyst)"
-                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                    // Dacă e activ, fundal gradient. Dacă nu, doar bordură subtilă
+                    background: isCurrent
+                      ? "var(--primary-gradient)"
+                      : undefined,
+                    borderColor: !isCurrent
+                      ? "color-mix(in srgb, var(--royal-violet) 15%, transparent)"
+                      : undefined,
                   }}
                 >
-                  {i + 1}
+                  {p}
                 </button>
-              ))
-              .slice(
-                Math.max(0, currentPage - 3),
-                Math.min(totalPages, currentPage + 2),
-              )}
+              );
+            })}
           </div>
 
           <span
