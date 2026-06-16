@@ -1055,10 +1055,11 @@ const AdminProducts = () => {
                       currentPage !== i + 1
                         ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
                         : undefined,
+                    // MODIFICĂ AICI:
                     color:
-                      currentPage !== i + 1
-                        ? "var(--dark-amethyst)"
-                        : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                      currentPage === i + 1
+                        ? "#ffffff"
+                        : "var(--dark-amethyst)",
                   }}
                 >
                   {i + 1}
