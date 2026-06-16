@@ -885,11 +885,7 @@ const AdminProducts = () => {
                         <div className="col-span-5 flex items-center gap-4 w-full pl-2">
                           <OptimizedImage
                             src={p.image_url}
-                            className="w-14 h-16 rounded-[1rem] border shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105"
-                            style={{
-                              borderColor:
-                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                            }}
+                            className="w-14 h-16 rounded-[1rem] border border-[color-mix(in_srgb,var(--royal-violet)_15%,transparent)] shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105"
                           />
                           <div className="flex flex-col min-w-0">
                             <span className="text-[13px] font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate group-hover:text-[var(--royal-violet)] transition-colors pr-2">
