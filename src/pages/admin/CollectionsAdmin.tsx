@@ -1,3 +1,8 @@
+/**
+ * CollectionsAdmin.tsx
+ * Gestionează colecțiile dinamice - Design Futuristic (Bento Neo-Mosaic)
+ */
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -11,6 +16,10 @@ import {
   ChevronLeft,
   ChevronRight,
   PackageOpen,
+  Sparkles,
+  Layers,
+  Plus,
+  GripVertical,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -93,6 +102,7 @@ const CollectionsAdmin = () => {
   useEffect(() => {
     fetchCollections();
   }, []);
+
   useEffect(() => {
     if (selectedCollection) fetchProducts(selectedCollection);
   }, [selectedCollection]);
@@ -119,8 +129,7 @@ const CollectionsAdmin = () => {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // 🚀 LOGICĂ NOUĂ: REORDONARE COLECȚII (Categorii)
-  // 🚀 REORDONARE COLECȚII (MUTĂ CATEGORIILE ÎNTRE ELE)
+  // REORDONARE COLECȚII
   const handleReorderCollections = async (
     index: number,
     direction: "up" | "down",
@@ -128,10 +137,8 @@ const CollectionsAdmin = () => {
     const newCollections = [...collections];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
 
-    // Verificăm limitele
     if (targetIndex < 0 || targetIndex >= newCollections.length) return;
 
-    // Interschimbăm elementele vizual instantaneu
     [newCollections[index], newCollections[targetIndex]] = [
       newCollections[targetIndex],
       newCollections[index],
@@ -139,7 +146,6 @@ const CollectionsAdmin = () => {
 
     setCollections(newCollections);
 
-    // Trimitem noua ordine la backend
     try {
       await fetch(`${API_BASE_URL}/api/v1/collections/reorder-collections`, {
         method: "PUT",
@@ -147,13 +153,12 @@ const CollectionsAdmin = () => {
         body: JSON.stringify({ ordered_collections: newCollections }),
         credentials: "include",
       });
-      toast({ title: "Ordine salvată!" });
+      toast({ title: "Ordine salvată cu succes!" });
     } catch (err) {
       toast({ variant: "destructive", title: "Eroare la salvarea ordinii" });
     }
   };
 
-  // --- RESTUL FUNCȚIILOR ---
   const selectProductToAdd = async (product: any) => {
     const targetCollection = selectedCollection || newCollectionName.trim();
     if (!targetCollection)
@@ -176,8 +181,8 @@ const CollectionsAdmin = () => {
         },
       );
       toast({
-        title: "Adăugat",
-        description: `${product.name} inclus în ${targetCollection}`,
+        title: "Sincronizare Reușită",
+        description: `${product.name} a fost adăugat.`,
       });
       setSearchQuery("");
       setSearchResults([]);
@@ -209,7 +214,7 @@ const CollectionsAdmin = () => {
   };
 
   const handleDeleteCollection = async (type: string) => {
-    if (!window.confirm("Ștergi colecția?")) return;
+    if (!window.confirm("Atenție! Confirmă ștergerea colecției.")) return;
     await fetch(`${API_BASE_URL}/api/v1/collections/${type}`, {
       method: "DELETE",
     });
@@ -246,114 +251,234 @@ const CollectionsAdmin = () => {
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4 md:mb-8">
-        <div className="p-3 bg-[var(--lavender-purple)]/10 text-[var(--royal-violet)] rounded-2xl w-max">
-          <FolderTree size={24} />
-        </div>
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900">
-            Colecții Dinamice
+    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+      {/* ── HEADER FUTURISTIC ──────────────────────────────────────────────── */}
+      <header
+        className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
+        style={{
+          borderColor:
+            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+        }}
+      >
+        <div className="space-y-2">
+          <div className="flex items-center gap-2.5">
+            <Sparkles
+              size={12}
+              style={{ color: "var(--royal-violet)" }}
+              className="animate-pulse"
+            />
+            <span
+              className="text-[9px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
+              }}
+            >
+              System Operations
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
+            Colecții{" "}
+            <span style={{ color: "var(--royal-violet)" }}>Dinamice</span>
           </h1>
-          <p className="text-xs text-zinc-500 font-medium">
-            Gestionează grupurile și ordinea lor pe Home Page.
-          </p>
         </div>
-      </div>
+      </header>
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-        {/* SIDEBAR STÂNGA: LISTĂ COLECȚII */}
-        <div className="w-full lg:w-1/3 xl:w-1/4 bg-white border border-zinc-100 rounded-3xl p-5 shadow-sm shrink-0">
-          <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 px-2">
-            Colecții Active
-          </h2>
-          <div className="space-y-2 mb-6 max-h-[40vh] lg:max-h-none overflow-y-auto custom-scrollbar pr-1">
-            {collections.map((type, idx) => (
-              <div
-                key={type}
-                className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${
-                  selectedCollection === type
-                    ? "bg-[var(--royal-violet)] border-[var(--royal-violet)] text-white shadow-md"
-                    : "bg-zinc-50 border-zinc-100 hover:border-zinc-300 text-zinc-700"
-                }`}
-                onClick={() => setSelectedCollection(type)}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {/* SĂGEȚI SUS/JOS PENTRU COLECȚII */}
-                  <div className="flex flex-col gap-0.5 shrink-0 mr-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReorderCollections(idx, "up");
-                      }}
-                      disabled={idx === 0}
-                      className="p-1 rounded bg-black/5 text-current opacity-60 hover:opacity-100 disabled:opacity-20"
-                    >
-                      <ArrowUp size={10} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReorderCollections(idx, "down");
-                      }}
-                      disabled={idx === collections.length - 1}
-                      className="p-1 rounded bg-black/5 text-current opacity-60 hover:opacity-100 disabled:opacity-20"
-                    >
-                      <ArrowDown size={10} />
-                    </button>
+        {/* ── SIDEBAR STÂNGA: LISTĂ COLECȚII ───────────────────────────────── */}
+        <div
+          className="w-full lg:w-1/3 xl:w-1/4 bg-white/70 backdrop-blur-xl border rounded-[2rem] p-5 md:p-6 shadow-sm shrink-0"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-5 px-1">
+            <FolderTree size={14} style={{ color: "var(--royal-violet)" }} />
+            <h2
+              className="text-[10px] font-black uppercase tracking-widest"
+              style={{ color: "var(--dark-amethyst)" }}
+            >
+              Colecții Active
+            </h2>
+          </div>
+
+          <div className="space-y-2.5 mb-6 max-h-[40vh] lg:max-h-[50vh] overflow-y-auto luxury-scrollbar pr-2">
+            {collections.map((type, idx) => {
+              const isActive = selectedCollection === type;
+              return (
+                <div
+                  key={type}
+                  className={`group relative flex items-center justify-between p-3.5 rounded-2xl cursor-pointer transition-all border ${
+                    isActive
+                      ? "text-white shadow-lg shadow-[var(--royal-violet)]/20"
+                      : "bg-white hover:bg-zinc-50/80 text-[var(--dark-amethyst)]"
+                  }`}
+                  style={{
+                    background: isActive
+                      ? "var(--primary-gradient)"
+                      : undefined,
+                    borderColor: isActive
+                      ? "transparent"
+                      : "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                  onClick={() => setSelectedCollection(type)}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* SĂGEȚI REORDONARE */}
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReorderCollections(idx, "up");
+                        }}
+                        disabled={idx === 0}
+                        className={`p-1 rounded-md transition-colors ${
+                          isActive
+                            ? "hover:bg-white/20 text-white/70 hover:text-white disabled:opacity-30"
+                            : "hover:bg-zinc-200 text-zinc-400 hover:text-zinc-700 disabled:opacity-20"
+                        }`}
+                      >
+                        <ArrowUp size={10} strokeWidth={3} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReorderCollections(idx, "down");
+                        }}
+                        disabled={idx === collections.length - 1}
+                        className={`p-1 rounded-md transition-colors ${
+                          isActive
+                            ? "hover:bg-white/20 text-white/70 hover:text-white disabled:opacity-30"
+                            : "hover:bg-zinc-200 text-zinc-400 hover:text-zinc-700 disabled:opacity-20"
+                        }`}
+                      >
+                        <ArrowDown size={10} strokeWidth={3} />
+                      </button>
+                    </div>
+
+                    <span className="font-bold text-xs tracking-wide truncate">
+                      {type}
+                    </span>
                   </div>
 
-                  <span className="font-bold text-sm tracking-wide truncate">
-                    {type}
-                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteCollection(type);
+                    }}
+                    className={`p-2 rounded-xl transition-all shrink-0 ml-2 ${
+                      isActive
+                        ? "bg-white/10 hover:bg-white/20 text-white"
+                        : "bg-red-50 hover:bg-red-500 text-red-500 hover:text-white opacity-0 group-hover:opacity-100"
+                    }`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteCollection(type);
-                  }}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ml-2 ${
-                    selectedCollection === type
-                      ? "hover:bg-white/20 text-white"
-                      : "hover:bg-red-100 text-zinc-400 hover:text-red-500"
-                  }`}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
             {collections.length === 0 && (
-              <p className="text-xs text-zinc-400 text-center py-4 italic">
-                Nu există nicio colecție.
-              </p>
+              <div
+                className="py-10 text-center flex flex-col items-center gap-2 border border-dashed rounded-2xl"
+                style={{
+                  borderColor:
+                    "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+                }}
+              >
+                <Layers
+                  size={20}
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                  }}
+                />
+                <p
+                  className="text-[9px] font-black uppercase tracking-widest"
+                  style={{
+                    color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                  }}
+                >
+                  Nicio colecție
+                </p>
+              </div>
             )}
           </div>
 
-          <div className="pt-4 border-t border-zinc-100">
-            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-3 px-2">
-              Creează Colecție Nouă
-            </p>
-            <input
-              type="text"
-              value={newCollectionName}
-              onChange={(e) => {
-                setNewCollectionName(e.target.value);
-                setSelectedCollection(null);
+          {/* INPUT COLECȚIE NOUĂ */}
+          <div
+            className="pt-5 border-t"
+            style={{
+              borderColor:
+                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+            }}
+          >
+            <p
+              className="text-[9px] font-black uppercase tracking-widest mb-3 px-1"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
               }}
-              placeholder="Ex: summer-sale"
-              className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs font-semibold outline-none focus:border-[var(--royal-violet)] mb-2"
-            />
+            >
+              + Colecție Nouă
+            </p>
+            <div className="relative">
+              <input
+                type="text"
+                value={newCollectionName}
+                onChange={(e) => {
+                  setNewCollectionName(e.target.value);
+                  setSelectedCollection(null);
+                }}
+                placeholder="Ex: summer-sale"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl px-4 py-3 text-xs font-bold outline-none transition-all placeholder:font-normal"
+                style={{
+                  color: "var(--dark-amethyst)",
+                  boxShadow:
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 2px var(--royal-violet)";
+                  e.target.style.backgroundColor = "#ffffff";
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow =
+                    "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                  e.target.style.backgroundColor = "rgba(255,255,255,0.5)";
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* PANOUL DREAPTA: PRODUSE */}
-        <div className="w-full lg:w-2/3 xl:w-3/4 bg-white border border-zinc-100 rounded-3xl p-5 md:p-8 shadow-sm min-h-[500px] flex flex-col">
+        {/* ── PANOUL DREAPTA: PRODUSE (Bento) ──────────────────────────────── */}
+        <div
+          className="w-full lg:w-2/3 xl:w-3/4 bg-white/70 backdrop-blur-xl border rounded-[2rem] sm:rounded-[2.5rem] p-5 md:p-8 shadow-sm min-h-[500px] flex flex-col relative"
+          style={{
+            borderColor:
+              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+          }}
+        >
           {!selectedCollection && !newCollectionName ? (
-            <div className="h-full flex-1 flex flex-col items-center justify-center text-zinc-400 space-y-4 opacity-60 py-20">
-              <PackageOpen size={48} strokeWidth={1} />
-              <p className="text-sm font-medium text-center px-4">
-                Selectează o colecție din listă.
+            <div className="h-full flex-1 flex flex-col items-center justify-center space-y-4 py-20">
+              <div
+                className="p-6 rounded-3xl"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                }}
+              >
+                <PackageOpen
+                  size={48}
+                  strokeWidth={1}
+                  style={{ color: "var(--royal-violet)" }}
+                />
+              </div>
+              <p
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
+              >
+                Selectează sau creează un segment
               </p>
             </div>
           ) : (
@@ -363,46 +488,84 @@ const CollectionsAdmin = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col h-full space-y-6 md:space-y-8"
               >
-                {/* HEADER COLECȚIE */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 md:pb-6 border-b border-zinc-100">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--royal-violet)] mb-1">
-                      {newCollectionName && !selectedCollection
-                        ? "Colecție Nouă"
-                        : "Colecție Activă"}
-                    </p>
+                {/* ── HEADER COLECȚIE ── */}
+                <div
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 md:pb-6 border-b"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                >
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: "var(--royal-violet)" }}
+                      />
+                      <p
+                        className="text-[8px] font-black uppercase tracking-[0.3em]"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                        }}
+                      >
+                        {newCollectionName && !selectedCollection
+                          ? "Instanță Nouă"
+                          : "Instanță Activă"}
+                      </p>
+                    </div>
+
                     {isRenaming && selectedCollection ? (
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
                         <input
                           type="text"
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
-                          className="bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-sm font-bold w-full max-w-[200px]"
+                          className="bg-white border rounded-xl px-4 py-2.5 text-lg font-black outline-none w-full max-w-[250px] transition-all focus:border-[var(--royal-violet)]"
+                          style={{
+                            color: "var(--dark-amethyst)",
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
                         />
                         <button
                           onClick={handleRename}
-                          className="px-4 py-2 bg-[var(--royal-violet)] text-white text-[10px] font-black uppercase rounded-lg"
+                          className="px-5 py-2.5 text-[9px] font-black uppercase tracking-widest text-white rounded-xl shadow-md transition-all active:scale-95"
+                          style={{ background: "var(--primary-gradient)" }}
                         >
                           Salvează
                         </button>
                         <button
                           onClick={() => setIsRenaming(false)}
-                          className="px-4 py-2 bg-zinc-100 text-zinc-600 text-[10px] font-black uppercase rounded-lg"
+                          className="px-5 py-2.5 text-[9px] font-black uppercase tracking-widest rounded-xl bg-white border transition-all hover:bg-zinc-50"
+                          style={{
+                            color: "var(--dark-amethyst)",
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
                         >
                           Anulează
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-3">
-                        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-zinc-900 truncate">
+                        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight truncate text-[var(--dark-amethyst)]">
                           {selectedCollection || newCollectionName}
                         </h2>
                         {selectedCollection && (
                           <button
-                            onClick={() => setIsRenaming(true)}
-                            className="text-zinc-400 p-1"
+                            onClick={() => {
+                              setRenameValue(selectedCollection);
+                              setIsRenaming(true);
+                            }}
+                            className="p-2 rounded-xl bg-white border hover:bg-zinc-50 transition-colors shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                              color: "var(--royal-violet)",
+                            }}
                           >
-                            <Edit2 size={16} />
+                            <Edit2 size={14} />
                           </button>
                         )}
                       </div>
@@ -410,33 +573,69 @@ const CollectionsAdmin = () => {
                   </div>
                 </div>
 
-                {/* SEARCH */}
-                <div className="bg-zinc-50 border border-zinc-100 rounded-2xl p-4 md:p-5 relative z-20">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">
-                    Caută și Adaugă Produs
+                {/* ── SEARCH (Adăugare produse) ── */}
+                <div
+                  className="bg-white rounded-[1.5rem] p-4 md:p-5 relative z-20 border shadow-sm"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                >
+                  <p
+                    className="text-[9px] font-black uppercase tracking-[0.3em] mb-3 flex items-center gap-2"
+                    style={{ color: "var(--dark-amethyst)" }}
+                  >
+                    <Plus size={12} style={{ color: "var(--royal-violet)" }} />{" "}
+                    Indexare Produs Nou
                   </p>
-                  <div className="relative">
+                  <div className="relative group">
                     <Search
                       size={14}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
+                      style={{
+                        color:
+                          "color-mix(in srgb, var(--royal-violet) 40%, transparent)",
+                      }}
                     />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Caută după nume sau SKU..."
-                      className="w-full bg-white border border-zinc-200 rounded-xl py-3 pl-9 pr-10 text-xs font-semibold outline-none focus:border-[var(--royal-violet)] shadow-sm"
+                      placeholder="Caută în DB (SKU / Nume)..."
+                      className="w-full bg-zinc-50/50 backdrop-blur-sm border rounded-xl py-3.5 pl-10 pr-10 text-xs font-bold outline-none transition-all placeholder:font-normal"
+                      style={{
+                        color: "var(--dark-amethyst)",
+                        borderColor:
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "var(--royal-violet)";
+                        e.target.style.backgroundColor = "#ffffff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor =
+                          "color-mix(in srgb, var(--royal-violet) 15%, transparent)";
+                        e.target.style.backgroundColor =
+                          "rgba(250,250,250,0.5)";
+                      }}
                     />
                     {isSearching && (
                       <Loader2
                         size={14}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--royal-violet)] animate-spin"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin"
+                        style={{ color: "var(--royal-violet)" }}
                       />
                     )}
 
-                    {/* REZULTATE */}
+                    {/* REZULTATE SEARCH */}
                     {searchResults.length > 0 && searchQuery.length >= 2 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-zinc-100 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto z-50">
+                      <div
+                        className="absolute top-full left-0 right-0 mt-3 bg-white/95 backdrop-blur-xl border rounded-[1.5rem] shadow-2xl overflow-hidden max-h-72 overflow-y-auto luxury-scrollbar z-50"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                        }}
+                      >
                         {searchResults.map((p) => {
                           const img = getImageUrl(p);
                           return (
@@ -446,28 +645,50 @@ const CollectionsAdmin = () => {
                                 e.preventDefault();
                                 selectProductToAdd(p);
                               }}
-                              className="flex items-center gap-3 p-3 hover:bg-zinc-50 cursor-pointer border-b border-zinc-50 last:border-0"
+                              className="flex items-center gap-4 p-3.5 hover:bg-zinc-50 cursor-pointer border-b transition-colors group/item"
+                              style={{
+                                borderColor:
+                                  "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                              }}
                             >
-                              <div className="size-10 bg-zinc-100 rounded-lg overflow-hidden shrink-0 flex items-center justify-center text-[8px] text-zinc-400">
+                              <div
+                                className="size-12 rounded-xl bg-white border overflow-hidden shrink-0 flex items-center justify-center text-[8px] font-black text-zinc-300"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                }}
+                              >
                                 {img ? (
                                   <img
                                     src={img}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
                                     alt=""
                                   />
                                 ) : (
-                                  "IMG"
+                                  "N/A"
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold truncate">
+                                <p className="text-xs font-bold text-[var(--dark-amethyst)] truncate group-hover/item:text-[var(--royal-violet)] transition-colors">
                                   {p.name}
                                 </p>
-                                <p className="text-[9px] text-zinc-400 font-mono">
+                                <p
+                                  className="text-[9px] font-black uppercase tracking-widest mt-0.5"
+                                  style={{
+                                    color:
+                                      "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                                  }}
+                                >
                                   {p.sku}
                                 </p>
                               </div>
-                              <span className="text-[10px] font-black px-2 py-1 bg-zinc-100 rounded-md shrink-0">
+                              <span
+                                className="text-[10px] font-black px-3 py-1.5 bg-white border rounded-lg shrink-0 text-[var(--dark-amethyst)] shadow-sm"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                                }}
+                              >
                                 {p.price?.toLocaleString()} RON
                               </span>
                             </div>
@@ -478,13 +699,22 @@ const CollectionsAdmin = () => {
                   </div>
                 </div>
 
-                {/* LISTA PRODUSE */}
+                {/* ── LISTA PRODUSE MAPPED ── */}
                 {selectedCollection && (
                   <div className="flex-1 flex flex-col relative z-10">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4 pl-1">
-                      Produse adăugate ({products.length})
+                    <p
+                      className="text-[9px] font-black uppercase tracking-widest mb-4 pl-1 flex items-center justify-between"
+                      style={{
+                        color:
+                          "color-mix(in srgb, var(--royal-violet) 60%, gray)",
+                      }}
+                    >
+                      <span>Matrice Produse</span>
+                      <span className="text-[10px] px-2 py-0.5 bg-white border rounded-md text-[var(--dark-amethyst)] shadow-sm">
+                        Total: {products.length}
+                      </span>
                     </p>
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       {paginatedProducts.map((p, localIdx) => {
                         const globalIdx =
                           (currentPage - 1) * itemsPerPage + localIdx;
@@ -493,39 +723,77 @@ const CollectionsAdmin = () => {
                           <motion.div
                             layout
                             key={p.id}
-                            className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-300 shadow-sm"
+                            className="group flex flex-col sm:flex-row sm:items-center gap-4 p-3 bg-white border rounded-[1.5rem] hover:shadow-md transition-all relative overflow-hidden"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                            }}
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="size-10 sm:size-12 rounded-lg bg-zinc-50 overflow-hidden border shrink-0">
+                            {/* Hover Fill */}
+                            <div
+                              className="absolute inset-1 rounded-[1.25rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                              style={{
+                                background:
+                                  "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 2%, transparent) 0%, transparent 100%)",
+                              }}
+                            />
+
+                            <div className="flex items-center gap-4 flex-1 min-w-0 relative z-10">
+                              {/* Grip Icon for visual hint */}
+                              <GripVertical
+                                size={14}
+                                className="text-zinc-300 hidden sm:block shrink-0 cursor-grab active:cursor-grabbing opacity-50 group-hover:opacity-100 transition-opacity"
+                              />
+                              <div
+                                className="size-12 sm:size-14 rounded-2xl bg-zinc-50 overflow-hidden border shrink-0 flex items-center justify-center text-[8px] font-black text-zinc-300"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                }}
+                              >
                                 {img ? (
                                   <img
                                     src={img}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                   />
                                 ) : (
                                   "IMG"
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h4 className="text-xs sm:text-sm font-bold truncate">
-                                  {globalIdx + 1}. {p.name}
+                                <h4 className="text-xs sm:text-sm font-bold text-[var(--dark-amethyst)] truncate">
+                                  <span className="opacity-50 font-black mr-1">
+                                    {globalIdx + 1}.
+                                  </span>
+                                  {p.name}
                                 </h4>
-                                <p className="text-[9px] sm:text-[10px] font-mono text-zinc-500">
+                                <p
+                                  className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mt-0.5"
+                                  style={{
+                                    color:
+                                      "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                                  }}
+                                >
                                   SKU: {p.sku}
                                 </p>
                               </div>
                             </div>
+
                             {/* Actions */}
-                            <div className="flex items-center justify-end gap-1.5 sm:mr-2 shrink-0">
-                              <div className="flex items-center sm:flex-col gap-1 sm:gap-0.5">
+                            <div className="flex items-center justify-end gap-2 sm:mr-2 shrink-0 relative z-10">
+                              <div className="flex items-center sm:flex-col gap-1 sm:gap-1">
                                 <button
                                   onClick={() =>
                                     handleReorderProducts(p.id, globalIdx, "up")
                                   }
                                   disabled={globalIdx === 0}
-                                  className="p-1.5 sm:p-1 bg-zinc-50 text-zinc-400 hover:text-zinc-900 disabled:opacity-30 rounded-md"
+                                  className="p-1.5 bg-white border rounded-lg text-[var(--dark-amethyst)] hover:bg-[var(--royal-violet)] hover:text-white hover:border-transparent disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-inherit disabled:hover:border-inherit transition-all shadow-sm"
+                                  style={{
+                                    borderColor:
+                                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                  }}
                                 >
-                                  <ArrowUp size={14} />
+                                  <ArrowUp size={12} strokeWidth={2.5} />
                                 </button>
                                 <button
                                   onClick={() =>
@@ -536,42 +804,104 @@ const CollectionsAdmin = () => {
                                     )
                                   }
                                   disabled={globalIdx === products.length - 1}
-                                  className="p-1.5 sm:p-1 bg-zinc-50 text-zinc-400 hover:text-zinc-900 disabled:opacity-30 rounded-md"
+                                  className="p-1.5 bg-white border rounded-lg text-[var(--dark-amethyst)] hover:bg-[var(--royal-violet)] hover:text-white hover:border-transparent disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-inherit disabled:hover:border-inherit transition-all shadow-sm"
+                                  style={{
+                                    borderColor:
+                                      "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                  }}
                                 >
-                                  <ArrowDown size={14} />
+                                  <ArrowDown size={12} strokeWidth={2.5} />
                                 </button>
                               </div>
-                              <div className="w-px h-6 sm:h-8 bg-zinc-100 mx-1 sm:mx-2 hidden sm:block" />
+                              <div className="w-px h-8 bg-zinc-200 mx-2 hidden sm:block" />
                               <button
                                 onClick={() => handleRemoveProduct(p.id)}
-                                className="size-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center"
+                                className="size-10 rounded-xl bg-white border text-red-500 hover:bg-red-500 hover:text-white hover:border-transparent flex items-center justify-center transition-all shadow-sm"
+                                style={{
+                                  borderColor:
+                                    "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                                }}
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} />
                               </button>
                             </div>
                           </motion.div>
                         );
                       })}
                     </div>
-                    {/* PAGINATION */}
+
+                    {/* ── PAGINATION (Bento style) ── */}
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-100">
+                      <div
+                        className="flex items-center justify-between mt-6 pt-4 border-t"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                        }}
+                      >
                         <button
                           onClick={() => setCurrentPage((p) => p - 1)}
                           disabled={currentPage === 1}
-                          className="flex items-center gap-1 text-[10px] font-black uppercase text-zinc-500 hover:text-zinc-900 disabled:opacity-30"
+                          className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
                         >
-                          <ChevronLeft size={14} /> Prev
+                          <ChevronLeft
+                            size={14}
+                            style={{ color: "var(--royal-violet)" }}
+                          />
                         </button>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase bg-zinc-50 px-3 py-1.5 rounded-lg border">
-                          Pagina {currentPage} / {totalPages}
-                        </span>
+
+                        <div className="flex gap-1.5">
+                          {[...Array(totalPages)]
+                            .map((_, i) => (
+                              <button
+                                key={i}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
+                                  currentPage === i + 1
+                                    ? "text-white border-transparent !text-white"
+                                    : "bg-white hover:bg-zinc-50"
+                                }`}
+                                style={{
+                                  background:
+                                    currentPage === i + 1
+                                      ? "var(--primary-gradient)"
+                                      : undefined,
+                                  borderColor:
+                                    currentPage !== i + 1
+                                      ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                                      : undefined,
+                                  color:
+                                    currentPage === i + 1
+                                      ? "#ffffff"
+                                      : "var(--dark-amethyst)",
+                                }}
+                              >
+                                {i + 1}
+                              </button>
+                            ))
+                            .slice(
+                              Math.max(0, currentPage - 3),
+                              Math.min(totalPages, currentPage + 2),
+                            )}
+                        </div>
+
                         <button
                           onClick={() => setCurrentPage((p) => p + 1)}
                           disabled={currentPage === totalPages}
-                          className="flex items-center gap-1 text-[10px] font-black uppercase text-zinc-500 hover:text-zinc-900 disabled:opacity-30"
+                          className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+                          style={{
+                            borderColor:
+                              "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                          }}
                         >
-                          Next <ChevronRight size={14} />
+                          <ChevronRight
+                            size={14}
+                            style={{ color: "var(--royal-violet)" }}
+                          />
                         </button>
                       </div>
                     )}
@@ -582,6 +912,17 @@ const CollectionsAdmin = () => {
           )}
         </div>
       </div>
+
+      {/* GLOBAL SCROLLBAR STYLES (pentru liste interne) */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
+        .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
+      `,
+        }}
+      />
     </div>
   );
 };
