@@ -794,13 +794,8 @@ const AdminOrders = () => {
                 <div className="col-span-3 text-center">Ref. Client</div>
                 <div className="col-span-3 text-right">Data AWB</div>
               </div>
-              <div
-                className="divide-y"
-                style={{
-                  divideColor:
-                    "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                }}
-              >
+              <div className="divide-y">
+
                 {glsHistoryData.map((parcel, idx) => (
                   <div
                     key={idx}
