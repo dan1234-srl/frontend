@@ -45,7 +45,7 @@ import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 import { FilterSidebar } from "../shop/FilterSidebar";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CACHE PENTRU SEARCH
+// Cache simplu in-memory per query
 // ─────────────────────────────────────────────────────────────────────────────
 const queryCache = new Map<string, any[]>();
 const QUERY_CACHE_LIMIT = 50;
@@ -255,9 +255,11 @@ const Sep = () => (
 const SearchModal = ({
   isOpen,
   onClose,
+  isScrolled,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  isScrolled?: boolean;
 }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
@@ -384,7 +386,9 @@ const SearchModal = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -5, scale: 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[200] top-full mt-2 sm:mt-3 left-0 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.2)] rounded-[1.5rem] border border-zinc-100 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left transition-all duration-400 ease-out"
+            className={`absolute z-[200] left-0 mt-3 sm:mt-4 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.2)] rounded-[1.5rem] border border-zinc-100 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left transition-all duration-400 ease-out ${
+              isScrolled ? "top-[3.5rem]" : "top-[5.5rem]"
+            }`}
             style={{ maxHeight: "min(75vh, calc(100vh - 8rem))" }}
           >
             <div
@@ -790,7 +794,6 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Pentru Promo Bar și Floating Effect
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -802,12 +805,10 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
 
-  // Detectare scroll
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 30);
   });
 
-  // --- MATEMATICA FLUIDĂ PENTRU FLOATING PILL ---
   const navWidth = useTransform(
     scrollY,
     [0, 60],
@@ -816,9 +817,8 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["12px 24px", "8px 24px"]);
+  const navPadding = useTransform(scrollY, [0, 60], ["12px 16px", "8px 24px"]);
 
-  // Efectele de sticlă
   const navBg = useTransform(
     scrollY,
     [0, 60],
@@ -864,7 +864,7 @@ const Navbar = () => {
   };
 
   const navButtonClass =
-    "relative flex items-center justify-center size-10 sm:size-11 rounded-full text-zinc-500 transition-colors duration-300 hover:text-[var(--royal-violet)] before:absolute before:inset-0 before:rounded-full before:bg-[var(--royal-violet)] before:opacity-0 hover:before:opacity-10 before:scale-50 hover:before:scale-100 before:transition-all before:duration-300 before:ease-out";
+    "relative flex items-center justify-center size-9 sm:size-10 lg:size-11 rounded-full text-zinc-500 transition-colors duration-300 hover:text-[var(--royal-violet)] before:absolute before:inset-0 before:rounded-full before:bg-[var(--royal-violet)] before:opacity-0 hover:before:opacity-10 before:scale-50 hover:before:scale-100 before:transition-all before:duration-300 before:ease-out";
 
   return (
     <>
@@ -876,9 +876,8 @@ const Navbar = () => {
           className="w-full flex items-center justify-center overflow-hidden pointer-events-auto relative shadow-sm"
           style={{ background: "var(--primary-gradient)" }}
         >
-          <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20" />
           <div className="flex items-center gap-2.5 relative z-10 px-4">
-            <Sparkles size={11} className="text-white/80 animate-pulse" />
+            <Sparkles size={11} className="text-white/90 animate-pulse" />
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white drop-shadow-sm whitespace-nowrap">
               Standardul Evem <span className="opacity-40 mx-2">•</span>{" "}
               Eleganță & Performanță
@@ -921,10 +920,10 @@ const Navbar = () => {
                 <Search size={18} strokeWidth={2} className="relative z-10" />
               </motion.button>
 
-              {/* Modalul de Search se ancorează de aici */}
               <SearchModal
                 isOpen={searchOpen}
                 onClose={() => setSearchOpen(false)}
+                isScrolled={isScrolled}
               />
             </div>
 
@@ -942,7 +941,7 @@ const Navbar = () => {
             </div>
 
             {/* RIGHT — ACTIONS */}
-            <div className="flex flex-1 items-center justify-end gap-1 sm:gap-2">
+            <div className="flex flex-1 items-center justify-end gap-0 sm:gap-1.5">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setWishOpen(true)}
@@ -1092,7 +1091,7 @@ const Navbar = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setBagOpen(true)}
                 aria-label="Coș de cumpărături"
-                className="relative flex size-10 sm:size-11 items-center justify-center rounded-full ml-1 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110"
+                className="relative flex size-10 sm:size-11 items-center justify-center rounded-full ml-1 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
                 style={{ background: "var(--primary-gradient)" }}
               >
                 <BagIcon size={18} strokeWidth={2} />
