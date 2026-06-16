@@ -1016,6 +1016,13 @@ const Navbar = () => {
               </AnimatePresence>
             </motion.button>
           </div>
+
+          {/* SearchModal — copil direct al nav-ului, ca să se întindă pe toată lățimea acestuia (continuă forma) */}
+          <SearchModal
+            isOpen={searchOpen}
+            onClose={() => setSearchOpen(false)}
+            isScrolled={isScrolled}
+          />
         </motion.nav>
       </header>
 
