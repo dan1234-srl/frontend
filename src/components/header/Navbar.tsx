@@ -257,9 +257,11 @@ const Sep = () => (
 const SearchModal = ({
   isOpen,
   onClose,
+  isScrolled = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  isScrolled?: boolean;
 }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
@@ -382,18 +384,24 @@ const SearchModal = ({
             onClick={handleClose}
           />
 
-          {/* Panel perfect aliniat sub Navbar (position: absolute) */}
+          {/* Panel — "contopit" cu Navbar: la top arată ca o continuare directă,
+              la scroll devine o capsulă atașată sub pill-ul flotant */}
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -5, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[200] top-full left-0 mt-3 sm:mt-5 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.2)] rounded-[1.5rem] border border-zinc-100 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left"
+            initial={{ opacity: 0, y: -8, scaleY: 0.96 }}
+            animate={{ opacity: 1, y: 0, scaleY: 1 }}
+            exit={{ opacity: 0, y: -6, scaleY: 0.97 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className={`absolute z-[200] left-0 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl border border-zinc-100/80 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left ${
+              isScrolled
+                ? "top-[calc(100%+0.625rem)] rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.22)]"
+                : "top-[calc(100%+0.5rem)] rounded-t-[0.5rem] rounded-b-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.18)] border-t-0"
+            }`}
             style={{
               maxHeight: "min(75vh, calc(100vh - 8rem))",
             }}
           >
+
             {/* Cap gradient decorativ */}
             <div
               className="h-1 w-full shrink-0"
@@ -703,7 +711,8 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["20px 32px", "8px 24px"]);
+  const navPadding = useTransform(scrollY, [0, 60], ["22px 56px", "8px 24px"]);
+  const navGap = useTransform(scrollY, [0, 60], ["48px", "16px"]);
 
   // Efectele de sticlă
   const navBg = useTransform(
@@ -798,6 +807,7 @@ const Navbar = () => {
             border: navBorder,
             backdropFilter: navBackdrop,
             padding: navPadding,
+            gap: navGap,
           }}
           className="relative flex items-center justify-between pointer-events-auto transform-gpu transition-all"
         >
@@ -824,6 +834,7 @@ const Navbar = () => {
             <SearchModal
               isOpen={searchOpen}
               onClose={() => setSearchOpen(false)}
+              isScrolled={isScrolled}
             />
           </div>
 
