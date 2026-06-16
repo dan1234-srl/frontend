@@ -384,23 +384,23 @@ const SearchModal = ({
             onClick={handleClose}
           />
 
-          {/* Panel — "contopit" cu Navbar: la top arată ca o continuare directă,
-              la scroll devine o capsulă atașată sub pill-ul flotant */}
+          {/* Panel — se întinde pe toată lățimea navbar-ului și mulează forma acestuia (full-bleed la top, capsulă la scroll) */}
           <motion.div
             key="panel"
-            initial={{ opacity: 0, y: -8, scaleY: 0.96 }}
+            initial={{ opacity: 0, y: -10, scaleY: 0.94 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
-            exit={{ opacity: 0, y: -6, scaleY: 0.97 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className={`absolute z-[200] left-0 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl border border-zinc-100/80 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left ${
+            exit={{ opacity: 0, y: -8, scaleY: 0.96 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className={`absolute z-[200] flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl border border-zinc-100/80 overflow-hidden pointer-events-auto origin-top ${
               isScrolled
-                ? "top-[calc(100%+0.625rem)] rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.22)]"
-                : "top-[calc(100%+0.5rem)] rounded-t-[0.5rem] rounded-b-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.18)] border-t-0"
+                ? "left-0 right-0 top-[calc(100%+0.5rem)] rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.22)]"
+                : "left-0 right-0 top-full mt-0 rounded-t-none rounded-b-[2rem] shadow-[0_40px_70px_-20px_rgba(123,44,191,0.18)] border-t-0"
             }`}
             style={{
               maxHeight: "min(75vh, calc(100vh - 8rem))",
             }}
           >
+
 
             {/* Cap gradient decorativ */}
             <div
