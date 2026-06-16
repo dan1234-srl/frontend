@@ -257,9 +257,11 @@ const Sep = () => (
 const SearchModal = ({
   isOpen,
   onClose,
+  isScrolled = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  isScrolled?: boolean;
 }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
