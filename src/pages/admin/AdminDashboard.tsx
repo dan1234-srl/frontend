@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Zap,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
