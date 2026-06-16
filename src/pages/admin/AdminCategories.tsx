@@ -621,15 +621,27 @@ const AdminCategories = () => {
           }}
         >
           <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            className="p-2.5 bg-white border rounded-xl hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
+            key={p}
+            onClick={() => setCurrentPage(p)}
+            className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
+              currentPage === p
+                ? "text-white border-transparent" // Text alb când e selectat
+                : "bg-white hover:bg-zinc-50"
+            }`}
             style={{
+              // Dacă pagina e activă, folosim gradientul, altfel fundal alb
+              background:
+                currentPage === p ? "var(--primary-gradient)" : undefined,
+              // Bordura apare doar pentru paginile inactive
               borderColor:
-                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                currentPage !== p
+                  ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
+                  : undefined,
+              // Culoarea textului pentru paginile inactive
+              color: currentPage !== p ? "var(--dark-amethyst)" : undefined,
             }}
           >
-            <ChevronLeft size={14} style={{ color: "var(--royal-violet)" }} />
+            {p}
           </button>
 
           <div className="hidden sm:flex gap-1.5">
