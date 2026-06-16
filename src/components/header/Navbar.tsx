@@ -45,7 +45,7 @@ import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 import { FilterSidebar } from "../shop/FilterSidebar";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cache simplu in-memory per query
+// CACHE IN-MEMORY
 // ─────────────────────────────────────────────────────────────────────────────
 const queryCache = new Map<string, any[]>();
 const QUERY_CACHE_LIMIT = 50;
@@ -181,6 +181,7 @@ const HitRow = memo(
           {!imgLoaded && (
             <div className="absolute inset-0 bg-zinc-100 animate-pulse" />
           )}
+
           {isOnSale && (
             <div
               className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full shadow-sm"
@@ -222,6 +223,7 @@ const HitRow = memo(
               {hit.price ? `${Number(hit.price).toLocaleString()} RON` : "—"}
             </p>
           </div>
+
           <motion.div
             animate={{ opacity: hovered ? 1 : 0, x: hovered ? 0 : -5 }}
             transition={{ duration: 0.15 }}
@@ -364,6 +366,7 @@ const SearchModal = ({
 
   const isCurrentlySearching =
     isFetching || isPending || inputValue !== searchQuery;
+
   const showEmptyState =
     initialSearchDone && !isCurrentlySearching && hits.length === 0;
   const showInitialState = !initialSearchDone && !isCurrentlySearching;
@@ -384,8 +387,8 @@ const SearchModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[180] bg-zinc-950/20 pointer-events-auto"
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[180] bg-zinc-950/20 backdrop-blur-sm pointer-events-auto"
             onClick={handleClose}
           />
 
@@ -766,6 +769,7 @@ const FilterDrawer = () => {
                 <button
                   onClick={() => onReset?.()}
                   className="h-12 w-14 flex items-center justify-center gap-2 rounded-xl border border-zinc-200/80 bg-zinc-50/50 text-zinc-500 hover:text-zinc-900 hover:bg-white hover:border-zinc-300 transition-all shadow-sm active:scale-95"
+                  title="Resetează"
                 >
                   <RotateCcw size={16} strokeWidth={2} />
                 </button>
@@ -807,6 +811,7 @@ const Navbar = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -859,7 +864,7 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["8px 12px", "4px 16px"]);
+  const navPadding = useTransform(scrollY, [0, 60], ["12px 16px", "8px 20px"]);
 
   const navBg = useTransform(
     scrollY,
@@ -906,7 +911,7 @@ const Navbar = () => {
   };
 
   const navButtonClass =
-    "relative flex items-center justify-center size-8 sm:size-10 lg:size-11 rounded-full text-zinc-500 transition-colors duration-300 hover:text-[var(--royal-violet)] before:absolute before:inset-0 before:rounded-full before:bg-[var(--royal-violet)] before:opacity-0 hover:before:opacity-10 before:scale-50 hover:before:scale-100 before:transition-all before:duration-300 before:ease-out";
+    "relative flex items-center justify-center size-9 sm:size-10 lg:size-11 rounded-full text-zinc-500 transition-colors duration-300 hover:text-[var(--royal-violet)] before:absolute before:inset-0 before:rounded-full before:bg-[var(--royal-violet)] before:opacity-0 hover:before:opacity-10 before:scale-50 hover:before:scale-100 before:transition-all before:duration-300 before:ease-out shrink-0";
 
   return (
     <>
@@ -918,18 +923,13 @@ const Navbar = () => {
           className="w-full flex items-center justify-center overflow-hidden pointer-events-auto relative shadow-sm"
           style={{ background: "var(--primary-gradient)" }}
         >
-          <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20" />
-          <motion.div
-            animate={{ opacity: [0.7, 1, 0.7] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="flex items-center gap-2 relative z-10 px-4"
-          >
-            <Sparkles size={11} className="text-white/80" />
+          <div className="flex items-center gap-2.5 relative z-10 px-4">
+            <Sparkles size={11} className="text-white animate-pulse" />
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white drop-shadow-sm whitespace-nowrap">
               Standardul Evem <span className="opacity-40 mx-2">•</span>{" "}
               Eleganță & Performanță
             </p>
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* ── NAV CONTAINER ── */}
@@ -983,7 +983,7 @@ const Navbar = () => {
             </div>
 
             {/* RIGHT — ACTIONS */}
-            <div className="flex flex-1 items-center justify-end gap-1 sm:gap-1.5">
+            <div className="flex flex-1 items-center justify-end gap-0 sm:gap-1.5">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setWishOpen(true)}
@@ -1133,7 +1133,7 @@ const Navbar = () => {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setBagOpen(true)}
                 aria-label="Coș de cumpărături"
-                className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-0.5 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110"
+                className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-0.5 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
                 style={{ background: "var(--primary-gradient)" }}
               >
                 <BagIcon
