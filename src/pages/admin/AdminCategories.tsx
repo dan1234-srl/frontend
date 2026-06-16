@@ -1,14 +1,12 @@
 /**
  * AdminCategories.tsx
- * Pagina de administrare categorii - Design Futuristic (Isomorphic UI)
+ * Pagina de administrare categorii - Design Futuristic (Bento Cards & Glassmorphism)
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Plus,
-  ChevronDown,
-  ChevronRight,
   Edit2,
   Trash2,
   Layers,
@@ -17,13 +15,14 @@ import {
   X,
   Image as ImageIcon,
   Eye,
-  MoveRight,
   ShieldCheck,
   ChevronLeft,
+  ChevronRight,
   UploadCloud,
   Sparkles,
   EyeOff,
   Save,
+  FolderTree,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -88,6 +87,7 @@ const OptimizedImage = ({
         onError={() => setError(true)}
         className={`${className} w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
         alt=""
+        crossOrigin="anonymous"
       />
     </div>
   );
@@ -100,7 +100,6 @@ interface Category {
   image_url: string | null;
   parent_id: string | null;
   is_active: boolean;
-  product_count?: number;
   subcategories: Category[];
 }
 
@@ -113,10 +112,9 @@ const AdminCategories = () => {
   const [loading, setLoading] = useState(!cachedCats.data);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [expanded, setExpanded] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 8; // Adjust for cards layout
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -330,7 +328,7 @@ const AdminCategories = () => {
                 color: "color-mix(in srgb, var(--royal-violet) 80%, black)",
               }}
             >
-              Arhitectură
+              Arhitectură Catalog
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)] leading-none">
@@ -359,7 +357,7 @@ const AdminCategories = () => {
                 boxShadow:
                   "0 4px 20px -10px color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
-              placeholder="Filtrează ierarhia..."
+              placeholder="Caută în ierarhie..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={(e) =>
@@ -376,365 +374,244 @@ const AdminCategories = () => {
             className="text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl whitespace-nowrap"
             style={{ background: "var(--primary-gradient)" }}
           >
-            <Plus size={14} strokeWidth={2.5} /> Adaugă Colecție
+            <Plus size={14} strokeWidth={2.5} /> Adaugă Colecție (Nod)
           </button>
         </div>
       </header>
 
-      {/* ── Listă Categorii (Futuristic Data Grid) ──────────────────────────── */}
-      <div
-        className="bg-white rounded-3xl border shadow-xl shadow-black/[0.02] overflow-hidden relative z-10 min-h-[400px]"
-        style={{
-          borderColor:
-            "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-        }}
-      >
-        {/* Header Listă */}
-        <div
-          className="hidden md:grid grid-cols-12 bg-zinc-50/80 backdrop-blur-md border-b text-[9px] uppercase tracking-[0.25em] font-black px-8 py-4"
-          style={{
-            borderColor:
-              "color-mix(in srgb, var(--royal-violet) 8%, transparent)",
-            color: "color-mix(in srgb, var(--royal-violet) 60%, gray)",
-          }}
-        >
-          <div className="col-span-7 pl-4">Denumire & Ierarhie</div>
-          <div className="col-span-2 text-center">Produse (Count)</div>
-          <div className="col-span-3 text-right pr-4">Management</div>
-        </div>
-
-        <div
-          className="divide-y"
-          style={{
-            divideColor:
-              "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-          }}
-        >
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div
-                key="skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="px-8 py-4 flex items-center gap-6 border-b last:border-none"
-                    style={{
-                      borderColor:
-                        "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                    }}
-                  >
-                    <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
-                    <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-2 w-24" />
-                    </div>
-                    <Skeleton className="h-8 w-24 rounded-lg ml-auto" />
-                  </div>
-                ))}
-              </motion.div>
-            ) : paginatedCats.length === 0 ? (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="py-32 flex flex-col items-center gap-3"
-              >
-                <Layers
-                  size={40}
-                  strokeWidth={1}
+      {/* ── BENTO GRID CATEGORII ──────────────────────────────────────────── */}
+      <div className="min-h-[500px]">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+            >
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-[2rem] border p-6 flex flex-col gap-4 shadow-sm"
                   style={{
-                    color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
-                  }}
-                />
-                <span
-                  className="text-[10px] font-black uppercase tracking-widest"
-                  style={{
-                    color: "color-mix(in srgb, var(--royal-violet) 40%, gray)",
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
                   }}
                 >
-                  Nicio colecție găsită
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="data"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                  <div className="flex items-center gap-4 w-full">
+                    <Skeleton className="h-16 w-16 rounded-2xl shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-10 w-full mt-2 rounded-xl" />
+                </div>
+              ))}
+            </motion.div>
+          ) : paginatedCats.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-32 flex flex-col items-center gap-3 bg-white/50 rounded-[3rem] border border-dashed"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
+              }}
+            >
+              <FolderTree
+                size={40}
+                strokeWidth={1}
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 30%, gray)",
+                }}
+              />
+              <span
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{
+                  color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                }}
               >
-                {paginatedCats.map((cat) => (
-                  <div key={cat.id} className="group relative transition-all">
-                    {/* Gradient Fill pe hover (Root Category) */}
-                    <div
-                      className="absolute inset-1.5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
-                      style={{
-                        background:
-                          "linear-gradient(100deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
-                      }}
-                    />
+                Nicio colecție găsită
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="data"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
+            >
+              {paginatedCats.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="group relative bg-white border rounded-[2rem] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden flex flex-col shadow-sm"
+                  style={{
+                    borderColor:
+                      "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
+                  }}
+                >
+                  {/* Background Hover Gradient */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, color-mix(in srgb, var(--royal-violet) 3%, transparent) 0%, color-mix(in srgb, var(--mauve-magic) 1.5%, transparent) 100%)",
+                    }}
+                  />
 
+                  {/* Conținut Card: Top */}
+                  <div className="p-6 relative z-10 flex flex-col h-full">
+                    <div className="flex justify-between items-start mb-4">
+                      {/* Imagine Categorie */}
+                      <OptimizedImage
+                        src={cat.image_url}
+                        className="w-20 h-20 rounded-2xl border shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105 bg-white"
+                      />
+                      {/* Status */}
+                      <span
+                        className="px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border shadow-sm whitespace-nowrap"
+                        style={{
+                          backgroundColor: cat.is_active
+                            ? "color-mix(in srgb, #10b981 5%, transparent)"
+                            : "color-mix(in srgb, gray 5%, transparent)",
+                          color: cat.is_active ? "#10b981" : "gray",
+                          borderColor: cat.is_active
+                            ? "color-mix(in srgb, #10b981 20%, transparent)"
+                            : "color-mix(in srgb, gray 20%, transparent)",
+                        }}
+                      >
+                        {cat.is_active ? "Activ" : "Ascuns"}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col min-w-0 mb-4">
+                      <h3 className="text-lg font-bold text-[var(--dark-amethyst)] uppercase tracking-tight truncate w-full group-hover:text-[var(--royal-violet)] transition-colors">
+                        {cat.name}
+                      </h3>
+                      <p
+                        className="text-[10px] font-bold lowercase tracking-widest mt-1 truncate"
+                        style={{
+                          color:
+                            "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+                        }}
+                      >
+                        /{cat.slug}
+                      </p>
+                    </div>
+
+                    {/* Zona de Subcategorii (Chips) */}
                     <div
-                      className="flex flex-col md:grid md:grid-cols-12 items-start md:items-center px-4 md:px-8 py-3.5 gap-4 md:gap-0 relative z-10 border-b last:border-none"
+                      className="mt-auto space-y-2 pt-4 border-t"
                       style={{
                         borderColor:
-                          "color-mix(in srgb, var(--royal-violet) 5%, transparent)",
+                          "color-mix(in srgb, var(--royal-violet) 6%, transparent)",
                       }}
                     >
-                      <div className="col-span-7 flex items-center gap-4 w-full pl-2">
-                        {/* Expand Button */}
-                        <button
-                          onClick={() =>
-                            setExpanded((prev) =>
-                              prev.includes(cat.id)
-                                ? prev.filter((i) => i !== cat.id)
-                                : [...prev, cat.id],
-                            )
-                          }
-                          className={`size-8 rounded-lg flex items-center justify-center transition-all shrink-0 border shadow-sm ${expanded.includes(cat.id) ? "text-white" : "bg-white"}`}
-                          style={{
-                            backgroundColor: expanded.includes(cat.id)
-                              ? "var(--dark-amethyst)"
-                              : "transparent",
-                            borderColor: expanded.includes(cat.id)
-                              ? "transparent"
-                              : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                            color: expanded.includes(cat.id)
-                              ? "white"
-                              : "var(--royal-violet)",
-                          }}
-                        >
-                          {expanded.includes(cat.id) ? (
-                            <ChevronDown size={14} />
-                          ) : (
-                            <ChevronRight size={14} />
-                          )}
-                        </button>
-
-                        {/* Image */}
-                        <OptimizedImage
-                          src={cat.image_url}
-                          className="w-12 h-12 rounded-xl border shadow-sm shrink-0 transition-transform duration-500 group-hover:scale-105 bg-white"
-                        />
-
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[13px] font-bold text-[var(--dark-amethyst)] tracking-tight truncate uppercase group-hover:text-[var(--royal-violet)] transition-colors">
-                            {cat.name}
-                          </span>
+                      <p
+                        className="text-[8px] font-black uppercase tracking-[0.3em] flex items-center gap-1.5"
+                        style={{ color: "var(--dark-amethyst)" }}
+                      >
+                        <Layers
+                          size={10}
+                          style={{ color: "var(--royal-violet)" }}
+                        />{" "}
+                        Ierarhie: {cat.subcategories?.length || 0} Sub-Noduri
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cat.subcategories?.slice(0, 3).map((sub) => (
                           <span
-                            className="text-[9px] font-semibold lowercase tracking-widest truncate mt-0.5"
+                            key={sub.id}
+                            className="text-[9px] font-bold px-2.5 py-1 bg-white border rounded-lg shadow-sm truncate max-w-[120px]"
                             style={{
                               color:
-                                "color-mix(in srgb, var(--royal-violet) 50%, gray)",
-                            }}
-                          >
-                            /{cat.slug}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Produse Count */}
-                      <div className="col-span-2 text-center hidden md:block">
-                        <span
-                          className="text-[10px] font-bold tabular-nums px-3 py-1.5 rounded-lg border bg-white/50"
-                          style={{
-                            color: "var(--dark-amethyst)",
-                            borderColor:
-                              "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
-                          }}
-                        >
-                          {cat.product_count || 0} Articole
-                        </span>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="col-span-3 flex justify-between md:justify-end gap-1.5 w-full md:w-auto pr-2">
-                        {/* Status mobile */}
-                        <div className="md:hidden flex items-center">
-                          <span
-                            className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border"
-                            style={{
-                              backgroundColor: cat.is_active
-                                ? "color-mix(in srgb, #10b981 5%, transparent)"
-                                : "color-mix(in srgb, gray 5%, transparent)",
-                              color: cat.is_active ? "#10b981" : "gray",
-                              borderColor: cat.is_active
-                                ? "color-mix(in srgb, #10b981 20%, transparent)"
-                                : "color-mix(in srgb, gray 20%, transparent)",
-                            }}
-                          >
-                            {cat.is_active ? "Activ" : "Inactiv"}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-0 lg:translate-x-2 lg:group-hover:translate-x-0">
-                          <button
-                            onClick={() => toggleVisibility(cat)}
-                            title={cat.is_active ? "Dezactivează" : "Activează"}
-                            className={`p-2 rounded-lg border transition-all shadow-sm ${cat.is_active ? "text-emerald-500 bg-emerald-50/50 hover:bg-emerald-100" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
-                            style={{
-                              borderColor: cat.is_active
-                                ? "color-mix(in srgb, #10b981 20%, transparent)"
-                                : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                            }}
-                          >
-                            {cat.is_active ? (
-                              <Eye size={14} />
-                            ) : (
-                              <EyeOff size={14} />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => openEdit(cat)}
-                            title="Editează"
-                            className="p-2 bg-white border rounded-lg hover:bg-[var(--royal-violet)] hover:text-white text-[var(--dark-amethyst)] transition-colors shadow-sm"
-                            style={{
+                                "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                               borderColor:
                                 "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                             }}
                           >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(cat.id)}
-                            title="Șterge"
-                            className="p-2 bg-white border rounded-lg text-rose-400 hover:bg-rose-500 hover:text-white transition-colors shadow-sm"
+                            {sub.name}
+                          </span>
+                        ))}
+                        {cat.subcategories?.length > 3 && (
+                          <span
+                            className="text-[9px] font-bold px-2 py-1 bg-zinc-50 border rounded-lg shadow-sm"
                             style={{
+                              color: "var(--dark-amethyst)",
                               borderColor:
-                                "color-mix(in srgb, #f43f5e 20%, transparent)",
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                             }}
                           >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                            +{cat.subcategories.length - 3}
+                          </span>
+                        )}
                       </div>
                     </div>
-
-                    {/* SUBCATEGORII (Animated & Nested) */}
-                    <AnimatePresence>
-                      {expanded.includes(cat.id) && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="bg-zinc-50/30 border-l-[3px] ml-[2.2rem] mr-4 mb-2 overflow-hidden relative z-10 rounded-br-2xl"
-                          style={{
-                            borderLeftColor: "var(--royal-violet)",
-                            borderBottom:
-                              "1px solid color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                            borderRight:
-                              "1px solid color-mix(in srgb, var(--royal-violet) 5%, transparent)",
-                          }}
-                        >
-                          {cat.subcategories?.length > 0 ? (
-                            cat.subcategories.map((sub) => (
-                              <div
-                                key={sub.id}
-                                className="flex flex-col md:grid md:grid-cols-12 items-center px-4 md:px-8 py-3.5 border-b last:border-0 hover:bg-white/60 transition-colors group/sub"
-                                style={{
-                                  borderColor:
-                                    "color-mix(in srgb, var(--royal-violet) 4%, transparent)",
-                                }}
-                              >
-                                <div className="col-span-7 flex items-center gap-4 w-full">
-                                  <MoveRight
-                                    size={14}
-                                    style={{
-                                      color:
-                                        "color-mix(in srgb, var(--royal-violet) 30%, gray)",
-                                    }}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span className="text-[12px] font-bold text-[var(--dark-amethyst)] tracking-tight uppercase">
-                                      {sub.name}
-                                    </span>
-                                    <span
-                                      className="text-[9px] font-medium lowercase tracking-widest mt-0.5"
-                                      style={{
-                                        color:
-                                          "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                                      }}
-                                    >
-                                      /{cat.slug}/{sub.slug}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div
-                                  className="col-span-2 text-center text-[10px] font-black tabular-nums hidden md:block"
-                                  style={{ color: "var(--royal-violet)" }}
-                                >
-                                  {sub.product_count || 0} ARTICOLE
-                                </div>
-                                <div className="col-span-3 flex justify-end gap-1.5 w-full md:w-auto mt-2 md:mt-0 opacity-100 lg:opacity-0 group-hover/sub:opacity-100 transition-all pr-2">
-                                  <button
-                                    onClick={() => toggleVisibility(sub)}
-                                    className={`p-1.5 rounded-lg border transition-all shadow-sm ${sub.is_active ? "text-emerald-500 bg-emerald-50/50 hover:bg-emerald-100" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
-                                    style={{
-                                      borderColor: sub.is_active
-                                        ? "color-mix(in srgb, #10b981 20%, transparent)"
-                                        : "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                                    }}
-                                  >
-                                    {sub.is_active ? (
-                                      <Eye size={12} />
-                                    ) : (
-                                      <EyeOff size={12} />
-                                    )}
-                                  </button>
-                                  <button
-                                    onClick={() => openEdit(sub)}
-                                    className="p-1.5 rounded-lg bg-white border hover:bg-[var(--royal-violet)] hover:text-white text-[var(--dark-amethyst)] transition-colors shadow-sm"
-                                    style={{
-                                      borderColor:
-                                        "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
-                                    }}
-                                  >
-                                    <Edit2 size={12} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(sub.id)}
-                                    className="p-1.5 rounded-lg bg-white border text-rose-400 hover:bg-rose-500 hover:text-white transition-colors shadow-sm"
-                                    style={{
-                                      borderColor:
-                                        "color-mix(in srgb, #f43f5e 20%, transparent)",
-                                    }}
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div
-                              className="px-8 py-5 text-[9px] font-bold uppercase tracking-widest flex items-center gap-2"
-                              style={{
-                                color:
-                                  "color-mix(in srgb, var(--royal-violet) 40%, gray)",
-                              }}
-                            >
-                              <ShieldCheck size={14} /> Nicio sub-colecție
-                              înregistrată
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+
+                  {/* Actions Footer */}
+                  <div
+                    className="px-5 py-3 border-t flex justify-end items-center relative z-10 bg-zinc-50/50 group-hover:bg-white/50 transition-colors mt-auto gap-2"
+                    style={{
+                      borderColor:
+                        "color-mix(in srgb, var(--royal-violet) 6%, transparent)",
+                    }}
+                  >
+                    <div className="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => toggleVisibility(cat)}
+                        title={cat.is_active ? "Ascunde" : "Publică"}
+                        className={`p-2 rounded-xl border transition-all shadow-sm ${cat.is_active ? "text-emerald-500 bg-emerald-50/50 hover:bg-emerald-100 border-emerald-200" : "text-zinc-400 bg-white hover:bg-zinc-50"}`}
+                        style={{
+                          borderColor: !cat.is_active
+                            ? "color-mix(in srgb, var(--royal-violet) 15%, transparent)"
+                            : undefined,
+                        }}
+                      >
+                        {cat.is_active ? (
+                          <Eye size={13} />
+                        ) : (
+                          <EyeOff size={13} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => openEdit(cat)}
+                        className="p-2 bg-white rounded-xl border hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)] shadow-sm"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                        }}
+                        title="Editează Node"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cat.id)}
+                        className="p-2 bg-white rounded-xl border hover:bg-rose-500 hover:text-white transition-colors text-rose-400 shadow-sm"
+                        style={{
+                          borderColor:
+                            "color-mix(in srgb, #f43f5e 20%, transparent)",
+                        }}
+                        title="Șterge Arbore"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* PAGINATION */}
+      {/* ── PAGINATION ─────────────────────────────────────── */}
       {!loading && totalPages > 1 && (
         <div
           className="p-4 border border-white rounded-2xl flex justify-center items-center gap-4 shrink-0 bg-white/50 backdrop-blur-md shadow-sm mt-6"
@@ -814,18 +691,17 @@ const AdminCategories = () => {
         onOpenChange={setIsModalOpen}
         size="md"
         mobileVariant="modal"
-        className="sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[2rem] border shadow-2xl"
+        className="sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[2.5rem] border shadow-2xl bg-[#FBFBFD]"
         style={{
-          background: "color-mix(in srgb, var(--surface-bg) 95%, white)",
           borderColor:
-            "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+            "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
         }}
       >
         <AdminDialogTitle className="sr-only">
           Configurare Colecție
         </AdminDialogTitle>
         <header
-          className="px-6 sm:px-8 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
+          className="px-6 sm:px-10 py-5 sm:py-6 bg-white/70 backdrop-blur-xl border-b shrink-0 sticky top-0 z-20 flex justify-between items-center"
           style={{
             borderColor:
               "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -847,20 +723,20 @@ const AdminCategories = () => {
           </div>
           <button
             onClick={() => setIsModalOpen(false)}
-            className="size-9 bg-white border rounded-full flex items-center justify-center hover:bg-rose-50 text-zinc-400 hover:text-rose-500 transition-all shadow-sm"
+            className="size-10 bg-white border hover:bg-rose-50 text-zinc-400 hover:text-rose-600 rounded-full flex items-center justify-center transition-all shadow-sm shrink-0"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
             }}
           >
-            <X size={14} strokeWidth={2.5} />
+            <X size={15} strokeWidth={2.5} />
           </button>
         </header>
 
-        <div className="flex-1 p-6 sm:p-8 space-y-8 overflow-y-auto luxury-scrollbar relative z-10 bg-white/50">
+        <div className="flex-1 p-6 sm:p-10 space-y-8 overflow-y-auto luxury-scrollbar relative z-10 bg-white/50">
           {/* Identificatori */}
           <div
-            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-6"
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[2rem] border shadow-sm space-y-6"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -946,7 +822,7 @@ const AdminCategories = () => {
                 Părinte Ierarhic (Opțional)
               </Label>
               <select
-                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-bold outline-none appearance-none cursor-pointer transition-all"
+                className="w-full bg-white/50 backdrop-blur-sm rounded-xl p-4 text-xs font-bold outline-none appearance-none cursor-pointer transition-all uppercase tracking-widest truncate pr-8"
                 style={{
                   color: "var(--dark-amethyst)",
                   boxShadow:
@@ -984,7 +860,7 @@ const AdminCategories = () => {
 
           {/* Media */}
           <div
-            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[1.5rem] border shadow-sm space-y-4"
+            className="bg-white/80 backdrop-blur-md p-6 sm:p-8 rounded-[2rem] border shadow-sm space-y-4"
             style={{
               borderColor:
                 "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
@@ -1005,9 +881,8 @@ const AdminCategories = () => {
               />
               <div className="flex-1 flex flex-col gap-3 w-full">
                 <input
-                  className="w-full bg-white/50 rounded-xl p-3 text-xs font-mono font-medium outline-none transition-all"
+                  className="w-full bg-white/50 rounded-xl p-3 text-xs font-mono font-medium outline-none transition-all text-[var(--dark-amethyst)]"
                   style={{
-                    color: "var(--dark-amethyst)",
                     boxShadow:
                       "inset 0 2px 4px 0 rgba(0,0,0,0.02), 0 0 0 1px color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                   }}
@@ -1067,12 +942,23 @@ const AdminCategories = () => {
         </div>
 
         <footer
-          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20 rounded-b-[2rem]"
+          className="p-5 sm:p-6 bg-white/90 backdrop-blur-xl border-t shrink-0 flex justify-end gap-3 sticky bottom-0 z-20 rounded-b-[2.5rem]"
           style={{
             borderColor:
               "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
           }}
         >
+          <div className="hidden sm:flex items-center gap-2.5 mr-auto">
+            <ShieldCheck size={16} style={{ color: "var(--royal-violet)" }} />
+            <p
+              className="text-[8px] font-black uppercase tracking-[0.4em]"
+              style={{
+                color: "color-mix(in srgb, var(--royal-violet) 50%, gray)",
+              }}
+            >
+              Sincronizare API Gate
+            </p>
+          </div>
           <button
             onClick={() => setIsModalOpen(false)}
             className="px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white border hover:bg-zinc-50 transition-all"
@@ -1106,6 +992,8 @@ const AdminCategories = () => {
         .luxury-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .luxury-scrollbar::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--royal-violet) 40%, transparent); border-radius: 10px; }
         .luxury-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--royal-violet); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `,
         }}
       />
