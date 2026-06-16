@@ -86,11 +86,10 @@ const SidebarContent = memo(({ isSidebarOpen, mobile, navigate }: any) => {
   return (
     <div className="flex flex-col h-full py-4 bg-zinc-50/30">
       <div className="h-16 flex items-center shrink-0 px-6 mb-4">
-        <img src="/LINEA-1.svg" className="h-3 brightness-0" alt="Evem" />
         {(isSidebarOpen || mobile) && (
           <div className="ml-3 border-l border-zinc-200 pl-3">
             <p className="text-[8px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)]">
-              Atelier Suite
+              EVEM Dashboard
             </p>
           </div>
         )}
