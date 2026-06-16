@@ -1019,7 +1019,6 @@ const Navbar = () => {
       <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
 
       {/* FILTER DRAWER */}
-      <FilterDrawer />
 
       <Login
         isOpen={loginOpen}
