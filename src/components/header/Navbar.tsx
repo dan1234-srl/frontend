@@ -834,6 +834,7 @@ const Navbar = () => {
             <SearchModal
               isOpen={searchOpen}
               onClose={() => setSearchOpen(false)}
+              isScrolled={isScrolled}
             />
           </div>
 
