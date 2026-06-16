@@ -21,7 +21,7 @@ import {
   motion,
   AnimatePresence,
   useScroll,
-  useTransform,
+  useMotionValueEvent,
 } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -77,7 +77,7 @@ const FilterDrawer = () => {
             />
           </motion.div>
 
-          {/* Panoul principal - Rotunjit și detașat */}
+          {/* Panoul principal */}
           <motion.div
             key="filter-panel"
             initial={{ x: "100%", opacity: 0.5 }}
@@ -136,7 +136,7 @@ const FilterDrawer = () => {
               )}
             </div>
 
-            {/* Footer flotant (Glass pill inside the drawer) */}
+            {/* Footer flotant */}
             <div className="absolute bottom-6 left-6 right-6 shrink-0 p-2 bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)]">
               <div className="flex items-center gap-2">
                 <button
@@ -170,7 +170,7 @@ const FilterDrawer = () => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   NAVBAR PRINCIPAL (Floating Pill Concept)
+   NAVBAR PRINCIPAL (Seamless Glass Concept)
 ───────────────────────────────────────────────────────────── */
 const Navbar = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -184,6 +184,7 @@ const Navbar = () => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const openCart = () => setBagOpen(true);
@@ -194,38 +195,10 @@ const Navbar = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
 
-  // Framer Motion transforms for the "Floating Pill" effect
-  const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
-  const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
-  const navPadding = useTransform(
-    scrollY,
-    [0, 60],
-    ["1.25rem", "0.75rem 1.5rem"],
-  );
-  const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navBg = useTransform(
-    scrollY,
-    [0, 60],
-    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.75)"],
-  );
-  const navBorder = useTransform(
-    scrollY,
-    [0, 60],
-    ["1px solid rgba(255,255,255,0)", "1px solid rgba(255,255,255,0.8)"],
-  );
-  const navShadow = useTransform(
-    scrollY,
-    [0, 60],
-    [
-      "0 1px 2px 0 rgba(0,0,0,0.02)",
-      "0 20px 40px -15px rgba(0,0,0,0.1), 0 0 0 1px rgba(123,44,191,0.05)",
-    ],
-  );
-  const navBackdrop = useTransform(
-    scrollY,
-    [0, 60],
-    ["blur(0px)", "blur(20px)"],
-  );
+  // Detectăm scroll-ul pentru a activa starea "Seamless Glass"
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setIsScrolled(latest > 30);
+  });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -247,117 +220,113 @@ const Navbar = () => {
     navigate("/");
   };
 
-  const navButtonClass =
-    "flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-full text-zinc-600 bg-transparent hover:bg-white hover:text-[var(--royal-violet)] hover:shadow-md border border-transparent hover:border-[var(--royal-violet)]/10 transition-all duration-300";
+  // Clase unificate pentru butoanele de navigare (Fără background-uri inestetice)
+  const navBtnClass =
+    "relative flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-full text-zinc-600 bg-transparent hover:text-[var(--royal-violet)] transition-colors duration-300 before:absolute before:inset-0 before:rounded-full before:bg-zinc-100 before:scale-0 hover:before:scale-100 before:transition-transform before:duration-300 before:ease-out";
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col w-full pointer-events-none">
-        {/* TOP BAR — PROMO (Ultra subțire și minimalist) */}
-        <div
-          className="z-30 flex h-8 w-full items-center justify-center px-4 text-center text-white shrink-0 shadow-sm pointer-events-auto relative overflow-hidden"
+      <header className="fixed top-0 inset-x-0 z-[200] flex flex-col pointer-events-none">
+        {/* TOP BAR — PROMO (Se pliază la scroll) */}
+        <motion.div
+          animate={{
+            height: isScrolled ? 0 : 32,
+            opacity: isScrolled ? 0 : 1,
+          }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="w-full flex items-center justify-center px-4 text-center text-white overflow-hidden pointer-events-auto shadow-sm"
           style={{ background: "var(--primary-gradient)" }}
         >
-          {/* Glass glare effect */}
-          <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20" />
-          <motion.div
-            animate={{ opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="flex items-center gap-2 relative z-10"
-          >
+          <div className="flex items-center gap-2">
             <Sparkles size={11} className="text-white/80" />
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] drop-shadow-sm">
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] drop-shadow-sm whitespace-nowrap">
               Standardul Evem • Eleganță & Performanță
             </p>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
-        {/* NAV CONTAINER */}
-        <div className="w-full flex justify-center px-4 sm:px-6 pointer-events-auto">
+        {/* NAV CONTAINER (Seamless Glass Transformation) */}
+        <div className="w-full pointer-events-auto">
           <motion.nav
-            style={{
-              maxWidth: navMaxWidth,
-              marginTop: navMarginTop,
-              borderRadius: navBorderRadius,
-              backgroundColor: navBg,
-              boxShadow: navShadow,
-              border: navBorder,
-              backdropFilter: navBackdrop,
-              padding: navPadding,
-            }}
-            className="relative flex w-full items-center justify-between transform-gpu transition-all"
+            layout
+            className={`w-full flex items-center justify-between px-4 sm:px-8 lg:px-12 transition-all duration-400 ease-out ${
+              isScrolled
+                ? "h-16 bg-white/70 backdrop-blur-2xl border-b border-zinc-200/50 shadow-[0_4px_30px_-10px_rgba(0,0,0,0.08)]"
+                : "h-20 bg-white border-b border-transparent"
+            }`}
           >
             {/* LEFT — SEARCH */}
             <div className="flex flex-1 items-center justify-start">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => setSearchOpen(true)}
                 aria-label="Caută"
                 aria-hidden={searchOpen}
                 tabIndex={searchOpen ? -1 : 0}
-                animate={{
+                style={{
                   opacity: searchOpen ? 0 : 1,
-                  scale: searchOpen ? 0.85 : 1,
+                  pointerEvents: searchOpen ? "none" : "auto",
                 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                style={{ pointerEvents: searchOpen ? "none" : "auto" }}
-                className={`${navButtonClass} bg-zinc-100/50`}
+                className={navBtnClass}
               >
-                <Search size={18} strokeWidth={2} />
-              </motion.button>
+                <Search
+                  size={18}
+                  strokeWidth={1.75}
+                  className="relative z-10"
+                />
+              </button>
             </div>
 
             {/* CENTER — LOGO */}
             <div className="flex-shrink-0 flex items-center justify-center px-4">
-              <Link to="/" className="group relative">
+              <Link to="/" className="group relative block">
                 <motion.img
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                   src="/Copilot_20260512_191942.png"
                   alt="Evem Luxury"
-                  className="h-6 sm:h-7 lg:h-8 w-auto object-contain transition-all drop-shadow-sm"
+                  className={`w-auto object-contain transition-all duration-400 ease-out ${
+                    isScrolled ? "h-6 sm:h-7" : "h-7 sm:h-8"
+                  }`}
                 />
               </Link>
             </div>
 
             {/* RIGHT — ACTIONS */}
-            <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-2">
+            <div className="flex flex-1 items-center justify-end gap-1 sm:gap-2">
               {/* Wishlist */}
-              <motion.button
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => setWishOpen(true)}
                 aria-label="Lista de dorințe"
-                className={navButtonClass}
+                className={navBtnClass}
               >
-                <Heart size={18} strokeWidth={2} />
-              </motion.button>
+                <Heart size={18} strokeWidth={1.75} className="relative z-10" />
+              </button>
 
               {/* User menu */}
               <div className="relative" ref={userMenuRef}>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={() =>
                     user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
                   }
                   aria-label="Contul meu"
-                  className={`${navButtonClass} ${
-                    userMenuOpen
-                      ? "bg-white text-[var(--royal-violet)] shadow-md border-[var(--royal-violet)]/20"
-                      : ""
-                  }`}
+                  className={navBtnClass}
                 >
-                  <User size={18} strokeWidth={2} />
-                </motion.button>
+                  <User
+                    size={18}
+                    strokeWidth={1.75}
+                    className="relative z-10"
+                  />
+                </button>
 
-                {/* Dropdown Menu (Glassmorphism Bento) */}
+                {/* Dropdown Menu (Bento Design) */}
                 <AnimatePresence>
                   {user && userMenuOpen && (
                     <motion.div
                       initial={{
                         opacity: 0,
-                        y: 20,
-                        scale: 0.95,
-                        filter: "blur(10px)",
+                        y: 15,
+                        scale: 0.96,
+                        filter: "blur(8px)",
                       }}
                       animate={{
                         opacity: 1,
@@ -367,22 +336,22 @@ const Navbar = () => {
                       }}
                       exit={{
                         opacity: 0,
-                        y: 15,
-                        scale: 0.95,
-                        filter: "blur(10px)",
+                        y: 10,
+                        scale: 0.96,
+                        filter: "blur(8px)",
                       }}
                       transition={{
                         type: "spring",
                         damping: 25,
-                        stiffness: 300,
+                        stiffness: 350,
                       }}
-                      className="absolute right-0 mt-4 w-72 overflow-hidden rounded-[2rem] border border-white/80 bg-white/80 backdrop-blur-2xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.2)] p-2 z-50"
+                      className="absolute right-0 mt-3 w-72 overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/90 backdrop-blur-3xl shadow-[0_30px_60px_-15px_rgba(123,44,191,0.15)] p-2 z-50"
                     >
-                      <div className="bg-zinc-50/80 backdrop-blur-sm p-5 rounded-[1.5rem] mb-2 border border-zinc-100">
+                      <div className="bg-zinc-50/80 p-4 rounded-[1rem] mb-2 border border-zinc-100">
                         <p className="text-[9px] font-black uppercase text-[var(--royal-violet)] tracking-[0.3em] mb-1">
                           Conectat ca
                         </p>
-                        <p className="truncate text-sm font-bold text-zinc-900">
+                        <p className="truncate text-sm font-bold text-[var(--dark-amethyst)]">
                           {user.email}
                         </p>
                       </div>
@@ -392,14 +361,14 @@ const Navbar = () => {
                           <Link
                             to="/admin"
                             onClick={() => setUserMenuOpen(false)}
-                            className="group flex items-center justify-between rounded-xl px-4 py-3 text-xs font-bold hover:bg-white hover:shadow-sm transition-all"
+                            className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
                           >
                             <span className="flex items-center gap-3">
                               <ShieldCheck
                                 size={16}
                                 className="text-blue-500"
                               />
-                              Panou Administrare
+                              Administrare
                             </span>
                             <ChevronRight
                               size={14}
@@ -410,7 +379,7 @@ const Navbar = () => {
                         <Link
                           to="/account/orders"
                           onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-4 py-3 text-xs font-bold hover:bg-white hover:shadow-sm transition-all"
+                          className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
                         >
                           <span className="flex items-center gap-3">
                             <Package
@@ -427,7 +396,7 @@ const Navbar = () => {
                         <Link
                           to="/account/addresses"
                           onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-4 py-3 text-xs font-bold hover:bg-white hover:shadow-sm transition-all"
+                          className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
                         >
                           <span className="flex items-center gap-3">
                             <MapPin
@@ -444,7 +413,7 @@ const Navbar = () => {
                         <Link
                           to="/account/settings"
                           onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-4 py-3 text-xs font-bold hover:bg-white hover:shadow-sm transition-all"
+                          className="group flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-600 hover:bg-white hover:text-[var(--royal-violet)] transition-all"
                         >
                           <span className="flex items-center gap-3">
                             <Settings
@@ -460,27 +429,26 @@ const Navbar = () => {
                         </Link>
                       </div>
 
-                      <div className="h-px bg-gradient-to-r from-transparent via-zinc-200 to-transparent my-2" />
+                      <div className="h-px bg-zinc-100 my-1 mx-2" />
 
                       <button
                         onClick={handleLogout}
-                        className="flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 hover:shadow-inner transition-all active:scale-95"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all active:scale-95 mt-1"
                       >
-                        <LogOut size={14} strokeWidth={2.5} /> Ieșire din cont
+                        <LogOut size={14} strokeWidth={2.5} /> Ieșire
                       </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* Shopping Bag Button (Gradient) */}
+              {/* Shopping Bag Button (Solid Luxury CTA) */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setBagOpen(true)}
                 aria-label="Coș de cumpărături"
-                className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] ml-1"
-                style={{ background: "var(--primary-gradient)" }}
+                className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full ml-1 md:ml-2 bg-[var(--dark-amethyst)] text-white shadow-md transition-colors hover:bg-black"
               >
                 <BagIcon size={18} strokeWidth={2} />
                 <AnimatePresence>
@@ -490,7 +458,7 @@ const Navbar = () => {
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0, opacity: 0 }}
-                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-zinc-900 text-[9px] font-black shadow-md"
+                      className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full border-2 border-white bg-[var(--royal-violet)] text-[9px] font-black"
                     >
                       {totalItems}
                     </motion.span>
