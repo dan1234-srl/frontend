@@ -807,6 +807,7 @@ const Navbar = () => {
             border: navBorder,
             backdropFilter: navBackdrop,
             padding: navPadding,
+            gap: navGap,
           }}
           className="relative flex items-center justify-between pointer-events-auto transform-gpu transition-all"
         >
