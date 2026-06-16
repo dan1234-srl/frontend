@@ -7,45 +7,12 @@ import {
   useTransition,
   useRef,
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  User,
-  ShoppingBag as BagIcon,
-  LogOut,
-  ShieldCheck,
-  Heart,
-  Package,
-  Sparkles,
-  Search,
-  MapPin,
-  Settings,
-  X,
-  Loader2,
-  RotateCcw,
-  ArrowRight,
-  ChevronRight,
-  ArrowUpRight,
-} from "lucide-react";
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useTransform,
-  useMotionValueEvent,
-} from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
-import { useFilters } from "@/contexts/FiltersContext";
-import ShoppingBag from "../cart/ShoppingBag";
-import WishlistDrawer from "../cart/WishlistDrawer";
-import Login from "@/components/auth/Login";
-import Register from "@/components/auth/Register";
-import { toast } from "sonner";
-import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
-import { FilterSidebar } from "../shop/FilterSidebar";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Sparkles, Loader2, Search, ArrowUpRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cache simplu in-memory per query
+// Cache in-memory
 // ─────────────────────────────────────────────────────────────────────────────
 const queryCache = new Map<string, any[]>();
 const QUERY_CACHE_LIMIT = 50;
@@ -252,14 +219,16 @@ const Sep = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SEARCH MODAL (Aliniat perfect în Navbar)
+// COMPONENTA PRINCIPALĂ
 // ─────────────────────────────────────────────────────────────────────────────
 const SearchModal = ({
   isOpen,
   onClose,
+  isScrolled = false, // <-- AICI E FIX-UL (Prop nou primit din Navbar)
 }: {
   isOpen: boolean;
   onClose: () => void;
+  isScrolled?: boolean;
 }) => {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
@@ -279,12 +248,14 @@ const SearchModal = ({
     [meiliUrl, meiliKey],
   );
 
+  // Debounce
   useEffect(() => {
     if (!isOpen) return;
     const timer = setTimeout(() => setSearchQuery(inputValue), 220);
     return () => clearTimeout(timer);
   }, [inputValue, isOpen]);
 
+  // Fetch + cache
   useEffect(() => {
     if (!isConfigValid || !isOpen) return;
     const q = searchQuery.trim();
@@ -332,6 +303,7 @@ const SearchModal = ({
     return () => ctrl.abort();
   }, [searchQuery, meiliUrl, meiliKey, isConfigValid, isOpen]);
 
+  // Body scroll lock + ESC
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -382,14 +354,16 @@ const SearchModal = ({
             onClick={handleClose}
           />
 
-          {/* Panel perfect aliniat sub Navbar (position: absolute) */}
+          {/* Panel perfect aliniat (folosim isScrolled pt a ajusta înălțimea) */}
           <motion.div
             key="panel"
             initial={{ opacity: 0, y: -10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -5, scale: 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[200] top-full left-0 mt-3 sm:mt-5 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.2)] rounded-[1.5rem] border border-zinc-100 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left"
+            className={`absolute z-[200] left-0 mt-3 sm:mt-5 flex flex-col transform-gpu bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.2)] rounded-[1.5rem] border border-zinc-100 overflow-hidden pointer-events-auto w-[calc(100vw-2rem)] sm:w-[28rem] origin-top-left transition-all duration-400 ease-out ${
+              isScrolled ? "top-[3.5rem]" : "top-[5.5rem]" // <-- ALINIERE DINAMICĂ AICI
+            }`}
             style={{
               maxHeight: "min(75vh, calc(100vh - 8rem))",
             }}
@@ -655,402 +629,4 @@ const SearchModal = ({
   );
 };
 
-/* ─────────────────────────────────────────────────────────────
-   FILTER DRAWER
-───────────────────────────────────────────────────────────── */
-// Codul pentru FilterDrawer rămâne exact același (cel cu efectul de sticlă din răspunsul meu precedent)
-
-/* ─────────────────────────────────────────────────────────────
-   NAVBAR PRINCIPAL (Floating Pill Concept Redefined)
-───────────────────────────────────────────────────────────── */
-const Navbar = () => {
-  const { user, signOut, isAdmin } = useAuth();
-  const { totalItems } = useCart();
-  const navigate = useNavigate();
-
-  const [bagOpen, setBagOpen] = useState(false);
-  const [wishOpen, setWishOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
-  const [forgotOpen, setForgotOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  // Pentru Promo Bar și Floating Effect
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const openCart = () => setBagOpen(true);
-    window.addEventListener("evem:open-cart", openCart);
-    return () => window.removeEventListener("evem:open-cart", openCart);
-  }, []);
-
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const { scrollY } = useScroll();
-
-  // Detectare scroll pentru plierea benzii de promo
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setIsScrolled(latest > 30);
-  });
-
-  // --- MATEMATICA FLUIDĂ PENTRU FLOATING PILL ---
-  // Aici garantăm că la scroll 0 are lățime 100%, iar apoi devine o capsulă
-  const navWidth = useTransform(
-    scrollY,
-    [0, 60],
-    ["100%", "calc(100% - 2rem)"],
-  );
-  const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
-  const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
-  const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["20px 32px", "8px 24px"]);
-
-  // Efectele de sticlă
-  const navBg = useTransform(
-    scrollY,
-    [0, 60],
-    ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.85)"],
-  );
-  const navBorder = useTransform(
-    scrollY,
-    [0, 60],
-    ["1px solid rgba(255,255,255,0)", "1px solid rgba(255,255,255,0.7)"],
-  );
-  const navShadow = useTransform(
-    scrollY,
-    [0, 60],
-    [
-      "0 1px 0px 0 rgba(0,0,0,0.04)",
-      "0 20px 40px -15px rgba(0,0,0,0.1), 0 0 0 1px rgba(123,44,191,0.03)",
-    ],
-  );
-  const navBackdrop = useTransform(
-    scrollY,
-    [0, 60],
-    ["blur(0px)", "blur(24px)"],
-  );
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(e.target as Node)
-      ) {
-        setUserMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleLogout = async () => {
-    await signOut();
-    toast.success("Sesiune încheiată cu succes.");
-    setUserMenuOpen(false);
-    navigate("/");
-  };
-
-  // Butoane iconițe ultra-curate (fără background gri fix)
-  const navButtonClass =
-    "relative flex items-center justify-center size-10 rounded-full text-zinc-500 transition-colors duration-300 hover:text-[var(--royal-violet)] before:absolute before:inset-0 before:rounded-full before:bg-[var(--royal-violet)] before:opacity-0 hover:before:opacity-10 before:scale-50 hover:before:scale-100 before:transition-all before:duration-300 before:ease-out";
-
-  return (
-    <>
-      <header className="fixed left-0 right-0 top-0 z-[200] flex flex-col items-center w-full pointer-events-none">
-        {/* ── TOP BAR PROMO (Animated Dark Premium) ── */}
-        <motion.div
-          animate={{
-            height: isScrolled ? 0 : 36,
-            opacity: isScrolled ? 0 : 1,
-          }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="w-full flex items-center justify-center overflow-hidden pointer-events-auto relative bg-[#0a0510]"
-        >
-          {/* Raza animată din fundal pentru efect de lux */}
-          <motion.div
-            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 8, ease: "linear", repeat: Infinity }}
-            className="absolute inset-0 opacity-40 mix-blend-screen"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent 0%, var(--royal-violet) 50%, transparent 100%)",
-              backgroundSize: "200% 100%",
-            }}
-          />
-          <div className="flex items-center gap-2.5 relative z-10">
-            <Sparkles size={11} className="text-[#E0D4F5] animate-pulse" />
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/90 drop-shadow-md">
-              Standardul Evem <span className="opacity-40 mx-2">•</span>{" "}
-              Eleganță & Performanță
-            </p>
-          </div>
-        </motion.div>
-
-        {/* ── NAV CONTAINER (The Floating Pill) ── */}
-        <motion.nav
-          style={{
-            width: navWidth,
-            maxWidth: navMaxWidth,
-            marginTop: navMarginTop,
-            borderRadius: navBorderRadius,
-            backgroundColor: navBg,
-            boxShadow: navShadow,
-            border: navBorder,
-            backdropFilter: navBackdrop,
-            padding: navPadding,
-          }}
-          className="relative flex items-center justify-between pointer-events-auto transform-gpu transition-all"
-        >
-          {/* LEFT — SEARCH (Aici integrăm modalul absolut!) */}
-          <div className="flex flex-1 items-center justify-start relative">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setSearchOpen(true)}
-              aria-label="Caută"
-              aria-hidden={searchOpen}
-              tabIndex={searchOpen ? -1 : 0}
-              animate={{
-                opacity: searchOpen ? 0 : 1,
-                scale: searchOpen ? 0.85 : 1,
-              }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              style={{ pointerEvents: searchOpen ? "none" : "auto" }}
-              className={navButtonClass}
-            >
-              <Search size={18} strokeWidth={2} className="relative z-10" />
-            </motion.button>
-
-            {/* Inserăm SearchModal aici pentru aliniere matematică */}
-            <SearchModal
-              isOpen={searchOpen}
-              onClose={() => setSearchOpen(false)}
-            />
-          </div>
-
-          {/* CENTER — LOGO */}
-          <div className="flex-shrink-0 flex items-center justify-center px-4">
-            <Link to="/" className="group relative">
-              <motion.img
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-                src="/Copilot_20260512_191942.png"
-                alt="Evem Luxury"
-                className="h-6 sm:h-7 lg:h-8 w-auto object-contain transition-all drop-shadow-sm"
-              />
-            </Link>
-          </div>
-
-          {/* RIGHT — ACTIONS */}
-          <div className="flex flex-1 items-center justify-end gap-0.5 sm:gap-1.5">
-            {/* Wishlist */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setWishOpen(true)}
-              aria-label="Lista de dorințe"
-              className={navButtonClass}
-            >
-              <Heart size={18} strokeWidth={2} className="relative z-10" />
-            </motion.button>
-
-            {/* User menu */}
-            <div className="relative" ref={userMenuRef}>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() =>
-                  user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
-                }
-                aria-label="Contul meu"
-                className={`${navButtonClass} ${
-                  userMenuOpen
-                    ? "text-[var(--royal-violet)] before:scale-100 before:opacity-10"
-                    : ""
-                }`}
-              >
-                <User size={18} strokeWidth={2} className="relative z-10" />
-              </motion.button>
-
-              {/* Dropdown Menu (Glassmorphism Bento) */}
-              <AnimatePresence>
-                {user && userMenuOpen && (
-                  <motion.div
-                    initial={{
-                      opacity: 0,
-                      y: 15,
-                      scale: 0.96,
-                      filter: "blur(8px)",
-                    }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      filter: "blur(0px)",
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: 10,
-                      scale: 0.96,
-                      filter: "blur(8px)",
-                    }}
-                    transition={{ type: "spring", damping: 25, stiffness: 350 }}
-                    className="absolute right-0 sm:right-[-10px] mt-4 w-[280px] sm:w-[320px] overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.15)] p-2 z-50 origin-top-right"
-                  >
-                    <div className="bg-zinc-50/80 p-5 rounded-[1.25rem] mb-2 border border-zinc-100">
-                      <p className="text-[8px] font-black uppercase text-[var(--royal-violet)] tracking-[0.3em] mb-1">
-                        Conectat ca
-                      </p>
-                      <p className="truncate text-sm font-bold text-[var(--dark-amethyst)]">
-                        {user.email}
-                      </p>
-                    </div>
-
-                    <div className="space-y-0.5 p-1">
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                        >
-                          <span className="flex items-center gap-3">
-                            <ShieldCheck size={16} className="text-blue-500" />
-                            Administrare
-                          </span>
-                          <ChevronRight
-                            size={14}
-                            className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                          />
-                        </Link>
-                      )}
-                      <Link
-                        to="/account/orders"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                      >
-                        <span className="flex items-center gap-3">
-                          <Package
-                            size={16}
-                            className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
-                          />
-                          Comenzile mele
-                        </span>
-                        <ChevronRight
-                          size={14}
-                          className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                        />
-                      </Link>
-                      <Link
-                        to="/account/addresses"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                      >
-                        <span className="flex items-center gap-3">
-                          <MapPin
-                            size={16}
-                            className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
-                          />
-                          Adresele mele
-                        </span>
-                        <ChevronRight
-                          size={14}
-                          className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                        />
-                      </Link>
-                      <Link
-                        to="/account/settings"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                      >
-                        <span className="flex items-center gap-3">
-                          <Settings
-                            size={16}
-                            className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
-                          />
-                          Setări cont
-                        </span>
-                        <ChevronRight
-                          size={14}
-                          className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                        />
-                      </Link>
-                    </div>
-
-                    <div className="h-px bg-zinc-100 my-1 mx-3" />
-
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all active:scale-95 mt-1"
-                    >
-                      <LogOut size={14} strokeWidth={2.5} /> Ieșire din cont
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Shopping Bag Button (Solid Luxury CTA) */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setBagOpen(true)}
-              aria-label="Coș de cumpărături"
-              className="relative flex size-10 sm:size-11 items-center justify-center rounded-full ml-1 md:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110"
-              style={{ background: "var(--primary-gradient)" }}
-            >
-              <BagIcon size={18} strokeWidth={2} />
-              <AnimatePresence>
-                {totalItems > 0 && (
-                  <motion.span
-                    key="badge"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full border-[2px] border-white bg-zinc-900 text-[9px] font-black shadow-sm"
-                  >
-                    {totalItems}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </div>
-        </motion.nav>
-      </header>
-
-      {/* ── MODALS & OVERLAYS ── */}
-      <ShoppingBag isOpen={bagOpen} onClose={() => setBagOpen(false)} />
-      <WishlistDrawer isOpen={wishOpen} onClose={() => setWishOpen(false)} />
-
-      {/* FILTER DRAWER */}
-      <FilterDrawer />
-
-      <Login
-        isOpen={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        onSwitchToRegister={() => {
-          setLoginOpen(false);
-          setTimeout(() => setRegisterOpen(true), 150);
-        }}
-        onOpenForgot={() => {
-          setLoginOpen(false);
-          setTimeout(() => setForgotOpen(true), 150);
-        }}
-      />
-      <Register
-        isOpen={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        onSwitchToLogin={() => {
-          setRegisterOpen(false);
-          setTimeout(() => setLoginOpen(true), 150);
-        }}
-      />
-      <ForgotPasswordDrawer
-        isOpen={forgotOpen}
-        onClose={() => setForgotOpen(false)}
-        onBackToLogin={() => {
-          setForgotOpen(false);
-          setTimeout(() => setLoginOpen(true), 150);
-        }}
-      />
-    </>
-  );
-};
-
-export default Navbar;
+export default SearchModal;
