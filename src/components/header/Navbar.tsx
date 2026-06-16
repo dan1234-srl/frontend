@@ -843,6 +843,7 @@ const Navbar = () => {
 
         {/* ── NAV CONTAINER (The Floating Pill) ── */}
         <motion.nav
+          ref={navRef}
           style={{
             width: navWidth,
             maxWidth: navMaxWidth,
@@ -851,11 +852,10 @@ const Navbar = () => {
             backgroundColor: navBg,
             boxShadow: navShadow,
             border: navBorder,
-            backdropFilter: navBackdrop,
             padding: navPadding,
             gap: navGap,
           }}
-          className="relative flex items-center justify-between pointer-events-auto transform-gpu transition-all"
+          className="relative flex items-center justify-between pointer-events-auto transition-[width,max-width,padding,gap] duration-300"
         >
           {/* LEFT — SEARCH */}
           <div className="flex flex-1 items-center justify-start">
