@@ -556,6 +556,10 @@ const AdminProducts = () => {
     }
   };
 
+  const handleImageError = (e: any) => {
+    e.target.src = PLACEHOLDER_IMG;
+  };
+
   if (!isAdmin) return null;
 
   return (
@@ -733,7 +737,7 @@ const AdminProducts = () => {
                   FilterObj.set(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer w-full appearance-none"
+                className="bg-transparent text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] outline-none cursor-pointer w-full appearance-none pr-4"
               >
                 {FilterObj.opts.map((o: any) => (
                   <option key={o.value} value={o.value}>
@@ -1036,31 +1040,34 @@ const AdminProducts = () => {
           </button>
 
           <div className="hidden sm:flex gap-1.5">
-            {[...Array(totalPages)].map((_, i) => {
-              const p = i + 1;
-              if (p < currentPage - 2 || p > currentPage + 2) return null;
-              return (
+            {[...Array(totalPages)]
+              .map((_, i) => (
                 <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === p ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
                   style={{
                     background:
-                      currentPage === p ? "var(--primary-gradient)" : undefined,
+                      currentPage === i + 1
+                        ? "var(--primary-gradient)"
+                        : undefined,
                     borderColor:
-                      currentPage !== p
+                      currentPage !== i + 1
                         ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
                         : undefined,
                     color:
-                      currentPage !== p
+                      currentPage !== i + 1
                         ? "var(--dark-amethyst)"
                         : "color-mix(in srgb, var(--royal-violet) 60%, gray)",
                   }}
                 >
-                  {p}
+                  {i + 1}
                 </button>
-              );
-            })}
+              ))
+              .slice(
+                Math.max(0, currentPage - 3),
+                Math.min(totalPages, currentPage + 2),
+              )}
           </div>
 
           <span
@@ -1074,7 +1081,6 @@ const AdminProducts = () => {
             {currentPage} <span className="opacity-30 mx-1">/</span>{" "}
             {totalPages}
           </span>
-
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
