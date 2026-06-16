@@ -970,7 +970,7 @@ const Navbar = () => {
             </div>
 
             {/* CENTER — LOGO */}
-            <div className="flex-shrink-0 flex items-center justify-center px-1 sm:px-4 absolute left-1/2 -translate-x-1/2">
+            <div className="flex items-center justify-center px-2 sm:px-6">
               <Link to="/" className="group relative block">
                 <motion.img
                   whileHover={{ scale: 1.04 }}
@@ -983,7 +983,7 @@ const Navbar = () => {
             </div>
 
             {/* RIGHT — ACTIONS */}
-            <div className="flex flex-1 items-center justify-end gap-0 sm:gap-1.5">
+            <div className="flex items-center justify-end gap-0 sm:gap-1.5">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setWishOpen(true)}
