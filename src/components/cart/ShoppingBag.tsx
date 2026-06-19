@@ -1,4 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+/**
+ * ShoppingBag.tsx
+ * Design Premium, Enterprise - Aliniat cu limbajul vizual "Atelier Suite"
+ */
+
+import { useState, useEffect, useMemo, memo } from "react";
 import {
   X,
   Minus,
@@ -9,11 +14,13 @@ import {
   Trash2,
   Tag,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import CheckoutPopup from "./CheckoutPopup";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -173,6 +180,9 @@ const ShoppingBag = ({
   useEffect(() => {
     if (isOpen) document.body.style.overflow = "hidden";
     else document.body.style.overflow = "unset";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
   const formatCurrency = (val: number) =>
@@ -186,67 +196,71 @@ const ShoppingBag = ({
       <AnimatePresence>
         {isOpen && (
           <div className="fixed inset-0 z-[700] flex justify-end font-sans">
-            {/* Backdrop Blur */}
+            {/* ── BACKDROP ── */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               onClick={onClose}
-              // Înlocuiește "absolute inset-0 bg-zinc-950/40 backdrop-blur-sm" cu clasa noastră:
-              className="absolute inset-0 glass-overlay"
+              className="absolute inset-0 glass-overlay cursor-pointer"
             />
 
-            {/* Main Drawer - Mai micuț (max-w-[400px]) pentru o senzație mai finuță */}
+            {/* ── PANOU PRINCIPAL ── */}
             <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 32, stiffness: 280 }}
-              className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[400px] flex-col bg-white shadow-2xl"
+              initial={{ x: "100%", opacity: 0.5 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0.5 }}
+              transition={{ type: "spring", damping: 30, stiffness: 250 }}
+              className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[420px] flex-col bg-white/95 backdrop-blur-3xl shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.15)] sm:rounded-l-[2.5rem] border-l border-white overflow-hidden"
             >
-              {/* Header */}
-              <header className="flex items-center justify-between px-6 py-6 shrink-0 border-b border-zinc-100">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: "var(--primary-gradient)" }}
+              {/* Glow-uri Ambientale */}
+              <div className="absolute top-0 left-0 w-full h-64 bg-[var(--mauve-magic)] opacity-5 blur-[100px] pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-64 h-64 bg-[var(--royal-violet)] opacity-[0.03] blur-[100px] pointer-events-none" />
+
+              {/* ── HEADER ── */}
+              <header className="relative flex items-center justify-between px-8 py-8 border-b border-zinc-100/50 shrink-0 bg-white/50 z-10">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles
+                      size={12}
+                      className="text-[var(--royal-violet)]"
                     />
-                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-zinc-400">
-                      Selecția ta
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet)]">
+                      Selecția Ta
                     </p>
                   </div>
-                  <h2 className="heading-serif text-2xl tracking-tighter text-[var(--dark-amethyst)]">
-                    Coșul de cumpărături{" "}
-                    <span className="text-zinc-300 font-sans text-lg ml-1">
-                      ({cart.length})
+                  <h2 className="text-3xl font-black tracking-tight text-[var(--dark-amethyst)] flex items-baseline gap-2">
+                    Coș Cumpărături
+                    <span className="text-sm font-bold text-zinc-400 bg-zinc-100/80 px-2 py-0.5 rounded-lg">
+                      {cart.length}
                     </span>
                   </h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="h-9 w-9 flex items-center justify-center rounded-full border border-zinc-100 hover:bg-zinc-50 transition-all text-zinc-400 hover:text-zinc-900 group"
+                  className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-50 border border-zinc-200/50 hover:bg-white hover:border-[var(--royal-violet)]/30 hover:text-[var(--royal-violet)] transition-all text-zinc-500 shadow-sm active:scale-95 group shrink-0"
                 >
                   <X
                     size={16}
+                    strokeWidth={2}
                     className="group-hover:rotate-90 transition-transform duration-300"
                   />
                 </button>
               </header>
 
-              {/* Progress Bar Livrare Gratuită */}
+              {/* ── PROGRESS BAR LIVRARE GRATUITĂ ── */}
               {cart.length > 0 && (
-                <div className="px-6 pt-5 shrink-0">
-                  <div className="p-4 bg-zinc-50/80 rounded-xl border border-zinc-100">
-                    <div className="mb-2.5 flex items-center justify-between font-black uppercase tracking-widest text-[8px] sm:text-[9px]">
+                <div className="px-6 pt-5 shrink-0 z-10">
+                  <div className="p-4 bg-zinc-50/70 backdrop-blur-xl rounded-[1.25rem] border border-white shadow-sm">
+                    <div className="mb-3 flex items-center justify-between font-black uppercase tracking-widest text-[8.5px]">
                       <span className="flex items-center gap-1.5 text-zinc-500">
                         <Truck
                           size={12}
                           className="text-[var(--royal-violet)]"
                         />
                         {remainingForFreeShipping === 0
-                          ? "Livrare Gratuită"
+                          ? "Livrare Gratuită Activă"
                           : "Livrare Standard"}
                       </span>
                       <span className="text-[var(--royal-violet)]">
@@ -255,11 +269,15 @@ const ShoppingBag = ({
                           : "ACTIV"}
                       </span>
                     </div>
-                    <div className="h-1 w-full bg-zinc-200/50 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-white rounded-full overflow-hidden border border-zinc-100/50">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${shippingProgress}%` }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        transition={{
+                          duration: 0.8,
+                          ease: "easeOut",
+                          delay: 0.2,
+                        }}
                         className="h-full rounded-full"
                         style={{ background: "var(--primary-gradient)" }}
                       />
@@ -268,84 +286,117 @@ const ShoppingBag = ({
                 </div>
               )}
 
-              {/* Lista Produse */}
-              <div className="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
+              {/* ── LISTA PRODUSE ── */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar z-10">
                 <LayoutGroup>
-                  <motion.div layout className="space-y-5">
+                  <motion.div layout className="space-y-4">
                     <AnimatePresence mode="popLayout">
                       {cart.length === 0 ? (
                         <motion.div
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="h-[50vh] flex flex-col items-center justify-center text-center gap-5"
+                          className="h-[50vh] flex flex-col items-center justify-center text-center px-4"
                         >
-                          <div className="h-20 w-20 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-300 mb-2">
-                            <BagIcon size={32} strokeWidth={1.5} />
-                          </div>
-                          <div>
-                            <p className="text-xl heading-serif text-[var(--dark-amethyst)] mb-1.5">
-                              Coșul tău este gol
-                            </p>
-                            <p className="text-[11px] text-zinc-400 font-medium">
-                              Explorează colecțiile noastre și
-                              <br />
-                              adaugă produsele dorite aici.
-                            </p>
-                          </div>
+                          <motion.div
+                            animate={{
+                              y: [0, -8, 0],
+                              scale: [1, 1.02, 1],
+                            }}
+                            transition={{
+                              duration: 4,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                            className="relative size-24 rounded-3xl bg-zinc-50 border border-zinc-100 flex items-center justify-center mb-8 shadow-sm"
+                          >
+                            <BagIcon
+                              size={32}
+                              strokeWidth={1.5}
+                              className="text-zinc-300"
+                            />
+                          </motion.div>
+                          <p className="text-xl font-black tracking-tight text-[var(--dark-amethyst)] mb-2">
+                            Coșul tău este gol.
+                          </p>
+                          <p className="text-[11px] font-medium text-zinc-400 max-w-[240px] leading-relaxed mb-8">
+                            Explorează colecțiile noastre și adaugă produsele
+                            dorite aici.
+                          </p>
                           <button
                             onClick={onClose}
-                            className="mt-3 px-6 h-10 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg hover:bg-zinc-800 transition-colors"
+                            className="relative h-12 px-8 text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
+                            style={{ background: "var(--primary-gradient)" }}
                           >
-                            Înapoi la magazin
+                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                            <span className="relative font-black uppercase text-[10px] tracking-[0.2em]">
+                              Înapoi la Magazin
+                            </span>
                           </button>
                         </motion.div>
                       ) : (
-                        cart.map((item: any) => (
+                        cart.map((item: any, idx: number) => (
                           <motion.div
                             layout
                             key={item.sku}
-                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{
                               opacity: 0,
+                              x: -50,
                               scale: 0.95,
-                              filter: "blur(2px)",
+                              filter: "blur(4px)",
                             }}
-                            transition={{ duration: 0.25 }}
-                            className="flex gap-4 items-center group/item pb-5 border-b border-zinc-50 last:border-0 last:pb-0"
+                            transition={{
+                              type: "spring",
+                              damping: 25,
+                              stiffness: 300,
+                              delay: Math.min(idx * 0.05, 0.3),
+                            }}
+                            className="group relative flex gap-4 p-3 bg-white/70 backdrop-blur-xl rounded-[1.25rem] border border-white shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_rgba(123,44,191,0.08)] hover:bg-white transition-all duration-300 overflow-hidden"
                           >
+                            {/* Linie fină de accent în stânga */}
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-[var(--royal-violet)] rounded-r-full opacity-0 group-hover:h-1/2 group-hover:opacity-100 transition-all duration-500" />
+
                             {/* Imagine mai micuță */}
-                            <div className="aspect-[3/4] w-20 shrink-0 overflow-hidden rounded-xl bg-zinc-50 border border-zinc-100">
+                            <Link
+                              to={`/product/${item.slug}`}
+                              onClick={onClose}
+                              className="relative aspect-[4/5] w-[80px] shrink-0 overflow-hidden bg-zinc-50 rounded-xl border border-black/5 z-10 block"
+                            >
                               <img
                                 src={getImageUrl(item.image_url)}
-                                className="h-full w-full object-cover mix-blend-multiply transition-transform duration-700 group-hover/item:scale-105"
+                                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 alt={item.name}
                               />
-                            </div>
+                            </Link>
 
                             {/* Detalii */}
-                            <div className="flex-1 flex flex-col justify-between h-full py-0.5">
+                            <div className="flex-1 flex flex-col justify-between h-full py-1 pr-2 z-10 min-w-0">
                               <div className="space-y-1">
                                 <div className="flex justify-between items-start gap-2">
-                                  <p className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] truncate">
+                                  <p className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.3em] truncate">
                                     {item.brand_name || "Evem"}
                                   </p>
                                   <button
                                     onClick={() => removeFromCart(item.sku)}
-                                    className="text-zinc-300 hover:text-rose-500 transition-colors"
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-zinc-50 border border-transparent text-zinc-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-colors shrink-0"
                                     aria-label="Șterge produs"
                                   >
-                                    <Trash2 size={13} />
+                                    <Trash2 size={13} strokeWidth={2} />
                                   </button>
                                 </div>
-                                <h4 className="text-[12px] font-bold text-[var(--dark-amethyst)] leading-tight line-clamp-2 pr-2">
+                                <Link
+                                  to={`/product/${item.slug}`}
+                                  onClick={onClose}
+                                  className="text-[12px] font-bold text-[var(--dark-amethyst)] leading-tight line-clamp-2 hover:text-[var(--royal-violet)] transition-colors"
+                                >
                                   {item.name}
-                                </h4>
+                                </Link>
                               </div>
 
                               <div className="flex justify-between items-end mt-3">
                                 {/* Selector Cantitate Compact */}
-                                <div className="flex items-center gap-3 bg-zinc-50/80 rounded-lg px-2.5 py-1.5 border border-zinc-200/60">
+                                <div className="flex items-center gap-3 bg-zinc-50 rounded-[10px] px-2 py-1.5 border border-zinc-100">
                                   <button
                                     onClick={() =>
                                       updateQuantity(
@@ -354,11 +405,11 @@ const ShoppingBag = ({
                                       )
                                     }
                                     disabled={item.quantity <= 1}
-                                    className="p-0.5 disabled:opacity-20 text-zinc-500 hover:text-black transition-colors"
+                                    className="p-1 disabled:opacity-20 text-zinc-400 hover:text-zinc-900 transition-colors bg-white rounded-md shadow-sm border border-black/5"
                                   >
-                                    <Minus size={10} />
+                                    <Minus size={10} strokeWidth={2.5} />
                                   </button>
-                                  <span className="text-[11px] font-black w-3 text-center text-zinc-900">
+                                  <span className="text-[11px] font-black w-3 text-center text-[var(--dark-amethyst)]">
                                     {item.quantity}
                                   </span>
                                   <button
@@ -368,17 +419,21 @@ const ShoppingBag = ({
                                         item.quantity + 1,
                                       )
                                     }
-                                    className="p-0.5 text-zinc-500 hover:text-black transition-colors"
+                                    className="p-1 text-zinc-400 hover:text-zinc-900 transition-colors bg-white rounded-md shadow-sm border border-black/5"
                                   >
-                                    <Plus size={10} />
+                                    <Plus size={10} strokeWidth={2.5} />
                                   </button>
                                 </div>
 
                                 {/* Preț */}
-                                <p className="text-[13px] font-black text-[var(--dark-amethyst)]">
-                                  {formatCurrency(item.price * item.quantity)}{" "}
-                                  <span className="text-[9px]">RON</span>
-                                </p>
+                                <div className="text-right">
+                                  <p className="text-[13px] font-black tabular-nums text-[var(--dark-amethyst)]">
+                                    {formatCurrency(item.price * item.quantity)}{" "}
+                                    <span className="text-[9px] text-zinc-400 uppercase tracking-widest font-bold ml-0.5">
+                                      RON
+                                    </span>
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </motion.div>
@@ -389,30 +444,30 @@ const ShoppingBag = ({
                 </LayoutGroup>
               </div>
 
-              {/* Zona de Footer & Checkout */}
+              {/* ── ZONA DE FOOTER & CHECKOUT ── */}
               {cart.length > 0 && (
-                <div className="shrink-0 border-t border-zinc-100 bg-white">
+                <div className="shrink-0 bg-white/90 backdrop-blur-xl border-t border-zinc-100 relative z-20">
                   {/* Zona Voucher */}
-                  <div className="px-6 py-4 border-b border-zinc-50">
+                  <div className="px-6 py-4 border-b border-zinc-50 bg-zinc-50/50">
                     {!appliedDiscount ? (
                       <div className="flex gap-2">
                         <div className="relative flex-1 group">
                           <Tag
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
+                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-[var(--royal-violet)] transition-colors"
                             size={12}
                           />
                           <input
                             type="text"
                             value={promoCode}
                             onChange={(e) => setPromoCode(e.target.value)}
-                            placeholder="COD VOUCHER"
-                            className="w-full h-10 pl-8 pr-3 bg-zinc-50 border border-zinc-200/80 rounded-xl text-[9px] font-black tracking-[0.2em] focus:outline-none focus:border-[var(--royal-violet)] focus:ring-2 focus:ring-[var(--royal-violet)]/10 focus:bg-white transition-all uppercase placeholder:text-zinc-400 text-zinc-900"
+                            placeholder="Ai un cod voucher?"
+                            className="w-full h-11 pl-9 pr-3 bg-white border border-zinc-200/80 rounded-xl text-[9.5px] font-black tracking-[0.15em] focus:outline-none focus:border-[var(--royal-violet)] focus:ring-2 focus:ring-[var(--royal-violet)]/10 transition-all uppercase placeholder:text-zinc-400 placeholder:normal-case placeholder:tracking-normal text-[var(--dark-amethyst)] shadow-sm"
                           />
                         </div>
                         <button
                           onClick={handleApplyVoucher}
                           disabled={isValidating || !promoCode.trim()}
-                          className="px-5 h-10 bg-zinc-900 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-xl transition-all hover:bg-zinc-800 disabled:opacity-50"
+                          className="px-5 h-11 bg-zinc-900 text-white text-[9.5px] font-black uppercase tracking-[0.2em] rounded-xl transition-all hover:bg-zinc-800 disabled:opacity-50 shadow-md active:scale-95"
                         >
                           {isValidating ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -422,14 +477,14 @@ const ShoppingBag = ({
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl">
-                        <div className="flex items-center gap-2.5">
-                          <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                            <Tag size={10} className="text-emerald-600" />
+                      <div className="flex items-center justify-between p-3 bg-emerald-50/80 border border-emerald-100 rounded-xl shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-[10px] bg-emerald-100/50 flex items-center justify-center border border-emerald-200/50">
+                            <Tag size={14} className="text-emerald-600" />
                           </div>
                           <div>
-                            <p className="text-[8px] font-black uppercase text-emerald-700 tracking-[0.2em]">
-                              Voucher Activat
+                            <p className="text-[8px] font-black uppercase text-emerald-600 tracking-[0.2em]">
+                              Reducere Activă
                             </p>
                             <p className="text-[11px] font-bold text-emerald-900 mt-0.5">
                               {appliedDiscount.code} (-
@@ -439,7 +494,8 @@ const ShoppingBag = ({
                         </div>
                         <button
                           onClick={removeVoucher}
-                          className="p-1.5 text-zinc-400 hover:text-rose-500 transition-colors"
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-transparent text-zinc-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-colors shadow-sm"
+                          title="Elimină reducerea"
                         >
                           <X size={14} />
                         </button>
@@ -447,15 +503,17 @@ const ShoppingBag = ({
                     )}
                   </div>
 
-                  {/* Zona de Checkout */}
-                  <div className="px-6 py-6 bg-zinc-50/50">
-                    <div className="flex justify-between items-end mb-5">
-                      <div className="space-y-0.5">
+                  {/* Total & Buton Final */}
+                  <div className="px-6 py-6 pb-8">
+                    <div className="flex justify-between items-end mb-6">
+                      <div className="space-y-1">
                         <span className="text-[9px] font-black uppercase text-zinc-400 tracking-[0.2em]">
-                          Suma totală
+                          Sumar Cumpărături
                         </span>
-                        <p className="text-[9px] text-zinc-500 font-medium">
-                          TVA inclus
+                        <p className="text-[10px] text-zinc-500 font-medium flex items-center gap-1.5">
+                          TVA Inclus{" "}
+                          <span className="w-1 h-1 rounded-full bg-zinc-300"></span>{" "}
+                          Fără taxe ascunse
                         </p>
                       </div>
                       <div className="text-right">
@@ -464,9 +522,9 @@ const ShoppingBag = ({
                             {formatCurrency(totalPrice)} RON
                           </p>
                         )}
-                        <p className="text-3xl heading-serif font-medium text-[var(--dark-amethyst)] tracking-tight">
+                        <p className="text-3xl heading-serif font-medium text-[var(--dark-amethyst)] tracking-tight leading-none">
                           {formatCurrency(finalTotal)}{" "}
-                          <span className="text-xs font-sans font-black">
+                          <span className="text-xs font-sans font-black ml-1 text-zinc-500">
                             RON
                           </span>
                         </p>
@@ -478,14 +536,14 @@ const ShoppingBag = ({
                         onClose();
                         setTimeout(() => setCheckoutOpen(true), 300);
                       }}
-                      className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] group active:scale-[0.98]"
+                      className="relative h-14 w-full text-white rounded-xl overflow-hidden transition-all shadow-[0_8px_25px_rgba(123,44,191,0.25)] hover:shadow-[0_12px_30px_rgba(123,44,191,0.35)] hover:scale-[1.01] group active:scale-[0.98]"
                       style={{ background: "var(--primary-gradient)" }}
                     >
                       <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                      <div className="relative flex items-center justify-center gap-3 font-black uppercase text-[10px] tracking-[0.2em]">
-                        Spre Checkout
+                      <div className="relative flex items-center justify-center gap-3 font-black uppercase text-[11px] tracking-[0.25em]">
+                        Finalizează Comanda
                         <ArrowRight
-                          size={14}
+                          size={15}
                           className="group-hover:translate-x-1.5 transition-transform duration-300"
                         />
                       </div>
