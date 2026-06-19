@@ -376,7 +376,7 @@ const SearchModal = ({
     initialSearchDone && !isCurrentlySearching && hits.length === 0;
   const showInitialState = !initialSearchDone && !isCurrentlySearching;
 
-  // Calculam pozitiile relative. Cand NU suntem scrollati, latimea va fi 100%
+  // Când nu este scrolled, Modal-ul va ocupa lățimea definită de `navRect`
   const panelLeft = isScrolled ? (navRect?.left ?? 0) : 0;
   const panelRight = isScrolled
     ? typeof window !== "undefined" && navRect
@@ -408,11 +408,13 @@ const SearchModal = ({
             className={`fixed z-[210] flex flex-col bg-white border-zinc-100 overflow-hidden pointer-events-auto origin-top ${
               isScrolled
                 ? "rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.28)] border"
-                : "rounded-b-[2rem] rounded-t-none border-b shadow-[0_40px_70px_-20px_rgba(123,44,191,0.2)]"
+                : "rounded-b-[2rem] rounded-t-none border-b shadow-[0_40px_70px_-20px_rgba(123,44,191,0.2)] mx-auto"
             }`}
             style={{
               left: panelLeft,
               right: panelRight,
+              // Pentru top-view limităm lățimea similar cu navbar-ul
+              maxWidth: isScrolled ? "none" : "1400px",
               top: isScrolled ? panelTop + 8 : panelTop,
               maxHeight: "min(75vh, calc(100vh - 8rem))",
             }}
@@ -863,7 +865,6 @@ const Navbar = () => {
   });
 
   // La 0 scroll e 100%, la 60px ajunge la capsulă.
-  // Transformările au fost optimizate.
   const navWidth = useTransform(
     scrollY,
     [0, 60],
@@ -872,9 +873,10 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["none", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  // Adăugăm padding pe desktop cand e extins pt a nu fi lipit de margini,
-  // dar păstrăm padding redus cand e capsulă.
-  const navPadding = useTransform(scrollY, [0, 60], ["0px 4vw", "0px 20px"]);
+
+  // AICI este "rețeta secretă": la scroll 0 dăm un padding generos,
+  // la scroll > 60 se strânge la 24px
+  const navPadding = useTransform(scrollY, [0, 60], ["0px 48px", "0px 24px"]);
 
   const navBg = useTransform(
     scrollY,
@@ -970,214 +972,217 @@ const Navbar = () => {
               backdropFilter: navBackdrop,
               padding: navPadding,
             }}
-            className="relative flex justify-between items-center transform-gpu transition-all h-[4rem] sm:h-[4.5rem]"
+            className="relative flex justify-center items-center transform-gpu transition-all h-[4rem] sm:h-[4.5rem]"
           >
-            {/* LEFT — SEARCH */}
-            <div className="flex-1 flex justify-start items-center">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setSearchOpen(true)}
-                aria-label="Caută"
-                aria-hidden={searchOpen}
-                tabIndex={searchOpen ? -1 : 0}
-                animate={{
-                  opacity: searchOpen ? 0 : 1,
-                  scale: searchOpen ? 0.85 : 1,
-                }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                style={{ pointerEvents: searchOpen ? "none" : "auto" }}
-                className={`${navButtonClass} ${isScrolled ? "" : "bg-zinc-100 hover:bg-zinc-200"}`} // Pe Top view îi dăm un mic background ca să fie clar
-              >
-                <Search size={18} strokeWidth={2} className="relative z-10" />
-              </motion.button>
-            </div>
-
-            {/* CENTER — LOGO */}
-            <div className="flex items-center justify-center shrink-0">
-              <Link to="/" className="group relative block">
-                <motion.img
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  src="/Copilot_20260512_191942.png"
-                  alt="Evem Luxury"
-                  className="h-5 sm:h-6 lg:h-7 w-auto object-contain transition-all drop-shadow-sm"
-                />
-              </Link>
-            </div>
-
-            {/* RIGHT — ACTIONS */}
-            <div className="flex-1 flex justify-end items-center gap-0.5 sm:gap-1.5">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setWishOpen(true)}
-                aria-label="Lista de dorințe"
-                className={navButtonClass}
-              >
-                <Heart size={18} strokeWidth={2} className="relative z-10" />
-              </motion.button>
-
-              <div className="relative" ref={userMenuRef}>
+            {/* INNER CONTAINER pentru controlul elementelor cand e full-width */}
+            <div className="w-full h-full max-w-[1400px] mx-auto flex justify-between items-center px-2">
+              {/* LEFT — SEARCH */}
+              <div className="flex-1 flex justify-start items-center">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() =>
-                    user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
-                  }
-                  aria-label="Contul meu"
-                  className={`${navButtonClass} ${userMenuOpen ? "text-[var(--royal-violet)] before:scale-100 before:opacity-10" : ""}`}
+                  onClick={() => setSearchOpen(true)}
+                  aria-label="Caută"
+                  aria-hidden={searchOpen}
+                  tabIndex={searchOpen ? -1 : 0}
+                  animate={{
+                    opacity: searchOpen ? 0 : 1,
+                    scale: searchOpen ? 0.85 : 1,
+                  }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  style={{ pointerEvents: searchOpen ? "none" : "auto" }}
+                  className={`${navButtonClass} ${isScrolled ? "" : "bg-zinc-100 hover:bg-zinc-200"}`}
                 >
-                  <User size={18} strokeWidth={2} className="relative z-10" />
+                  <Search size={18} strokeWidth={2} className="relative z-10" />
+                </motion.button>
+              </div>
+
+              {/* CENTER — LOGO */}
+              <div className="flex items-center justify-center shrink-0">
+                <Link to="/" className="group relative block">
+                  <motion.img
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.97 }}
+                    src="/Copilot_20260512_191942.png"
+                    alt="Evem Luxury"
+                    className="h-5 sm:h-6 lg:h-7 w-auto object-contain transition-all drop-shadow-sm"
+                  />
+                </Link>
+              </div>
+
+              {/* RIGHT — ACTIONS */}
+              <div className="flex-1 flex justify-end items-center gap-0.5 sm:gap-1.5">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setWishOpen(true)}
+                  aria-label="Lista de dorințe"
+                  className={navButtonClass}
+                >
+                  <Heart size={18} strokeWidth={2} className="relative z-10" />
                 </motion.button>
 
-                <AnimatePresence>
-                  {user && userMenuOpen && (
-                    <motion.div
-                      initial={{
-                        opacity: 0,
-                        y: 15,
-                        scale: 0.96,
-                        filter: "blur(8px)",
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        filter: "blur(0px)",
-                      }}
-                      exit={{
-                        opacity: 0,
-                        y: 10,
-                        scale: 0.96,
-                        filter: "blur(8px)",
-                      }}
-                      transition={{
-                        type: "spring",
-                        damping: 25,
-                        stiffness: 350,
-                      }}
-                      className="absolute right-0 sm:right-[-10px] mt-4 w-[260px] sm:w-[320px] overflow-hidden rounded-[1.5rem] sm:rounded-[1.75rem] border border-white/80 bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.15)] p-2 z-50 origin-top-right"
-                    >
-                      <div className="bg-zinc-50/80 p-4 sm:p-5 rounded-[1.25rem] mb-2 border border-zinc-100">
-                        <p className="text-[8px] font-black uppercase text-[var(--royal-violet)] tracking-[0.3em] mb-1">
-                          Conectat ca
-                        </p>
-                        <p className="truncate text-xs sm:text-sm font-bold text-[var(--dark-amethyst)]">
-                          {user.email}
-                        </p>
-                      </div>
+                <div className="relative" ref={userMenuRef}>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() =>
+                      user ? setUserMenuOpen(!userMenuOpen) : setLoginOpen(true)
+                    }
+                    aria-label="Contul meu"
+                    className={`${navButtonClass} ${userMenuOpen ? "text-[var(--royal-violet)] before:scale-100 before:opacity-10" : ""}`}
+                  >
+                    <User size={18} strokeWidth={2} className="relative z-10" />
+                  </motion.button>
 
-                      <div className="space-y-0.5 p-1">
-                        {isAdmin && (
+                  <AnimatePresence>
+                    {user && userMenuOpen && (
+                      <motion.div
+                        initial={{
+                          opacity: 0,
+                          y: 15,
+                          scale: 0.96,
+                          filter: "blur(8px)",
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          scale: 1,
+                          filter: "blur(0px)",
+                        }}
+                        exit={{
+                          opacity: 0,
+                          y: 10,
+                          scale: 0.96,
+                          filter: "blur(8px)",
+                        }}
+                        transition={{
+                          type: "spring",
+                          damping: 25,
+                          stiffness: 350,
+                        }}
+                        className="absolute right-0 sm:right-[-10px] mt-4 w-[260px] sm:w-[320px] overflow-hidden rounded-[1.5rem] sm:rounded-[1.75rem] border border-white/80 bg-white/95 backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(123,44,191,0.15)] p-2 z-50 origin-top-right"
+                      >
+                        <div className="bg-zinc-50/80 p-4 sm:p-5 rounded-[1.25rem] mb-2 border border-zinc-100">
+                          <p className="text-[8px] font-black uppercase text-[var(--royal-violet)] tracking-[0.3em] mb-1">
+                            Conectat ca
+                          </p>
+                          <p className="truncate text-xs sm:text-sm font-bold text-[var(--dark-amethyst)]">
+                            {user.email}
+                          </p>
+                        </div>
+
+                        <div className="space-y-0.5 p-1">
+                          {isAdmin && (
+                            <Link
+                              to="/admin"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
+                            >
+                              <span className="flex items-center gap-3">
+                                <ShieldCheck
+                                  size={16}
+                                  className="text-blue-500"
+                                />
+                                Administrare
+                              </span>
+                              <ChevronRight
+                                size={14}
+                                className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
+                              />
+                            </Link>
+                          )}
                           <Link
-                            to="/admin"
+                            to="/account/orders"
                             onClick={() => setUserMenuOpen(false)}
                             className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
                           >
                             <span className="flex items-center gap-3">
-                              <ShieldCheck
+                              <Package
                                 size={16}
-                                className="text-blue-500"
+                                className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
                               />
-                              Administrare
+                              Comenzile mele
                             </span>
                             <ChevronRight
                               size={14}
                               className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
                             />
                           </Link>
-                        )}
-                        <Link
-                          to="/account/orders"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                        >
-                          <span className="flex items-center gap-3">
-                            <Package
-                              size={16}
-                              className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
+                          <Link
+                            to="/account/addresses"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
+                          >
+                            <span className="flex items-center gap-3">
+                              <MapPin
+                                size={16}
+                                className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
+                              />
+                              Adresele mele
+                            </span>
+                            <ChevronRight
+                              size={14}
+                              className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
                             />
-                            Comenzile mele
-                          </span>
-                          <ChevronRight
-                            size={14}
-                            className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                          />
-                        </Link>
-                        <Link
-                          to="/account/addresses"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                        >
-                          <span className="flex items-center gap-3">
-                            <MapPin
-                              size={16}
-                              className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
+                          </Link>
+                          <Link
+                            to="/account/settings"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
+                          >
+                            <span className="flex items-center gap-3">
+                              <Settings
+                                size={16}
+                                className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
+                              />
+                              Setări cont
+                            </span>
+                            <ChevronRight
+                              size={14}
+                              className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
                             />
-                            Adresele mele
-                          </span>
-                          <ChevronRight
-                            size={14}
-                            className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                          />
-                        </Link>
-                        <Link
-                          to="/account/settings"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="group flex items-center justify-between rounded-xl px-3 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50 hover:text-[var(--royal-violet)] transition-all"
-                        >
-                          <span className="flex items-center gap-3">
-                            <Settings
-                              size={16}
-                              className="text-zinc-400 group-hover:text-[var(--royal-violet)] transition-colors"
-                            />
-                            Setări cont
-                          </span>
-                          <ChevronRight
-                            size={14}
-                            className="text-zinc-300 group-hover:text-[var(--royal-violet)] group-hover:translate-x-0.5 transition-all"
-                          />
-                        </Link>
-                      </div>
+                          </Link>
+                        </div>
 
-                      <div className="h-px bg-zinc-100 my-1 mx-3" />
+                        <div className="h-px bg-zinc-100 my-1 mx-3" />
 
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all active:scale-95 mt-1"
+                        <button
+                          onClick={handleLogout}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-50 transition-all active:scale-95 mt-1"
+                        >
+                          <LogOut size={14} strokeWidth={2.5} /> Ieșire din cont
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setBagOpen(true)}
+                  aria-label="Coș de cumpărături"
+                  className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-0.5 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  <BagIcon
+                    size={16}
+                    className="sm:w-[18px] sm:h-[18px]"
+                    strokeWidth={2}
+                  />
+                  <AnimatePresence>
+                    {totalItems > 0 && (
+                      <motion.span
+                        key="badge"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        className="absolute -right-1 -top-1 flex h-[16px] min-w-[16px] sm:h-[18px] sm:min-w-[18px] px-1 items-center justify-center rounded-full border-[2px] border-white bg-zinc-900 text-[8px] sm:text-[9px] font-black shadow-sm"
                       >
-                        <LogOut size={14} strokeWidth={2.5} /> Ieșire din cont
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        {totalItems}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               </div>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setBagOpen(true)}
-                aria-label="Coș de cumpărături"
-                className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-0.5 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
-                style={{ background: "var(--primary-gradient)" }}
-              >
-                <BagIcon
-                  size={16}
-                  className="sm:w-[18px] sm:h-[18px]"
-                  strokeWidth={2}
-                />
-                <AnimatePresence>
-                  {totalItems > 0 && (
-                    <motion.span
-                      key="badge"
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      className="absolute -right-1 -top-1 flex h-[16px] min-w-[16px] sm:h-[18px] sm:min-w-[18px] px-1 items-center justify-center rounded-full border-[2px] border-white bg-zinc-900 text-[8px] sm:text-[9px] font-black shadow-sm"
-                    >
-                      {totalItems}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
             </div>
           </motion.nav>
         </div>
