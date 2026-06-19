@@ -1,3 +1,8 @@
+/**
+ * Navbar.tsx
+ * Design Futuristic - Full-Width la Top, Capsule la Scroll
+ */
+
 import {
   useState,
   useEffect,
@@ -371,11 +376,13 @@ const SearchModal = ({
     initialSearchDone && !isCurrentlySearching && hits.length === 0;
   const showInitialState = !initialSearchDone && !isCurrentlySearching;
 
-  const panelLeft = navRect?.left ?? 0;
-  const panelRight =
-    typeof window !== "undefined" && navRect
+  // Calculam pozitiile relative. Cand NU suntem scrollati, latimea va fi 100%
+  const panelLeft = isScrolled ? (navRect?.left ?? 0) : 0;
+  const panelRight = isScrolled
+    ? typeof window !== "undefined" && navRect
       ? Math.max(0, window.innerWidth - navRect.right)
-      : 0;
+      : 0
+    : 0;
   const panelTop = navRect?.bottom ?? 0;
 
   return (
@@ -398,10 +405,10 @@ const SearchModal = ({
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
             exit={{ opacity: 0, y: -8, scaleY: 0.96 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className={`fixed z-[210] flex flex-col bg-white border border-zinc-100 overflow-hidden pointer-events-auto origin-top ${
+            className={`fixed z-[210] flex flex-col bg-white border-zinc-100 overflow-hidden pointer-events-auto origin-top ${
               isScrolled
-                ? "rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.28)]"
-                : "rounded-b-[2rem] rounded-t-none border-t-0 shadow-[0_40px_70px_-20px_rgba(123,44,191,0.2)]"
+                ? "rounded-[1.75rem] shadow-[0_30px_70px_-20px_rgba(123,44,191,0.28)] border"
+                : "rounded-b-[2rem] rounded-t-none border-b shadow-[0_40px_70px_-20px_rgba(123,44,191,0.2)]"
             }`}
             style={{
               left: panelLeft,
@@ -834,53 +841,62 @@ const Navbar = () => {
     bottom: number;
   } | null>(null);
 
-  useEffect(() => {
-    if (!searchOpen) return;
-    const measure = () => {
-      if (!navRef.current) return;
-      const r = navRef.current.getBoundingClientRect();
-      setNavRect({ left: r.left, right: r.right, bottom: r.bottom });
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, { passive: true });
-    return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure);
-    };
-  }, [searchOpen]);
-
-  useMotionValueEvent(scrollY, "change", () => {
-    if (!searchOpen || !navRef.current) return;
+  const updateNavRect = useCallback(() => {
+    if (!navRef.current) return;
     const r = navRef.current.getBoundingClientRect();
     setNavRect({ left: r.left, right: r.right, bottom: r.bottom });
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    updateNavRect();
+    window.addEventListener("resize", updateNavRect);
+    window.addEventListener("scroll", updateNavRect, { passive: true });
+    return () => {
+      window.removeEventListener("resize", updateNavRect);
+      window.removeEventListener("scroll", updateNavRect);
+    };
+  }, [searchOpen, updateNavRect]);
+
+  useMotionValueEvent(scrollY, "change", () => {
+    if (searchOpen) updateNavRect();
   });
 
+  // La 0 scroll e 100%, la 60px ajunge la capsulă.
+  // Transformările au fost optimizate.
   const navWidth = useTransform(
     scrollY,
     [0, 60],
-    ["100%", "calc(100% - 1rem)"],
+    ["100%", "calc(100% - 2rem)"],
   );
-  const navMaxWidth = useTransform(scrollY, [0, 60], ["100%", "1200px"]);
+  const navMaxWidth = useTransform(scrollY, [0, 60], ["none", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-  const navPadding = useTransform(scrollY, [0, 60], ["0px 28px", "0px 20px"]);
+  // Adăugăm padding pe desktop cand e extins pt a nu fi lipit de margini,
+  // dar păstrăm padding redus cand e capsulă.
+  const navPadding = useTransform(scrollY, [0, 60], ["0px 4vw", "0px 20px"]);
 
   const navBg = useTransform(
     scrollY,
     [0, 60],
     ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.85)"],
   );
-  const navBorder = useTransform(
+  const navBorderColor = useTransform(
     scrollY,
     [0, 60],
-    ["1px solid rgba(255,255,255,0)", "1px solid rgba(255,255,255,0.7)"],
+    ["rgba(255,255,255,0)", "rgba(255,255,255,0.7)"],
   );
+  const navBorderBottomColor = useTransform(
+    scrollY,
+    [0, 60],
+    ["rgba(0,0,0,0.06)", "rgba(255,255,255,0.7)"],
+  );
+
   const navShadow = useTransform(
     scrollY,
     [0, 60],
     [
-      "0 1px 0px 0 rgba(0,0,0,0.04)",
+      "0 0px 0px 0 rgba(0,0,0,0)",
       "0 20px 40px -15px rgba(0,0,0,0.1), 0 0 0 1px rgba(123,44,191,0.03)",
     ],
   );
@@ -920,7 +936,7 @@ const Navbar = () => {
         <motion.div
           animate={{ height: isScrolled ? 0 : 36, opacity: isScrolled ? 0 : 1 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="w-full flex items-center justify-center overflow-hidden pointer-events-auto relative shadow-sm"
+          className="w-full flex items-center justify-center overflow-hidden pointer-events-auto relative shadow-[0_1px_3px_rgba(0,0,0,0.05)]"
           style={{ background: "var(--primary-gradient)" }}
         >
           <div className="flex items-center gap-2.5 relative z-10 px-4">
@@ -943,14 +959,21 @@ const Navbar = () => {
               borderRadius: navBorderRadius,
               backgroundColor: navBg,
               boxShadow: navShadow,
-              border: navBorder,
+              borderTop: "1px solid",
+              borderLeft: "1px solid",
+              borderRight: "1px solid",
+              borderBottom: "1px solid",
+              borderTopColor: navBorderColor,
+              borderLeftColor: navBorderColor,
+              borderRightColor: navBorderColor,
+              borderBottomColor: navBorderBottomColor,
               backdropFilter: navBackdrop,
               padding: navPadding,
             }}
-            className="relative grid grid-cols-[1fr_auto_1fr] items-center transform-gpu transition-all w-full h-[3.5rem] sm:h-[4.5rem]"
+            className="relative flex justify-between items-center transform-gpu transition-all h-[4rem] sm:h-[4.5rem]"
           >
             {/* LEFT — SEARCH */}
-            <div className="flex items-center justify-start">
+            <div className="flex-1 flex justify-start items-center">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setSearchOpen(true)}
@@ -963,14 +986,14 @@ const Navbar = () => {
                 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
                 style={{ pointerEvents: searchOpen ? "none" : "auto" }}
-                className={navButtonClass}
+                className={`${navButtonClass} ${isScrolled ? "" : "bg-zinc-100 hover:bg-zinc-200"}`} // Pe Top view îi dăm un mic background ca să fie clar
               >
                 <Search size={18} strokeWidth={2} className="relative z-10" />
               </motion.button>
             </div>
 
             {/* CENTER — LOGO */}
-            <div className="flex items-center justify-center px-2 sm:px-6">
+            <div className="flex items-center justify-center shrink-0">
               <Link to="/" className="group relative block">
                 <motion.img
                   whileHover={{ scale: 1.04 }}
@@ -983,7 +1006,7 @@ const Navbar = () => {
             </div>
 
             {/* RIGHT — ACTIONS */}
-            <div className="flex items-center justify-end gap-0 sm:gap-1.5">
+            <div className="flex-1 flex justify-end items-center gap-0.5 sm:gap-1.5">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setWishOpen(true)}
