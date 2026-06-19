@@ -1,6 +1,7 @@
 /**
  * Navbar.tsx
  * Design Futuristic - Full-Width la Top, Capsule la Scroll
+ * Optimizat complet pentru alinieri perfecte (Mobile & Desktop)
  */
 
 import {
@@ -50,7 +51,7 @@ import ForgotPasswordDrawer from "@/pages/auth/ForgotPasswordDrawer";
 import { FilterSidebar } from "../shop/FilterSidebar";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CACHE IN-MEMORY
+// CACHE IN-MEMORY FOR SEARCH
 // ─────────────────────────────────────────────────────────────────────────────
 const queryCache = new Map<string, any[]>();
 const QUERY_CACHE_LIMIT = 50;
@@ -63,7 +64,7 @@ const cachePut = (q: string, hits: any[]) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SKELETON ROW
+// SKELETON ROW FOR SEARCH
 // ─────────────────────────────────────────────────────────────────────────────
 const RowSkeleton = memo(({ index }: { index: number }) => (
   <motion.div
@@ -86,7 +87,7 @@ const RowSkeleton = memo(({ index }: { index: number }) => (
 RowSkeleton.displayName = "RowSkeleton";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HIT ROW
+// HIT ROW FOR SEARCH RESULTS
 // ─────────────────────────────────────────────────────────────────────────────
 const HitRow = memo(
   ({
@@ -135,7 +136,7 @@ const HitRow = memo(
         onClick={() => onClick(hit.slug)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="relative w-full flex items-center gap-4 px-5 py-3 text-left group focus:outline-none"
+        className="relative w-full flex items-center gap-4 px-5 py-3 text-left group focus:outline-none z-10"
       >
         <AnimatePresence>
           {hovered && (
@@ -376,7 +377,6 @@ const SearchModal = ({
     initialSearchDone && !isCurrentlySearching && hits.length === 0;
   const showInitialState = !initialSearchDone && !isCurrentlySearching;
 
-  // Când nu este scrolled, Modal-ul va ocupa lățimea definită de `navRect`
   const panelLeft = isScrolled ? (navRect?.left ?? 0) : 0;
   const panelRight = isScrolled
     ? typeof window !== "undefined" && navRect
@@ -413,7 +413,6 @@ const SearchModal = ({
             style={{
               left: panelLeft,
               right: panelRight,
-              // Pentru top-view limităm lățimea similar cu navbar-ul
               maxWidth: isScrolled ? "none" : "1400px",
               top: isScrolled ? panelTop + 8 : panelTop,
               maxHeight: "min(75vh, calc(100vh - 8rem))",
@@ -864,7 +863,6 @@ const Navbar = () => {
     if (searchOpen) updateNavRect();
   });
 
-  // La 0 scroll e 100%, la 60px ajunge la capsulă.
   const navWidth = useTransform(
     scrollY,
     [0, 60],
@@ -873,10 +871,6 @@ const Navbar = () => {
   const navMaxWidth = useTransform(scrollY, [0, 60], ["none", "1200px"]);
   const navMarginTop = useTransform(scrollY, [0, 60], ["0px", "16px"]);
   const navBorderRadius = useTransform(scrollY, [0, 60], ["0px", "100px"]);
-
-  // AICI este "rețeta secretă": la scroll 0 dăm un padding generos,
-  // la scroll > 60 se strânge la 24px
-  const navPadding = useTransform(scrollY, [0, 60], ["0px 48px", "0px 24px"]);
 
   const navBg = useTransform(
     scrollY,
@@ -970,12 +964,12 @@ const Navbar = () => {
               borderRightColor: navBorderColor,
               borderBottomColor: navBorderBottomColor,
               backdropFilter: navBackdrop,
-              padding: navPadding,
+              padding: "0px",
             }}
             className="relative flex justify-center items-center transform-gpu transition-all h-[4rem] sm:h-[4.5rem]"
           >
-            {/* INNER CONTAINER pentru controlul elementelor */}
-            <div className="w-full h-full max-w-[1400px] mx-auto flex justify-between items-center px-4 sm:px-2">
+            {/* INNER CONTAINER ── Păstrează marginile stabile indiferent de rezoluție */}
+            <div className="w-full h-full max-w-[1400px] mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
               {/* LEFT — SEARCH */}
               <div className="flex-1 flex justify-start items-center">
                 <motion.button
@@ -990,14 +984,14 @@ const Navbar = () => {
                   }}
                   transition={{ duration: 0.15, ease: "easeOut" }}
                   style={{ pointerEvents: searchOpen ? "none" : "auto" }}
-                  className={`${navButtonClass} ${isScrolled ? "" : "bg-zinc-100 hover:bg-zinc-200"}`}
+                  className={`${navButtonClass} ${isScrolled ? "" : "bg-zinc-100/60 hover:bg-zinc-200"}`}
                 >
                   <Search size={18} strokeWidth={2} className="relative z-10" />
                 </motion.button>
               </div>
 
               {/* CENTER — LOGO */}
-              <div className="flex items-center justify-center shrink-0 px-2">
+              <div className="flex items-center justify-center shrink-0">
                 <Link to="/" className="group relative block">
                   <motion.img
                     whileHover={{ scale: 1.04 }}
@@ -1010,8 +1004,7 @@ const Navbar = () => {
               </div>
 
               {/* RIGHT — ACTIONS */}
-              {/* Am redus gap-ul pe mobil la gap-0 și am adăugat un mic margin pentru a nu sta lipite de ecran */}
-              <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1.5">
+              <div className="flex-1 flex justify-end items-center gap-1 sm:gap-2">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setWishOpen(true)}
@@ -1161,7 +1154,7 @@ const Navbar = () => {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setBagOpen(true)}
                   aria-label="Coș de cumpărături"
-                  className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-1 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
+                  className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
                   style={{ background: "var(--primary-gradient)" }}
                 >
                   <BagIcon
