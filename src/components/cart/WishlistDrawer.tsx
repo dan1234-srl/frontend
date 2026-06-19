@@ -102,29 +102,16 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[700] flex justify-end font-sans">
-          {/* ── BACKDROP CU BLUR ȘI GLOW-URI ── */}
+          {/* ── BACKDROP CU BLUR ȘI CLASA TA CUSTOM ── */}
           <motion.div
             key="wishlist-backdrop"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             onClick={onClose}
-            className="absolute inset-0 bg-zinc-900/40 overflow-hidden cursor-pointer"
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.2 }}
-              transition={{ duration: 2, ease: "easeOut" }}
-              className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-[var(--royal-violet)] rounded-full blur-[120px] pointer-events-none"
-            />
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.15 }}
-              transition={{ duration: 2, delay: 0.3, ease: "easeOut" }}
-              className="absolute bottom-1/4 right-1/4 w-[50vw] h-[50vw] bg-[var(--mauve-magic)] rounded-full blur-[100px] pointer-events-none"
-            />
-          </motion.div>
+            className="absolute inset-0 glass-overlay cursor-pointer"
+          />
 
           {/* ── PANOU PRINCIPAL ── */}
           <motion.div
@@ -135,8 +122,12 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
             transition={{ type: "spring", damping: 30, stiffness: 250 }}
             className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[420px] flex-col bg-white/95 backdrop-blur-3xl shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.15)] sm:rounded-l-[2.5rem] border-l border-white overflow-hidden"
           >
+            {/* Glow-uri fundal (păstrate din versiunea premium) */}
+            <div className="absolute top-0 left-0 w-full h-64 bg-[var(--mauve-magic)] opacity-5 blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-[var(--royal-violet)] opacity-[0.03] blur-[100px] pointer-events-none" />
+
             {/* ── HEADER ── */}
-            <header className="relative flex items-center justify-between px-8 py-8 border-b border-zinc-100/50 shrink-0 bg-white/50">
+            <header className="relative flex items-center justify-between px-8 py-8 border-b border-zinc-100/50 shrink-0 bg-white/50 z-10">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Sparkles size={12} className="text-[var(--royal-violet)]" />
@@ -164,7 +155,7 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
             </header>
 
             {/* ── CONȚINUT ── */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar relative px-6 py-6 pb-32">
+            <div className="flex-1 overflow-y-auto custom-scrollbar relative px-6 py-6 pb-32 z-10">
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-5">
                   <div className="relative flex items-center justify-center">
@@ -205,7 +196,7 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
                             stiffness: 300,
                             delay: Math.min(idx * 0.05, 0.3),
                           }}
-                          className={`group relative flex gap-4 p-3 bg-white rounded-[1.25rem] border border-zinc-100 shadow-sm hover:shadow-md hover:border-zinc-200 transition-all duration-300 overflow-hidden ${
+                          className={`group relative flex gap-4 p-3 bg-white/70 backdrop-blur-xl rounded-[1.25rem] border border-white shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_rgba(123,44,191,0.08)] hover:bg-white transition-all duration-300 overflow-hidden ${
                             isOutOfStock ? "opacity-60 grayscale-[0.5]" : ""
                           }`}
                         >
@@ -311,22 +302,31 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
             </div>
 
             {/* ── FOOTER PLUTITOR ── */}
-            <div className="absolute bottom-6 left-6 right-6 shrink-0 p-2 bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] z-50">
-              <button
-                onClick={onClose}
-                className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 group active:scale-[0.98]"
-                style={{ background: "var(--primary-gradient)" }}
-              >
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                <div className="relative flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-[0.25em]">
-                  Continuă Cumpărăturile{" "}
-                  <ArrowRight
-                    size={14}
-                    className="group-hover:translate-x-1 transition-transform duration-300"
-                  />
-                </div>
-              </button>
-            </div>
+            <AnimatePresence>
+              {items.length > 0 && (
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 50, opacity: 0 }}
+                  className="absolute bottom-6 left-6 right-6 shrink-0 p-2 bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] z-50"
+                >
+                  <button
+                    onClick={onClose}
+                    className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 group active:scale-[0.98]"
+                    style={{ background: "var(--primary-gradient)" }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                    <div className="relative flex items-center justify-center gap-2 font-black uppercase text-[10px] tracking-[0.25em]">
+                      Continuă Cumpărăturile{" "}
+                      <ArrowRight
+                        size={14}
+                        className="group-hover:translate-x-1 transition-transform duration-300"
+                      />
+                    </div>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
       )}
