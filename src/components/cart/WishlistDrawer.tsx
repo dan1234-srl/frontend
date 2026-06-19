@@ -136,7 +136,7 @@ const WishlistDrawer = ({ isOpen, onClose }: WishlistDrawerProps) => {
                   </p>
                 </div>
                 <h2 className="text-3xl font-black tracking-tight text-[var(--dark-amethyst)] flex items-baseline gap-2">
-                  Wishlist
+                  Coș de dorințe
                   <span className="text-sm font-bold text-zinc-400 bg-zinc-100/80 px-2 py-0.5 rounded-lg">
                     {items.length}
                   </span>

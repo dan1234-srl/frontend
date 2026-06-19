@@ -974,8 +974,8 @@ const Navbar = () => {
             }}
             className="relative flex justify-center items-center transform-gpu transition-all h-[4rem] sm:h-[4.5rem]"
           >
-            {/* INNER CONTAINER pentru controlul elementelor cand e full-width */}
-            <div className="w-full h-full max-w-[1400px] mx-auto flex justify-between items-center px-2">
+            {/* INNER CONTAINER pentru controlul elementelor */}
+            <div className="w-full h-full max-w-[1400px] mx-auto flex justify-between items-center px-4 sm:px-2">
               {/* LEFT — SEARCH */}
               <div className="flex-1 flex justify-start items-center">
                 <motion.button
@@ -997,7 +997,7 @@ const Navbar = () => {
               </div>
 
               {/* CENTER — LOGO */}
-              <div className="flex items-center justify-center shrink-0">
+              <div className="flex items-center justify-center shrink-0 px-2">
                 <Link to="/" className="group relative block">
                   <motion.img
                     whileHover={{ scale: 1.04 }}
@@ -1010,7 +1010,8 @@ const Navbar = () => {
               </div>
 
               {/* RIGHT — ACTIONS */}
-              <div className="flex-1 flex justify-end items-center gap-0.5 sm:gap-1.5">
+              {/* Am redus gap-ul pe mobil la gap-0 și am adăugat un mic margin pentru a nu sta lipite de ecran */}
+              <div className="flex-1 flex justify-end items-center gap-0 sm:gap-1.5">
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setWishOpen(true)}
@@ -1160,7 +1161,7 @@ const Navbar = () => {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setBagOpen(true)}
                   aria-label="Coș de cumpărături"
-                  className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-0.5 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
+                  className="relative flex size-9 sm:size-10 lg:size-11 items-center justify-center rounded-full ml-1 sm:ml-2 text-white shadow-[0_8px_20px_-5px_rgba(123,44,191,0.4)] transition-colors hover:brightness-110 shrink-0"
                   style={{ background: "var(--primary-gradient)" }}
                 >
                   <BagIcon
