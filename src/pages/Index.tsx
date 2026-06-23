@@ -15,6 +15,20 @@ const API_BASE_URL =
 const SCROLL_KEY = "index:scrollY";
 const COLLECTIONS_CACHE_KEY = "index:collections:order";
 
+const slugify = (text: string) =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/ă/g, "a")
+    .replace(/î/g, "i")
+    .replace(/â/g, "a")
+    .replace(/ș/g, "s")
+    .replace(/ț/g, "t")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-");
+
 const Index = () => {
   // Hidrăm instant ordinea colecțiilor din sessionStorage (doar pozițiile/structura,
   // datele propriu-zise se reîmprospătează din backend în fundal).
@@ -72,7 +86,6 @@ const Index = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-
   const formatTitle = (slug: string) => {
     const parts = slug.replace(/-/g, " ").split(" ");
     return {
@@ -120,6 +133,8 @@ const Index = () => {
           ) : (
             collections.map((colType, index) => {
               const titleParts = formatTitle(colType);
+              const collectionSlug = slugify(colType);
+
               return (
                 <motion.div
                   key={colType}
@@ -141,7 +156,8 @@ const Index = () => {
                       ) as any
                     }
                     subtitle={`${titleParts.first} ${titleParts.rest} EVEM`}
-                    collectionType={colType}
+                    // 3. CONCRET: Trimiți slug-ul generat, NU valoarea brută
+                    collectionType={collectionSlug}
                     hideExploreLink={true}
                   />
                 </motion.div>
