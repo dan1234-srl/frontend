@@ -88,7 +88,7 @@ const Footer = () => {
 
   const exploreLinks = [
     { name: t("Acasă", "Home"), path: "/" },
-    { name: t("FAQ", "FAQ"), path: "/faq" },
+    { name: t("Întrebări frecvente", "FAQ"), path: "/faq" },
     { name: t("Contact", "Contact Us"), path: "/contact" },
   ];
 

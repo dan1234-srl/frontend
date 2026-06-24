@@ -185,7 +185,8 @@ const AdminEmailTemplates = () => {
   };
 
   return (
-    <div className="w-full space-y-8 px-2 sm:px-4 md:px-8 pb-20 font-sans text-left animate-fade-in relative z-0">
+    // PĂRINTELE PRINCIPAL: Fără 'relative' sau padding global, doar full height
+    <div className="w-full h-full font-sans text-left animate-fade-in flex flex-col">
       <AnimatePresence mode="wait">
         {/* ─── VEDEREA 1: LISTA DE TEMPLATE-URI ──────────────────────── */}
         {view === "list" && (
@@ -194,7 +195,8 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="space-y-10"
+            // PADDING-UL MUTAT AICI
+            className="space-y-10 w-full px-2 sm:px-4 md:px-8 pb-20 pt-4"
           >
             {/* Header */}
             <header
@@ -294,7 +296,6 @@ const AdminEmailTemplates = () => {
                     }}
                     onClick={() => openEditor(t)}
                   >
-                    {/* Background Hover Gradient */}
                     <div
                       className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-0"
                       style={{
@@ -378,7 +379,8 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="space-y-10"
+            // PADDING-UL MUTAT AICI
+            className="space-y-10 w-full px-2 sm:px-4 md:px-8 pb-20 pt-4"
           >
             <header
               className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
@@ -500,7 +502,9 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-white flex flex-col h-[100dvh] overflow-hidden"
+            // 🚀 SOLUȚIA: `absolute inset-0` se ancorează de containerul `<main>` din AdminLayout
+            // Care ocupă exact restul ecranului lăsând Sidebar-ul liber.
+            className="absolute inset-0 z-[100] bg-white flex flex-col overflow-hidden"
           >
             {/* Header Consolă pentru Editor */}
             <header
