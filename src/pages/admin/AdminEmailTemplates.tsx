@@ -47,7 +47,6 @@ const AdminEmailTemplates = () => {
   const emailEditorRef = useRef<EditorRef>(null);
   const { theme } = useTheme();
 
-  // Culori dinamice din sistemul Theme
   const brandColors = {
     deep: "var(--dark-amethyst)",
     accent: "var(--royal-violet)",
@@ -185,7 +184,6 @@ const AdminEmailTemplates = () => {
   };
 
   return (
-    // PĂRINTELE PRINCIPAL: Fără 'relative' sau padding global, doar full height
     <div className="w-full h-full font-sans text-left animate-fade-in flex flex-col">
       <AnimatePresence mode="wait">
         {/* ─── VEDEREA 1: LISTA DE TEMPLATE-URI ──────────────────────── */}
@@ -195,7 +193,6 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            // PADDING-UL MUTAT AICI
             className="space-y-10 w-full px-2 sm:px-4 md:px-8 pb-20 pt-4"
           >
             {/* Header */}
@@ -379,7 +376,6 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            // PADDING-UL MUTAT AICI
             className="space-y-10 w-full px-2 sm:px-4 md:px-8 pb-20 pt-4"
           >
             <header
@@ -502,8 +498,6 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            // 🚀 SOLUȚIA: `absolute inset-0` se ancorează de containerul `<main>` din AdminLayout
-            // Care ocupă exact restul ecranului lăsând Sidebar-ul liber.
             className="absolute inset-0 z-[100] bg-white flex flex-col overflow-hidden"
           >
             {/* Header Consolă pentru Editor */}
@@ -653,41 +647,45 @@ const AdminEmailTemplates = () => {
               </div>
             </header>
 
-            {/* Email Editor Canvas Fixat folosind arhitectura flexbox + absolute */}
-            <div className="w-full bg-zinc-50 flex-1 relative min-h-0">
-              <div className="absolute inset-0">
-                <EmailEditor
-                  ref={emailEditorRef}
-                  onReady={onReady}
-                  minHeight="100%"
-                  options={{
-                    locale: "ro",
-                    appearance: {
-                      theme: "light",
-                      panels: { tools: { dock: "left" } },
+            {/* 🚀 AICI ESTE FIX-UL CRITIC PENTRU UNLAYER */}
+            {/* Folosim CSS forțat (arbitrary variants Tailwind) pentru a instrui toate div-urile copil și iframe-ul să ia height 100% */}
+            <div className="flex-1 w-full bg-zinc-50 flex flex-col min-h-0 relative [&>div]:!flex-1 [&>div]:!h-full [&>div]:!min-h-full [&_iframe]:!h-full [&_iframe]:!min-h-full">
+              <EmailEditor
+                ref={emailEditorRef}
+                onReady={onReady}
+                minHeight="100%"
+                options={{
+                  locale: "ro",
+                  appearance: {
+                    theme: "light",
+                    panels: { tools: { dock: "left" } },
+                  },
+                  mergeTags: {
+                    customerName: {
+                      name: "Nume Client",
+                      value: "{{customerName}}",
                     },
-                    mergeTags: {
-                      customerName: {
-                        name: "Nume Client",
-                        value: "{{customerName}}",
-                      },
-                      orderNumber: {
-                        name: "Număr Comandă",
-                        value: "{{orderNumber}}",
-                      },
-                      totalAmount: {
-                        name: "Total Plată",
-                        value: "{{totalAmount}}",
-                      },
-                      trackingUrl: {
-                        name: "Link AWB (Curier)",
-                        value: "{{trackingUrl}}",
-                      },
+                    orderNumber: {
+                      name: "Număr Comandă",
+                      value: "{{orderNumber}}",
                     },
-                  }}
-                  style={{ width: "100%", height: "100%", display: "flex" }}
-                />
-              </div>
+                    totalAmount: {
+                      name: "Total Plată",
+                      value: "{{totalAmount}}",
+                    },
+                    trackingUrl: {
+                      name: "Link AWB (Curier)",
+                      value: "{{trackingUrl}}",
+                    },
+                  },
+                }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flex: 1,
+                }}
+              />
             </div>
           </motion.div>
         )}
