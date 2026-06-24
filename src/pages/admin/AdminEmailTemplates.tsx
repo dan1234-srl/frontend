@@ -195,7 +195,7 @@ const AdminEmailTemplates = () => {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-10 w-full px-2 sm:px-4 md:px-8 pb-20 pt-4"
           >
-            {/* Header */}
+            {/* Header List */}
             <header
               className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 pb-6 pt-4 border-b"
               style={{
@@ -500,15 +500,16 @@ const AdminEmailTemplates = () => {
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-[100] bg-white flex flex-col overflow-hidden"
           >
-            {/* Header Consolă pentru Editor */}
+            {/* 🚀 HEADER REORGANIZAT PENTRU MOBIL */}
             <header
-              className="w-full bg-white border-b flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 lg:px-6 lg:py-4 gap-4 shrink-0 shadow-sm z-30 max-h-[50vh] overflow-y-auto lg:overflow-visible custom-scrollbar"
+              className="w-full bg-white border-b flex flex-col p-3 lg:px-6 lg:py-4 gap-3 lg:gap-4 shrink-0 shadow-sm z-30"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
             >
-              <div className="flex w-full lg:w-auto items-center justify-between gap-4 shrink-0">
+              {/* TOP BAR: Butoane Renunță & Salvare (pe mobil sunt ambele aici) */}
+              <div className="flex items-center justify-between w-full lg:w-auto">
                 <button
                   onClick={() => setView("list")}
                   className="flex items-center justify-center size-10 lg:size-12 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
@@ -520,11 +521,26 @@ const AdminEmailTemplates = () => {
                 >
                   <X size={18} strokeWidth={2.5} />
                 </button>
+
+                {/* Buton Salvare DOAR pe Mobil */}
+                <button
+                  onClick={saveTemplate}
+                  disabled={isSaving}
+                  className="lg:hidden h-10 px-6 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.1em] flex items-center justify-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 transition-all"
+                  style={{ background: "var(--primary-gradient)" }}
+                >
+                  {isSaving ? (
+                    <Loader2 className="animate-spin" size={14} />
+                  ) : (
+                    <Save size={14} />
+                  )}
+                  Salvează
+                </button>
               </div>
 
-              {/* Input-urile flexibile adaptate pe Flexbox */}
-              <div className="flex flex-col md:flex-row flex-1 w-full lg:max-w-6xl xl:max-w-7xl mx-auto gap-3 lg:gap-4 pr-1 lg:pr-0">
-                <div className="min-w-0 md:min-w-[150px] flex-[1.5] group relative">
+              {/* INPUTS BAR: Rând Scrollabil pe Mobil / Rând normal pe Desktop */}
+              <div className="flex flex-row flex-1 w-full lg:max-w-6xl xl:max-w-7xl lg:mx-auto gap-3 lg:gap-4 overflow-x-auto pb-2 lg:pb-0 custom-scrollbar snap-x snap-mandatory">
+                <div className="min-w-[220px] lg:min-w-[150px] flex-[1.5] group relative snap-start">
                   <Label
                     className="text-[9px] font-black uppercase ml-1 transition-colors"
                     style={{
@@ -542,7 +558,7 @@ const AdminEmailTemplates = () => {
                         title: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-xl px-3 py-2.5 lg:px-4 lg:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    className="w-full bg-white/50 rounded-xl px-3 py-2 lg:px-4 lg:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -560,7 +576,7 @@ const AdminEmailTemplates = () => {
                   />
                 </div>
 
-                <div className="min-w-0 md:min-w-[150px] flex-1 group relative">
+                <div className="min-w-[220px] lg:min-w-[150px] flex-1 group relative snap-start">
                   <Label
                     className="text-[9px] font-black uppercase ml-1 transition-colors flex items-center gap-1.5"
                     style={{ color: "var(--royal-violet)" }}
@@ -575,7 +591,7 @@ const AdminEmailTemplates = () => {
                         event_name: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-xl px-3 py-2.5 lg:px-4 lg:py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    className="w-full bg-white/50 rounded-xl px-3 py-2 lg:px-4 lg:py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -593,7 +609,7 @@ const AdminEmailTemplates = () => {
                   />
                 </div>
 
-                <div className="min-w-0 md:min-w-[200px] flex-[2.5] group relative">
+                <div className="min-w-[260px] lg:min-w-[200px] flex-[2.5] group relative snap-start">
                   <Label
                     className="text-[9px] font-black uppercase ml-1 transition-colors"
                     style={{
@@ -611,7 +627,7 @@ const AdminEmailTemplates = () => {
                         subject: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-xl px-3 py-2.5 lg:px-4 lg:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    className="w-full bg-white/50 rounded-xl px-3 py-2 lg:px-4 lg:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -630,11 +646,12 @@ const AdminEmailTemplates = () => {
                 </div>
               </div>
 
-              <div className="flex w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
+              {/* Buton Salvare DOAR pe Desktop (mutat din dreapta pe layout mare) */}
+              <div className="hidden lg:flex shrink-0 absolute right-6 top-4">
                 <button
                   onClick={saveTemplate}
                   disabled={isSaving}
-                  className="w-full sm:w-auto text-white px-6 py-3.5 lg:px-8 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap"
+                  className="px-8 py-3.5 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap"
                   style={{ background: "var(--primary-gradient)" }}
                 >
                   {isSaving ? (
@@ -647,8 +664,7 @@ const AdminEmailTemplates = () => {
               </div>
             </header>
 
-            {/* 🚀 AICI ESTE FIX-UL CRITIC PENTRU UNLAYER */}
-            {/* Folosim CSS forțat (arbitrary variants Tailwind) pentru a instrui toate div-urile copil și iframe-ul să ia height 100% */}
+            {/* Email Editor Canvas */}
             <div className="flex-1 w-full bg-zinc-50 flex flex-col min-h-0 relative [&>div]:!flex-1 [&>div]:!h-full [&>div]:!min-h-full [&_iframe]:!h-full [&_iframe]:!min-h-full">
               <EmailEditor
                 ref={emailEditorRef}
