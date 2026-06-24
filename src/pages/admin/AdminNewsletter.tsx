@@ -94,6 +94,14 @@ const AdminNewsletter = () => {
     }
 
     setLoading(true);
+
+    // 🚀 FIX: Curățăm payload-ul. Pydantic (UUID) acceptă null, dar nu acceptă string gol "".
+    const payload = {
+      template_id: campaign.template_id,
+      segment: campaign.segment,
+      product_id: campaign.product_id === "" ? null : campaign.product_id,
+    };
+
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/v1/admin/marketing/send-campaign`,
@@ -101,7 +109,7 @@ const AdminNewsletter = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(campaign),
+          body: JSON.stringify(payload), // Trimitem payload-ul curățat
         },
       );
 
