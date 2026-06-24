@@ -500,20 +500,20 @@ const AdminEmailTemplates = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-white flex flex-col"
+            className="fixed inset-0 z-[1000] bg-white flex flex-col h-[100dvh] overflow-hidden"
           >
             {/* Header Consolă pentru Editor */}
             <header
-              className="w-full bg-white border-b flex flex-col lg:flex-row items-center justify-between px-6 py-4 gap-4 shrink-0 shadow-sm z-30"
+              className="w-full bg-white border-b flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 lg:px-6 lg:py-4 gap-4 shrink-0 shadow-sm z-30 max-h-[50vh] overflow-y-auto lg:overflow-visible custom-scrollbar"
               style={{
                 borderColor:
                   "color-mix(in srgb, var(--royal-violet) 10%, transparent)",
               }}
             >
-              <div className="flex w-full lg:w-auto items-center justify-between lg:justify-start gap-4">
+              <div className="flex w-full lg:w-auto items-center justify-between gap-4 shrink-0">
                 <button
                   onClick={() => setView("list")}
-                  className="flex items-center justify-center size-12 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
+                  className="flex items-center justify-center size-10 lg:size-12 rounded-full border bg-white hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all text-zinc-400 shrink-0"
                   style={{
                     borderColor:
                       "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -524,9 +524,9 @@ const AdminEmailTemplates = () => {
                 </button>
               </div>
 
-              {/* Input-urile flexibile */}
-              <div className="flex flex-1 w-full lg:max-w-6xl xl:max-w-7xl mx-auto gap-4 overflow-x-auto luxury-scrollbar pb-2 lg:pb-0">
-                <div className="min-w-[200px] flex-[1.5] group relative">
+              {/* Input-urile flexibile adaptate pe Flexbox */}
+              <div className="flex flex-col md:flex-row flex-1 w-full lg:max-w-6xl xl:max-w-7xl mx-auto gap-3 lg:gap-4 pr-1 lg:pr-0">
+                <div className="min-w-0 md:min-w-[150px] flex-[1.5] group relative">
                   <Label
                     className="text-[9px] font-black uppercase ml-1 transition-colors"
                     style={{
@@ -544,7 +544,7 @@ const AdminEmailTemplates = () => {
                         title: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    className="w-full bg-white/50 rounded-xl px-3 py-2.5 lg:px-4 lg:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -562,7 +562,7 @@ const AdminEmailTemplates = () => {
                   />
                 </div>
 
-                <div className="min-w-[200px] flex-1 group relative">
+                <div className="min-w-0 md:min-w-[150px] flex-1 group relative">
                   <Label
                     className="text-[9px] font-black uppercase ml-1 transition-colors flex items-center gap-1.5"
                     style={{ color: "var(--royal-violet)" }}
@@ -577,7 +577,7 @@ const AdminEmailTemplates = () => {
                         event_name: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    className="w-full bg-white/50 rounded-xl px-3 py-2.5 lg:px-4 lg:py-3 text-sm font-mono font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -595,7 +595,7 @@ const AdminEmailTemplates = () => {
                   />
                 </div>
 
-                <div className="min-w-[300px] flex-[2.5] group relative">
+                <div className="min-w-0 md:min-w-[200px] flex-[2.5] group relative">
                   <Label
                     className="text-[9px] font-black uppercase ml-1 transition-colors"
                     style={{
@@ -613,7 +613,7 @@ const AdminEmailTemplates = () => {
                         subject: e.target.value,
                       })
                     }
-                    className="w-full bg-white/50 rounded-xl px-4 py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
+                    className="w-full bg-white/50 rounded-xl px-3 py-2.5 lg:px-4 lg:py-3 text-sm font-bold outline-none transition-all text-[var(--dark-amethyst)] mt-1.5 border"
                     style={{
                       borderColor:
                         "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
@@ -632,11 +632,11 @@ const AdminEmailTemplates = () => {
                 </div>
               </div>
 
-              <div className="flex w-full lg:w-auto">
+              <div className="flex w-full lg:w-auto shrink-0 mt-2 lg:mt-0">
                 <button
                   onClick={saveTemplate}
                   disabled={isSaving}
-                  className="w-full sm:w-auto text-white px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all shrink-0 whitespace-nowrap"
+                  className="w-full sm:w-auto text-white px-6 py-3.5 lg:px-8 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center justify-center gap-2 hover:shadow-xl active:scale-95 disabled:opacity-50 transition-all whitespace-nowrap"
                   style={{ background: "var(--primary-gradient)" }}
                 >
                   {isSaving ? (
@@ -649,43 +649,41 @@ const AdminEmailTemplates = () => {
               </div>
             </header>
 
-            {/* Email Editor Canvas Fixat folosind absolut position */}
-            {/* Email Editor Canvas Fixat folosind calcul matematic direct pe componentă */}
-            <div
-              className="w-full bg-zinc-50"
-              style={{ height: "calc(100dvh - 88px)" }}
-            >
-              <EmailEditor
-                ref={emailEditorRef}
-                onReady={onReady}
-                minHeight="calc(100dvh - 88px)" // 🚀 AICI ESTE CHEIA CARE FORȚEAZĂ IFRAME-UL SĂ SE ÎNTINDĂ
-                options={{
-                  locale: "ro",
-                  appearance: {
-                    theme: "light",
-                    panels: { tools: { dock: "left" } },
-                  },
-                  mergeTags: {
-                    customerName: {
-                      name: "Nume Client",
-                      value: "{{customerName}}",
+            {/* Email Editor Canvas Fixat folosind arhitectura flexbox + absolute */}
+            <div className="w-full bg-zinc-50 flex-1 relative min-h-0">
+              <div className="absolute inset-0">
+                <EmailEditor
+                  ref={emailEditorRef}
+                  onReady={onReady}
+                  minHeight="100%"
+                  options={{
+                    locale: "ro",
+                    appearance: {
+                      theme: "light",
+                      panels: { tools: { dock: "left" } },
                     },
-                    orderNumber: {
-                      name: "Număr Comandă",
-                      value: "{{orderNumber}}",
+                    mergeTags: {
+                      customerName: {
+                        name: "Nume Client",
+                        value: "{{customerName}}",
+                      },
+                      orderNumber: {
+                        name: "Număr Comandă",
+                        value: "{{orderNumber}}",
+                      },
+                      totalAmount: {
+                        name: "Total Plată",
+                        value: "{{totalAmount}}",
+                      },
+                      trackingUrl: {
+                        name: "Link AWB (Curier)",
+                        value: "{{trackingUrl}}",
+                      },
                     },
-                    totalAmount: {
-                      name: "Total Plată",
-                      value: "{{totalAmount}}",
-                    },
-                    trackingUrl: {
-                      name: "Link AWB (Curier)",
-                      value: "{{trackingUrl}}",
-                    },
-                  },
-                }}
-                style={{ width: "100%", height: "calc(100dvh - 88px)" }} // Și aici dăm override la stilurile default ale librăriei
-              />
+                  }}
+                  style={{ width: "100%", height: "100%", display: "flex" }}
+                />
+              </div>
             </div>
           </motion.div>
         )}
