@@ -23,21 +23,21 @@ const PrivacyPolicy = () => {
       <h2>1. Cine suntem noi (Operatorul de date)</h2>
       <p>
         Platforma EVEM (accesibilă la www.evem.ro) este deținută și operată de{" "}
-        <strong>[Numele Companiei Tale SRL / PFA]</strong>, o societate
-        înregistrată în România, cu sediul social în [Adresa completă a
-        sediului], înregistrată la Registrul Comerțului sub nr. [JXX/XXX/XXXX],
-        având Codul Unic de Înregistrare (CUI) [XXXXXXX].
+        <strong>Tufan Logistic Expert SRL</strong>, o societate înregistrată în
+        România, cu sediul social în Prelungirea Ghencea 124D, Sector 6,
+        București, înregistrată la Registrul Comerțului sub nr. J2025024172009,
+        având Codul Unic de Înregistrare (CUI) RO51574431.
       </p>
       <p>
         Pentru orice aspect legat de protecția datelor, Responsabilul nostru cu
         Protecția Datelor (DPO) poate fi contactat direct la adresa de email:{" "}
         <a
-          href="mailto:privacy@evem.ro"
+          href="mailto:daniel.tufan@consultant.com"
           className="font-bold text-[var(--royal-violet)] hover:underline"
         >
-          privacy@evem.ro
-        </a>
-        .
+          daniel.tufan@consultant.com
+        </a>{" "}
+        sau telefonic la <strong>+40 735 928 664</strong>.
       </p>
 
       <h2>2. Ce date cu caracter personal colectăm?</h2>
@@ -206,8 +206,9 @@ const PrivacyPolicy = () => {
       </ul>
       <p>
         Dacă dorești să îți exerciți oricare dintre aceste drepturi, te rugăm să
-        ne trimiți un email la <strong>privacy@evem.ro</strong>. Vom răspunde
-        solicitării tale în termen de maxim 30 de zile.
+        ne trimiți un email la <strong>daniel.tufan@consultant.com</strong> sau
+        să ne contactezi la numărul <strong>+40 735 928 664</strong>. Vom
+        răspunde solicitării tale în termen de maxim 30 de zile.
       </p>
       <p>
         De asemenea, ai dreptul de a depune o plângere la{" "}
