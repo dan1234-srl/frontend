@@ -24,6 +24,13 @@ import {
   useProducts,
 } from "@/lib/queries";
 import Fuse from "fuse.js";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -452,18 +459,37 @@ const CategoryPage = () => {
 
         {/* ── Toolbar: Filters + Sort ── */}
         <div className="flex items-center justify-between py-3 mb-6 border-y border-zinc-100 sticky top-[7rem] md:top-[8.5rem] bg-[#fcfbfe]/95 backdrop-blur-md z-40 gap-3">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal size={14} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-              Filtre
-            </span>
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="flex items-center gap-2">
+                <SlidersHorizontal size={14} />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                  Filtre
+                </span>
+                {activeFiltersCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
+            </SheetTrigger>
 
-            {activeFiltersCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black">
-                {activeFiltersCount}
-              </span>
-            )}
-          </div>
+            <SheetContent
+              side="right"
+              className="w-[320px] sm:w-[380px] overflow-y-auto p-6"
+            >
+              <SheetHeader className="mb-6">
+                <SheetTitle className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)]">
+                  Filtre
+                </SheetTitle>
+              </SheetHeader>
+              <FilterSidebar
+                filtersData={filtersData}
+                searchParams={searchParams}
+                setSearchParams={setSearchParams}
+              />
+            </SheetContent>
+          </Sheet>
 
           <div className="w-36 sm:w-48 shrink-0">
             <SortDropdown />
@@ -535,13 +561,7 @@ const CategoryPage = () => {
               })}
             </nav>
           </aside>
-          <aside className="hidden xl:block w-[320px] shrink-0 sticky top-[12rem]">
-            <FilterSidebar
-              filtersData={filtersData}
-              searchParams={searchParams}
-              setSearchParams={setSearchParams}
-            />
-          </aside>
+
           {/* Product grid */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
