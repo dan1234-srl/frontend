@@ -5,8 +5,9 @@ import {
   LayoutGrid,
   Grid2X2,
   SlidersHorizontal,
-  X,
   Search,
+  X,
+  Sparkles,
 } from "lucide-react";
 import Navbar from "../components/header/Navbar";
 import Footer from "../components/footer/Footer";
@@ -24,13 +25,6 @@ import {
   useProducts,
 } from "@/lib/queries";
 import Fuse from "fuse.js";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
 
@@ -166,13 +160,143 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
 };
 
 // ─────────────────────────────────────────────
-// Sub-component: Meniu Filtrare Experiențial
+// Filter Drawer — identic cu WishlistDrawer
 // ─────────────────────────────────────────────
+interface FilterDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  filtersData: any;
+  searchParams: URLSearchParams;
+  setSearchParams: (p: URLSearchParams) => void;
+  activeFiltersCount: number;
+}
+
+const FilterDrawer = ({
+  isOpen,
+  onClose,
+  filtersData,
+  searchParams,
+  setSearchParams,
+  activeFiltersCount,
+}: FilterDrawerProps) => {
+  // Blochează scroll-ul body când e deschis
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[700] flex justify-end font-sans">
+          {/* Backdrop cu blur */}
+          <motion.div
+            key="filter-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer"
+          />
+
+          {/* Panou principal */}
+          <motion.div
+            key="filter-panel"
+            initial={{ x: "100%", opacity: 0.5 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "100%", opacity: 0.5 }}
+            transition={{ type: "spring", damping: 30, stiffness: 250 }}
+            className="relative z-[701] flex h-[100dvh] w-full sm:max-w-[420px] flex-col bg-white/95 backdrop-blur-3xl shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.15)] sm:rounded-l-[2.5rem] border-l border-white overflow-hidden"
+          >
+            {/* Glow-uri fundal */}
+            <div className="absolute top-0 left-0 w-full h-64 bg-[var(--mauve-magic,#c084fc)] opacity-5 blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-[var(--royal-violet,#7B2CBF)] opacity-[0.03] blur-[100px] pointer-events-none" />
+
+            {/* Header */}
+            <header className="relative flex items-center justify-between px-8 py-8 border-b border-zinc-100/50 shrink-0 bg-white/50 z-10">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles
+                    size={12}
+                    className="text-[var(--royal-violet,#7B2CBF)]"
+                  />
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--royal-violet,#7B2CBF)]">
+                    Rafinează Selecția
+                  </p>
+                </div>
+                <h2 className="text-3xl font-black tracking-tight text-[var(--dark-amethyst,#3b0764)] flex items-baseline gap-2">
+                  Filtre
+                  {activeFiltersCount > 0 && (
+                    <span className="text-sm font-bold text-zinc-400 bg-zinc-100/80 px-2 py-0.5 rounded-lg">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-50 border border-zinc-200/50 hover:bg-white hover:border-[var(--royal-violet,#7B2CBF)]/30 hover:text-[var(--royal-violet,#7B2CBF)] transition-all text-zinc-500 shadow-sm active:scale-95 group shrink-0"
+              >
+                <X
+                  size={16}
+                  strokeWidth={2}
+                  className="group-hover:rotate-90 transition-transform duration-300"
+                />
+              </button>
+            </header>
+
+            {/* Conținut scrollabil */}
+            <div
+              className="flex-1 overflow-y-auto overflow-x-hidden relative px-6 py-6 z-10"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <FilterSidebar
+                filtersData={filtersData}
+                searchParams={searchParams}
+                setSearchParams={(next) => {
+                  setSearchParams(next);
+                  // Nu închidem drawer-ul la aplicarea filtrelor
+                }}
+              />
+            </div>
+
+            {/* Footer */}
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="shrink-0 p-4 bg-white/80 backdrop-blur-xl border-t border-zinc-100/60 z-10"
+            >
+              <button
+                onClick={onClose}
+                className="relative h-12 w-full text-white rounded-xl overflow-hidden transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 group active:scale-[0.98]"
+                style={{
+                  background:
+                    "var(--primary-gradient, linear-gradient(135deg,#7B2CBF,#9D4EDD))",
+                }}
+              >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                <span className="relative font-black uppercase text-[10px] tracking-[0.25em]">
+                  Aplică & Închide
+                </span>
+              </button>
+            </motion.div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 // ─────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────
-// Module-level cache (survives unmount, re-mounts → instant render even pe 2G/3G)
 type PageCacheEntry = {
   items: any[];
   total: number;
@@ -206,11 +330,11 @@ const buildParams = (
 const CategoryPage = () => {
   const { slug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   const currentPage = parseInt(searchParams.get("page") || "1");
   const qs = searchParams.toString();
 
-  // Seed produs din cache (zero flash la revenire sau la schimbarea filtrului)
   const seedFromCache = (): { items: any[]; total: number; pages: number } => {
     if (!slug) return { items: [], total: 0, pages: 1 };
     const merged: any[] = [];
@@ -236,7 +360,6 @@ const CategoryPage = () => {
   const pageToLoadRef = useRef(currentPage + 1);
   const [, setPageToLoadState] = useState(currentPage + 1);
 
-  // Categorii / filtre / bannere — cache global via TanStack
   const { data: categoriesTree = [] } = useCategoriesTree();
   const { data: filtersData = null } = useCategoryFilters(slug, qs);
   const { data: campaignBannersData = [] } = useCategoryBanner(slug);
@@ -269,9 +392,7 @@ const CategoryPage = () => {
       const key = cacheKey(slug, qs, page);
       const cached = PAGE_CACHE.get(key);
       if (cached && Date.now() - cached.ts < PAGE_TTL) {
-        // hit → folosim cache pentru render instant, dar revalidăm în background
         if (!append) {
-          // produsele sunt deja seed-uite din cache; doar normalizăm count-urile
           setTotalPages(cached.pages);
           setTotalProducts(cached.total);
           setLoading(false);
@@ -300,7 +421,6 @@ const CategoryPage = () => {
         });
         if (append) {
           setProducts((prev) => {
-            // evită dublarea dacă deja era seed-uit din cache
             const seen = new Set(prev.map((p: any) => p.id));
             const additions = items.filter((p: any) => !seen.has(p.id));
             return [...prev, ...additions];
@@ -311,7 +431,7 @@ const CategoryPage = () => {
         setTotalPages(data.pages || 1);
         setTotalProducts(data.total || 0);
       } catch {
-        // ignore — păstrăm ce avem
+        // ignore
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -322,7 +442,6 @@ const CategoryPage = () => {
 
   useEffect(() => {
     if (!slug) return;
-    // re-seed din cache la schimbarea slug-ului / filtrelor (sincron, fără flash)
     const seeded = seedFromCache();
     if (seeded.items.length > 0) {
       setProducts(seeded.items);
@@ -349,10 +468,8 @@ const CategoryPage = () => {
     if (observerRef.current) {
       observerRef.current.disconnect();
     }
-
     const target = observerTarget.current;
     if (!target) return;
-
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (
@@ -367,11 +484,9 @@ const CategoryPage = () => {
           fetchProducts(nextPage, true);
         }
       },
-      { rootMargin: "600px" }, // mai agresiv → senzație de "infinit fluid"
+      { rootMargin: "600px" },
     );
-
     observerRef.current.observe(target);
-
     return () => {
       observerRef.current?.disconnect();
     };
@@ -408,9 +523,17 @@ const CategoryPage = () => {
 
   return (
     <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased relative">
-      {/* ✅ OVERLAY MANUAL LA RĂDĂCINĂ (ROOT) PENTRU A IGNORA TOATE CONTEXTELE Z-INDEX ✅ */}
-
       <Navbar />
+
+      {/* Filter Drawer — montat la rădăcina paginii, deasupra oricărui context */}
+      <FilterDrawer
+        isOpen={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        filtersData={filtersData}
+        searchParams={searchParams}
+        setSearchParams={setSearchParams}
+        activeFiltersCount={activeFiltersCount}
+      />
 
       <div
         className="w-full h-[7rem] md:h-[8.5rem] shrink-0"
@@ -459,44 +582,30 @@ const CategoryPage = () => {
 
         {/* ── Toolbar: Filters + Sort ── */}
         <div className="flex items-center justify-between py-3 mb-6 border-y border-zinc-100 sticky top-[7rem] md:top-[8.5rem] bg-[#fcfbfe]/95 backdrop-blur-md z-40 gap-3">
-          <Sheet>
-            <SheetTrigger asChild>
-              <button className="flex items-center gap-2">
-                <SlidersHorizontal size={14} />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-                  Filtre
-                </span>
-                {activeFiltersCount > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-            </SheetTrigger>
-
-            <SheetContent
-              side="right"
-              className="w-[320px] sm:w-[380px] overflow-y-auto p-6"
-            >
-              <SheetHeader className="mb-6">
-                <SheetTitle className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)]">
-                  Filtre
-                </SheetTitle>
-              </SheetHeader>
-              <FilterSidebar
-                filtersData={filtersData}
-                searchParams={searchParams}
-                setSearchParams={setSearchParams}
-              />
-            </SheetContent>
-          </Sheet>
+          <button
+            onClick={() => setFilterDrawerOpen(true)}
+            className="flex items-center gap-2 group"
+          >
+            <SlidersHorizontal
+              size={14}
+              className="group-hover:text-[var(--royal-violet)] transition-colors"
+            />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] group-hover:text-[var(--royal-violet)] transition-colors">
+              Filtre
+            </span>
+            {activeFiltersCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black px-1">
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
 
           <div className="w-36 sm:w-48 shrink-0">
             <SortDropdown />
           </div>
         </div>
 
-        {/* ── Main layout: Sidebar + Grid ── */}
+        {/* ── Main layout: Sidebar categorii + Grid ── */}
         <div className="flex gap-8 items-start">
           {/* Desktop category sidebar */}
           <aside className="hidden lg:block w-[200px] xl:w-[220px] shrink-0 sticky top-[12rem]">
@@ -507,7 +616,6 @@ const CategoryPage = () => {
               </span>
             </div>
 
-            {/* Bara de cautare elastica */}
             <div className="relative mb-4">
               <Search
                 size={14}
@@ -627,22 +735,6 @@ const CategoryPage = () => {
       </main>
 
       <Footer />
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            /* Asigură-te că Sheet-ul în sine este deasupra blur-ului */
-            [data-radix-portal] [role="dialog"] {
-              z-index: 99999 !important;
-            }
-            
-            /* Prevenim scroll-ul dublu */
-            body[data-scroll-locked] {
-              padding-right: 0px !important;
-            }
-          `,
-        }}
-      />
     </div>
   );
 };
