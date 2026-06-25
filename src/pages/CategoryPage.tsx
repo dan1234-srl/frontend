@@ -14,14 +14,7 @@ import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { FilterSidebar } from "../components/shop/FilterSidebar";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
 import {
@@ -168,113 +161,6 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
 // ─────────────────────────────────────────────
 // Sub-component: Meniu Filtrare Experiențial
 // ─────────────────────────────────────────────
-const FilterSheetExperience = ({
-  filtersData,
-  activeSearchParams,
-  onApply,
-}: {
-  filtersData: any;
-  activeSearchParams: URLSearchParams;
-  onApply: (pendingParams: URLSearchParams) => void;
-}) => {
-  const [pendingSearchParams, setPendingSearchParams] = useState(
-    () => new URLSearchParams(activeSearchParams),
-  );
-
-  useEffect(() => {
-    setPendingSearchParams(new URLSearchParams(activeSearchParams));
-  }, [activeSearchParams]);
-
-  const handlePendingFilterChange = useCallback(
-    (newParams: URLSearchParams) => {
-      newParams.set("page", "1");
-      setPendingSearchParams(newParams);
-    },
-    [],
-  );
-
-  const handleApply = () => {
-    onApply(pendingSearchParams);
-  };
-
-  const clearPending = () => {
-    const cleared = new URLSearchParams();
-    if (activeSearchParams.has("sort"))
-      cleared.set("sort", activeSearchParams.get("sort")!);
-    cleared.set("page", "1");
-    setPendingSearchParams(cleared);
-  };
-
-  const hasPendingChanges =
-    pendingSearchParams.toString() !== activeSearchParams.toString();
-
-  const pendingFiltersCount = useMemo(() => {
-    let count = 0;
-    pendingSearchParams.forEach((val, key) => {
-      if (
-        !["page", "sort", "category_slug", "sort_by", "sort_order"].includes(
-          key,
-        ) &&
-        val
-      )
-        count++;
-    });
-    return count;
-  }, [pendingSearchParams]);
-
-  return (
-    <div className="flex flex-col h-full text-left">
-      <SheetHeader className="px-6 py-5 border-b border-zinc-100 shrink-0 flex flex-row items-center justify-between gap-4 space-y-0">
-        <SheetTitle className="text-xl font-black uppercase tracking-tighter text-[var(--dark-amethyst)]">
-          Rafinează Selecția
-        </SheetTitle>
-        <div className="flex items-center gap-2">
-          {pendingFiltersCount > 0 && (
-            <button
-              onClick={clearPending}
-              className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-rose-500 transition-colors"
-            >
-              Resetează ({pendingFiltersCount})
-            </button>
-          )}
-          <SheetClose className="rounded-full h-8 w-8 flex items-center justify-center bg-zinc-50 hover:bg-zinc-100 border border-zinc-100 text-zinc-400 hover:text-zinc-900 transition-colors">
-            <X size={16} />
-          </SheetClose>
-        </div>
-      </SheetHeader>
-
-      <div className="flex-1 overflow-y-auto p-6 luxury-scrollbar pb-32">
-        {filtersData ? (
-          <FilterSidebar
-            filtersData={filtersData}
-            searchParams={pendingSearchParams}
-            setSearchParams={handlePendingFilterChange}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2
-              className="animate-spin text-[var(--royal-violet)]"
-              size={20}
-            />
-            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-              Se încarcă matricea...
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="absolute bottom-0 left-0 w-full p-6 bg-white border-t border-zinc-100 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10">
-        <button
-          onClick={handleApply}
-          disabled={!hasPendingChanges}
-          className="w-full h-14 bg-zinc-950 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:bg-zinc-200 disabled:cursor-not-allowed active:scale-[0.98]"
-        >
-          Aplica Filtrele
-        </button>
-      </div>
-    </div>
-  );
-};
 
 // ─────────────────────────────────────────────
 // Main Page
@@ -349,7 +235,6 @@ const CategoryPage = () => {
   const { data: campaignBannersData = [] } = useCategoryBanner(slug);
   const campaignBanners = campaignBannersData as any[];
 
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [categorySearchQuery, setCategorySearchQuery] = useState("");
 
   const observerTarget = useRef<HTMLDivElement | null>(null);
@@ -499,14 +384,6 @@ const CategoryPage = () => {
     return count;
   }, [searchParams]);
 
-  const handleApplyFilters = useCallback(
-    (pendingParams: URLSearchParams) => {
-      setSearchParams(pendingParams);
-      setFiltersOpen(false);
-    },
-    [setSearchParams],
-  );
-
   const categoryTitle = useMemo(() => {
     if (filtersData?.category_name) return filtersData.category_name;
     if (!slug) return "";
@@ -525,18 +402,6 @@ const CategoryPage = () => {
   return (
     <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased relative">
       {/* ✅ OVERLAY MANUAL LA RĂDĂCINĂ (ROOT) PENTRU A IGNORA TOATE CONTEXTELE Z-INDEX ✅ */}
-      <AnimatePresence>
-        {filtersOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => setFiltersOpen(false)}
-            className="fixed inset-0 z-[99990] glass-overlay"
-          />
-        )}
-      </AnimatePresence>
 
       <Navbar />
 
@@ -587,37 +452,18 @@ const CategoryPage = () => {
 
         {/* ── Toolbar: Filters + Sort ── */}
         <div className="flex items-center justify-between py-3 mb-6 border-y border-zinc-100 sticky top-[7rem] md:top-[8.5rem] bg-[#fcfbfe]/95 backdrop-blur-md z-40 gap-3">
-          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetTrigger asChild>
-              <button
-                className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-900 group"
-                aria-label="Deschide filtre"
-              >
-                <div className="relative p-2 bg-zinc-100/80 rounded-full group-hover:bg-zinc-900 group-hover:text-white transition-all duration-300 shadow-sm border border-zinc-200 group-hover:border-transparent">
-                  <SlidersHorizontal size={13} />
-                  {activeFiltersCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[7px] font-black border border-white">
-                      {activeFiltersCount}
-                    </span>
-                  )}
-                </div>
-                <span className="hidden sm:inline">Filtrează Produsele</span>
-                <span className="sm:hidden">Filtre</span>
-              </button>
-            </SheetTrigger>
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal size={14} />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+              Filtre
+            </span>
 
-            <SheetContent
-              side="right"
-              hideClose
-              className="w-[94%] sm:w-[420px] p-0 border-none bg-white z-[99999] shadow-2xl flex flex-col h-full"
-            >
-              <FilterSheetExperience
-                filtersData={filtersData}
-                activeSearchParams={searchParams}
-                onApply={handleApplyFilters}
-              />
-            </SheetContent>
-          </Sheet>
+            {activeFiltersCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--royal-violet)] text-white text-[8px] font-black">
+                {activeFiltersCount}
+              </span>
+            )}
+          </div>
 
           <div className="w-36 sm:w-48 shrink-0">
             <SortDropdown />
@@ -689,7 +535,13 @@ const CategoryPage = () => {
               })}
             </nav>
           </aside>
-
+          <aside className="hidden xl:block w-[320px] shrink-0 sticky top-[12rem]">
+            <FilterSidebar
+              filtersData={filtersData}
+              searchParams={searchParams}
+              setSearchParams={setSearchParams}
+            />
+          </aside>
           {/* Product grid */}
           <div className="flex-1 min-w-0">
             {loading && products.length === 0 ? (
