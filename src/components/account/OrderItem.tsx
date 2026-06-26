@@ -269,6 +269,16 @@ export const OrderItem = ({ order }: any) => {
     [order.status],
   );
 
+  const isReadyForProforma = [
+    "CONFIRMED",
+    "SHIPPED",
+    "DELIVERED",
+    "RETURNED",
+  ].includes(normalizedStatus);
+  const isReadyForInvoice = ["SHIPPED", "DELIVERED", "RETURNED"].includes(
+    normalizedStatus,
+  );
+
   const currentStepIndex = (() => {
     if (["DELIVERED", "RETURNED", "CANCELLED"].includes(normalizedStatus))
       return 5;
@@ -705,13 +715,22 @@ export const OrderItem = ({ order }: any) => {
           <div className="pt-2 flex flex-col sm:flex-row justify-between items-center gap-6">
             <button
               onClick={handleDownloadDocs}
-              disabled={isDownloading}
-              className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-[var(--dark-amethyst)] text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
+              // Dezactivăm dacă nu e nici proformă, nici factură gata
+              disabled={
+                isDownloading || (!isReadyForProforma && !isReadyForInvoice)
+              }
+              className={`w-full sm:w-auto h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isReadyForProforma || isReadyForInvoice
+                  ? "bg-[var(--dark-amethyst)] text-white hover:bg-black"
+                  : "bg-zinc-100 text-zinc-400 border border-zinc-200"
+              }`}
             >
               <Receipt size={14} />
-              {["SHIPPED", "DELIVERED", "RETURNED"].includes(normalizedStatus)
-                ? "Descarcă Factură"
-                : "Descarcă Proformă"}
+              {isReadyForInvoice
+                ? "Descarcă factura"
+                : isReadyForProforma
+                  ? "Descarcă proforma"
+                  : "Document în așteptare"}
             </button>
             <div className="text-center sm:text-right bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm min-w-[200px]">
               <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-1">
