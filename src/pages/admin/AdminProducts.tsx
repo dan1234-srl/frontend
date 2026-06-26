@@ -43,6 +43,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RichTextEditor } from "@/components/product/RichTextEditor";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -221,7 +222,7 @@ const AdminProducts = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
-
+  const navigate = useNavigate(); // Definește hook-ul
   const cacheKey = useMemo(
     () =>
       `admin:products:${currentPage}:${debouncedSearch}:${statusFilter}:${stockFilter}:${sortBy}:${sortOrder}:${categoryIdFilter}`,
@@ -782,7 +783,6 @@ const AdminProducts = () => {
         </div>
 
         <div className="divide-y">
-
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
@@ -966,6 +966,18 @@ const AdminProducts = () => {
 
                         {/* Actiuni */}
                         <div className="col-span-2 flex justify-start md:justify-end gap-1.5 w-full md:w-auto pr-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all duration-300 lg:translate-x-2 group-hover:translate-x-0 mt-2 md:mt-0">
+                          <button
+                            onClick={() => navigate(`/admin/products/${p.sku}`)}
+                            className="p-2.5 bg-white border rounded-xl hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)] shadow-sm"
+                            style={{
+                              borderColor:
+                                "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
+                            }}
+                            title="Editează detaliat"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+
                           <button
                             onClick={() => openEdit(p)}
                             className="p-2.5 bg-white border rounded-xl hover:bg-[var(--royal-violet)] hover:text-white transition-colors text-[var(--dark-amethyst)] shadow-sm"
