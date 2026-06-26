@@ -207,6 +207,7 @@ const CollectionsAdmin = () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ new_type: renameValue.trim() }),
+        credentials: "include", // 👈 adaugă
       },
     );
     setSelectedCollection(renameValue.trim());
@@ -218,6 +219,7 @@ const CollectionsAdmin = () => {
     if (!window.confirm("Atenție! Confirmă ștergerea colecției.")) return;
     await fetch(`${API_BASE_URL}/api/v1/collections/${type}`, {
       method: "DELETE",
+      credentials: "include", // 👈 adaugă
     });
     if (selectedCollection === type) setSelectedCollection(null);
     fetchCollections();
@@ -226,7 +228,10 @@ const CollectionsAdmin = () => {
   const handleRemoveProduct = async (productId: string) => {
     await fetch(
       `${API_BASE_URL}/api/v1/collections/${selectedCollection}/remove/${productId}`,
-      { method: "DELETE" },
+      {
+        method: "DELETE",
+        credentials: "include", // 👈 adaugă
+      },
     );
     await fetchProducts(selectedCollection!);
     if (paginatedProducts.length === 1 && currentPage > 1)
@@ -246,6 +251,7 @@ const CollectionsAdmin = () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ position: newPos }),
+        credentials: "include", // 👈 adaugă
       },
     );
     fetchProducts(selectedCollection!);
