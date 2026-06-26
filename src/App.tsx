@@ -62,6 +62,7 @@ const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
 const CollectionsAdmin = lazy(() => import("./pages/admin/CollectionsAdmin"));
 import Faq from "./pages/Faq"; // Ajustează calea către fișier dacă e diferită
 import Contact from "./pages/Contact";
+import AdminProductEdit from "./pages/admin/AdminProductEdit";
 
 const AdminWishlistAnalytics = lazy(
   () => import("./pages/admin/AdminWishlistAnalytics"),
@@ -137,6 +138,7 @@ const AnimatedRoutes = () => {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<AdminProducts />} />
+            <Route path="products/:sku" element={<AdminProductEdit />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="brands" element={<AdminBrands />} />
             <Route path="attributes" element={<AdminAttributes />} />
