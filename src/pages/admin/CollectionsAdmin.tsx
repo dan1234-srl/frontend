@@ -178,6 +178,7 @@ const CollectionsAdmin = () => {
             product_id: product.id,
             position: products.length,
           }),
+          credentials: "include", // 👈 adaugă asta
         },
       );
       toast({
