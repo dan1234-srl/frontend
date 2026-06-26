@@ -31,11 +31,6 @@ const AccountProfile = () => {
   const { user, signOut, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
 
-  // Culori dinamice din paleta ta
-  const deepTwilight = "#001B3D";
-  const frenchBlue = "#0055FF";
-  const qrFg = "#001B3D";
-
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
@@ -140,14 +135,14 @@ const AccountProfile = () => {
     `${formData.firstName?.charAt(0) || ""}${formData.lastName?.charAt(0) || ""}`.toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#001B3D] font-sans flex flex-col">
+    <div className="min-h-screen bg-[#FAFAFA] text-[var(--dark-amethyst)] font-sans flex flex-col">
       <Header />
       <main className="flex-1 pt-32 pb-24 px-6 md:px-12 lg:px-24">
         <div className="max-w-[1400px] mx-auto">
           <header className="mb-20 space-y-4 text-left border-b border-zinc-100 pb-10">
             <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#0055FF]" />
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[#0055FF]">
+              <span className="h-px w-8 bg-[var(--royal-violet)]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-[var(--royal-violet)]">
                 Setări Profil
               </p>
             </div>
@@ -157,7 +152,7 @@ const AccountProfile = () => {
           </header>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-            {/* STÂNGA: CARD IDENTITATE (ALBASTRU ÎNCHIS) */}
+            {/* STÂNGA: CARD IDENTITATE */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -165,7 +160,7 @@ const AccountProfile = () => {
             >
               <div
                 className="relative p-10 rounded-[3rem] text-white overflow-hidden shadow-2xl"
-                style={{ backgroundColor: deepTwilight }}
+                style={{ backgroundColor: "var(--dark-amethyst)" }}
               >
                 <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
                   <Fingerprint size={200} strokeWidth={1} />
@@ -177,9 +172,9 @@ const AccountProfile = () => {
                       {initials || "L"}
                     </div>
                     <button
-                      className="absolute -bottom-2 -right-2 size-10 rounded-2xl flex items-center justify-center text-white border-4 border-[#001B3D] transition-transform hover:scale-110 shadow-lg"
+                      className="absolute -bottom-2 -right-2 size-10 rounded-2xl flex items-center justify-center text-white border-4 border-[var(--dark-amethyst)] transition-transform hover:scale-110 shadow-lg"
                       style={{
-                        background: `linear-gradient(135deg, ${frenchBlue} 0%, ${deepTwilight} 100%)`,
+                        background: `linear-gradient(135deg, var(--royal-violet) 0%, var(--dark-amethyst) 100%)`,
                       }}
                     >
                       <Camera size={16} />
@@ -282,7 +277,7 @@ const AccountProfile = () => {
                           size={20}
                           style={{
                             color: user.is_two_factor_enabled
-                              ? frenchBlue
+                              ? "var(--royal-violet)"
                               : "#d4d4d8",
                           }}
                         />
@@ -303,7 +298,7 @@ const AccountProfile = () => {
                         onClick={handleSetup2FA}
                         className="h-14 px-10 text-white text-[10px] font-black uppercase tracking-[0.3em] rounded-2xl transition-all shadow-xl hover:brightness-110 active:scale-95"
                         style={{
-                          background: `linear-gradient(135deg, ${frenchBlue} 0%, ${deepTwilight} 100%)`,
+                          background: `linear-gradient(135deg, var(--royal-violet) 0%, var(--dark-amethyst) 100%)`,
                         }}
                       >
                         Activează 2FA
@@ -324,7 +319,7 @@ const AccountProfile = () => {
                     type="submit"
                     disabled={loading}
                     className="h-16 px-16 text-white rounded-2xl flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] shadow-xl transition-all hover:scale-[1.02] disabled:opacity-30"
-                    style={{ background: deepTwilight }}
+                    style={{ background: "var(--dark-amethyst)" }}
                   >
                     {loading ? (
                       <Loader2 className="animate-spin" size={16} />
@@ -353,7 +348,7 @@ const AccountProfile = () => {
           <div className="flex justify-center relative group">
             <div
               className="absolute inset-0 blur-[60px] rounded-full scale-75 opacity-20"
-              style={{ backgroundColor: frenchBlue }}
+              style={{ backgroundColor: "var(--royal-violet)" }}
             />
             <div className="relative p-7 bg-white rounded-[2.5rem] shadow-xl border border-zinc-100">
               {qrUrl ? (
@@ -362,7 +357,7 @@ const AccountProfile = () => {
                     value={qrUrl}
                     size={200}
                     level="H"
-                    fgColor={qrFg}
+                    fgColor="var(--dark-amethyst)"
                     includeMargin={false}
                   />
                 </div>
@@ -395,7 +390,7 @@ const AccountProfile = () => {
                         : { opacity: 0, y: 10 }
                     }
                     className="heading-serif italic text-6xl text-center absolute -mt-4 z-20"
-                    style={{ color: frenchBlue }}
+                    style={{ color: "var(--royal-violet)" }}
                   >
                     {twoFactorCode[i]}
                   </motion.p>
@@ -405,7 +400,7 @@ const AccountProfile = () => {
                     0
                   </p>
                   <div
-                    className={`absolute bottom-0 left-1 right-1 h-0.5 rounded-full ${twoFactorCode.length === i ? `bg-[${frenchBlue}]` : "bg-zinc-100"}`}
+                    className={`absolute bottom-0 left-1 right-1 h-0.5 rounded-full ${twoFactorCode.length === i ? `bg-[var(--royal-violet)]` : "bg-zinc-100"}`}
                   />
                 </div>
               ))}
@@ -417,7 +412,7 @@ const AccountProfile = () => {
             disabled={activating2FA || twoFactorCode.length < 6}
             className="w-full py-7 text-white rounded-full font-black uppercase tracking-[0.4em] text-[11px] shadow-2xl transition-all active:scale-95 disabled:opacity-20"
             style={{
-              background: `linear-gradient(135deg, ${frenchBlue} 0%, ${deepTwilight} 100%)`,
+              background: `linear-gradient(135deg, var(--royal-violet) 0%, var(--dark-amethyst) 100%)`,
             }}
           >
             {activating2FA ? (
@@ -452,14 +447,14 @@ const StatusRow = ({ icon, label, value, highlight = false }: any) => (
 
 const ModernInput = ({ label, value, onChange, placeholder }: any) => (
   <div className="space-y-3 group text-left">
-    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 group-focus-within:text-[#0055FF] transition-colors">
+    <label className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 group-focus-within:text-[var(--royal-violet)] transition-colors">
       {label}
     </label>
     <input
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-14 bg-transparent border-b-2 border-zinc-100 focus:border-[#0055FF] outline-none text-base font-medium transition-all"
+      className="w-full h-14 bg-transparent border-b-2 border-zinc-100 focus:border-[var(--royal-violet)] outline-none text-base font-medium transition-all"
     />
   </div>
 );
