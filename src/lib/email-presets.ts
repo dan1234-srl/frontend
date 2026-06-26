@@ -47,6 +47,15 @@ export const EMAIL_PRESETS: EmailPreset[] = [
     category: "order",
   },
   {
+    id: "admin-order-notification",
+    name: "Notificare Admin (Comandă Nouă)",
+    event_name: "admin_order_notification",
+    subject: "🚨 Comandă Nouă: #{{orderNumber}}",
+    description:
+      "Notificare internă pentru administrator la plasarea unei comenzi noi.",
+    category: "order",
+  },
+  {
     id: "order-confirmed",
     name: "2. Comandă Confirmată (de Admin)",
     event_name: "order_confirmed_by_admin",
@@ -239,6 +248,35 @@ export function buildPresetDesign(
       ),
       htmlBlock(orderSummaryHtml),
       buttonBlock("VEZI STAREA COMENZII", "{{orderUrl}}", accent),
+      divider,
+      footer,
+    ],
+
+    // NOU: Notificare internă pentru administrator
+    "admin-order-notification": [
+      headerLogo,
+      textBlock(
+        `<h1 style="text-align:center;font-family:Georgia,serif;font-style:italic;font-size:36px;color:${deep};margin:0;font-weight:400;">Comandă Nouă!</h1>`,
+        { paddingTop: "40px", paddingBottom: "24px" },
+      ),
+      textBlock(
+        `<div style="background:${soft}1A;padding:24px;text-align:center;border:1px solid ${accent};">
+            <p style="margin:0;font-family:Arial;font-size:11px;color:#888;letter-spacing:0.2em;text-transform:uppercase;">Identificator Comandă</p>
+            <p style="margin:8px 0 0;font-family:Georgia,serif;font-size:28px;color:${deep};font-weight:bold;">#{{orderNumber}}</p>
+        </div>`,
+        { paddingBottom: "24px" },
+      ),
+      textBlock(
+        `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;border-left:3px solid ${accent};padding-left:16px;">
+            <p style="margin:0 0 8px 0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.1em;font-weight:bold;">Detalii Client</p>
+            <strong>Nume:</strong> {{customerName}}<br/>
+            <strong>Email:</strong> <a href="mailto:{{customerEmail}}" style="color:${accent};">{{customerEmail}}</a><br/>
+            <strong>Telefon:</strong> <a href="tel:{{customerPhone}}" style="color:${accent};">{{customerPhone}}</a>
+        </div>`,
+        { paddingBottom: "16px" },
+      ),
+      htmlBlock(orderSummaryHtml),
+      buttonBlock("VEZI ÎN PANOU", "{{orderUrl}}", accent),
       divider,
       footer,
     ],
