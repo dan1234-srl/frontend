@@ -41,10 +41,6 @@ export const AddressCard = ({
   const isDefault = address.is_default;
   const { confirm, ConfirmDialog } = useConfirm();
 
-  // DEFINIM CULORILE AICI PENTRU A EVITA TRANSPARENȚA
-  const deepBlue = "#03045e"; // Deep Twilight
-  const accentBlue = "#0077b6"; // French/Teal Blue
-
   const handleDelete = async () => {
     const ok = await confirm({
       title: "Ștergi această adresă?",
@@ -61,17 +57,15 @@ export const AddressCard = ({
       layout
       className={`relative p-8 rounded-[2.5rem] transition-all duration-500 group overflow-hidden ${
         isDefault
-          ? "text-white shadow-2xl"
-          : "bg-white text-[#03045e] border border-zinc-100"
+          ? "bg-[var(--dark-amethyst)] text-white shadow-2xl"
+          : "bg-white text-[var(--dark-amethyst)] border border-zinc-100"
       }`}
-      style={{
-        backgroundColor: isDefault ? deepBlue : "#FFFFFF",
-      }}
     >
       {/* Iconiță de fundal uriașă pentru efect luxury */}
       <div
-        className={`absolute -right-4 -top-4 opacity-[0.08] group-hover:scale-110 transition-transform duration-700`}
-        style={{ color: isDefault ? "#FFFFFF" : deepBlue }}
+        className={`absolute -right-4 -top-4 opacity-[0.08] group-hover:scale-110 transition-transform duration-700 ${
+          isDefault ? "text-white" : "text-[var(--dark-amethyst)]"
+        }`}
       >
         <Icon size={140} strokeWidth={1} />
       </div>
@@ -82,16 +76,16 @@ export const AddressCard = ({
             className={`size-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm ${
               isDefault
                 ? "bg-white/10 text-white"
-                : "bg-zinc-50 border border-zinc-100"
+                : "bg-zinc-50 border border-zinc-100 text-[var(--royal-violet)]"
             }`}
-            style={{ color: isDefault ? "#FFFFFF" : accentBlue }}
           >
             <Icon size={18} strokeWidth={1.5} />
           </div>
           <div>
             <p
-              className={`text-[10px] font-black uppercase tracking-[0.3em] ${isDefault ? "text-blue-200" : ""}`}
-              style={{ color: isDefault ? undefined : accentBlue }}
+              className={`text-[10px] font-black uppercase tracking-[0.3em] ${
+                isDefault ? "text-white/80" : "text-[var(--royal-violet)]"
+              }`}
             >
               {address.address_type}
             </p>
@@ -114,7 +108,9 @@ export const AddressCard = ({
             {address.first_name} {address.last_name}
           </h3>
           <p
-            className={`text-sm mt-2 font-medium leading-relaxed ${isDefault ? "text-blue-100" : "text-zinc-500"}`}
+            className={`text-sm mt-2 font-medium leading-relaxed ${
+              isDefault ? "text-white/80" : "text-zinc-500"
+            }`}
           >
             {address.street}
           </p>
@@ -130,7 +126,7 @@ export const AddressCard = ({
           <div
             className={`flex items-center gap-3 py-2 px-4 rounded-xl w-fit border ${
               isDefault
-                ? "bg-white/5 border-white/10 text-blue-100"
+                ? "bg-white/10 border-white/20 text-white/90"
                 : "bg-zinc-50 border-zinc-100 text-zinc-500"
             }`}
           >
@@ -144,7 +140,7 @@ export const AddressCard = ({
 
       <div
         className={`flex items-center justify-between pt-6 border-t relative z-10 ${
-          isDefault ? "border-white/10" : "border-zinc-100"
+          isDefault ? "border-white/20" : "border-zinc-100"
         }`}
       >
         <div className="flex gap-6">
@@ -152,8 +148,8 @@ export const AddressCard = ({
             onClick={onEdit}
             className={`text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 transition-colors ${
               isDefault
-                ? "text-blue-200 hover:text-white"
-                : "text-zinc-400 hover:text-[#03045e]"
+                ? "text-white/70 hover:text-white"
+                : "text-zinc-400 hover:text-[var(--dark-amethyst)]"
             }`}
           >
             <Edit3 size={12} /> Editează
@@ -162,8 +158,7 @@ export const AddressCard = ({
           {!isDefault && (
             <button
               onClick={onSetDefault}
-              className="text-[9px] font-black uppercase tracking-[0.2em] transition-colors"
-              style={{ color: accentBlue }}
+              className="text-[9px] font-black uppercase tracking-[0.2em] transition-colors text-[var(--royal-violet)] hover:text-[var(--dark-amethyst)]"
             >
               Setează principală
             </button>
@@ -174,8 +169,8 @@ export const AddressCard = ({
           onClick={handleDelete}
           className={`size-10 rounded-xl flex items-center justify-center transition-all ${
             isDefault
-              ? "bg-white/5 hover:bg-red-500/40 text-white"
-              : "bg-zinc-50 hover:bg-red-50 text-zinc-300 hover:text-red-500 border border-zinc-100"
+              ? "bg-white/10 hover:bg-red-500/80 text-white"
+              : "bg-zinc-50 hover:bg-red-50 text-zinc-400 hover:text-red-500 border border-zinc-100"
           }`}
         >
           <Trash2 size={14} strokeWidth={2} />
