@@ -57,9 +57,17 @@ export const AddressCard = ({
       layout
       className={`relative p-8 rounded-[2.5rem] transition-all duration-500 group overflow-hidden ${
         isDefault
-          ? "bg-[var(--dark-amethyst)] text-white shadow-2xl"
-          : "bg-white text-[var(--dark-amethyst)] border border-zinc-100"
+          ? "text-white shadow-[0_12px_40px_rgba(123,44,191,0.25)]"
+          : "bg-white text-[var(--dark-amethyst)] border border-zinc-100 hover:shadow-lg"
       }`}
+      style={
+        isDefault
+          ? {
+              background:
+                "var(--primary-gradient, linear-gradient(135deg, #7B2CBF, #9D4EDD))",
+            }
+          : undefined
+      }
     >
       {/* Iconiță de fundal uriașă pentru efect luxury */}
       <div
@@ -75,8 +83,8 @@ export const AddressCard = ({
           <div
             className={`size-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm ${
               isDefault
-                ? "bg-white/10 text-white"
-                : "bg-zinc-50 border border-zinc-100 text-[var(--royal-violet)]"
+                ? "bg-white/10 text-white border border-white/20 backdrop-blur-md"
+                : "bg-zinc-50 border border-zinc-100 text-[var(--royal-violet)] group-hover:bg-zinc-100/80"
             }`}
           >
             <Icon size={18} strokeWidth={1.5} />
@@ -84,7 +92,9 @@ export const AddressCard = ({
           <div>
             <p
               className={`text-[10px] font-black uppercase tracking-[0.3em] ${
-                isDefault ? "text-white/80" : "text-[var(--royal-violet)]"
+                isDefault
+                  ? "text-white/90 drop-shadow-sm"
+                  : "text-[var(--royal-violet)]"
               }`}
             >
               {address.address_type}
@@ -93,9 +103,9 @@ export const AddressCard = ({
         </div>
 
         {isDefault && (
-          <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">
+          <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full backdrop-blur-md border border-white/20 shadow-inner">
             <CheckCircle2 size={12} className="text-white" />
-            <span className="text-[9px] font-black uppercase tracking-widest text-white">
+            <span className="text-[9px] font-black uppercase tracking-widest text-white drop-shadow-sm">
               Principală
             </span>
           </div>
@@ -104,19 +114,22 @@ export const AddressCard = ({
 
       <div className="space-y-4 mb-10 relative z-10 text-left">
         <div>
-          <h3 className="heading-serif text-2xl italic">
+          <h3 className="heading-serif text-2xl italic drop-shadow-sm">
             {address.first_name} {address.last_name}
           </h3>
           <p
             className={`text-sm mt-2 font-medium leading-relaxed ${
-              isDefault ? "text-white/80" : "text-zinc-500"
+              isDefault ? "text-white/90 drop-shadow-sm" : "text-zinc-500"
             }`}
           >
             {address.street}
           </p>
-          <div className="flex items-center gap-2 mt-2 opacity-70">
-            <MapPin size={14} />
-            <p className="text-[11px] font-bold uppercase tracking-widest">
+          <div className="flex items-center gap-2 mt-2 opacity-80">
+            <MapPin
+              size={14}
+              className={isDefault ? "text-white" : "text-zinc-400"}
+            />
+            <p className="text-[11px] font-bold uppercase tracking-widest drop-shadow-sm">
               {address.city}, {address.county}
             </p>
           </div>
@@ -124,10 +137,10 @@ export const AddressCard = ({
 
         {address.phone && (
           <div
-            className={`flex items-center gap-3 py-2 px-4 rounded-xl w-fit border ${
+            className={`flex items-center gap-3 py-2 px-4 rounded-xl w-fit border transition-colors ${
               isDefault
-                ? "bg-white/10 border-white/20 text-white/90"
-                : "bg-zinc-50 border-zinc-100 text-zinc-500"
+                ? "bg-white/10 border-white/20 text-white backdrop-blur-sm"
+                : "bg-zinc-50 border-zinc-100 text-zinc-500 group-hover:bg-zinc-100/50"
             }`}
           >
             <Phone size={10} />
@@ -169,7 +182,7 @@ export const AddressCard = ({
           onClick={handleDelete}
           className={`size-10 rounded-xl flex items-center justify-center transition-all ${
             isDefault
-              ? "bg-white/10 hover:bg-red-500/80 text-white"
+              ? "bg-white/10 hover:bg-red-500/80 text-white backdrop-blur-sm"
               : "bg-zinc-50 hover:bg-red-50 text-zinc-400 hover:text-red-500 border border-zinc-100"
           }`}
         >
