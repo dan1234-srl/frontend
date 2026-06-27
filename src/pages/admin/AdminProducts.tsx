@@ -104,27 +104,30 @@ const generateSlug = (text: string) =>
 const PLACEHOLDER_IMG =
   "https://placehold.co/400x600/f4f4f5/a1a1aa.png?text=Fara+Imagine";
 
-const getValidImageUrl = (imageSource: any) => {
-  if (!imageSource) return PLACEHOLDER_IMG;
+// Funcție utilitară inteligentă pentru imagini cu variante (large, medium, small)
+const getValidImageObject = (imageSource: any) => {
+  if (!imageSource) return null;
+
   let data = imageSource;
   if (typeof data === "string") {
     try {
       data = JSON.parse(data);
     } catch {
-      return data;
+      // Dacă e string URL curat, creăm un obiect fals ca să nu crape componenta
+      if (data.startsWith("http")) {
+        return { large: data, medium: data, small: data };
+      }
+      return null;
     }
   }
-  if (data && typeof data === "object") {
-    const container = data.main || data;
-    return (
-      container.large ||
-      container.medium ||
-      container.small ||
-      container.url ||
-      PLACEHOLDER_IMG
-    );
-  }
-  return PLACEHOLDER_IMG;
+
+  // Dacă are structura completă din baza de date { main: {...}, gallery: [...] }
+  if (data && data.main) return data.main;
+
+  // Dacă este deja obiectul cu variante { large, medium, small }
+  if (data && data.large) return data;
+
+  return null;
 };
 
 const getStatusBadge = (status: string, stock: number) => {
@@ -158,18 +161,19 @@ const getStatusBadge = (status: string, stock: number) => {
   };
 };
 
+// Componenta de Randare Imagini (Responsivă cu srcSet)
 const OptimizedImage = ({
   src,
   className,
 }: {
-  src: string | null;
+  src: any;
   className?: string;
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [error, setError] = useState(false);
-  const optimizedSrc = getValidImageUrl(src);
+  const [hasError, setHasError] = useState(false);
+  const imgData = useMemo(() => getValidImageObject(src), [src]);
 
-  if (error)
+  if (!imgData || hasError)
     return (
       <div
         className={`bg-zinc-50 flex items-center justify-center ${className}`}
@@ -186,12 +190,18 @@ const OptimizedImage = ({
         </div>
       )}
       <img
-        src={optimizedSrc}
+        src={imgData.large || PLACEHOLDER_IMG}
+        srcSet={
+          imgData.small && imgData.medium && imgData.large
+            ? `${imgData.small} 300w, ${imgData.medium} 600w, ${imgData.large} 1200w`
+            : undefined
+        }
+        sizes="(max-width: 600px) 300px, (max-width: 1200px) 600px, 1200px"
         loading="lazy"
         onLoad={() => setIsLoaded(true)}
-        onError={() => setError(true)}
+        onError={() => setHasError(true)}
         className={`${className} w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? "opacity-100" : "opacity-0"}`}
-        alt=""
+        alt="Product"
         crossOrigin="anonymous"
       />
     </div>
@@ -222,7 +232,7 @@ const AdminProducts = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
-  const navigate = useNavigate(); // Definește hook-ul
+  const navigate = useNavigate();
   const cacheKey = useMemo(
     () =>
       `admin:products:${currentPage}:${debouncedSearch}:${statusFilter}:${stockFilter}:${sortBy}:${sortOrder}:${categoryIdFilter}`,
@@ -248,7 +258,8 @@ const AdminProducts = () => {
     sale_price: 0,
     stock_quantity: 0,
     category_id: "",
-    image_url: "" as string | any, // 🚀 Aici este schimbarea: permite orice (string sau obiect)    description: "",
+    image_url: { main: null, gallery: [] } as any, // 🚀 Structura unificată
+    description: "",
     weight: 0,
     length: 0,
     width: 0,
@@ -256,7 +267,7 @@ const AdminProducts = () => {
     meta_title: "",
     meta_description: "",
     canonical_url: "",
-    additional_image_link: [] as string[],
+    additional_image_link: [] as any[], // Lăsăm aici doar pentru golire în handleSave
     attributes_json: {} as Record<string, any>,
   };
 
@@ -398,28 +409,48 @@ const AdminProducts = () => {
 
       setEditingProduct(productToEdit);
 
-      let parsedImageUrl = productToEdit.image_url;
-      if (typeof parsedImageUrl === "string") {
+      // 1. Parsare structură principală image_url
+      let parsedImageUrl: any = { main: null, gallery: [] };
+      if (typeof productToEdit.image_url === "string") {
         try {
-          parsedImageUrl = JSON.parse(parsedImageUrl);
-        } catch {}
+          parsedImageUrl = JSON.parse(productToEdit.image_url);
+        } catch {
+          // Fallback pt string simplu
+          if (productToEdit.image_url.startsWith("http")) {
+            parsedImageUrl.main = {
+              large: productToEdit.image_url,
+              medium: productToEdit.image_url,
+              small: productToEdit.image_url,
+            };
+          }
+        }
+      } else if (
+        productToEdit.image_url &&
+        typeof productToEdit.image_url === "object"
+      ) {
+        parsedImageUrl = { ...productToEdit.image_url };
       }
-      const mainImg =
-        parsedImageUrl?.main?.medium ||
-        parsedImageUrl?.url ||
-        parsedImageUrl?.medium ||
-        productToEdit.image_url ||
-        "";
 
-      let galleryImages: string[] = [];
+      if (!parsedImageUrl.gallery) parsedImageUrl.gallery = [];
+
+      // 2. MIGRAREA POZELOR VECHI DIN additional_image_link -> gallery
+      let legacyGallery: any[] = [];
       if (productToEdit.additional_image_link) {
         try {
-          const raw =
+          legacyGallery =
             typeof productToEdit.additional_image_link === "string"
               ? JSON.parse(productToEdit.additional_image_link)
               : productToEdit.additional_image_link;
-          galleryImages = Array.isArray(raw) ? raw : [];
         } catch {}
+      }
+
+      // Dacă galeria nouă este goală, le mutăm pe cele vechi în format {large, medium, small}
+      if (parsedImageUrl.gallery.length === 0 && legacyGallery.length > 0) {
+        parsedImageUrl.gallery = legacyGallery.map((url) =>
+          typeof url === "string"
+            ? { large: url, medium: url, small: url }
+            : url,
+        );
       }
 
       let parsedAttributes = {};
@@ -435,10 +466,10 @@ const AdminProducts = () => {
       setFormData({
         ...initialFormState,
         ...productToEdit,
-        image_url: mainImg,
+        image_url: parsedImageUrl, // Totul e integrat aici
+        additional_image_link: [], // Îl golim pentru curățenie
         category_id:
           productToEdit.category_id || productToEdit.category?.id || "",
-        additional_image_link: galleryImages,
         attributes_json: parsedAttributes,
         description: productToEdit.description || "",
       });
@@ -468,33 +499,27 @@ const AdminProducts = () => {
       });
       const result = await res.json();
 
-      // BACKEND-UL RETURNEAZĂ ACUM: { "url": "...", "versions": { "large": "...", "medium": "...", "small": "..." }, ... }
       if (!result.versions)
         throw new Error("Upload invalid: Format backend neașteptat");
 
-      if (index === "main") {
-        // 🚀 SALVĂM TOT OBIECTUL PENTRU A PUTEA FOLOSI srcset ÎN FRONTEND
-        const structuredImage = {
-          main: result.versions,
-          gallery: [], // Aici păstrezi galeria originală dacă există
-        };
+      setFormData((prev) => {
+        // Asigurăm că avem structura bază
+        const currentImage =
+          typeof prev.image_url === "object" && prev.image_url
+            ? { ...prev.image_url }
+            : { main: null, gallery: [] };
 
-        setFormData((prev) => ({
-          ...prev,
-          image_url: structuredImage,
-        }));
-      } else {
-        // Pentru galerie, salvăm doar varianta LARGE pentru previzualizare
-        const uploadedUrl = result.versions.large;
-        const nl = [...formData.additional_image_link];
-        nl[index as number] = uploadedUrl;
-        setFormData((prev) => ({
-          ...prev,
-          additional_image_link: nl.filter(
-            (img) => img && typeof img === "string" && img.trim() !== "",
-          ),
-        }));
-      }
+        if (!currentImage.gallery) currentImage.gallery = [];
+
+        if (index === "main") {
+          currentImage.main = result.versions;
+        } else {
+          currentImage.gallery[index as number] = result.versions;
+        }
+
+        return { ...prev, image_url: currentImage };
+      });
+
       toast.success("Imagine procesată și urcată (variante multiple).");
     } catch (err) {
       console.error(err);
@@ -503,31 +528,23 @@ const AdminProducts = () => {
       setUploading(null);
     }
   };
+
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
 
-    // 1. Filtrare galerie (eliminăm string-urile goale)
-    const cleanedImages = formData.additional_image_link.filter(
-      (img) => typeof img === "string" && img.trim() !== "",
-    );
-
-    // 2. Procesare atribute (ne asigurăm că este un obiect valid)
     const attributesPayload =
       typeof formData.attributes_json === "object"
         ? formData.attributes_json
         : JSON.parse(formData.attributes_json || "{}");
 
-    // 3. 🚀 LOGICA PENTRU IMAGINE (Punctul critic)
-    // Dacă image_url e obiect (structura cu { main, gallery }), îl stringificăm pentru baza de date.
-    // Dacă e deja string (URL vechi), îl păstrăm.
+    // 🚀 Stringificăm obiectul curat cu { main: {...}, gallery: [...] }
     const imagePayload = formData.image_url
       ? typeof formData.image_url === "object"
         ? JSON.stringify(formData.image_url)
         : formData.image_url
       : null;
 
-    // 4. Construire Payload
     const payload = {
       sku:
         formData.sku?.trim().toUpperCase() ||
@@ -544,7 +561,7 @@ const AdminProducts = () => {
           : null,
       stock_quantity: parseInt(formData.stock_quantity as any) || 0,
       category_id: formData.category_id,
-      image_url: imagePayload, // 🚀 Aici trimitem string-ul JSON
+      image_url: imagePayload, // 🚀 Aici merge obiectul unificat (stringified)
       description: formData.description || "",
       weight: parseFloat(formData.weight as any) || 0.0,
       length: parseFloat(formData.length as any) || 0.0,
@@ -553,7 +570,7 @@ const AdminProducts = () => {
       meta_title: formData.meta_title || "",
       meta_description: formData.meta_description || "",
       canonical_url: formData.canonical_url || null,
-      additional_image_link: cleanedImages,
+      additional_image_link: [], // 🚀 Golim intentionat field-ul vechi
       attributes_json: attributesPayload,
     };
 
@@ -567,12 +584,12 @@ const AdminProducts = () => {
         method: editingProduct ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload), // JSON.stringify aici va transforma tot payload-ul (inclusiv imagePayload) într-un singur șir
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         toast.success("Catalog sincronizat cu succes!");
-        fetchData(); // Reîmprospătăm lista
+        fetchData();
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -583,10 +600,6 @@ const AdminProducts = () => {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleImageError = (e: any) => {
-    e.target.src = PLACEHOLDER_IMG;
   };
 
   if (!isAdmin) return null;
@@ -684,7 +697,11 @@ const AdminProducts = () => {
                   setStatusFilter(f);
                   setCurrentPage(1);
                 }}
-                className={`relative px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-sm shrink-0 ${active ? "text-white border-transparent" : "text-zinc-500 hover:text-[var(--dark-amethyst)] bg-white border"}`}
+                className={`relative px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-sm shrink-0 ${
+                  active
+                    ? "text-white border-transparent"
+                    : "text-zinc-500 hover:text-[var(--dark-amethyst)] bg-white border"
+                }`}
                 style={{
                   borderColor: !active
                     ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
@@ -1076,7 +1093,11 @@ const AdminProducts = () => {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${currentPage === i + 1 ? "text-white border-transparent" : "bg-white hover:bg-zinc-50"}`}
+                  className={`w-9 h-9 rounded-lg text-[10px] font-black transition-all shadow-sm border ${
+                    currentPage === i + 1
+                      ? "text-white border-transparent"
+                      : "bg-white hover:bg-zinc-50"
+                  }`}
                   style={{
                     background:
                       currentPage === i + 1
@@ -1086,7 +1107,6 @@ const AdminProducts = () => {
                       currentPage !== i + 1
                         ? "color-mix(in srgb, var(--royal-violet) 10%, transparent)"
                         : undefined,
-                    // MODIFICĂ AICI:
                     color:
                       currentPage === i + 1
                         ? "#ffffff"
@@ -1210,19 +1230,19 @@ const AdminProducts = () => {
                       "color-mix(in srgb, var(--royal-violet) 20%, transparent)",
                   }}
                 >
-                  {formData.image_url ? (
+                  {formData.image_url?.main ? (
                     <>
-                      <img
-                        src={getValidImageUrl(formData.image_url)}
-                        crossOrigin="anonymous"
-                        onError={handleImageError}
+                      <OptimizedImage
+                        src={formData.image_url.main}
                         className="h-full w-full object-contain p-2 transition-transform duration-700 group-hover:scale-105"
-                        alt=""
                       />
                       <div className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all backdrop-blur-sm">
                         <button
                           onClick={() =>
-                            setFormData({ ...formData, image_url: "" })
+                            setFormData({
+                              ...formData,
+                              image_url: { ...formData.image_url, main: null },
+                            })
                           }
                           className="bg-white text-rose-600 p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-transform border border-rose-100"
                         >
@@ -1279,24 +1299,24 @@ const AdminProducts = () => {
                           "color-mix(in srgb, var(--royal-violet) 15%, transparent)",
                       }}
                     >
-                      {formData.additional_image_link[i] ? (
+                      {formData.image_url?.gallery?.[i] ? (
                         <>
-                          <img
-                            src={getValidImageUrl(
-                              formData.additional_image_link[i],
-                            )}
-                            crossOrigin="anonymous"
-                            onError={handleImageError}
+                          <OptimizedImage
+                            src={formData.image_url.gallery[i]}
                             className="w-full h-full object-cover"
-                            alt=""
                           />
                           <button
                             onClick={() => {
-                              const nl = [...formData.additional_image_link];
-                              nl.splice(i, 1);
+                              const currentGallery = [
+                                ...(formData.image_url?.gallery || []),
+                              ];
+                              currentGallery.splice(i, 1);
                               setFormData({
                                 ...formData,
-                                additional_image_link: nl,
+                                image_url: {
+                                  ...formData.image_url,
+                                  gallery: currentGallery,
+                                },
                               });
                             }}
                             className="absolute inset-0 bg-rose-600/80 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
@@ -1467,7 +1487,6 @@ const AdminProducts = () => {
                   Financiare & Logistică
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
-                  {/* Pret Original */}
                   <div
                     className="p-4 sm:p-5 bg-white rounded-2xl border text-center transition-all focus-within:shadow-md"
                     style={{
@@ -1497,7 +1516,6 @@ const AdminProducts = () => {
                       }
                     />
                   </div>
-                  {/* Pret Vanzare */}
                   <div
                     className="p-4 sm:p-5 rounded-2xl border text-center transition-all focus-within:shadow-md"
                     style={{
@@ -1522,7 +1540,6 @@ const AdminProducts = () => {
                       }
                     />
                   </div>
-                  {/* Stoc */}
                   <div
                     className="p-4 sm:p-5 bg-white rounded-2xl border text-center transition-all focus-within:shadow-md"
                     style={{
@@ -1552,7 +1569,6 @@ const AdminProducts = () => {
                       }
                     />
                   </div>
-                  {/* Status */}
                   <div
                     className="p-4 sm:p-5 bg-white rounded-2xl border text-center flex flex-col justify-center transition-all focus-within:shadow-md"
                     style={{
@@ -1583,7 +1599,6 @@ const AdminProducts = () => {
                     </select>
                   </div>
                 </div>
-                {/* Dimensiuni (Weight/Length/Width/Height) */}
                 <div
                   className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5 pt-4 sm:pt-6 border-t"
                   style={{
