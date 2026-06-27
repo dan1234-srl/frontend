@@ -87,6 +87,7 @@ export type Order = {
   delivery_type?: string;
   locker_id?: string | null;
   locker_address?: string | null;
+  awb_number?: string | null;
   items: OrderItem[];
 };
 
@@ -865,7 +866,24 @@ export const OrderReviewModal = ({
                   </div>
                 </div>
               </SectionCard>
-
+              {order.awb_number && (
+                <SectionCard
+                  eyebrow="Tracking Courier"
+                  title={`AWB: ${order.awb_number}`}
+                  icon={<Truck size={14} />}
+                >
+                  <div className="mt-3 flex gap-2">
+                    <a
+                      href={`https://gls-group.com/RO/ro/urmarire-colet?match=${order.awb_number}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 h-9 rounded-xl border border-zinc-200 bg-zinc-50 text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] flex items-center justify-center hover:bg-zinc-100 transition"
+                    >
+                      Urmărește Coletul
+                    </a>
+                  </div>
+                </SectionCard>
+              )}
               {/* Livrare */}
               <SectionCard
                 eyebrow={
@@ -889,10 +907,7 @@ export const OrderReviewModal = ({
                 <div className="space-y-1.5 mt-2">
                   {order.delivery_type === "locker" ? (
                     <>
-                      <Row
-                        label="Adresă"
-                        value={order.locker_address || "—"}
-                      />
+                      <Row label="Adresă" value={order.locker_address || "—"} />
                       <EditableRow
                         label="Cod poștal"
                         defaultValue={
