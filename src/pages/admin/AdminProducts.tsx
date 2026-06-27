@@ -248,8 +248,7 @@ const AdminProducts = () => {
     sale_price: 0,
     stock_quantity: 0,
     category_id: "",
-    image_url: "",
-    description: "",
+    image_url: "" as string | any, // 🚀 Aici este schimbarea: permite orice (string sau obiect)    description: "",
     weight: 0,
     length: 0,
     width: 0,
@@ -456,9 +455,11 @@ const AdminProducts = () => {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     setUploading(index === "main" ? "main" : `extra-${index}`);
     const data = new FormData();
     data.append("file", file);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/upload/image`, {
         method: "POST",
@@ -466,12 +467,25 @@ const AdminProducts = () => {
         credentials: "include",
       });
       const result = await res.json();
-      const uploadedUrl = result.url || result.file_url || result.data?.url;
-      if (!uploadedUrl) throw new Error("Upload invalid");
+
+      // BACKEND-UL RETURNEAZĂ ACUM: { "url": "...", "versions": { "large": "...", "medium": "...", "small": "..." }, ... }
+      if (!result.versions)
+        throw new Error("Upload invalid: Format backend neașteptat");
 
       if (index === "main") {
-        setFormData((prev) => ({ ...prev, image_url: uploadedUrl }));
+        // 🚀 SALVĂM TOT OBIECTUL PENTRU A PUTEA FOLOSI srcset ÎN FRONTEND
+        const structuredImage = {
+          main: result.versions,
+          gallery: [], // Aici păstrezi galeria originală dacă există
+        };
+
+        setFormData((prev) => ({
+          ...prev,
+          image_url: structuredImage,
+        }));
       } else {
+        // Pentru galerie, salvăm doar varianta LARGE pentru previzualizare
+        const uploadedUrl = result.versions.large;
         const nl = [...formData.additional_image_link];
         nl[index as number] = uploadedUrl;
         setFormData((prev) => ({
@@ -481,25 +495,39 @@ const AdminProducts = () => {
           ),
         }));
       }
-      toast.success("Imagine urcată pe S3.");
-    } catch {
-      toast.error("Eroare la încărcarea imaginii.");
+      toast.success("Imagine procesată și urcată (variante multiple).");
+    } catch (err) {
+      console.error(err);
+      toast.error("Eroare la procesarea imaginii.");
     } finally {
       setUploading(null);
     }
   };
-
   const handleSave = async () => {
     if (!formData.name || !formData.category_id)
       return toast.error("Numele și Categoria sunt obligatorii.");
+
+    // 1. Filtrare galerie (eliminăm string-urile goale)
     const cleanedImages = formData.additional_image_link.filter(
       (img) => typeof img === "string" && img.trim() !== "",
     );
+
+    // 2. Procesare atribute (ne asigurăm că este un obiect valid)
     const attributesPayload =
       typeof formData.attributes_json === "object"
         ? formData.attributes_json
         : JSON.parse(formData.attributes_json || "{}");
 
+    // 3. 🚀 LOGICA PENTRU IMAGINE (Punctul critic)
+    // Dacă image_url e obiect (structura cu { main, gallery }), îl stringificăm pentru baza de date.
+    // Dacă e deja string (URL vechi), îl păstrăm.
+    const imagePayload = formData.image_url
+      ? typeof formData.image_url === "object"
+        ? JSON.stringify(formData.image_url)
+        : formData.image_url
+      : null;
+
+    // 4. Construire Payload
     const payload = {
       sku:
         formData.sku?.trim().toUpperCase() ||
@@ -516,7 +544,7 @@ const AdminProducts = () => {
           : null,
       stock_quantity: parseInt(formData.stock_quantity as any) || 0,
       category_id: formData.category_id,
-      image_url: formData.image_url || null,
+      image_url: imagePayload, // 🚀 Aici trimitem string-ul JSON
       description: formData.description || "",
       weight: parseFloat(formData.weight as any) || 0.0,
       length: parseFloat(formData.length as any) || 0.0,
@@ -539,12 +567,12 @@ const AdminProducts = () => {
         method: editingProduct ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload), // JSON.stringify aici va transforma tot payload-ul (inclusiv imagePayload) într-un singur șir
       });
 
       if (res.ok) {
         toast.success("Catalog sincronizat cu succes!");
-        fetchData();
+        fetchData(); // Reîmprospătăm lista
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
