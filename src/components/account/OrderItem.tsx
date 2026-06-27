@@ -132,7 +132,6 @@ const ReviewDialog = ({
             transition={{ type: "spring", damping: 28, stiffness: 300 }}
             className="relative w-full sm:max-w-lg overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] bg-white/70 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 shadow-[0_40px_100px_-20px_rgba(123,44,191,0.25)]"
           >
-            {/* Glowing Orbs */}
             <div className="absolute top-[-20%] left-[-10%] w-64 h-64 bg-[var(--royal-violet)] rounded-full mix-blend-multiply filter blur-[80px] opacity-20 pointer-events-none" />
             <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-[var(--lavender-purple)] rounded-full mix-blend-multiply filter blur-[80px] opacity-30 pointer-events-none" />
 
@@ -229,6 +228,11 @@ export const OrderItem = ({ order }: any) => {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [reviewItem, setReviewItem] = useState<any>(null);
+
+  // Stări pentru urmărirea traseului coletului
+  const [trackingData, setTrackingData] = useState<any[]>([]);
+  const [loadingTracking, setLoadingTracking] = useState(false);
+
   const { toast } = useToast();
 
   const getValidImageUrl = (item: any) => {
@@ -321,6 +325,7 @@ export const OrderItem = ({ order }: any) => {
           badge: "bg-blue-100 text-blue-700 border-blue-200",
           progress:
             "bg-gradient-to-r from-blue-400 to-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]",
+          style: { background: "var(--primary-gradient)" },
           color: "text-blue-600",
         };
       case "CONFIRMED":
@@ -370,6 +375,74 @@ export const OrderItem = ({ order }: any) => {
     return { text: "Ramburs", icon: <Truck size={12} /> };
   }, [order.payment_method]);
 
+  // ─── OPTIMIZED SMART POLLING PENTRU ISTORIC GLS ───
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    // Rulăm doar dacă modalul e deschis și există AWB
+    if (showFullDetails && (order.gls_parcel_number || order.awb_number)) {
+      const fetchTrackingHistory = async (isBackgroundUpdate = false) => {
+        // Arătăm loader-ul doar la prima încărcare, ca să nu dăm "flash" la UI la refresh-urile din spate
+        if (!isBackgroundUpdate) setLoadingTracking(true);
+        try {
+          const res = await fetch(
+            `${API_BASE_URL}/api/v1/orders/${order.id}/tracking-history`,
+            { credentials: "include" },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            setTrackingData(data);
+          }
+        } catch (e) {
+          console.error("Eroare preluare istoric pachet:", e);
+        } finally {
+          if (!isBackgroundUpdate) setLoadingTracking(false);
+        }
+      };
+
+      // Apelul inițial când se deschide modalul
+      fetchTrackingHistory();
+
+      // Verificăm dacă coletul a ajuns deja la destinație sau a fost anulat.
+      // Dacă da, nu mai consumăm resurse serverului făcând polling, deoarece statusul e final.
+      const isFinalStatus = ["DELIVERED", "RETURNED", "CANCELLED"].includes(
+        normalizedStatus,
+      );
+
+      if (!isFinalStatus) {
+        // Facem polling tăcut în fundal la fiecare 30 de secunde
+        intervalId = setInterval(() => {
+          fetchTrackingHistory(true);
+        }, 30000);
+      }
+    }
+
+    // Funcția de cleanup: distruge intervalul imediat ce utilizatorul închide modalul
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [
+    showFullDetails,
+    order.id,
+    order.gls_parcel_number,
+    order.awb_number,
+    normalizedStatus,
+  ]);
+
+  const formatGlsDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    if (dateStr.includes("/Date(")) {
+      const timestamp = parseInt(dateStr.match(/\d+/)?.[0] || "0");
+      return new Date(timestamp).toLocaleString("ro-RO", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    return new Date(dateStr).toLocaleString("ro-RO");
+  };
+
   const handleDownloadDocs = async () => {
     if (isDownloading) return;
     setIsDownloading(true);
@@ -418,7 +491,6 @@ export const OrderItem = ({ order }: any) => {
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className={`group relative flex flex-col bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] ring-1 ${statusConfig.ring} ring-inset overflow-hidden`}
       >
-        {/* Decorative ambient gradient inside card */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
 
         {/* ── HEADER ── */}
@@ -447,7 +519,6 @@ export const OrderItem = ({ order }: any) => {
 
         {/* ── BENTO BODY ── */}
         <div className="relative z-10 flex-1 flex flex-col gap-5">
-          {/* Images Stack */}
           <div className="flex items-center gap-3">
             <div className="flex -space-x-3">
               {order.items?.slice(0, 4).map((item: any, i: number) => (
@@ -472,7 +543,6 @@ export const OrderItem = ({ order }: any) => {
             )}
           </div>
 
-          {/* Futuristic Progress Track */}
           <div className="bg-white/50 border border-white/60 p-4 rounded-2xl shadow-inner mt-2">
             <div className="flex justify-between items-center relative">
               <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-zinc-200/60 rounded-full" />
@@ -631,27 +701,101 @@ export const OrderItem = ({ order }: any) => {
             </div>
           </div>
 
-          {/* Tracking Component */}
-          <div className="w-full">
-            <OrderTracking
-              orderId={order.id}
-              awb={
-                order.tracking?.awb_number ||
-                order.awb_number ||
-                order.gls_parcel_number
-              }
-              orderStatus={normalizedStatus}
-              placeholderStatus={
-                normalizedStatus === "PENDING"
-                  ? "Sincronizare în așteptare cu sistemul de curierat."
-                  : normalizedStatus === "PROCESSING" ||
-                      normalizedStatus === "PAID"
-                    ? "Pachetul este în depozit. AWB-ul va fi emis curând."
-                    : normalizedStatus === "CONFIRMED"
-                      ? "Status confirmat. Urmează generarea rutei."
-                      : undefined
-              }
-            />
+          {/* ── DYNAMIC LIVE GLS TRACKING HISTORY TIMELINE ── */}
+          <div className="w-full bg-zinc-50/80 rounded-[2rem] border border-zinc-100/80 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600">
+                  <Truck size={14} />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                  Istoric Checkpoint-uri Livrare GLS
+                </span>
+              </div>
+              {(order.gls_parcel_number || order.awb_number) && (
+                <span className="text-[10px] font-black text-[var(--royal-violet)] bg-[var(--royal-violet)]/10 px-3 py-1.5 rounded-lg">
+                  AWB: {order.gls_parcel_number || order.awb_number}
+                </span>
+              )}
+            </div>
+
+            {loadingTracking ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <Loader2
+                  className="animate-spin text-[var(--royal-violet)]"
+                  size={24}
+                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                  Sincronizare în timp real cu serverele GLS...
+                </span>
+              </div>
+            ) : trackingData.length > 0 ? (
+              <div className="relative pl-5 border-l-2 border-[var(--royal-violet)]/20 space-y-6 ml-2">
+                {trackingData.map((track: any, idx: number) => {
+                  const isLatest = idx === 0;
+                  return (
+                    <div key={idx} className="relative">
+                      <div
+                        className={`absolute -left-[27px] size-3.5 rounded-full border-2 border-white transition-all duration-500 ${
+                          isLatest
+                            ? "bg-[var(--royal-violet)] shadow-[0_0_12px_var(--royal-violet)]"
+                            : "bg-zinc-300"
+                        }`}
+                      />
+                      <p
+                        className={`text-xs font-black uppercase tracking-wider leading-tight transition-colors duration-500 ${
+                          isLatest
+                            ? "text-[var(--dark-amethyst)]"
+                            : "text-zinc-500"
+                        }`}
+                      >
+                        {track.StatusDescription}
+                      </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
+                        <p className="text-[10px] font-bold text-[var(--royal-violet)] flex items-center gap-1">
+                          <Clock size={10} /> {formatGlsDate(track.StatusDate)}
+                        </p>
+                        {track.StatusInfo && (
+                          <>
+                            <span className="hidden sm:block text-zinc-300">
+                              •
+                            </span>
+                            <p className="text-[10px] font-bold text-zinc-400">
+                              Hub/Locație: {track.StatusInfo}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">
+                  Nu există înregistrări logistice active pentru acest colet.
+                </p>
+                <OrderTracking
+                  orderId={order.id}
+                  awb={
+                    order.tracking?.awb_number ||
+                    order.awb_number ||
+                    order.gls_parcel_number
+                  }
+                  orderStatus={normalizedStatus}
+                  placeholderStatus={
+                    normalizedStatus === "PENDING"
+                      ? "Sincronizare în așteptare cu sistemul de curierat."
+                      : normalizedStatus === "PROCESSING" ||
+                          normalizedStatus === "PAID"
+                        ? "Pachetul este în depozit. AWB-ul va fi emis curând."
+                        : normalizedStatus === "CONFIRMED"
+                          ? "Status confirmat. Urmează generarea rutei."
+                          : "Pachetul nu a fost predat încă spre sortare."
+                  }
+                />
+              </div>
+            )}
           </div>
 
           {/* Items List Bento */}
@@ -677,7 +821,7 @@ export const OrderItem = ({ order }: any) => {
                         "Articol Evem"}
                     </h4>
                     <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
-                      Cantitate: {item.quantity} buc.
+                      Quantity: {item.quantity} buc.
                     </p>
                   </div>
 
@@ -715,7 +859,6 @@ export const OrderItem = ({ order }: any) => {
           <div className="pt-2 flex flex-col sm:flex-row justify-between items-center gap-6">
             <button
               onClick={handleDownloadDocs}
-              // Dezactivăm dacă nu e nici proformă, nici factură gata
               disabled={
                 isDownloading || (!isReadyForProforma && !isReadyForInvoice)
               }

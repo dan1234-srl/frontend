@@ -1,904 +1,684 @@
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Truck,
-  MapPin,
-  ArrowUpRight,
-  Receipt,
-  CreditCard,
-  Sparkles,
-  ClipboardList,
-  Clock,
-  CheckCircle,
-  Package,
-  Check,
-  X,
-  Star,
-  Loader2,
-  ChevronRight,
+  PackageCheck,
+  PackageX,
+  PackageSearch,
   ShieldCheck,
+  AlertTriangle,
+  Clock,
+  Sparkles,
+  Copy,
+  Check,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Sparkle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { LuxuryModal } from "@/components/ui/luxury-modal";
-import { OrderTracking } from "@/components/account/OrderTracking";
-import { Textarea } from "@/components/ui/textarea";
-import { prefetchTracking } from "@/lib/tracking-cache";
+import {
+  fetchTracking as fetchTrackingCached,
+  readTrackingCache,
+} from "@/lib/tracking-cache";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://linea-backend-production.up.railway.app";
+interface GlsHistoryEvent {
+  code: string | number | null;
+  description?: string | null;
+  timestamp?: string | null;
+  depot?: string | null;
+  location?: string | null;
+}
 
-// ─── REVIEW DIALOG ─────────────────────────────────────────────────────────
+interface TrackingPayload {
+  awb?: string | null;
+  courier?: string | null;
+  parcel_number?: string | number | null;
+  current_code?: string | number | null;
+  delivered_at?: string | null;
+  history?: GlsHistoryEvent[];
+  ParcelStatusList?: any[];
+  ParcelNumber?: string | number | null;
+}
 
-const ReviewDialog = ({
-  open,
-  onClose,
-  item,
-  orderId,
-}: {
-  open: boolean;
-  onClose: () => void;
-  item: any;
-  orderId: any;
-}) => {
-  const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
-  const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const { toast } = useToast();
+function normalizeHistory(payload: TrackingPayload | null): GlsHistoryEvent[] {
+  if (!payload) return [];
 
-  const productId = item?.product_id || item?.product?.id;
-  const productName =
-    item?.product_name || item?.product_name_at_purchase || "Articol";
+  let events: GlsHistoryEvent[] = [];
 
-  const submit = async () => {
-    if (rating === 0) {
-      toast({
-        variant: "destructive",
-        title: "Te rugăm să acorzi un număr de stele.",
-      });
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/reviews/products/${productId}/reviews`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            rating,
-            comment: comment.trim(),
-            order_id: orderId,
-          }),
-        },
-      );
-      if (!res.ok) throw new Error();
-      toast({
-        title: "Recenzie trimisă cu succes!",
-        description:
-          "Îți mulțumim pentru feedback. Va fi vizibil după moderare.",
-      });
-      onClose();
-      setRating(0);
-      setComment("");
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "Eroare de comunicare",
-        description: "Nu am putut salva recenzia. Te rugăm să reîncerci.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (Array.isArray(payload.history) && payload.history.length) {
+    events = payload.history.map((h: any) => ({
+      code: h.code,
+      description: h.description,
+      timestamp: h.timestamp || h.date,
+      depot: h.depot,
+      location: h.location,
+    }));
+  } else if (Array.isArray(payload.ParcelStatusList)) {
+    events = payload.ParcelStatusList.map((s: any) => ({
+      code: s.StatusCode ?? s.code,
+      description: s.StatusDescription ?? s.description,
+      timestamp: s.StatusDate ?? s.Date ?? s.timestamp,
+      depot: s.DepotName ?? s.depot,
+      location: s.Location ?? s.location,
+    }));
+  }
 
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
-
-  if (typeof document === "undefined") return null;
-
-  return createPortal(
-    <AnimatePresence>
-      {open && (
-        <div
-          className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-0 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-        >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/20"
-          />
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            transition={{ type: "spring", damping: 28, stiffness: 300 }}
-            className="relative w-full sm:max-w-lg overflow-hidden rounded-t-[2.5rem] sm:rounded-[2.5rem] bg-white/70 backdrop-blur-3xl backdrop-saturate-150 border border-white/60 shadow-[0_40px_100px_-20px_rgba(123,44,191,0.25)]"
-          >
-            <div className="absolute top-[-20%] left-[-10%] w-64 h-64 bg-[var(--royal-violet)] rounded-full mix-blend-multiply filter blur-[80px] opacity-20 pointer-events-none" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-[var(--lavender-purple)] rounded-full mix-blend-multiply filter blur-[80px] opacity-30 pointer-events-none" />
-
-            <button
-              onClick={onClose}
-              className="absolute top-6 right-6 z-20 size-10 rounded-full bg-white/50 hover:bg-white border border-white/60 shadow-sm flex items-center justify-center text-zinc-500 hover:text-[var(--royal-violet)] transition-all active:scale-95"
-            >
-              <X size={16} strokeWidth={2} />
-            </button>
-
-            <div className="relative z-10 px-8 pt-12 pb-10 flex flex-col items-center text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-[var(--royal-violet)]/10 mb-6 shadow-sm">
-                <ShieldCheck size={14} className="text-[var(--royal-violet)]" />
-                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)]">
-                  Achiziție Verificată
-                </span>
-              </div>
-
-              <h2 className="text-3xl font-black text-[var(--dark-amethyst)] tracking-tight mb-2">
-                Evaluează Produsul
-              </h2>
-              <p className="text-sm text-zinc-500 font-medium max-w-[80%] line-clamp-2">
-                {productName}
-              </p>
-
-              <div className="mt-10 w-full">
-                <div className="flex justify-center gap-2 mb-8">
-                  {[1, 2, 3, 4, 5].map((n) => {
-                    const active = n <= (hover || rating);
-                    return (
-                      <button
-                        key={n}
-                        type="button"
-                        onMouseEnter={() => setHover(n)}
-                        onMouseLeave={() => setHover(0)}
-                        onClick={() => setRating(n)}
-                        className="relative group transition-all duration-300 hover:scale-110 active:scale-90 p-1"
-                      >
-                        <Star
-                          size={42}
-                          strokeWidth={active ? 0 : 1.5}
-                          className={`transition-all duration-300 ${
-                            active
-                              ? "fill-[var(--royal-violet)] text-[var(--royal-violet)] filter drop-shadow-[0_0_12px_rgba(123,44,191,0.5)]"
-                              : "text-zinc-300"
-                          }`}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="text-left w-full space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--dark-amethyst)] ml-1">
-                    Experiența ta (Opțional)
-                  </label>
-                  <Textarea
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Detaliază ce ți-a plăcut sau ce ar putea fi îmbunătățit..."
-                    className="min-h-[120px] resize-none rounded-2xl bg-white/50 border-white/60 shadow-inner focus-visible:ring-2 focus-visible:ring-[var(--royal-violet)]/30 text-sm font-medium placeholder:text-zinc-400 placeholder:font-normal"
-                  />
-                </div>
-
-                <button
-                  onClick={submit}
-                  disabled={submitting || rating === 0}
-                  className="mt-8 w-full py-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_10px_30px_-10px_rgba(123,44,191,0.6)] active:scale-[0.98] relative overflow-hidden group"
-                  style={{ background: "var(--primary-gradient)" }}
-                >
-                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                  <span className="relative z-10 flex items-center gap-2">
-                    {submitting ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Sparkle size={16} className="fill-white" />
-                    )}
-                    Trimite Recenzia
-                  </span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>,
-    document.body,
-  );
-};
-
-// ─── ORDER ITEM CARD ───────────────────────────────────────────────────────
-
-export const OrderItem = ({ order }: any) => {
-  const [showFullDetails, setShowFullDetails] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [reviewItem, setReviewItem] = useState<any>(null);
-
-  // Stări pentru urmărirea traseului coletului
-  const [trackingData, setTrackingData] = useState<any[]>([]);
-  const [loadingTracking, setLoadingTracking] = useState(false);
-
-  const { toast } = useToast();
-
-  const getValidImageUrl = (item: any) => {
-    const source = item.product_image || item.product?.image_url;
-    if (!source) return "/placeholder-product.jpg";
-    if (typeof source === "string") {
-      if (source.startsWith("http")) return source;
-      try {
-        const parsed = JSON.parse(source);
-        return (
-          parsed?.main?.medium ||
-          parsed?.url ||
-          parsed?.medium ||
-          "/placeholder-product.jpg"
-        );
-      } catch {
-        return "/placeholder-product.jpg";
-      }
-    }
-    return (
-      source?.main?.medium ||
-      source?.url ||
-      source?.medium ||
-      "/placeholder-product.jpg"
-    );
-  };
-
-  const isLocker = order.delivery_type === "locker";
-  const addressObj = useMemo(() => {
-    if (!order.shipping_address) return {};
-    return typeof order.shipping_address === "string"
-      ? JSON.parse(order.shipping_address)
-      : order.shipping_address;
-  }, [order.shipping_address]);
-
-  const normalizedStatus = useMemo(
-    () => order.status?.trim().toUpperCase() || "PENDING",
-    [order.status],
-  );
-
-  const isReadyForProforma = [
-    "CONFIRMED",
-    "SHIPPED",
-    "DELIVERED",
-    "RETURNED",
-  ].includes(normalizedStatus);
-  const isReadyForInvoice = ["SHIPPED", "DELIVERED", "RETURNED"].includes(
-    normalizedStatus,
-  );
-
-  const currentStepIndex = (() => {
-    if (["DELIVERED", "RETURNED", "CANCELLED"].includes(normalizedStatus))
-      return 5;
-    if (normalizedStatus === "SHIPPED") return 4;
-    if (normalizedStatus === "CONFIRMED") return 3;
-    if (["PROCESSING", "PAID"].includes(normalizedStatus)) return 2;
-    return 1;
-  })();
-
-  const steps = [
-    { label: "Plasează", icon: ClipboardList },
-    { label: "Procesare", icon: Clock },
-    { label: "Confirmă", icon: CheckCircle },
-    { label: "Curier", icon: isLocker ? Package : Truck },
-    {
-      label: ["CANCELLED", "RETURNED"].includes(normalizedStatus)
-        ? normalizedStatus === "RETURNED"
-          ? "Retur"
-          : "Anulat"
-        : "Finalizat",
-      icon: ["CANCELLED", "RETURNED"].includes(normalizedStatus) ? X : Check,
-    },
+  // --- FILTRU PENTRU CURĂȚAREA ZGOMOTULUI GLS ---
+  const codesToIgnore = [
+    "01",
+    "1", // Inregistrare si cantarire (clientul stie deja din "AWB Generat")
+    "03",
+    "3", // Intrare in depozit
+    "10", // Rollkarte Check / Scanare verificata
+    "191", // StatusKey_St191 (Gunoi intern GLS)
+    "51", // Date transmise (Se suprapune cu AWB generat)
   ];
 
-  const statusConfig = useMemo(() => {
-    switch (normalizedStatus) {
-      case "DELIVERED":
-        return {
-          text: "Livrată",
-          ring: "ring-emerald-500/20",
-          badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
-          progress:
-            "bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]",
-          color: "text-emerald-600",
-        };
-      case "SHIPPED":
-        return {
-          text: "Expediată",
-          ring: "ring-blue-500/20",
-          badge: "bg-blue-100 text-blue-700 border-blue-200",
-          progress:
-            "bg-gradient-to-r from-blue-400 to-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]",
-          style: { background: "var(--primary-gradient)" },
-          color: "text-blue-600",
-        };
-      case "CONFIRMED":
-        return {
-          text: "Confirmată",
-          ring: "ring-[var(--royal-violet)]/20",
-          badge:
-            "bg-[var(--royal-violet)]/10 text-[var(--royal-violet)] border-[var(--royal-violet)]/20",
-          progress:
-            "bg-gradient-to-r from-[var(--royal-violet)] to-[var(--mauve-magic)] shadow-[0_0_12px_rgba(123,44,191,0.4)]",
-          color: "text-[var(--royal-violet)]",
-        };
-      case "PROCESSING":
-      case "PAID":
-        return {
-          text: "În Procesare",
-          ring: "ring-indigo-500/20",
-          badge: "bg-indigo-100 text-indigo-700 border-indigo-200",
-          progress:
-            "bg-gradient-to-r from-indigo-400 to-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.4)]",
-          color: "text-indigo-600",
-        };
-      case "CANCELLED":
-      case "RETURNED":
-        return {
-          text: normalizedStatus === "RETURNED" ? "Returnată" : "Anulată",
-          ring: "ring-rose-500/20",
-          badge: "bg-rose-100 text-rose-700 border-rose-200",
-          progress: "bg-rose-500",
-          color: "text-rose-600",
-        };
-      default:
-        return {
-          text: "Așteptare",
-          ring: "ring-zinc-500/20",
-          badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
-          progress: "bg-zinc-400",
-          color: "text-zinc-600",
-        };
-    }
-  }, [normalizedStatus]);
+  return events.filter((ev) => {
+    // 1. Elimină statusurile cu coduri cunoscute ca "zgomot"
+    if (ev.code && codesToIgnore.includes(String(ev.code))) return false;
 
-  const paymentConfig = useMemo(() => {
-    const method = order.payment_method?.toLowerCase() || "cod";
-    if (method === "card")
-      return { text: "Card Online", icon: <CreditCard size={12} /> };
-    return { text: "Ramburs", icon: <Truck size={12} /> };
-  }, [order.payment_method]);
-
-  // ─── OPTIMIZED SMART POLLING PENTRU ISTORIC GLS ───
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
-    // Rulăm doar dacă modalul e deschis și există AWB
-    if (showFullDetails && (order.gls_parcel_number || order.awb_number)) {
-      const fetchTrackingHistory = async (isBackgroundUpdate = false) => {
-        // Arătăm loader-ul doar la prima încărcare, ca să nu dăm "flash" la UI la refresh-urile din spate
-        if (!isBackgroundUpdate) setLoadingTracking(true);
-        try {
-          const res = await fetch(
-            `${API_BASE_URL}/api/v1/orders/${order.id}/tracking-history`,
-            { credentials: "include" },
-          );
-          if (res.ok) {
-            const data = await res.json();
-            setTrackingData(data);
-          }
-        } catch (e) {
-          console.error("Eroare preluare istoric pachet:", e);
-        } finally {
-          if (!isBackgroundUpdate) setLoadingTracking(false);
-        }
-      };
-
-      // Apelul inițial când se deschide modalul
-      fetchTrackingHistory();
-
-      // Verificăm dacă coletul a ajuns deja la destinație sau a fost anulat.
-      // Dacă da, nu mai consumăm resurse serverului făcând polling, deoarece statusul e final.
-      const isFinalStatus = ["DELIVERED", "RETURNED", "CANCELLED"].includes(
-        normalizedStatus,
-      );
-
-      if (!isFinalStatus) {
-        // Facem polling tăcut în fundal la fiecare 30 de secunde
-        intervalId = setInterval(() => {
-          fetchTrackingHistory(true);
-        }, 30000);
-      }
+    // 2. Elimină statusurile care contin cuvinte cheie interne
+    if (
+      ev.description &&
+      (ev.description.includes("StatusKey_") ||
+        ev.description.includes("Date transmise") ||
+        ev.description.includes("Rollkarte"))
+    ) {
+      return false;
     }
 
-    // Funcția de cleanup: distruge intervalul imediat ce utilizatorul închide modalul
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [
-    showFullDetails,
-    order.id,
-    order.gls_parcel_number,
-    order.awb_number,
-    normalizedStatus,
-  ]);
+    return true; // Pastreaza restul!
+  });
+}
 
-  const formatGlsDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    if (dateStr.includes("/Date(")) {
-      const timestamp = parseInt(dateStr.match(/\d+/)?.[0] || "0");
-      return new Date(timestamp).toLocaleString("ro-RO", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-    return new Date(dateStr).toLocaleString("ro-RO");
+const CATEGORY_ICON: Record<GlsCategory, typeof Truck> = {
+  created: Sparkles,
+  transit: Truck,
+  out_delivery: Truck,
+  delivered: PackageCheck,
+  stored: PackageSearch,
+  attention: AlertTriangle,
+  failed: PackageX,
+  returned: PackageX,
+  damaged: AlertTriangle,
+  customs: ShieldCheck,
+  info: Clock,
+};
+
+export type GlsCategory =
+  | "created"
+  | "transit"
+  | "out_delivery"
+  | "delivered"
+  | "stored"
+  | "attention"
+  | "failed"
+  | "returned"
+  | "damaged"
+  | "customs"
+  | "info";
+
+export interface GlsCodeMeta {
+  text: string;
+  category: GlsCategory;
+}
+
+export const GLS_STATUS_MAP: Record<string, GlsCodeMeta> = {
+  "1": { text: "Coletul a fost preluat de GLS", category: "created" },
+  "2": { text: "Coletul a părăsit centrul de sortare", category: "transit" },
+  "3": { text: "Coletul a ajuns în centrul de sortare", category: "transit" },
+  "4": {
+    text: "Coletul este programat pentru livrare azi",
+    category: "out_delivery",
+  },
+  "5": { text: "Coletul a fost livrat", category: "delivered" },
+  "6": {
+    text: "Coletul este depozitat în centrul de sortare",
+    category: "stored",
+  },
+  "7": {
+    text: "Coletul este depozitat în centrul de sortare",
+    category: "stored",
+  },
+  "8": {
+    text: "Coletul așteaptă ridicare personală (destinatar)",
+    category: "stored",
+  },
+  "9": {
+    text: "Coletul este depozitat pentru o nouă dată de livrare",
+    category: "stored",
+  },
+  "10": { text: "Scanare verificată. Totul în regulă", category: "info" },
+  "11": {
+    text: "Nu s-a livrat — destinatar plecat în concediu",
+    category: "failed",
+  },
+  "12": { text: "Nu s-a livrat — destinatar absent", category: "failed" },
+  "13": { text: "Eroare de sortare la depou", category: "attention" },
+  "14": { text: "Nu s-a livrat — recepție închisă", category: "failed" },
+  "15": { text: "Nu s-a livrat — timp insuficient", category: "failed" },
+  "16": {
+    text: "Nu s-a livrat — destinatarul nu avea numerar (COD)",
+    category: "failed",
+  },
+  "17": { text: "Coletul a fost refuzat la livrare", category: "returned" },
+  "18": {
+    text: "Nu s-a livrat — sunt necesare detalii suplimentare",
+    category: "attention",
+  },
+  "19": {
+    text: "Nu s-a livrat — condiții meteo nefavorabile",
+    category: "failed",
+  },
+  "20": {
+    text: "Nu s-a livrat — adresă greșită sau incompletă",
+    category: "failed",
+  },
+  "21": { text: "Redirecționat — eroare de sortare", category: "attention" },
+  "22": {
+    text: "Coletul a fost trimis spre centrul de sortare",
+    category: "transit",
+  },
+  "23": { text: "Coletul a fost returnat expeditorului", category: "returned" },
+  "24": {
+    text: "Modificare livrare salvată în sistemul GLS",
+    category: "info",
+  },
+  "25": { text: "Redirecționat — rută greșită", category: "attention" },
+  "26": { text: "Coletul a ajuns în centrul de sortare", category: "transit" },
+  "27": { text: "Coletul a ajuns în centrul de sortare", category: "transit" },
+  "28": { text: "Coletul a fost casat", category: "damaged" },
+  "29": { text: "Coletul este în investigare", category: "attention" },
+  "30": { text: "Colet deteriorat la recepție", category: "damaged" },
+  "31": { text: "Colet complet distrus", category: "damaged" },
+  "32": {
+    text: "Coletul va fi livrat în cursul serii",
+    category: "out_delivery",
+  },
+  "33": { text: "Nu s-a livrat — termen depășit", category: "failed" },
+  "34": { text: "Refuzat — acceptarea întârziată", category: "returned" },
+  "35": { text: "Refuzat — marfă necomandată", category: "returned" },
+  "36": { text: "Destinatar absent, fără card de contact", category: "failed" },
+  "37": {
+    text: "Modificare livrare la cererea expeditorului",
+    category: "info",
+  },
+  "38": {
+    text: "Nu s-a livrat — aviz de însoțire lipsă",
+    category: "attention",
+  },
+  "39": { text: "Avizul de însoțire nu a fost semnat", category: "attention" },
+  "40": { text: "Coletul a fost returnat expeditorului", category: "returned" },
+  "41": { text: "Redirecționat normal", category: "info" },
+  "42": {
+    text: "Coletul a fost casat la cererea expeditorului",
+    category: "damaged",
+  },
+  "43": { text: "Coletul nu poate fi localizat", category: "attention" },
+  "44": {
+    text: "Colet exclus din termenii și condițiile generale",
+    category: "attention",
+  },
+  "46": {
+    text: "Modificare finalizată pentru adresa de livrare",
+    category: "info",
+  },
+  "47": { text: "Coletul a părăsit centrul de colete", category: "transit" },
+  "51": {
+    text: "Datele coletului au fost introduse în sistemul GLS",
+    category: "created",
+  },
+  "52": {
+    text: "Datele COD au fost introduse în sistemul GLS",
+    category: "created",
+  },
+  "53": { text: "Tranzit între depouri", category: "transit" },
+  "54": { text: "Coletul a fost livrat la parcel box", category: "delivered" },
+  "55": {
+    text: "Coletul a fost livrat la ParcelShop / Locker",
+    category: "delivered",
+  },
+  "56": { text: "Colet depozitat în GLS ParcelShop", category: "stored" },
+  "57": {
+    text: "Timp maxim de stocare în ParcelShop atins",
+    category: "attention",
+  },
+  "58": {
+    text: "Coletul a fost livrat unui vecin (semnătură)",
+    category: "delivered",
+  },
+  "59": {
+    text: "Coletul a fost ridicat din ParcelShop",
+    category: "delivered",
+  },
+  "60": { text: "Vămuire întârziată — factură lipsă", category: "customs" },
+  "61": { text: "Documentele de vamă sunt în pregătire", category: "customs" },
+  "62": {
+    text: "Vămuire întârziată — telefon destinatar indisponibil",
+    category: "customs",
+  },
+  "64": { text: "Coletul a fost eliberat din vamă", category: "customs" },
+  "65": {
+    text: "Eliberat din vamă — vămuire la destinatar",
+    category: "customs",
+  },
+  "66": {
+    text: "Vămuire întârziată — așteaptă aprobare destinatar",
+    category: "customs",
+  },
+  "67": { text: "Documentele de vamă sunt în pregătire", category: "customs" },
+  "68": {
+    text: "Nu s-a livrat — destinatarul refuză taxele vamale",
+    category: "customs",
+  },
+  "69": {
+    text: "Depozitat în centrul de colete — expediție incompletă",
+    category: "stored",
+  },
+  "70": {
+    text: "Vămuire întârziată — documente incomplete",
+    category: "customs",
+  },
+  "71": {
+    text: "Vămuire întârziată — documente lipsă/incorecte",
+    category: "customs",
+  },
+  "72": {
+    text: "Datele de vamă urmează să fie înregistrate",
+    category: "customs",
+  },
+};
+
+export interface CategoryStyle {
+  label: string;
+  dot: string;
+  text: string;
+  bg: string;
+  ring: string;
+}
+
+export const CATEGORY_STYLE: Record<GlsCategory, CategoryStyle> = {
+  created: {
+    label: "Înregistrat",
+    dot: "bg-indigo-500",
+    text: "text-indigo-600",
+    bg: "bg-indigo-50",
+    ring: "ring-indigo-200",
+  },
+  transit: {
+    label: "În tranzit",
+    dot: "bg-blue-500",
+    text: "text-blue-600",
+    bg: "bg-blue-50",
+    ring: "ring-blue-200",
+  },
+  out_delivery: {
+    label: "La curier",
+    dot: "bg-cyan-500",
+    text: "text-cyan-600",
+    bg: "bg-cyan-50",
+    ring: "ring-cyan-200",
+  },
+  delivered: {
+    label: "Livrat",
+    dot: "bg-emerald-500",
+    text: "text-emerald-600",
+    bg: "bg-emerald-50",
+    ring: "ring-emerald-200",
+  },
+  stored: {
+    label: "În depozit",
+    dot: "bg-amber-500",
+    text: "text-amber-600",
+    bg: "bg-amber-50",
+    ring: "ring-amber-200",
+  },
+  attention: {
+    label: "Atenție",
+    dot: "bg-orange-500",
+    text: "text-orange-600",
+    bg: "bg-orange-50",
+    ring: "ring-orange-200",
+  },
+  failed: {
+    label: "Nelivrat",
+    dot: "bg-rose-500",
+    text: "text-rose-600",
+    bg: "bg-rose-50",
+    ring: "ring-rose-200",
+  },
+  returned: {
+    label: "Returnat",
+    dot: "bg-rose-600",
+    text: "text-rose-700",
+    bg: "bg-rose-50",
+    ring: "ring-rose-300",
+  },
+  damaged: {
+    label: "Deteriorat",
+    dot: "bg-red-600",
+    text: "text-red-700",
+    bg: "bg-red-50",
+    ring: "ring-red-300",
+  },
+  customs: {
+    label: "Vamă",
+    dot: "bg-violet-500",
+    text: "text-violet-600",
+    bg: "bg-violet-50",
+    ring: "ring-violet-200",
+  },
+  info: {
+    label: "Info",
+    dot: "bg-zinc-500",
+    text: "text-zinc-600",
+    bg: "bg-zinc-50",
+    ring: "ring-zinc-200",
+  },
+};
+
+export function resolveGlsStatus(code: string | number | null | undefined): {
+  code: string;
+  meta: GlsCodeMeta;
+  style: CategoryStyle;
+} {
+  const key = code != null ? String(code) : "";
+  const meta = GLS_STATUS_MAP[key] || {
+    text: "Status necunoscut",
+    category: "info" as GlsCategory,
   };
+  return { code: key, meta, style: CATEGORY_STYLE[meta.category] };
+}
 
-  const handleDownloadDocs = async () => {
-    if (isDownloading) return;
-    setIsDownloading(true);
-    const docName = ["SHIPPED", "DELIVERED", "RETURNED"].includes(
-      normalizedStatus,
-    )
-      ? "Factura"
-      : "Proforma";
-    toast({
-      title: `Se descarcă ${docName}`,
-      description: "Generarea fișierului a început...",
-    });
+interface OrderTrackingProps {
+  orderId: string;
+  awb?: string | null;
+  orderStatus?: string;
+  placeholderStatus?: string;
+}
 
+export function OrderTracking({
+  orderId,
+  awb,
+  orderStatus,
+  placeholderStatus,
+}: OrderTrackingProps) {
+  // Hydrate immediately from sessionStorage → no spinner on 2G/3G
+  const initial = useMemo(
+    () => readTrackingCache<TrackingPayload>(orderId),
+    [orderId],
+  );
+  const [data, setData] = useState<TrackingPayload | null>(initial.data);
+  const [loading, setLoading] = useState<boolean>(!initial.data);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const fetchTracking = useCallback(async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setError(null);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/orders/${order.id}/document`,
-        { credentials: "include" },
+      const json = await fetchTrackingCached<TrackingPayload>(
+        orderId,
+        ctrl.signal,
       );
-      if (!response.ok) throw new Error();
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${docName}-${order.order_number}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast({ title: "Succes", description: `${docName} a fost salvată.` });
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Eroare",
-        description: "Document indisponibil.",
-      });
+      if (json === null) {
+        setData(null);
+        setError("not_yet");
+      } else {
+        setData(json);
+      }
+    } catch (e: any) {
+      if (e.name !== "AbortError") setError("fetch_failed");
     } finally {
-      setIsDownloading(false);
+      setLoading(false);
     }
+  }, [orderId]);
+
+  useEffect(() => {
+    fetchTracking();
+    return () => abortRef.current?.abort();
+  }, [fetchTracking]);
+
+  // Polling în fundal (real-time feel) la fiecare 30 secunde, dacă comanda e activă și tabul e vizibil
+  const isActive = useMemo(() => {
+    const s = (orderStatus || "").toUpperCase();
+    return ["SHIPPED", "PROCESSING", "CONFIRMED", "PAID"].includes(s);
+  }, [orderStatus]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    let interval: number | undefined;
+    const start = () => {
+      stop();
+      interval = window.setInterval(() => fetchTracking(), 30000);
+    };
+    const stop = () => {
+      if (interval) window.clearInterval(interval);
+      interval = undefined;
+    };
+    const onVis = () => (document.hidden ? stop() : start());
+    start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [isActive, fetchTracking]);
+
+  const history = useMemo(() => normalizeHistory(data), [data]);
+
+  const awbValue =
+    data?.awb || data?.parcel_number || data?.ParcelNumber || awb || null;
+  const currentCode = data?.current_code ?? history[0]?.code ?? null;
+  const current = resolveGlsStatus(currentCode);
+
+  const handleCopy = async () => {
+    if (!awbValue) return;
+    try {
+      await navigator.clipboard.writeText(String(awbValue));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {}
   };
+
+  const hasNothing = !awbValue && history.length === 0;
+  const showSkeleton = loading && !data;
 
   return (
-    <>
-      <motion.article
-        layout
-        whileHover={{ y: -5 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className={`group relative flex flex-col bg-white/60 backdrop-blur-2xl border border-white/80 rounded-[2rem] p-6 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] ring-1 ${statusConfig.ring} ring-inset overflow-hidden`}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
+    <section
+      className="relative overflow-hidden rounded-[2rem] border border-[var(--royal-violet)]/10 bg-white/70 backdrop-blur-xl p-6 md:p-8 flex flex-col gap-6 shadow-[0_20px_60px_-30px_rgba(16,0,43,0.18)]"
+      aria-label="Tracking colet"
+    >
+      {/* Decorative theme orb */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-[0.18] blur-3xl"
+        style={{ background: "var(--mauve-magic)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -left-20 w-80 h-80 rounded-full opacity-[0.10] blur-3xl"
+        style={{ background: "var(--lavender-purple)" }}
+      />
 
-        {/* ── HEADER ── */}
-        <div className="relative z-10 flex justify-between items-start mb-6">
-          <div>
-            <div className="flex items-center gap-1.5 mb-1">
-              <Sparkles size={10} className={statusConfig.color} />
-              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400">
-                COM #{order.order_number.slice(-6)}
-              </span>
-            </div>
-            <h3 className="text-xl font-black text-[var(--dark-amethyst)] tracking-tight">
-              {new Date(order.created_at).toLocaleDateString("ro-RO", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </h3>
-          </div>
-          <div
-            className={`px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest ${statusConfig.badge}`}
-          >
-            {statusConfig.text}
-          </div>
-        </div>
-
-        {/* ── BENTO BODY ── */}
-        <div className="relative z-10 flex-1 flex flex-col gap-5">
-          <div className="flex items-center gap-3">
-            <div className="flex -space-x-3">
-              {order.items?.slice(0, 4).map((item: any, i: number) => (
-                <div
-                  key={i}
-                  className="relative size-12 sm:size-14 rounded-full border-2 border-white bg-zinc-50 shadow-sm overflow-hidden z-10 hover:z-20 hover:scale-110 transition-transform"
-                >
-                  <img
-                    src={getValidImageUrl(item)}
-                    alt=""
-                    className="w-full h-full object-cover"
+      <div className="relative">
+        <header className="flex items-start justify-between gap-4 mb-6">
+          <div className="space-y-1.5">
+            <p className="text-[9px] font-black uppercase tracking-[0.35em] text-[var(--royal-violet)]/70 flex items-center gap-1.5">
+              <Sparkles
+                size={11}
+                className="text-[var(--royal-violet)] animate-pulse"
+              />
+              Tracking live · GLS
+            </p>
+            <h4 className="heading-serif text-2xl md:text-3xl italic text-[var(--dark-amethyst)] leading-tight tracking-tight">
+              {showSkeleton
+                ? "Se sincronizează…"
+                : hasNothing
+                  ? "În pregătire"
+                  : history.length > 0
+                    ? current.meta.text
+                    : "AWB Generat"}
+            </h4>
+            {awbValue && (
+              <button
+                onClick={handleCopy}
+                className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500 hover:text-[var(--royal-violet)] transition-colors group"
+                title="Copiază AWB"
+              >
+                <span>AWB · {awbValue}</span>
+                {copied ? (
+                  <Check size={11} className="text-emerald-500" />
+                ) : (
+                  <Copy
+                    size={11}
+                    className="group-hover:scale-110 transition-transform"
                   />
-                </div>
-              ))}
-            </div>
-            {order.items?.length > 4 && (
-              <div className="size-10 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center z-0 ml-1">
-                <span className="text-[10px] font-black text-zinc-500">
-                  +{order.items.length - 4}
-                </span>
-              </div>
+                )}
+              </button>
             )}
           </div>
 
-          <div className="bg-white/50 border border-white/60 p-4 rounded-2xl shadow-inner mt-2">
-            <div className="flex justify-between items-center relative">
-              <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] bg-zinc-200/60 rounded-full" />
-              <div
-                className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${(currentStepIndex - 1) * 25}%` }}
+          <div className="flex flex-col items-end gap-2">
+            {!hasNothing && history.length > 0 && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ring-1 ${current.style.bg} ${current.style.text} ${current.style.ring}`}
               >
-                <div className={`w-full h-full ${statusConfig.progress}`} />
-              </div>
+                <span
+                  className={`size-1.5 rounded-full ${current.style.dot} animate-pulse`}
+                />
+                {current.style.label}
+              </motion.span>
+            )}
+          </div>
+        </header>
 
-              {steps.map((step, idx) => {
-                const stepNum = idx + 1;
-                const passed = stepNum <= currentStepIndex;
-                const active = stepNum === currentStepIndex;
-                const StepIcon = step.icon;
+        {(isActive || showSkeleton) && (
+          <div className="relative h-[2px] bg-zinc-100/80 rounded-full overflow-hidden mb-6">
+            <motion.div
+              className="absolute top-0 left-0 h-full w-1/3"
+              style={{ background: "var(--primary-gradient)" }}
+              animate={{ left: ["-33%", "100%"] }}
+              transition={{
+                repeat: Infinity,
+                duration: 2.4,
+                ease: "easeInOut",
+              }}
+            />
+          </div>
+        )}
 
+        {showSkeleton ? (
+          <ol className="relative pl-7 space-y-5 before:absolute before:left-[10px] before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-[var(--royal-violet)]/30 before:to-transparent">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="relative">
+                <span className="absolute -left-7 top-0.5 size-5 rounded-full bg-zinc-100 ring-2 ring-white animate-pulse" />
+                <div className="space-y-2">
+                  <div className="h-3 w-20 rounded-full bg-zinc-100 animate-pulse" />
+                  <div className="h-3.5 w-2/3 rounded-full bg-zinc-100 animate-pulse" />
+                  <div className="h-2.5 w-32 rounded-full bg-zinc-100/80 animate-pulse" />
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : hasNothing ? (
+          <div
+            className="rounded-2xl border border-dashed p-7 text-center"
+            style={{
+              borderColor: "rgba(123,44,191,0.18)",
+              background:
+                "linear-gradient(135deg, rgba(123,44,191,0.04), rgba(224,170,255,0.06))",
+            }}
+          >
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--dark-amethyst)]/70">
+              {placeholderStatus ||
+                "Coletul nu a fost încă predat curierului. Vei primi AWB de îndată ce este expediat."}
+            </p>
+          </div>
+        ) : history.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--royal-violet)]/10 bg-white/60 p-7 text-center">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
+              AWB înregistrat. Așteptăm primele scanări de la curier.
+            </p>
+          </div>
+        ) : (
+          <ol className="relative pl-7 space-y-5 before:absolute before:left-[10px] before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-[var(--royal-violet)]/40 before:via-[var(--lavender-purple)]/25 before:to-transparent">
+            <AnimatePresence initial={false}>
+              {history.map((ev, idx) => {
+                const { meta, style } = resolveGlsStatus(ev.code);
+                const Icon = CATEGORY_ICON[meta.category] || Truck;
+                const isFirst = idx === 0;
                 return (
-                  <div
-                    key={idx}
-                    className="relative z-10 flex flex-col items-center gap-2"
+                  <motion.li
+                    key={`${ev.code}-${ev.timestamp}-${idx}`}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25, delay: idx * 0.02 }}
+                    className="relative"
                   >
-                    <div
-                      className={`size-6 rounded-full flex items-center justify-center transition-all duration-500 ${
-                        passed
-                          ? active
-                            ? statusConfig.badge
-                            : "bg-white text-zinc-800 border border-zinc-200 shadow-sm"
-                          : "bg-zinc-100 text-zinc-300 border border-zinc-200/50"
-                      }`}
+                    <span
+                      className={`absolute -left-7 top-0.5 flex items-center justify-center size-5 rounded-full ring-2 ring-white shadow-sm ${style.dot}`}
                     >
-                      <StepIcon size={10} strokeWidth={active ? 2.5 : 2} />
+                      <Icon size={10} className="text-white" />
+                      {isFirst && (
+                        <span
+                          className={`absolute inset-0 rounded-full ${style.dot} opacity-60 animate-ping`}
+                        />
+                      )}
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${style.bg} ${style.text}`}
+                        >
+                          {style.label}
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">
+                          cod {ev.code ?? "—"}
+                        </span>
+                      </div>
+                      <p className="text-[13px] font-bold text-zinc-800 leading-snug">
+                        {ev.description || meta.text}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                        {ev.timestamp
+                          ? (() => {
+                              // Extragem timestamp-ul dintre paranteze (ex: 1781120544000)
+                              const match = String(ev.timestamp).match(/\d+/);
+                              const timestamp = match
+                                ? parseInt(match[0], 10)
+                                : NaN;
+
+                              const d = new Date(timestamp);
+                              return isNaN(d.getTime())
+                                ? ev.timestamp
+                                : d.toLocaleString("ro-RO", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  });
+                            })()
+                          : "—"}
+                        {ev.depot || ev.location
+                          ? ` · ${ev.depot || ev.location}`
+                          : ""}
+                      </p>
                     </div>
-                  </div>
+                  </motion.li>
                 );
               })}
-            </div>
-          </div>
-        </div>
-
-        {/* ── FOOTER ── */}
-        <div className="relative z-10 mt-6 pt-5 border-t border-zinc-200/50 flex items-center justify-between">
-          <div>
-            <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-400 block mb-0.5">
-              Total
-            </span>
-            <p className="text-lg font-black text-[var(--dark-amethyst)] leading-none">
-              {order.total_amount?.toLocaleString("ro-RO")}{" "}
-              <span className="text-[10px] font-bold">RON</span>
-            </p>
-          </div>
-
-          <button
-            onClick={() => setShowFullDetails(true)}
-            onMouseEnter={() => prefetchTracking(order.id)}
-            className="h-10 px-5 rounded-xl bg-white border border-zinc-200 text-[9px] font-black uppercase tracking-widest text-[var(--dark-amethyst)] flex items-center gap-1.5 hover:bg-[var(--royal-violet)] hover:text-white hover:border-[var(--royal-violet)] transition-all shadow-sm active:scale-95"
-          >
-            Detalii <ChevronRight size={14} />
-          </button>
-        </div>
-      </motion.article>
-
-      {/* ── LUXURY MODAL (BENTO GRID INSIDE) ── */}
-      <LuxuryModal
-        open={showFullDetails}
-        onClose={() => setShowFullDetails(false)}
-        title="Arhiva Comandă"
-        description={`Referință: ${order.order_number}`}
-      >
-        <div className="space-y-4 py-2 font-sans w-full">
-          {/* Top Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Delivery Details Bento */}
-            <div className="p-6 bg-zinc-50/80 rounded-[2rem] border border-zinc-100/80 flex flex-col relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
-                {isLocker ? <Package size={100} /> : <MapPin size={100} />}
-              </div>
-              <div className="flex items-center gap-2 mb-4">
-                <div
-                  className={`p-2 rounded-xl ${isLocker ? "bg-violet-100 text-violet-600" : "bg-blue-100 text-blue-600"}`}
-                >
-                  {isLocker ? <Package size={14} /> : <MapPin size={14} />}
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                  {isLocker ? "Locker GLS" : "Adresă Livrare"}
-                </span>
-              </div>
-              <p className="font-black text-sm text-[var(--dark-amethyst)] mb-1 relative z-10">
-                {order.customer_name}
-              </p>
-              <div className="text-xs text-zinc-500 font-medium leading-relaxed relative z-10">
-                {isLocker ? (
-                  <>
-                    <span className="block font-bold text-violet-600 mb-1">
-                      {addressObj.locker_name ||
-                        order.locker_address ||
-                        "GLS Locker"}
-                    </span>
-                    {addressObj.street || ""} {addressObj.house_number || ""}
-                    <br />
-                    {addressObj.city || ""}{" "}
-                    {addressObj.postal_code
-                      ? `- ${addressObj.postal_code}`
-                      : ""}
-                  </>
-                ) : (
-                  <>
-                    {addressObj.street || "Strada lipsă"}{" "}
-                    {addressObj.house_number
-                      ? `Nr. ${addressObj.house_number}`
-                      : ""}
-                    <br />
-                    {addressObj.city || ""}, {addressObj.county || ""}
-                    <br />
-                    {addressObj.postal_code
-                      ? `Cod poștal: ${addressObj.postal_code}`
-                      : ""}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Order Summary Bento */}
-            <div className="p-6 bg-zinc-50/80 rounded-[2rem] border border-zinc-100/80 flex flex-col justify-between gap-4">
-              <div className="flex justify-between items-center border-b border-zinc-200/60 pb-3">
-                <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
-                  Data Plasării
-                </span>
-                <span className="font-black text-zinc-800 text-xs">
-                  {new Date(order.created_at).toLocaleDateString("ro-RO", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              <div className="flex justify-between items-center border-b border-zinc-200/60 pb-3">
-                <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
-                  Status
-                </span>
-                <span
-                  className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border ${statusConfig.badge}`}
-                >
-                  {statusConfig.text}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-400 font-bold uppercase tracking-widest text-[9px]">
-                  Plată
-                </span>
-                <span className="text-[10px] font-black uppercase flex items-center gap-1.5 text-zinc-700">
-                  {paymentConfig.icon} {paymentConfig.text}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── DYNAMIC LIVE GLS TRACKING HISTORY TIMELINE ── */}
-          <div className="w-full bg-zinc-50/80 rounded-[2rem] border border-zinc-100/80 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-indigo-100 text-indigo-600">
-                  <Truck size={14} />
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                  Istoric Checkpoint-uri Livrare GLS
-                </span>
-              </div>
-              {(order.gls_parcel_number || order.awb_number) && (
-                <span className="text-[10px] font-black text-[var(--royal-violet)] bg-[var(--royal-violet)]/10 px-3 py-1.5 rounded-lg">
-                  AWB: {order.gls_parcel_number || order.awb_number}
-                </span>
-              )}
-            </div>
-
-            {loadingTracking ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-3">
-                <Loader2
-                  className="animate-spin text-[var(--royal-violet)]"
-                  size={24}
-                />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                  Sincronizare în timp real cu serverele GLS...
-                </span>
-              </div>
-            ) : trackingData.length > 0 ? (
-              <div className="relative pl-5 border-l-2 border-[var(--royal-violet)]/20 space-y-6 ml-2">
-                {trackingData.map((track: any, idx: number) => {
-                  const isLatest = idx === 0;
-                  return (
-                    <div key={idx} className="relative">
-                      <div
-                        className={`absolute -left-[27px] size-3.5 rounded-full border-2 border-white transition-all duration-500 ${
-                          isLatest
-                            ? "bg-[var(--royal-violet)] shadow-[0_0_12px_var(--royal-violet)]"
-                            : "bg-zinc-300"
-                        }`}
-                      />
-                      <p
-                        className={`text-xs font-black uppercase tracking-wider leading-tight transition-colors duration-500 ${
-                          isLatest
-                            ? "text-[var(--dark-amethyst)]"
-                            : "text-zinc-500"
-                        }`}
-                      >
-                        {track.StatusDescription}
-                      </p>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1">
-                        <p className="text-[10px] font-bold text-[var(--royal-violet)] flex items-center gap-1">
-                          <Clock size={10} /> {formatGlsDate(track.StatusDate)}
-                        </p>
-                        {track.StatusInfo && (
-                          <>
-                            <span className="hidden sm:block text-zinc-300">
-                              •
-                            </span>
-                            <p className="text-[10px] font-bold text-zinc-400">
-                              Hub/Locație: {track.StatusInfo}
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">
-                  Nu există înregistrări logistice active pentru acest colet.
-                </p>
-                <OrderTracking
-                  orderId={order.id}
-                  awb={
-                    order.tracking?.awb_number ||
-                    order.awb_number ||
-                    order.gls_parcel_number
-                  }
-                  orderStatus={normalizedStatus}
-                  placeholderStatus={
-                    normalizedStatus === "PENDING"
-                      ? "Sincronizare în așteptare cu sistemul de curierat."
-                      : normalizedStatus === "PROCESSING" ||
-                          normalizedStatus === "PAID"
-                        ? "Pachetul este în depozit. AWB-ul va fi emis curând."
-                        : normalizedStatus === "CONFIRMED"
-                          ? "Status confirmat. Urmează generarea rutei."
-                          : "Pachetul nu a fost predat încă spre sortare."
-                  }
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Items List Bento */}
-          <div className="bg-zinc-50/80 rounded-[2rem] border border-zinc-100/80 p-6">
-            <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-4">
-              Conținut Pachet
-            </p>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-              {order.items?.map((item: any, i: number) => (
-                <div
-                  key={i}
-                  className="flex flex-col sm:flex-row sm:items-center gap-4 p-3.5 bg-white border border-zinc-100/80 rounded-2xl shadow-sm transition-all hover:shadow-md"
-                >
-                  <img
-                    src={getValidImageUrl(item)}
-                    className="size-16 rounded-[1rem] object-cover border border-zinc-50 shrink-0"
-                    alt=""
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-[13px] font-black text-[var(--dark-amethyst)] truncate">
-                      {item.product_name ||
-                        item.product_name_at_purchase ||
-                        "Articol Evem"}
-                    </h4>
-                    <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
-                      Quantity: {item.quantity} buc.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center sm:flex-col sm:items-end justify-between gap-3 sm:gap-1 mt-2 sm:mt-0 border-t sm:border-t-0 border-zinc-100 pt-3 sm:pt-0">
-                    <p className="font-black text-sm text-[var(--dark-amethyst)]">
-                      {(
-                        item.price_at_purchase || item.unit_price_at_purchase
-                      )?.toLocaleString("ro-RO", {
-                        minimumFractionDigits: 2,
-                      })}{" "}
-                      <span className="text-[10px] text-zinc-400">RON</span>
-                    </p>
-                    {normalizedStatus === "DELIVERED" ? (
-                      <button
-                        onClick={() => {
-                          setShowFullDetails(false);
-                          setReviewItem(item);
-                        }}
-                        className="h-8 px-4 rounded-xl bg-white border border-zinc-200 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-[var(--royal-violet)] hover:text-white hover:border-[var(--royal-violet)] transition-all shadow-sm"
-                      >
-                        <Star size={10} /> Review
-                      </button>
-                    ) : (
-                      <p className="text-[8px] text-zinc-400 uppercase font-bold tracking-widest">
-                        {normalizedStatus}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Actions */}
-          <div className="pt-2 flex flex-col sm:flex-row justify-between items-center gap-6">
-            <button
-              onClick={handleDownloadDocs}
-              disabled={
-                isDownloading || (!isReadyForProforma && !isReadyForInvoice)
-              }
-              className={`w-full sm:w-auto h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                isReadyForProforma || isReadyForInvoice
-                  ? "bg-[var(--dark-amethyst)] text-white hover:bg-black"
-                  : "bg-zinc-100 text-zinc-400 border border-zinc-200"
-              }`}
-            >
-              <Receipt size={14} />
-              {isReadyForInvoice
-                ? "Descarcă factura"
-                : isReadyForProforma
-                  ? "Descarcă proforma"
-                  : "Document în așteptare"}
-            </button>
-            <div className="text-center sm:text-right bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm min-w-[200px]">
-              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-1">
-                Total Achitat
-              </p>
-              <p className="text-3xl font-black text-[var(--dark-amethyst)] leading-none tracking-tight">
-                {order.total_amount?.toLocaleString("ro-RO", {
-                  minimumFractionDigits: 2,
-                })}{" "}
-                <span className="text-sm font-bold text-zinc-400">RON</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </LuxuryModal>
-
-      <ReviewDialog
-        open={!!reviewItem}
-        onClose={() => {
-          setReviewItem(null);
-          setShowFullDetails(true);
-        }}
-        item={reviewItem}
-        orderId={order.id}
-      />
-    </>
+            </AnimatePresence>
+          </ol>
+        )}
+      </div>
+    </section>
   );
-};
+}
+
+export default OrderTracking;
