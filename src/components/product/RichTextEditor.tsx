@@ -1,8 +1,7 @@
 /**
  * RichTextEditor.tsx
  * Editor WYSIWYG complet pentru descrieri produs.
- * Suportă: Bold, Italic, Underline, Liste, Emoji, YouTube embed, spații libere.
- * NU necesită dependențe externe în afara celor deja instalate.
+ * Suportă: Bold, Italic, Underline, Liste, Emoji, YouTube embed, Upload Imagini S3, spații libere.
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -22,7 +21,14 @@ import {
   RotateCcw,
   RotateCw,
   Type,
+  Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://linea-backend-production.up.railway.app";
 
 // ─── Tipuri ──────────────────────────────────────────────────────────────────
 
@@ -213,24 +219,27 @@ const ToolBtn = ({
   title,
   children,
   className = "",
+  disabled = false,
 }: {
   onClick: () => void;
   active?: boolean;
   title: string;
   children: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 }) => (
   <button
     type="button"
     title={title}
+    disabled={disabled}
     onMouseDown={(e) => {
       e.preventDefault();
-      onClick();
+      if (!disabled) onClick();
     }}
     className={`
       w-8 h-8 flex items-center justify-center rounded-lg transition-all text-zinc-500
-      hover:bg-[var(--royal-violet)]/10 hover:text-[var(--royal-violet)]
-      ${active ? "bg-[var(--royal-violet)]/10 text-[var(--royal-violet)]" : ""}
+      ${disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-[var(--royal-violet)]/10 hover:text-[var(--royal-violet)]"}
+      ${active && !disabled ? "bg-[var(--royal-violet)]/10 text-[var(--royal-violet)]" : ""}
       ${className}
     `}
   >
@@ -249,9 +258,13 @@ export const RichTextEditor = ({
   minHeight = 280,
 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [showEmoji, setShowEmoji] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+
   const savedRangeRef = useRef<Range | null>(null);
   const isInternalUpdate = useRef(false);
 
@@ -261,8 +274,7 @@ export const RichTextEditor = ({
     isInternalUpdate.current = true;
     editorRef.current.innerHTML = value || "";
     isInternalUpdate.current = false;
-    // Rulează DOAR la mount (array gol) — key pe componentă garantează remontare
-  }, []); // <-- array gol, nu [value]
+  }, []);
 
   // Detectare formate active la cursor
   const updateActiveFormats = useCallback(() => {
@@ -279,7 +291,7 @@ export const RichTextEditor = ({
     setActiveFormats(formats);
   }, []);
 
-  // Salvare selecție (pentru inserare emoji/video)
+  // Salvare selecție (pentru inserare modal/dialog)
   const saveSelection = useCallback(() => {
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
@@ -325,7 +337,49 @@ export const RichTextEditor = ({
     [restoreSelection, onChange],
   );
 
-  // Inserare Emoji
+  // 🚀 UPLOAD IMAGINI 🚀
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    const data = new FormData();
+    data.append("file", file);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/upload/image`, {
+        method: "POST",
+        body: data,
+        credentials: "include",
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.versions) {
+        throw new Error(result.detail || "Eroare la upload-ul imaginii");
+      }
+
+      // Folosim varianta "large" pentru a fi inserată în descriere
+      const imageUrl = result.versions.large || result.url;
+
+      // Inserăm imaginea curată în text + un paragraf nou gol dedesubt ca să se poată scrie în continuare
+      const imgHtml = `
+        <img src="${imageUrl}" alt="Descriere vizuală" style="max-width: 100%; border-radius: 12px; margin: 16px 0;" />
+        <p><br></p>
+      `;
+
+      insertHtmlAtCursor(imgHtml);
+      toast.success("Imagine inserată cu succes!");
+    } catch (err) {
+      console.error(err);
+      toast.error("A apărut o problemă la încărcarea imaginii.");
+    } finally {
+      setIsUploadingImage(false);
+      // Resetăm input-ul ca să putem selecta aceeași imagine de 2 ori dacă vrem
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const insertEmoji = useCallback(
     (emoji: string) => {
       editorRef.current?.focus();
@@ -336,7 +390,6 @@ export const RichTextEditor = ({
     [exec, restoreSelection],
   );
 
-  // Inserare YouTube
   const insertYouTube = useCallback(
     (videoId: string) => {
       const html = `
@@ -355,14 +408,12 @@ export const RichTextEditor = ({
     [insertHtmlAtCursor],
   );
 
-  // Inserare separator orizontal
   const insertHR = useCallback(() => {
     insertHtmlAtCursor(
       '<hr style="border:none;border-top:1px solid #e4e4e7;margin:20px 0;" /><p><br></p>',
     );
   }, [insertHtmlAtCursor]);
 
-  // Handle input
   const handleInput = useCallback(() => {
     if (isInternalUpdate.current) return;
     if (editorRef.current) {
@@ -371,7 +422,6 @@ export const RichTextEditor = ({
     updateActiveFormats();
   }, [onChange, updateActiveFormats]);
 
-  // Tab = inserare 2 spații (nu schimba focusul)
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Tab") {
@@ -470,14 +520,11 @@ export const RichTextEditor = ({
 
         <Divider />
 
-        {/* Linie orizontală */}
+        {/* Inserări Extra (Linie, Emoji, Imagine, YouTube) */}
         <ToolBtn onClick={insertHR} title="Inserează separator">
           <Minus size={14} />
         </ToolBtn>
 
-        <Divider />
-
-        {/* Emoji */}
         <div className="relative">
           <ToolBtn
             onClick={() => {
@@ -497,7 +544,31 @@ export const RichTextEditor = ({
           )}
         </div>
 
-        {/* YouTube */}
+        {/* Buton Upload Imagine 🚀 */}
+        <ToolBtn
+          onClick={() => {
+            saveSelection();
+            fileInputRef.current?.click();
+          }}
+          title="Încarcă Imagine"
+          disabled={isUploadingImage}
+          className="text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+        >
+          {isUploadingImage ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <ImageIcon size={14} />
+          )}
+        </ToolBtn>
+        {/* Input ascuns pentru File Picker */}
+        <input
+          type="file"
+          accept="image/png, image/jpeg, image/webp"
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+
         <ToolBtn
           onClick={() => {
             saveSelection();
@@ -547,6 +618,7 @@ export const RichTextEditor = ({
           [&_em]:italic [&_em]:text-zinc-600
           [&_u]:underline [&_u]:underline-offset-3
           [&_hr]:border-zinc-200 [&_hr]:my-4
+          [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-4 [&_img]:shadow-sm
           empty:before:content-[attr(data-placeholder)] empty:before:text-zinc-300 empty:before:pointer-events-none empty:before:absolute
           relative
         "
