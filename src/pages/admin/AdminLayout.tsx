@@ -332,7 +332,7 @@ const AdminLayout = () => {
           >
             <Menu size={16} />
           </button>
-          <img src="/LINEA-1.svg" className="h-3.5 brightness-0" alt="Evem" />
+          <img src="" className="h-3.5 brightness-0" alt="EVEM" />
           <div className="size-10" /> {/* Spacer pentru centrare logo */}
         </header>
 
