@@ -148,6 +148,9 @@ export const OrderReviewModal = ({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
+  const [trackingData, setTrackingData] = useState<any[]>([]);
+  const [loadingTracking, setLoadingTracking] = useState(false);
+
   const [pickupLocationKey, setPickupLocationKey] = useState("");
   const [locationOptions, setLocationOptions] = useState<
     { key: string; label: string }[]
@@ -468,6 +471,24 @@ export const OrderReviewModal = ({
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const formatGlsDate = (dateStr: string) => {
+    if (!dateStr) return "";
+
+    // GLS returnează adesea timestamp-ul în formatul /Date(123456789)/
+    if (dateStr.includes("/Date(")) {
+      const timestamp = parseInt(dateStr.match(/\d+/)?.[0] || "0");
+      return new Date(timestamp).toLocaleString("ro-RO", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    // Fallback pentru date standard ISO
+    return new Date(dateStr).toLocaleString("ro-RO");
+  };
 
   return (
     <AdminDialogShell
@@ -820,6 +841,7 @@ export const OrderReviewModal = ({
 
             {/* ── DREAPTA (sticky panel) ──────────────────────── */}
             <aside className="lg:col-span-5 space-y-4 lg:sticky lg:top-0 self-start">
+              {/* Secțiune AWB și Tracking LIVE */}
               {(order.gls_parcel_number || order.awb_number) && (
                 <SectionCard
                   eyebrow="Livrare GLS"
@@ -838,7 +860,7 @@ export const OrderReviewModal = ({
                           Status: {trackingData[0].StatusDescription}
                         </p>
                         <div className="relative pl-4 border-l-2 border-zinc-200 space-y-3">
-                          {trackingData.slice(0, 3).map((t, i) => (
+                          {trackingData.slice(0, 3).map((t: any, i: number) => (
                             <div key={i} className="text-[10px]">
                               <p className="font-bold text-zinc-700">
                                 {t.StatusDescription}
@@ -850,7 +872,11 @@ export const OrderReviewModal = ({
                           ))}
                         </div>
                       </div>
-                    ) : null}
+                    ) : (
+                      <p className="text-[10px] text-zinc-400">
+                        Nu există istoric GLS.
+                      </p>
+                    )}
 
                     <a
                       href={`https://gls-group.com/RO/ro/urmarire-colet?match=${order.gls_parcel_number || order.awb_number}`}
