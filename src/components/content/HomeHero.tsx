@@ -9,7 +9,7 @@ import {
   ShoppingBag,
   Search, // Adăugat pentru iconiță
 } from "lucide-react";
-import heroBanner from "@/assets/evem-hero-banner.jpg";
+import heroBanner from "@/assets/banner.png";
 import Fuse from "fuse.js"; // 1. Importul bibliotecii
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8002";
