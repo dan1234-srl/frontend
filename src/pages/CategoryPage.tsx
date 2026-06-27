@@ -86,7 +86,8 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
       : currentBanner.image_desktop;
 
   return (
-    <div className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[300px] rounded-3xl overflow-hidden mb-10 shadow-sm border border-zinc-100 group bg-zinc-950 select-none">
+    <div className="relative w-full h-[220px] sm:h-[260px] md:h-[340px] lg:h-[380px] rounded-3xl overflow-hidden mb-10 shadow-sm border border-zinc-100 group bg-zinc-950 select-none">
+      {" "}
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
@@ -130,15 +131,9 @@ const CategoryHeroCarousel = ({ banners }: { banners: any[] }) => {
                 {currentBanner.subtitle}
               </p>
             )}
-            <div className="pt-2">
-              <button className="px-5 sm:px-6 py-2.5 sm:py-3 bg-white text-zinc-950 text-[8px] sm:text-[9px] font-black uppercase tracking-[0.25em] rounded-full hover:bg-zinc-900 hover:text-white transition-all shadow-xl active:scale-95 duration-300">
-                {currentBanner.button_text || "DESCOPERĂ COLECȚIA"}
-              </button>
-            </div>
           </div>
         </motion.div>
       </AnimatePresence>
-
       {banners.length > 1 && (
         <div className="absolute bottom-4 right-6 flex gap-2 z-30">
           {banners.map((_, i) => (
