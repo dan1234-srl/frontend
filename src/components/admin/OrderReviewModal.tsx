@@ -87,7 +87,14 @@ export type Order = {
   delivery_type?: string;
   locker_id?: string | null;
   locker_address?: string | null;
-  awb_number?: string | null;
+
+  // 🚀 AWB și date GLS primite de la backend
+  awb_number?: string | null; // Același lucru cu gls_parcel_number
+  gls_parcel_number?: number | null;
+  gls_last_status_code?: string | null;
+  gls_last_status_desc?: string | null;
+  gls_label_pdf_url?: string | null;
+
   items: OrderItem[];
 };
 
@@ -813,6 +820,50 @@ export const OrderReviewModal = ({
 
             {/* ── DREAPTA (sticky panel) ──────────────────────── */}
             <aside className="lg:col-span-5 space-y-4 lg:sticky lg:top-0 self-start">
+              {(order.gls_parcel_number || order.awb_number) && (
+                <SectionCard
+                  eyebrow="Livrare GLS"
+                  title={`AWB: ${order.gls_parcel_number || order.awb_number}`}
+                  icon={<Truck size={14} />}
+                >
+                  <div className="mt-4 space-y-4">
+                    {loadingTracking ? (
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-400 animate-pulse">
+                        <Loader2 className="animate-spin" size={12} /> Se
+                        actualizează statusul...
+                      </div>
+                    ) : trackingData.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black uppercase text-[var(--royal-violet)]">
+                          Status: {trackingData[0].StatusDescription}
+                        </p>
+                        <div className="relative pl-4 border-l-2 border-zinc-200 space-y-3">
+                          {trackingData.slice(0, 3).map((t, i) => (
+                            <div key={i} className="text-[10px]">
+                              <p className="font-bold text-zinc-700">
+                                {t.StatusDescription}
+                              </p>
+                              <p className="text-zinc-400">
+                                {formatGlsDate(t.StatusDate)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <a
+                      href={`https://gls-group.com/RO/ro/urmarire-colet?match=${order.gls_parcel_number || order.awb_number}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full h-9 rounded-xl border border-zinc-200 bg-zinc-50 text-[9px] font-black uppercase tracking-widest flex items-center justify-center hover:bg-zinc-100 transition"
+                    >
+                      Vezi tot istoricul pe GLS
+                    </a>
+                  </div>
+                </SectionCard>
+              )}
+
               {/* Pickup location */}
               <SectionCard
                 eyebrow="Expeditor"
