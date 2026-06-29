@@ -46,11 +46,21 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (!processedMainImage) return;
+
+    // 1. Determine the URL string safely
+    // Check if processedMainImage is a string itself,
+    // or if it's an object containing sizes
     const lcp =
-      processedMainImage.large ||
-      processedMainImage.medium ||
-      processedMainImage.small;
-    if (lcp) preloadLcp(lcp);
+      typeof processedMainImage === "string"
+        ? processedMainImage
+        : processedMainImage.large ||
+          processedMainImage.medium ||
+          processedMainImage.small;
+
+    // 2. Ensure it is a valid string before calling the function
+    if (typeof lcp === "string" && lcp.startsWith("http")) {
+      preloadLcp(lcp);
+    }
   }, [processedMainImage]);
 
   useEffect(() => {
