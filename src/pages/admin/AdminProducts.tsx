@@ -393,6 +393,8 @@ const AdminProducts = () => {
   const openEdit = async (p: any = null) => {
     if (p) {
       let productToEdit = p;
+
+      // 1. Fetch detalii complete de la server
       try {
         const token = localStorage.getItem("token") || "";
         const res = await fetch(
@@ -404,55 +406,73 @@ const AdminProducts = () => {
         );
         if (res.ok) productToEdit = await res.json();
       } catch (err) {
-        console.error("Eroare fetch detalii:", err);
+        console.error("Eroare la preluarea detaliilor:", err);
       }
 
-      setEditingProduct(productToEdit);
-
-      // 1. Parsare structură principală image_url
-      let parsedImageUrl: any = { main: null, gallery: [] };
-      if (typeof productToEdit.image_url === "string") {
+      // 2. Parsare și curățare strictă a imaginilor (image_url)
+      let rawImage = productToEdit.image_url;
+      if (typeof rawImage === "string") {
         try {
-          parsedImageUrl = JSON.parse(productToEdit.image_url);
+          rawImage = JSON.parse(rawImage);
         } catch {
-          // Fallback pt string simplu
-          if (productToEdit.image_url.startsWith("http")) {
-            parsedImageUrl.main = {
-              large: productToEdit.image_url,
-              medium: productToEdit.image_url,
-              small: productToEdit.image_url,
+          // Dacă e doar un URL "chel" (legacy), îl punem în main
+          if (rawImage?.startsWith("http")) {
+            rawImage = {
+              main: { large: rawImage, medium: rawImage, small: rawImage },
+              gallery: [],
             };
+          } else {
+            rawImage = null;
           }
         }
-      } else if (
-        productToEdit.image_url &&
-        typeof productToEdit.image_url === "object"
-      ) {
-        parsedImageUrl = { ...productToEdit.image_url };
       }
 
-      if (!parsedImageUrl.gallery) parsedImageUrl.gallery = [];
+      // Aici reconstruim obiectul de la zero pentru a elimina "Frankenstein JSON"
+      let cleanImageUrl = { main: null, gallery: [] as any[] };
 
-      // 2. MIGRAREA POZELOR VECHI DIN additional_image_link -> gallery
-      let legacyGallery: any[] = [];
-      if (productToEdit.additional_image_link) {
+      if (rawImage && typeof rawImage === "object") {
+        // Preluăm main-ul corect (dacă există)
+        if (rawImage.main) {
+          cleanImageUrl.main = rawImage.main;
+        }
+        // Fallback: dacă main e null, dar avem chei de tip 'large' pe root (legacy)
+        else if (rawImage.large) {
+          cleanImageUrl.main = {
+            large: rawImage.large,
+            medium: rawImage.medium,
+            small: rawImage.small,
+          };
+        }
+
+        // Preluăm galeria corectă
+        cleanImageUrl.gallery = Array.isArray(rawImage.gallery)
+          ? rawImage.gallery
+          : [];
+      }
+
+      // 3. Migrare poze vechi din 'additional_image_link' (dacă galeria e goală)
+      if (
+        cleanImageUrl.gallery.length === 0 &&
+        productToEdit.additional_image_link
+      ) {
+        let legacy = [];
         try {
-          legacyGallery =
+          legacy =
             typeof productToEdit.additional_image_link === "string"
               ? JSON.parse(productToEdit.additional_image_link)
               : productToEdit.additional_image_link;
         } catch {}
+
+        if (Array.isArray(legacy)) {
+          cleanImageUrl.gallery = legacy.map((url) =>
+            typeof url === "string"
+              ? { large: url, medium: url, small: url }
+              : url,
+          );
+        }
       }
 
-      // Dacă galeria nouă este goală, le mutăm pe cele vechi în format {large, medium, small}
-      if (parsedImageUrl.gallery.length === 0 && legacyGallery.length > 0) {
-        parsedImageUrl.gallery = legacyGallery.map((url) =>
-          typeof url === "string"
-            ? { large: url, medium: url, small: url }
-            : url,
-        );
-      }
-
+      // 4. Parsare sigură atribute
       let parsedAttributes = {};
       if (productToEdit.attributes_json) {
         try {
@@ -460,23 +480,32 @@ const AdminProducts = () => {
             typeof productToEdit.attributes_json === "string"
               ? JSON.parse(productToEdit.attributes_json)
               : productToEdit.attributes_json;
-        } catch {}
+        } catch {
+          parsedAttributes = {};
+        }
       }
 
+      // 5. Setare stare
+      setEditingProduct(productToEdit);
       setFormData({
         ...initialFormState,
         ...productToEdit,
-        image_url: parsedImageUrl, // Totul e integrat aici
-        additional_image_link: [], // Îl golim pentru curățenie
+        image_url: cleanImageUrl, // Structură garantată
+        additional_image_link: [], // Îl golim pentru a nu-l mai refolosi
         category_id:
           productToEdit.category_id || productToEdit.category?.id || "",
         attributes_json: parsedAttributes,
         description: productToEdit.description || "",
+        price: productToEdit.price || 0,
+        sale_price: productToEdit.sale_price || 0,
+        stock_quantity: productToEdit.stock_quantity || 0,
       });
     } else {
+      // Cazul de "Adaugă Articol Nou"
       setEditingProduct(null);
       setFormData(initialFormState);
     }
+
     setIsModalOpen(true);
   };
 
@@ -499,52 +528,57 @@ const AdminProducts = () => {
       });
       const result = await res.json();
 
-      if (!result.versions)
-        throw new Error("Upload invalid: Format backend neașteptat");
+      if (!result.versions) throw new Error("Format invalid");
 
       setFormData((prev) => {
-        // Asigurăm că avem structura bază
-        const currentImage =
-          typeof prev.image_url === "object" && prev.image_url
-            ? { ...prev.image_url }
-            : { main: null, gallery: [] };
+        // 🚀 EXTRAGERE CONTROLATĂ: Nu facem spread pe tot prev.image_url
+        const oldGallery = Array.isArray(prev.image_url?.gallery)
+          ? [...prev.image_url.gallery]
+          : [];
 
-        if (!currentImage.gallery) currentImage.gallery = [];
+        const newImageState = {
+          main:
+            index === "main" ? result.versions : prev.image_url?.main || null,
+          gallery: oldGallery,
+        };
 
-        if (index === "main") {
-          currentImage.main = result.versions;
-        } else {
-          currentImage.gallery[index as number] = result.versions;
+        if (index !== "main") {
+          newImageState.gallery[index as number] = result.versions;
         }
 
-        return { ...prev, image_url: currentImage };
+        return { ...prev, image_url: newImageState };
       });
 
-      toast.success("Imagine procesată și urcată (variante multiple).");
+      toast.success("Imagine încărcată cu succes.");
     } catch (err) {
-      console.error(err);
-      toast.error("Eroare la procesarea imaginii.");
+      toast.error("Eroare la upload.");
     } finally {
       setUploading(null);
     }
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.category_id)
+    // 1. Validare de bază
+    if (!formData.name || !formData.category_id) {
       return toast.error("Numele și Categoria sunt obligatorii.");
+    }
 
+    // 2. Pregătire Atribute (Asigurăm că trimitem un obiect JSON valid, nu un string)
     const attributesPayload =
       typeof formData.attributes_json === "object"
         ? formData.attributes_json
         : JSON.parse(formData.attributes_json || "{}");
 
-    // 🚀 Stringificăm obiectul curat cu { main: {...}, gallery: [...] }
-    const imagePayload = formData.image_url
-      ? typeof formData.image_url === "object"
-        ? JSON.stringify(formData.image_url)
-        : formData.image_url
-      : null;
+    // 3. Pregătire Imagini (Extracție strictă pentru a evita "Frankenstein JSON")
+    // Trimitem obiectul direct; Backend-ul (cu funcția reparată) îl va primi și procesa corect
+    const imagePayload = {
+      main: formData.image_url?.main || null,
+      gallery: Array.isArray(formData.image_url?.gallery)
+        ? formData.image_url.gallery
+        : [],
+    };
 
+    // 4. Pregătire Payload Final
     const payload = {
       sku:
         formData.sku?.trim().toUpperCase() ||
@@ -561,7 +595,7 @@ const AdminProducts = () => {
           : null,
       stock_quantity: parseInt(formData.stock_quantity as any) || 0,
       category_id: formData.category_id,
-      image_url: imagePayload, // 🚀 Aici merge obiectul unificat (stringified)
+      image_url: imagePayload, // 🚀 Acum trimitem obiectul curat, backend-ul știe să-l JSON.dump-uiască
       description: formData.description || "",
       weight: parseFloat(formData.weight as any) || 0.0,
       length: parseFloat(formData.length as any) || 0.0,
@@ -570,10 +604,11 @@ const AdminProducts = () => {
       meta_title: formData.meta_title || "",
       meta_description: formData.meta_description || "",
       canonical_url: formData.canonical_url || null,
-      additional_image_link: [], // 🚀 Golim intentionat field-ul vechi
+      additional_image_link: [], // 🚀 Curățăm câmpul legacy pentru a nu polua baza
       attributes_json: attributesPayload,
     };
 
+    // 5. Trimitere cerere către API
     const url = editingProduct
       ? `${API_BASE_URL}/api/v1/products/${editingProduct.sku}`
       : `${API_BASE_URL}/api/v1/products/`;
@@ -584,19 +619,23 @@ const AdminProducts = () => {
         method: editingProduct ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload), // JSON.stringify va transforma imagePayload în stringul corect pentru JSON API
       });
 
       if (res.ok) {
-        toast.success("Catalog sincronizat cu succes!");
-        fetchData();
+        toast.success(
+          editingProduct
+            ? "Produs actualizat cu succes!"
+            : "Produs adăugat cu succes!",
+        );
+        fetchData(); // Reîmprospătăm lista din baza de date
         setIsModalOpen(false);
       } else {
         const errorData = await res.json().catch(() => ({}));
-        toast.error(errorData.detail || "Eroare la scriere în baza de date.");
+        toast.error(errorData.detail || "Eroare la salvare în baza de date.");
       }
     } catch (e) {
-      toast.error("Pierdere conexiune gateway API.");
+      toast.error("Eroare de conexiune cu serverul.");
     } finally {
       setIsSaving(false);
     }
