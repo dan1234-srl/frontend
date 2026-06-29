@@ -11,6 +11,7 @@ import ProductReviews from "../components/product/ProductReviews";
 import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 import { getPrefetchedProduct } from "@/lib/prefetch";
 import { preloadLcp } from "@/lib/cf-image";
+import { Seo } from "@/components/Seo";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
