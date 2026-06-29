@@ -5,6 +5,7 @@
  */
 
 import { useState, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
