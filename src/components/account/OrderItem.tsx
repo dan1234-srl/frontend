@@ -377,7 +377,7 @@ export const OrderItem = ({ order }: any) => {
 
   // ─── OPTIMIZED SMART POLLING PENTRU ISTORIC GLS ───
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
 
     // Rulăm doar dacă modalul e deschis și există AWB
     if (showFullDetails && (order.gls_parcel_number || order.awb_number)) {

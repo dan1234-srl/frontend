@@ -24,8 +24,8 @@ interface FilterSidebarProps {
     brands?: string[];
     attributes?: Record<string, { label: string; values: string[] }>;
   } | null;
-  searchParams: URLSearchParams;
-  setSearchParams: (params: URLSearchParams) => void;
+  searchParams?: URLSearchParams;
+  setSearchParams?: (params: URLSearchParams) => void;
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -259,9 +259,12 @@ const PriceInput = ({
 
 export const FilterSidebar = ({
   filtersData,
-  searchParams,
-  setSearchParams,
+  searchParams: searchParamsProp,
+  setSearchParams: setSearchParamsProp,
 }: FilterSidebarProps) => {
+  const [routerSearchParams, setRouterSearchParams] = useSearchParams();
+  const searchParams = searchParamsProp ?? routerSearchParams;
+  const setSearchParams = setSearchParamsProp ?? setRouterSearchParams;
   const brands = filtersData?.brands || [];
   const attributes = filtersData?.attributes || {};
 
