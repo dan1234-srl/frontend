@@ -340,6 +340,7 @@ const AnimatedRoutes = () => {
         </Routes>
       </AnimatePresence>
     </Suspense>
+    </ChunkErrorBoundary>
   );
 };
 
