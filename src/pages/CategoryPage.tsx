@@ -15,6 +15,7 @@ import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { FilterSidebar } from "../components/shop/FilterSidebar";
+import { Seo } from "@/components/Seo";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
