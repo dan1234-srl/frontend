@@ -117,7 +117,8 @@ const AnimatedRoutes = () => {
   const isAdmin = location.pathname.startsWith("/admin");
 
   return (
-    <Suspense fallback={<PageLoader />}>
+    <ChunkErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
       <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={isAdmin ? "admin" : location.pathname}>
           {/* ── Admin (fără animation per-route, doar layout share) ── */}
