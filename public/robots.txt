@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+# Blochează paginile de filtrare/sortare (ajustează în funcție de parametrii tăi)
+Disallow: /*?*sort=*
+Disallow: /*?*filter=*
+Disallow: /*?*minPrice=*
+Disallow: /*?*maxPrice=*
+Disallow: /api/*
+Disallow: /admin/*
 
 Sitemap: https://evem.ro/sitemap.xml

@@ -435,7 +435,11 @@ const CategoryPage = () => {
     },
     [slug, qs, searchParams, products.length],
   );
-
+  useEffect(() => {
+    // Ștergem cache-ul când se schimbă slug-ul (categoria)
+    // pentru a forța un fetch proaspăt de la API
+    PAGE_CACHE.clear();
+  }, [slug]);
   useEffect(() => {
     if (!slug) return;
     const seeded = seedFromCache();
@@ -521,9 +525,7 @@ const CategoryPage = () => {
     <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased relative">
       <Seo
         title={
-          categoryTitle
-            ? `${categoryTitle} | Evem`
-            : "Categorie produse | Evem"
+          categoryTitle ? `${categoryTitle} | Evem` : "Categorie produse | Evem"
         }
         description={
           categoryTitle
@@ -538,18 +540,19 @@ const CategoryPage = () => {
                 "@type": "ItemList",
                 name: categoryTitle,
                 numberOfItems: totalProducts,
-                itemListElement: products.slice(0, 20).map((p: any, i: number) => ({
-                  "@type": "ListItem",
-                  position: i + 1,
-                  url: `https://evem.ro/product/${p.slug}`,
-                  name: p.name,
-                })),
+                itemListElement: products
+                  .slice(0, 20)
+                  .map((p: any, i: number) => ({
+                    "@type": "ListItem",
+                    position: i + 1,
+                    url: `https://evem.ro/product/${p.slug}`,
+                    name: p.name,
+                  })),
               }
             : undefined
         }
       />
       <Navbar />
-
 
       {/* Filter Drawer — montat la rădăcina paginii, deasupra oricărui context */}
       <FilterDrawer

@@ -44,7 +44,10 @@ export const Seo = ({
       <meta property="og:url" content={href} />
       {image && <meta property="og:image" content={image} />}
 
-      <meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
+      <meta
+        name="twitter:card"
+        content={image ? "summary_large_image" : "summary"}
+      />
       <meta name="twitter:title" content={title} />
       {desc && <meta name="twitter:description" content={desc} />}
       {image && <meta name="twitter:image" content={image} />}
