@@ -1,7 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import {
   BrowserRouter,
   Routes,
@@ -83,17 +85,8 @@ const AdminGeneralSettings = lazy(
 );
 const AdminGLS = lazy(() => import("./pages/admin/AdminGLS"));
 
-// Single Query Client + sane defaults (caching, no refetch storm).
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000,
-      gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+// Single Query Client now lives in src/lib/query-client.ts so cache-busting
+// utilities (used by the admin) can invalidate the same instance.
 
 // Minimal fallback: doar un puls subtil, fără overlay full-screen (zero blocking paint).
 const PageLoader = () => (
