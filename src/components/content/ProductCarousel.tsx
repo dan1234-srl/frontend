@@ -32,6 +32,11 @@ interface ProductCarouselProps {
 const CAROUSEL_CACHE = new Map<string, any[]>();
 const INFLIGHT = new Map<string, Promise<any[]>>();
 
+export const clearCarouselCache = () => {
+  CAROUSEL_CACHE.clear();
+  INFLIGHT.clear();
+};
+
 const buildKey = (p: ProductCarouselProps) =>
   p.collectionType
     ? `col::${p.collectionType}`

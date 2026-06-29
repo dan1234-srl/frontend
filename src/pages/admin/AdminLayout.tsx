@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import AdminCacheBuster from "@/components/admin/AdminCacheBuster";
 
 // ─── STRUCTURA MENIULUI ───
 const MENU_GROUPS = [
@@ -261,6 +262,7 @@ const AdminLayout = () => {
 
   return (
     <div className="fixed inset-0 flex bg-[#fbfbfd] font-sans overflow-hidden w-full h-screen selection:bg-[var(--royal-violet)] selection:text-white">
+      <AdminCacheBuster />
       {/* ── SIDEBAR DESKTOP ── */}
       <aside
         className="hidden lg:flex flex-col bg-white border-r border-zinc-200/60 h-full shrink-0 relative z-50 transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] shadow-[4px_0_24px_-10px_rgba(0,0,0,0.02)]"
