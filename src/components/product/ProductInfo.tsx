@@ -26,7 +26,6 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
   const { addToCart, cart } = useCart();
   const { user } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
-  
 
   // --- LOGICĂ VERIFICARE FAVORIT ---
   useEffect(() => {
@@ -238,7 +237,7 @@ const ProductInfo = ({ product }: ProductInfoProps) => {
           </span>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-serif italic tracking-tighter text-[var(--dark-amethyst)] leading-[1.1]">
+        <h1 className="text-3xl md:text-4xl font-serif italic tracking-tighter text-blackleading-[1.1]">
           {product.name}
         </h1>
         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-neutral-300">
