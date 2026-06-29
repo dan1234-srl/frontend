@@ -15,6 +15,7 @@ import { SortDropdown } from "../components/shop/SortDropdown";
 import { ProductCard } from "../components/shop/ProductCard";
 import { ProductGridSkeleton } from "@/components/ui/skeleton";
 import { FilterSidebar } from "../components/shop/FilterSidebar";
+import { Seo } from "@/components/Seo";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { preloadLcp } from "@/lib/cf-image";
@@ -518,7 +519,37 @@ const CategoryPage = () => {
 
   return (
     <div className="bg-[#fcfbfe] min-h-screen flex flex-col overflow-x-hidden selection:bg-[var(--royal-violet)] selection:text-white font-sans antialiased relative">
+      <Seo
+        title={
+          categoryTitle
+            ? `${categoryTitle} | Evem`
+            : "Categorie produse | Evem"
+        }
+        description={
+          categoryTitle
+            ? `Descoperă colecția ${categoryTitle} de la Evem. ${totalProducts || ""} produse disponibile cu livrare rapidă în toată România.`
+            : undefined
+        }
+        canonical={`/category/${slug}`}
+        jsonLd={
+          products.length > 0
+            ? {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                name: categoryTitle,
+                numberOfItems: totalProducts,
+                itemListElement: products.slice(0, 20).map((p: any, i: number) => ({
+                  "@type": "ListItem",
+                  position: i + 1,
+                  url: `https://evem.ro/product/${p.slug}`,
+                  name: p.name,
+                })),
+              }
+            : undefined
+        }
+      />
       <Navbar />
+
 
       {/* Filter Drawer — montat la rădăcina paginii, deasupra oricărui context */}
       <FilterDrawer
