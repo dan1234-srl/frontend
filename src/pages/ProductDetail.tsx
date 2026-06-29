@@ -94,9 +94,86 @@ const ProductDetail = () => {
     fetchProductData();
   }, [productId]);
 
+  // ───────────────────── SEO ─────────────────────
+  const seo = useMemo(() => {
+    if (!product) return null;
+    const slug = product.slug || productId;
+    const canonical = `/product/${slug}`;
+    const cleanDesc = (product.description || product.short_description || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const description =
+      cleanDesc.slice(0, 160) ||
+      `Cumpără ${product.name} de la Evem. Livrare rapidă în toată România.`;
+    const title = `${product.name}${product.brand_name ? " · " + product.brand_name : ""} | Evem`;
+
+    const img =
+      typeof processedMainImage === "string"
+        ? processedMainImage
+        : processedMainImage?.large ||
+          processedMainImage?.medium ||
+          processedMainImage?.small;
+
+    const price = Number(product.sale_price && product.sale_price > 0 ? product.sale_price : product.price) || 0;
+    const stock = Number(product.stock_quantity ?? product.stock ?? 0);
+
+    const jsonLd: Record<string, unknown> = {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      name: product.name,
+      description: cleanDesc.slice(0, 5000),
+      sku: product.sku,
+      mpn: product.sku,
+      image: img ? [img] : undefined,
+      brand: { "@type": "Brand", name: product.brand_name || "Evem" },
+      category: product.category?.name || product.category_name,
+      url: `https://evem.ro${canonical}`,
+      offers: {
+        "@type": "Offer",
+        url: `https://evem.ro${canonical}`,
+        priceCurrency: "RON",
+        price: price.toFixed(2),
+        availability:
+          stock > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
+        itemCondition: "https://schema.org/NewCondition",
+        priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60)
+          .toISOString()
+          .slice(0, 10),
+      },
+    };
+
+    const reviews = Array.isArray(product.reviews) ? product.reviews : [];
+    if (reviews.length > 0) {
+      const avg =
+        reviews.reduce((s: number, r: any) => s + (Number(r.rating) || 0), 0) /
+        reviews.length;
+      jsonLd.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: avg.toFixed(1),
+        reviewCount: reviews.length,
+      };
+    }
+
+    return { title, description, canonical, img, jsonLd };
+  }, [product, productId, processedMainImage]);
+
   return (
     <div className="min-h-screen bg-white relative">
+      {seo && (
+        <Seo
+          title={seo.title}
+          description={seo.description}
+          canonical={seo.canonical}
+          image={seo.img}
+          type="product"
+          jsonLd={seo.jsonLd}
+        />
+      )}
       <Navbar />
+
 
       {loading ? (
         <main className="px-6 pt-[8.5rem] lg:pt-[9.25rem] max-w-[1400px] mx-auto pb-20">
