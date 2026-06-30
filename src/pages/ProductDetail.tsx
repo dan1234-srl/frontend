@@ -115,7 +115,12 @@ const ProductDetail = () => {
           processedMainImage?.medium ||
           processedMainImage?.small;
 
-    const price = Number(product.sale_price && product.sale_price > 0 ? product.sale_price : product.price) || 0;
+    const price =
+      Number(
+        product.sale_price && product.sale_price > 0
+          ? product.sale_price
+          : product.price,
+      ) || 0;
     const stock = Number(product.stock_quantity ?? product.stock ?? 0);
 
     const jsonLd: Record<string, unknown> = {
@@ -142,6 +147,48 @@ const ProductDetail = () => {
         priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 60)
           .toISOString()
           .slice(0, 10),
+
+        // --- CÂMPURI NOI ADĂUGATE PENTRU POLITICA DE RETUR ---
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: "RO",
+          returnPolicyCategory:
+            "https://schema.org/MerchantReturnFiniteReturnWindow",
+          merchantReturnDays: 14, // Numărul de zile pentru retur conform legii din RO
+          returnMethod: "https://schema.org/ReturnByMail",
+          returnFees: "https://schema.org/ReturnShippingFees", // Clientul plătește returul (modifică dacă e gratuit)
+        },
+
+        // --- CÂMPURI NOI ADĂUGATE PENTRU DETALII DE LIVRARE ---
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          shippingRate: {
+            "@type": "MonetaryAmount",
+            value: 19.99, // MODIFICĂ AICI: Costul standard de livrare (pune 0 dacă e mereu gratuit)
+            currency: "RON",
+          },
+          shippingDestination: {
+            "@type": "DefinedRegion",
+            addressCountry: "RO",
+          },
+          deliveryTime: {
+            "@type": "ShippingDeliveryTime",
+            handlingTime: {
+              // Timpul de procesare a comenzii (ex: 0-1 zile)
+              "@type": "QuantitativeValue",
+              minValue: 0,
+              maxValue: 1,
+              unitCode: "d",
+            },
+            transitTime: {
+              // Timpul efectiv petrecut pe drum cu curierul (ex: 1-2 zile)
+              "@type": "QuantitativeValue",
+              minValue: 1,
+              maxValue: 2,
+              unitCode: "d",
+            },
+          },
+        },
       },
     };
 
@@ -173,7 +220,6 @@ const ProductDetail = () => {
         />
       )}
       <Navbar />
-
 
       {loading ? (
         <main className="px-6 pt-[8.5rem] lg:pt-[9.25rem] max-w-[1400px] mx-auto pb-20">
