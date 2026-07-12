@@ -36,7 +36,7 @@ export const Seo = ({
       <title>{title}</title>
       {desc && <meta name="description" content={desc} />}
       <link rel="canonical" href={href} />
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
+      {noindex && <meta name="robots" content="noindex, follow" />}
 
       <meta property="og:type" content={type} />
       <meta property="og:title" content={title} />
