@@ -82,8 +82,12 @@ const ProductDetail = () => {
               await fetch(`${API_BASE_URL}/api/v1/products/${productId}`)
             ).json();
 
-        if (!data) throw new Error("Not found");
-        setProduct(data);
+        if (!data || !data.name || (data.detail && !data.id)) {
+          setProduct(null);
+          setError(true);
+        } else {
+          setProduct(data);
+        }
         setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0);
       } catch (err) {
         setError(true);
