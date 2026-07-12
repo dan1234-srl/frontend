@@ -1,82 +1,58 @@
-## Redesign AdminOrders + OrderReviewModal
 
-### 1. AdminOrders.tsx — Bento Neo-Mosaic
+# Pagină produs indisponibil — redesign profesional
 
-**Layout grid (înlocuiește lista actuală)**
-- CSS grid `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-[180px] gap-4`.
-- Pattern repetat la fiecare 6 card-uri: poziții 1 și 4 = `col-span-2` (wide), restul = 1x1 compact. Generat din index → mereu mozaic, nu uniformitate plictisitoare.
-- Container card: `rounded-[24px] border border-zinc-100 bg-white shadow-[0_1px_0_rgba(0,0,0,0.02),0_20px_40px_-24px_rgba(16,0,43,0.10)] hover:shadow-[0_30px_60px_-20px_rgba(16,0,43,0.18)] hover:-translate-y-0.5 transition`.
+## Problema
+Când un produs indexat de Google nu mai există sau e out-of-stock, `ProductDetail.tsx` afișează:
+- fallback urât "Produsul nu a fost găsit" (simplu text + link)
+- sau, mai rău, produsul se randează cu preț `0`, stoc `0`, imagine goală → arată neprofesional și strică SEO.
 
-**Compact card (1x1)**
-- Eyebrow violet `#ORD-...` + dată short.
-- Nume client (truncate) + status pill colorat (pending=amber, processing=violet, shipped=blue, delivered=emerald, cancelled=zinc).
-- Total mare jos-stânga `heading-serif text-2xl`, count items dreapta („3 pcs”).
-- Bara accent pe muchia stângă 3px cu culoarea statusului.
+## Ce construim
 
-**Wide card (2x1)**
-- Stânga: aceleași info + sparkline mini (placeholder din timeline status: pending→...→delivered ca SVG 5 puncte, punctul activ glow).
-- Dreapta: stack 3 thumbnails produs suprapuse (`-ml-3`, ring-2 white), badge `+N` dacă > 3.
-- Hover reveal: rând acțiuni rapide (Vezi / AWB / Factură) cu clip-path inset → 0.
+### 1. Componentă nouă `src/components/product/ProductUnavailable.tsx`
+State-ul vizual pentru două cazuri:
+- **`not_found`** — produsul nu există / a fost șters (404 de la backend sau date invalide: fără nume, fără preț)
+- **`out_of_stock`** — produsul există dar `stock_quantity <= 0`
 
-**Restul paginii**
-- Header pagina (eyebrow + title heading-serif) + KPI strip (Total, Pending, Today's revenue) — 3 mini-card-uri sus.
-- Filter bar: search debounced 300ms + status chips orizontale (Toate / Pending / Processing / Shipped / Delivered / Cancelled) cu `layoutId` indicator.
-- Empty state ilustrat cu icon Sparkles, skeleton cards animate (nu Loader2 central).
-- Paginare păstrată dar restilizată ca pill-uri.
-- Migrare `useEffect+fetch` → `useAdminSWR` cu cheie `admin:orders:list:<page>:<q>:<status>`, TTL 60s, refresh background.
+Design:
+- Layout centrat pe toată lățimea, în tematica brandului (`--royal-violet`, `--dark-amethyst`, `--primary-gradient`, font serif italic pentru titlu — exact ca în `ProductInfo`).
+- Icon animat mare (Sparkles/PackageX din lucide) cu pulse + gradient overlay.
+- Titlu serif italic: „Această bijuterie și-a găsit deja stăpânul" (out of stock) sau „Piesă indisponibilă" (not found).
+- Subtitlu explicativ scurt.
+- Micro-animații: `animate-fade-in`, `animate-scale-in`, shimmer pe un card decorativ, pulse pe dot de status (reutilizează pattern-ul din `ProductInfo`).
+- Două CTA-uri stilizate identic cu butoanele din site (h-16, uppercase, tracking-[0.4em], primary-gradient):
+  - „Vezi produse similare" → link către categoria produsului (dacă avem slug) sau `/shop`
+  - „Anunță-mă când revine" (doar out_of_stock) — buton secundar, opțional cu form email simplu (POST către un endpoint existent dacă există, altfel dezactivat cu tooltip "În curând")
+- Secțiune inferioară: `ProductCarousel` cu „Alte piese din colecție" (dacă avem `categorySlug`) sau produse recomandate generice.
+- Trust badges reutilizate (Truck / ShieldCheck) pentru continuitate vizuală.
 
-**Animații**
-- Container `motion.div` fade+y:8→0, stagger 0.03 doar pe primele 8 card-uri.
-- `useReducedMotion` respectat (fallback fade simplu).
-- Hover GPU-only (transform + box-shadow).
+### 2. Modificări în `src/pages/ProductDetail.tsx`
+- Detectăm 3 stări clare după fetch:
+  1. `loading` → skeleton (există)
+  2. `notFound` → 404 real de la backend SAU `!data.name` → `<ProductUnavailable variant="not_found" />`
+  3. `outOfStock` → `product.stock_quantity <= 0` → randăm normal ProductInfo/Gallery DAR cu overlay `<ProductUnavailable variant="out_of_stock" inline />` peste zona de preț/CTA, iar butonul "Adaugă în coș" e ascuns (deja e disabled, dar înlocuim cu mesaj frumos).
+  
+  Decizie: pentru `out_of_stock` păstrăm galeria + descrierea (util pentru SEO și utilizator), doar zona ProductInfo primește tratament special.
 
-**Mobile**
-- 1 col, toate cardurile devin compact (fără wide), thumbnails ascunse, acțiuni sub formă de bottom-sheet la tap.
+- SEO pentru `not_found`:
+  - Setăm `<Seo>` cu `noindex` (props nou în `Seo.tsx`) + status 404 semantic (title „Produs indisponibil | Evem").
+  - Pentru `out_of_stock` păstrăm JSON-LD dar cu `availability: OutOfStock` (deja e corect).
 
----
+### 3. Extindere `src/components/Seo.tsx`
+Adăugăm prop opțional `noindex?: boolean` care emite `<meta name="robots" content="noindex,follow" />`. Aplicat doar pe pagina not_found — previne ca Google să indexeze un URL mort ca fiind conținut valid.
 
-### 2. OrderReviewModal.tsx — Split Cinematic peste AdminDialogShell
+### 4. Micro-detalii de robustețe în `ProductDetail.tsx`
+- Verificare mai strictă: dacă `data && !data.name` sau `!data.price && !data.sale_price` → tratăm ca `not_found` (evită randarea urâtă cu preț 0 pe care ai descris-o).
+- Fetch-ul deja setează `error=true` pe reject — extindem cu `notFound` separat de `error` real de rețea (opțional, retry pe error real).
 
-**Bază**
-- Înlocuiesc complet markup-ul propriu (overlay/wrapper custom) cu `AdminDialogShell` size `xl`, `mobileVariant="sheet"`. Păstrez toată logica (fetch order, save shipping, validări, GLS).
-- Pe mobile = bottom-sheet drag-to-close (moștenit din shell).
+## Ce NU atingem
+- Nu modificăm backend-ul.
+- Nu schimbăm `ProductInfo`, `ProductImageGallery`, `ProductDescription` — doar le condiționăm randarea.
+- Nu atingem restul design system-ului.
 
-**Layout desktop (grid 12 col)**
-- Header intern: eyebrow violet `COMANDĂ • <data>`, titlu `heading-serif` cu `#ORD-...`, status pill mare animat, total în dreapta.
-- Aurora subtilă în header (`radial-gradient` violet 6% opacity).
-- Body grid:
-  - **Stânga (col-span-7)**: timeline vertical status (5 pași: Plasată → Confirmată → Procesare → Expediată → Livrată) cu line gradient violet, punct activ glow + pulse; sub timeline → lista produse cu `<SmartImage>` lazy (card 84px imagine + nume + SKU + qty × preț + total). Fiecare item într-un mini-card rounded-2xl.
-  - **Dreapta (col-span-5) sticky**: 4 sub-card-uri stack:
-    1. Client (avatar inițiale + nume + email + phone).
-    2. Livrare (tip: curier/locker, adresă completă sau nume locker; mini-buton „Vezi pe hartă" dacă locker).
-    3. Plată (metoda + status).
-    4. Sumar (subtotal, discount, shipping, **TOTAL** mare).
-- Footer sticky cu acțiuni: `Salvează modificări` (primary violet) + `Anulează` + dropdown „Mai mult" (refund / factură / AWB).
+## Fișiere
+- **creat**: `src/components/product/ProductUnavailable.tsx`
+- **editat**: `src/pages/ProductDetail.tsx` (logica de branch + import)
+- **editat**: `src/components/Seo.tsx` (prop `noindex`)
 
-**Mobile**
-- Layout devine single column: header → timeline → produse → client → livrare → plată → sumar → acțiuni sticky bottom.
-
-**Micro-detalii**
-- Form-uri (editare adresă) inline în secțiunea Livrare, fără sub-modal.
-- Skeleton split-screen la load (timeline + 2 produse + side panel).
-- `useAdminSWR` cu cheie `admin:order:<id>`, TTL 30s.
-- Confirmări (anulare AWB etc.) folosesc `AdminConfirmDialog` deja existent.
-
----
-
-### 3. Tehnic
-
-- edited `src/pages/admin/AdminOrders.tsx` (refactor major, păstrez logica fetch/cancel/GLS)
-- edited `src/components/admin/OrderReviewModal.tsx` (rewrite UI, păstrez logica salvare/validare)
-- nu se ating endpoint-uri sau shape-uri de date
-- nu se ating alte pagini
-
-### 4. Out of scope
-- Restilizarea modalelor GLS din AdminOrders (istoric/cancel) — rămân pe `AdminDialogShell` curent.
-- Nu adaug funcționalitate nouă (export, bulk actions).
-
-### 5. Verificare
-- Build TS pass.
-- Vizual: desktop 1311px + mobile 375px, fiecare status simulat pentru culori.
-- `prefers-reduced-motion` → fără stagger/halo.
-- Modal: deschidere/închidere, Esc, click overlay, drag-down mobile.
+## Întrebare rapidă înainte de build
+Vrei buton „Anunță-mă când revine" funcțional (necesită un mic endpoint sau salvare în Supabase cu email) sau doar decorativ / ascuns? Dacă nu specifici, îl las **ascuns** și pun doar CTA-ul „Vezi produse similare" — cel mai curat vizual și fără dependințe noi.
