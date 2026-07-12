@@ -9,6 +9,7 @@ import {
   Server,
   Activity,
   Database,
+  CloudLightning,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,10 +19,51 @@ const API_BASE =
 
 const AdminExportFeed = () => {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
-  const handleCopy = (endpoint: string) => {
-    navigator.clipboard.writeText(`${API_BASE}/api/v1/export/${endpoint}`);
-    toast.success("Endpoint URL copiat în clipboard!");
+  // Stocăm URL-urile publice (Blob) sau folosim un fallback către domeniu
+  const [merchantUrl, setMerchantUrl] = useState(
+    `${window.location.origin}/google-merchant.xml`,
+  );
+  const [sitemapUrl, setSitemapUrl] = useState(
+    `${window.location.origin}/sitemap.xml`,
+  );
+
+  const handleCopy = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success("URL copiat în clipboard!");
+  };
+
+  const handleGenerateFeeds = async () => {
+    setGenerating(true);
+    try {
+      const token =
+        localStorage.getItem("token") || localStorage.getItem("access_token");
+      const res = await fetch(
+        `${API_BASE}/api/v1/export/admin/generate-feeds`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Fișierele au fost generate și salvate în cloud!");
+        // Actualizăm input-urile cu noile link-uri permanente de pe Vercel Blob
+        if (data.google_merchant_url) setMerchantUrl(data.google_merchant_url);
+        if (data.sitemap_url) setSitemapUrl(data.sitemap_url);
+      } else {
+        toast.error(data.error || "Eroare la generarea fișierelor.");
+      }
+    } catch (error) {
+      toast.error("Eroare de conexiune la server.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const pingSearchConsole = async () => {
@@ -72,11 +114,28 @@ const AdminExportFeed = () => {
             Data Export <span className="italic font-light">Engine</span>
           </h1>
         </div>
-        <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600">
-          <Activity size={14} className="animate-pulse" />
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            System Online
-          </span>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600">
+            <Activity size={14} className="animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              System Online
+            </span>
+          </div>
+          <button
+            onClick={handleGenerateFeeds}
+            disabled={generating}
+            className="flex items-center gap-2 px-6 py-2.5 bg-[var(--dark-amethyst)] hover:brightness-110 text-white rounded-full transition-all shadow-md active:scale-95 disabled:opacity-50"
+          >
+            {generating ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <CloudLightning size={14} />
+            )}
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              {generating ? "Se generează..." : "Manual Cloud Sync"}
+            </span>
+          </button>
         </div>
       </header>
 
@@ -106,16 +165,16 @@ const AdminExportFeed = () => {
           </div>
           <div className="space-y-3">
             <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-              Scheduled Fetch URL
+              Public Blob URL
             </label>
             <div className="flex gap-2">
               <input
                 readOnly
-                value={`${API_BASE}/api/v1/export/google-merchant.xml`}
+                value={merchantUrl}
                 className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-4 text-[10px] font-mono text-zinc-500 outline-none shadow-inner"
               />
               <button
-                onClick={() => handleCopy("google-merchant.xml")}
+                onClick={() => handleCopy(merchantUrl)}
                 className="size-11 shrink-0 text-white rounded-xl flex items-center justify-center transition-all shadow-lg active:scale-95"
                 style={{ background: "var(--primary-gradient)" }}
               >
@@ -143,16 +202,16 @@ const AdminExportFeed = () => {
           </div>
           <div className="space-y-3">
             <label className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-              Crawler Endpoint
+              Public Blob URL
             </label>
             <div className="flex gap-2">
               <input
                 readOnly
-                value={`${API_BASE}/api/v1/export/sitemap.xml`}
+                value={sitemapUrl}
                 className="flex-1 bg-zinc-50 border border-zinc-100 rounded-xl px-4 text-[10px] font-mono text-zinc-500 outline-none shadow-inner"
               />
               <button
-                onClick={() => handleCopy("sitemap.xml")}
+                onClick={() => handleCopy(sitemapUrl)}
                 className="size-11 shrink-0 bg-white border border-zinc-200 hover:border-[var(--royal-violet)] text-[var(--dark-amethyst)] rounded-xl flex items-center justify-center transition-all shadow-sm"
               >
                 <Copy size={16} />
@@ -218,10 +277,10 @@ const AdminExportFeed = () => {
         </div>
         <div className="space-y-3">
           {[
-            { s: "Google Merchant Hub", t: "Dynamic XML Stream", d: "0.4ms" },
+            { s: "Vercel Blob Storage", t: "Static XML Hosting", d: "12ms" },
             {
               s: "Search Console Connector",
-              t: "Real-time Sitemap",
+              t: "Real-time Sitemap Ping",
               d: "0.2ms",
             },
             {
@@ -274,14 +333,14 @@ const AdminExportFeed = () => {
             Automated Distribution
           </h4>
           <p className="text-sm opacity-80 font-medium">
-            Feed-urile sunt generate dinamic folosind datele direct din serverul
-            Evem, fără cache învechit.
+            Sistemul actualizează feed-urile direct în Cloud pentru a garanta
+            performanță maximă (Zero Timeout).
           </p>
         </div>
         <div className="relative z-10 flex gap-4">
           <div className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
             <p className="text-[10px] uppercase font-black opacity-60">
-              Last Global Sync
+              Vercel Edge Network
             </p>
             <p className="text-xs font-bold uppercase tracking-widest">Live</p>
           </div>
