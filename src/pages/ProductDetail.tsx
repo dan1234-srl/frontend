@@ -12,6 +12,7 @@ import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 import { getPrefetchedProduct } from "@/lib/prefetch";
 import { preloadLcp } from "@/lib/cf-image";
 import { Seo } from "@/components/Seo";
+import ProductUnavailable from "@/components/product/ProductUnavailable";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
