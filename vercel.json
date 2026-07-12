@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "https://linea-backend-production.up.railway.app/api/v1/export/sitemap.xml"
+      "destination": "https://xbqsbgyx1v4pfcep.public.blob.vercel-storage.com/sitemap.xml"
     },
     {
       "source": "/google-merchant.xml",
-      "destination": "https://linea-backend-production.up.railway.app/api/v1/export/google-merchant.xml"
+      "destination": "https://xbqsbgyx1v4pfcep.public.blob.vercel-storage.com/google-merchant.xml"
     },
     {
       "source": "/robots.txt",
