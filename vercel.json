@@ -5,8 +5,16 @@
       "destination": "https://linea-backend-production.up.railway.app/api/v1/export/sitemap.xml"
     },
     {
+      "source": "/google-merchant.xml",
+      "destination": "https://linea-backend-production.up.railway.app/api/v1/export/google-merchant.xml"
+    },
+    {
       "source": "/robots.txt",
       "destination": "/robots.txt"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://linea-backend-production.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",
