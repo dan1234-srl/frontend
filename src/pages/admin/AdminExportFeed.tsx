@@ -37,15 +37,14 @@ const AdminExportFeed = () => {
   const handleGenerateFeeds = async () => {
     setGenerating(true);
     try {
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("access_token");
       const res = await fetch(
         `${API_BASE}/api/v1/export/admin/generate-feeds`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
+          credentials: "include", // Asta trimite automat cookie-ul tău
         },
       );
 
@@ -53,7 +52,6 @@ const AdminExportFeed = () => {
 
       if (res.ok) {
         toast.success("Fișierele au fost generate și salvate în cloud!");
-        // Actualizăm input-urile cu noile link-uri permanente de pe Vercel Blob
         if (data.google_merchant_url) setMerchantUrl(data.google_merchant_url);
         if (data.sitemap_url) setSitemapUrl(data.sitemap_url);
       } else {
@@ -69,14 +67,12 @@ const AdminExportFeed = () => {
   const pingSearchConsole = async () => {
     setLoadingGoogle(true);
     try {
-      const token =
-        localStorage.getItem("token") || localStorage.getItem("access_token");
       const res = await fetch(`${API_BASE}/api/v1/export/ping-google`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include", // Asta trimite automat cookie-ul tău
       });
 
       if (res.ok) {
