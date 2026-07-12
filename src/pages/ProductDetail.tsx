@@ -212,17 +212,30 @@ const ProductDetail = () => {
     return { title, description, canonical, img, jsonLd };
   }, [product, productId, processedMainImage]);
 
+  const isOutOfStock =
+    !!product && Number(product.stock_quantity ?? product.stock ?? 0) <= 0;
+  const notFound = !loading && (error || !product);
+
   return (
     <div className="min-h-screen bg-white relative">
-      {seo && (
+      {notFound ? (
         <Seo
-          title={seo.title}
-          description={seo.description}
-          canonical={seo.canonical}
-          image={seo.img}
-          type="product"
-          jsonLd={seo.jsonLd}
+          title="Produs indisponibil | Evem"
+          description="Produsul căutat nu mai este disponibil. Descoperă piese similare din colecția Evem."
+          canonical={`/product/${productId}`}
+          noindex
         />
+      ) : (
+        seo && (
+          <Seo
+            title={seo.title}
+            description={seo.description}
+            canonical={seo.canonical}
+            image={seo.img}
+            type="product"
+            jsonLd={seo.jsonLd}
+          />
+        )
       )}
       <Navbar />
 
@@ -230,15 +243,9 @@ const ProductDetail = () => {
         <main className="px-6 pt-[8.5rem] lg:pt-[9.25rem] max-w-[1400px] mx-auto pb-20">
           <ProductDetailSkeleton />
         </main>
-      ) : error || !product ? (
-        <main className="flex-1 flex flex-col items-center justify-center pt-[8.5rem] text-center p-6">
-          <h1 className="text-2xl font-serif mb-4">Produsul nu a fost găsit</h1>
-          <Link
-            to="/"
-            className="text-brand font-bold uppercase text-xs tracking-widest border-b border-brand"
-          >
-            Înapoi în magazin
-          </Link>
+      ) : notFound ? (
+        <main className="px-6 lg:px-12 pt-[9.25rem] max-w-[1400px] mx-auto pb-20">
+          <ProductUnavailable variant="not_found" />
         </main>
       ) : (
         <main className="px-6 lg:px-12 pt-[9.25rem] max-w-[1400px] mx-auto pb-16">
@@ -257,7 +264,23 @@ const ProductDetail = () => {
               />
             </div>
             <div className="lg:col-span-7 flex flex-col gap-8">
-              <ProductInfo product={product} />
+              {isOutOfStock ? (
+                <ProductUnavailable
+                  variant="out_of_stock"
+                  productName={product.sku}
+                  categorySlug={
+                    product.category?.slug ||
+                    product.category_slug ||
+                    product._meta_category_slug
+                  }
+                  categoryName={
+                    product.category?.name || product.category_name
+                  }
+                  inline
+                />
+              ) : (
+                <ProductInfo product={product} />
+              )}
               <ProductDescription product={product} />
             </div>
           </div>
