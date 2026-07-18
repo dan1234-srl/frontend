@@ -33,7 +33,7 @@ const ProductDetail = () => {
       try {
         media = JSON.parse(media);
       } catch (e) {
-        console.error("Eroare parsare JSON media:", e);
+        console.error("Eroare parsare JSON media :", e);
       }
     }
 
@@ -49,9 +49,6 @@ const ProductDetail = () => {
   useEffect(() => {
     if (!processedMainImage) return;
 
-    // 1. Determine the URL string safely
-    // Check if processedMainImage is a string itself,
-    // or if it's an object containing sizes
     const lcp =
       typeof processedMainImage === "string"
         ? processedMainImage
@@ -59,7 +56,6 @@ const ProductDetail = () => {
           processedMainImage.medium ||
           processedMainImage.small;
 
-    // 2. Ensure it is a valid string before calling the function
     if (typeof lcp === "string" && lcp.startsWith("http")) {
       preloadLcp(lcp);
     }
@@ -153,24 +149,29 @@ const ProductDetail = () => {
           .toISOString()
           .slice(0, 10),
 
-        // --- CÂMPURI NOI ADĂUGATE PENTRU POLITICA DE RETUR ---
+        // --- POLITICA DE RETUR ---
         hasMerchantReturnPolicy: {
           "@type": "MerchantReturnPolicy",
           applicableCountry: "RO",
           returnPolicyCategory:
             "https://schema.org/MerchantReturnFiniteReturnWindow",
-          merchantReturnDays: 14, // Numărul de zile pentru retur conform legii din RO
+          merchantReturnDays: 14,
           returnMethod: "https://schema.org/ReturnByMail",
-          returnFees: "https://schema.org/ReturnShippingFees", // Clientul plătește returul (modifică dacă e gratuit)
+          returnFees: "https://schema.org/ReturnShippingFees",
         },
 
-        // --- CÂMPURI NOI ADĂUGATE PENTRU DETALII DE LIVRARE ---
+        // --- DETALII DE LIVRARE ACTUALIZATE PENTRU INTERVAL DE PREȚ ---
         shippingDetails: {
           "@type": "OfferShippingDetails",
           shippingRate: {
-            "@type": "MonetaryAmount",
-            value: 19.99, // MODIFICĂ AICI: Costul standard de livrare (pune 0 dacă e mereu gratuit)
-            currency: "RON",
+            "@type": "QuantitativeValue",
+            minValue: 16.99,
+            maxValue: 19.99,
+            valueReference: {
+              "@type": "PropertyValue",
+              name: "Valuta",
+              value: "RON",
+            },
           },
           shippingDestination: {
             "@type": "DefinedRegion",
@@ -179,14 +180,12 @@ const ProductDetail = () => {
           deliveryTime: {
             "@type": "ShippingDeliveryTime",
             handlingTime: {
-              // Timpul de procesare a comenzii (ex: 0-1 zile)
               "@type": "QuantitativeValue",
               minValue: 0,
               maxValue: 1,
               unitCode: "d",
             },
             transitTime: {
-              // Timpul efectiv petrecut pe drum cu curierul (ex: 1-2 zile)
               "@type": "QuantitativeValue",
               minValue: 1,
               maxValue: 2,
@@ -273,9 +272,7 @@ const ProductDetail = () => {
                     product.category_slug ||
                     product._meta_category_slug
                   }
-                  categoryName={
-                    product.category?.name || product.category_name
-                  }
+                  categoryName={product.category?.name || product.category_name}
                   inline
                 />
               ) : (
