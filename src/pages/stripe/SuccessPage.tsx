@@ -1,15 +1,14 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Check,
   ArrowRight,
   ShoppingBag,
-  Mail,
-  Sparkles,
-  MapPin,
-  Truck,
   Package,
+  Truck,
+  MapPin,
+  Sparkles,
 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +20,7 @@ const API_BASE_URL =
   (import.meta.env.VITE_API_URL as string) ||
   "https://linea-backend-production.up.railway.app";
 
-// Helper pentru extragerea URL-ului imaginii
+// Helper pentru extragerea detaliilor produsului
 const getItemDetails = (item: any) => {
   const name =
     item.product_name_at_purchase || item.product?.name || "Produs EVEM";
@@ -128,28 +127,41 @@ const SuccessPage = () => {
     };
   }, [orderId, isSuccess]);
 
-  // ───────────────────── TRACKING PURCHASE (DATALAYER) ─────────────────────
+  // ───────────────────── TRACKING PURCHASE (GA4 & GOOGLE ADS) ─────────────────────
   useEffect(() => {
     // Rulăm DOAR când comanda s-a încărcat complet din API și avem datele
     if (loading || !order) return;
 
-    try {
-      // Declarăm interfața globală în caz că nu există
-      (window as any).dataLayer = (window as any).dataLayer || [];
+    const currentOrderId = order.id || orderId;
+    const trackingKey = `gads_tracked_${currentOrderId}`;
 
-      // Împingem structura standard de E-commerce dorită de Google
-      (window as any).dataLayer.push({
+    // PROTECȚIE LA REFRESH: Verificăm dacă a fost deja trackuită în această sesiune
+    if (sessionStorage.getItem(trackingKey)) {
+      console.log(
+        "DEBUG: Comanda a fost deja raportată (prevented double tracking).",
+      );
+      return;
+    }
+
+    try {
+      const globalWindow = window as any;
+      globalWindow.dataLayer = globalWindow.dataLayer || [];
+
+      const totalValue = Number(order.total_amount || 0);
+
+      // 1. Împingem structura standard de E-commerce pentru Google Analytics 4
+      globalWindow.dataLayer.push({
         event: "purchase",
         ecommerce: {
-          transaction_id: order.id || orderId,
-          value: Number(order.total_amount || 0),
+          transaction_id: currentOrderId,
+          value: totalValue,
           currency: "RON",
-          tax: 0, // Poți calcula valoarea dacă e nevoie
+          tax: 0,
           shipping: Number(order.shipping_fee || 0),
           items: (order.items || []).map((it: any) => {
             const details = getItemDetails(it);
             return {
-              item_id: it.product?.sku || it.sku || "N/A", // Trebuie să bată cu <g:id> din feed-ul XML
+              item_id: it.product?.sku || it.sku || "N/A",
               item_name: details.name,
               price: details.price,
               quantity: details.quantity,
@@ -158,15 +170,37 @@ const SuccessPage = () => {
           }),
         },
       });
+
+      // 2. Declanșăm direct evenimentul de conversie strict pentru Google Ads
+      if (typeof globalWindow.gtag === "function") {
+        globalWindow.gtag("event", "conversion", {
+          send_to: "AW-16969968602/bJHXCO2Xi9QcENrX9Js_",
+          value: totalValue,
+          currency: "RON",
+          transaction_id: currentOrderId,
+        });
+      } else {
+        // Fallback: Dacă gtag nu e inițializat ca funcție, trimitem prin dataLayer
+        globalWindow.dataLayer.push({
+          event: "conversion",
+          send_to: "AW-16969968602/bJHXCO2Xi9QcENrX9Js_",
+          value: totalValue,
+          currency: "RON",
+          transaction_id: currentOrderId,
+        });
+      }
+
+      // Marcăm comanda ca fiind trackuită cu succes pentru a preveni dublurile la refresh
+      sessionStorage.setItem(trackingKey, "true");
       console.log(
-        "DEBUG: Purchase event pushed successfully to dataLayer",
-        order.id,
+        "DEBUG: Conversie Google Ads trimisă cu succes pentru comanda",
+        currentOrderId,
       );
     } catch (e) {
-      console.error("DEBUG: Eroare la scrierea în dataLayer:", e);
+      console.error("DEBUG: Eroare la scrierea conversiei:", e);
     }
   }, [loading, order, orderId]);
-  // ─────────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────────
 
   if (!isSuccess) return null;
 
