@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -23,12 +23,9 @@ const API_BASE_URL =
 
 // Helper pentru extragerea URL-ului imaginii
 const getItemDetails = (item: any) => {
-  // Să ne asigurăm că citim corect din modelul OrderItemOut
-  // În SQL-ul tău din orders.py, item este de tip models.OrderItem
   const name =
     item.product_name_at_purchase || item.product?.name || "Produs EVEM";
 
-  // Asigură-te că folosești prețul salvat la checkout, nu prețul curent al produsului
   const price = Number(
     item.unit_price_at_purchase || item.price_at_purchase || 0,
   );
@@ -41,15 +38,12 @@ const getItemDetails = (item: any) => {
 
 // Helper pentru imagine
 const getItemImage = (item: any) => {
-  // item.product_image este coloana setată în orders.py la checkout
   const source = item.product_image || item.product?.image_url;
 
   if (!source) return "/placeholder.png";
 
-  // Dacă e deja un URL simplu
   if (typeof source === "string" && source.startsWith("http")) return source;
 
-  // Dacă e JSON (cum vine din DB)
   try {
     const parsed = typeof source === "string" ? JSON.parse(source) : source;
     return (
@@ -68,16 +62,14 @@ const getFormattedAddress = (addrInput: any) => {
 
   let addr = addrInput;
 
-  // Dacă este string, încercăm să-l parsăm
   if (typeof addr === "string") {
     try {
       addr = JSON.parse(addr);
     } catch {
-      return addr; // Dacă nu e JSON, returnăm string-ul brut
+      return addr;
     }
   }
 
-  // Dacă a devenit obiect, extragem câmpurile
   if (typeof addr === "object" && addr !== null) {
     if (addr.locker_name) return `${addr.locker_name}, ${addr.city}`;
     if (addr.street)
@@ -136,6 +128,46 @@ const SuccessPage = () => {
     };
   }, [orderId, isSuccess]);
 
+  // ───────────────────── TRACKING PURCHASE (DATALAYER) ─────────────────────
+  useEffect(() => {
+    // Rulăm DOAR când comanda s-a încărcat complet din API și avem datele
+    if (loading || !order) return;
+
+    try {
+      // Declarăm interfața globală în caz că nu există
+      (window as any).dataLayer = (window as any).dataLayer || [];
+
+      // Împingem structura standard de E-commerce dorită de Google
+      (window as any).dataLayer.push({
+        event: "purchase",
+        ecommerce: {
+          transaction_id: order.id || orderId,
+          value: Number(order.total_amount || 0),
+          currency: "RON",
+          tax: 0, // Poți calcula valoarea dacă e nevoie
+          shipping: Number(order.shipping_fee || 0),
+          items: (order.items || []).map((it: any) => {
+            const details = getItemDetails(it);
+            return {
+              item_id: it.product?.sku || it.sku || "N/A", // Trebuie să bată cu <g:id> din feed-ul XML
+              item_name: details.name,
+              price: details.price,
+              quantity: details.quantity,
+              item_brand: details.brand,
+            };
+          }),
+        },
+      });
+      console.log(
+        "DEBUG: Purchase event pushed successfully to dataLayer",
+        order.id,
+      );
+    } catch (e) {
+      console.error("DEBUG: Eroare la scrierea în dataLayer:", e);
+    }
+  }, [loading, order, orderId]);
+  // ─────────────────────────────────────────────────────────────────────────
+
   if (!isSuccess) return null;
 
   const displayOrderId =
@@ -145,7 +177,6 @@ const SuccessPage = () => {
         : orderId.toUpperCase()
       : "N/A";
 
-  // Extragem valorile bazându-ne direct pe schema Pydantic OrderOut
   const items: any[] = order?.items || [];
   const subtotal = Number(order?.subtotal_amount || 0);
   const discount = Number(order?.discount_amount || 0);
@@ -153,28 +184,11 @@ const SuccessPage = () => {
   const total = Number(order?.total_amount || 0);
   const deliveryType = order?.delivery_type || "courier";
 
-  // Căutăm adresa pentru a o afișa drăguț. Ne bazăm pe textul JSON salvat în DB.
-  let addressText = "Adresă indisponibilă";
-  try {
-    if (order?.shipping_address) {
-      const parsedAddr = JSON.parse(order.shipping_address);
-      if (parsedAddr.locker_name) {
-        addressText = `${parsedAddr.locker_name}, ${parsedAddr.city}`;
-      } else if (parsedAddr.street) {
-        addressText = `${parsedAddr.street}, ${parsedAddr.city}, ${parsedAddr.county}`;
-      }
-    }
-  } catch (e) {
-    // Dacă shipping_address este doar un string simplu (cum e definit în Pydantic acum)
-    addressText = order?.shipping_address || "Adresă indisponibilă";
-  }
-
   return (
     <div className="min-h-screen bg-[#FDFDFD] text-[var(--deep-twilight)] font-sans flex flex-col">
       <Navbar />
 
       <main className="flex-1 flex flex-col items-center px-4 sm:px-6 pt-32 sm:pt-40 pb-24 relative overflow-hidden">
-        {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none overflow-hidden z-0">
           <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[var(--french-blue,#3b82f6)] opacity-[0.03] blur-[120px] rounded-full" />
           <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-[var(--deep-twilight,#0a0a0a)] opacity-[0.03] blur-[120px] rounded-full" />
@@ -186,7 +200,6 @@ const SuccessPage = () => {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 max-w-3xl w-full border border-zinc-100 p-6 sm:p-10 md:p-16 bg-white/80 backdrop-blur-xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.04)] rounded-[2rem] md:rounded-[3rem] text-center"
         >
-          {/* Check Icon */}
           <div className="flex justify-center mb-10">
             <div className="relative">
               <motion.div
@@ -228,7 +241,6 @@ const SuccessPage = () => {
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-zinc-100" />
           </div>
 
-          {/* Cards: Numar comanda & Metoda Livrare */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-10">
             <div className="flex flex-col items-center justify-center gap-3 p-5 rounded-2xl bg-zinc-50/60 border border-zinc-100 text-center">
               <div className="p-3 rounded-full bg-white shadow-sm text-zinc-700">
@@ -261,7 +273,6 @@ const SuccessPage = () => {
             </div>
           </div>
 
-          {/* PRODUSELE COMANDATE & TOTALURI */}
           {(loading || items.length > 0) && (
             <div className="mb-10 text-left">
               <div className="flex items-center justify-between mb-5">
@@ -286,7 +297,6 @@ const SuccessPage = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {/* Lista de produse */}
                   {items.map((it, i) => {
                     const details = getItemDetails(it);
                     return (
@@ -333,7 +343,6 @@ const SuccessPage = () => {
                     );
                   })}
 
-                  {/* Adresa de destinație */}
                   {order && (
                     <div className="mt-6 p-4 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-start gap-3">
                       <MapPin
@@ -358,7 +367,6 @@ const SuccessPage = () => {
                     </div>
                   )}
 
-                  {/* Secțiunea de Totaluri Finale */}
                   {order && (
                     <div className="pt-6 mt-6 border-t border-zinc-100 space-y-3">
                       <div className="flex justify-between items-center text-xs">
@@ -415,7 +423,6 @@ const SuccessPage = () => {
             </div>
           )}
 
-          {/* Footer Call to actions */}
           <div className="space-y-6">
             <p className="text-sm text-zinc-500 leading-relaxed max-w-sm mx-auto font-medium italic">
               "Detaliile fac diferența. Vom pregăti coletul cu cea mai mare
